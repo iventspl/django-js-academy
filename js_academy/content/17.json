@@ -1,0 +1,156 @@
+{
+  "module": {
+    "slug": "ai-praca",
+    "title": "AI a praca programisty",
+    "subtitle": "Co naprawdę zmienia AI, dlaczego JS/React nadal ma sens i czego się uczyć.",
+    "description": "Specjalna sekcja o wpływie AI na pracę programisty. Tylko sprawdzalne dane, źródła i praktyczne wnioski — bez hype'u, bez przepowiedni i bez udawania, że wiemy więcej, niż wiemy.",
+    "level": "advanced",
+    "glyph": "17",
+    "accent": "#F472B6",
+    "duration_minutes": 60,
+    "outcomes": [
+      "Rozróżniasz deklarowaną produktywność od zmierzonego czasu i jakości.",
+      "Znasz konkretne dane o zaufaniu, poprawianiu kodu i bezpieczeństwie.",
+      "Uzasadniasz naukę JavaScriptu i Reacta rzeczywistymi liczbami, nie sloganami.",
+      "Budujesz nawyk weryfikacji kodu AI: testy, przegląd, bezpieczeństwo, odpowiedzialność."
+    ],
+    "project_title": "Audyt kodu wygenerowanego przez AI",
+    "project_brief": "Weź jeden komponent lub endpoint wygenerowany przez model. Sprawdź, czego brakuje: walidacji, obsługi błędów, testów, dostępności i bezpieczeństwa. Napisz krótki raport z decyzjami.",
+    "project_steps": [
+      "Zapisz prompt i założenia, które model miał spełnić.",
+      "Dodaj testy przypadków brzegowych i błędu.",
+      "Sprawdź XSS, walidację wejścia i obsługę uprawnień.",
+      "Opisz, co zmieniłbyś i dlaczego — bez ogólników."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "co-ai-zmienia",
+      "title": "Co AI naprawdę zmienia w pracy",
+      "summary": "Deklarowana prędkość, zmierzony czas, zaufanie i ukryty koszt weryfikacji.",
+      "minutes": 20,
+      "body_html": "<p>Najważniejsza różnica nie brzmi „AI pisze kod”. Brzmi: <strong>AI przenosi pracę z pisania na specyfikowanie, sprawdzanie i integrowanie</strong>. To nadal praca inżynierska — tylko inna.</p>\n<h2>Dane, które warto znać</h2>\n<p>Stack Overflow Developer Survey 2025 (49 000+ respondentów) podaje, że <strong>80% deweloperów używa AI</strong> w pracy, ale tylko <strong>29% ufa dokładności</strong> odpowiedzi. <strong>66%</strong> deklaruje, że spędza więcej czasu na poprawianiu kodu „prawie dobrego”, a <strong>75%</strong> w razie wątpliwości nadal pyta człowieka.</p>\n<p>Raport DORA 2025 (Google Cloud) podaje, że <strong>90% specjalistów technicznych używa AI</strong>, a ponad <strong>80%</strong> uważa, że zwiększyło to ich produktywność. Jednocześnie <strong>30%</strong> deklaruje niewielkie zaufanie lub brak zaufania do kodu AI. Autorzy opisują „podatek weryfikacji”: czas zaoszczędzony na generowaniu jest często wydawany na audyt i poprawki.</p>\n<h2>To nie jest jednoznaczne „szybciej”</h2>\n<p>W randomizowanym badaniu METR z początku 2025 doświadczeni deweloperzy open source pracowali z AI <strong>19% dłużej</strong> (przedział ufności +2% do +39%). Późniejsze badanie METR (2026) sugeruje, że część deweloperów mogła już przyspieszyć, ale autorzy sami ostrzegają, że selekcja uczestników zaniża wiarygodność pomiaru. Uczciwy wniosek: <strong>efekt zależy od zadania, repo i doświadczenia</strong>, a nie od samego narzędzia.</p>\n<div class=\"lesson-callout\"><strong>Wniosek:</strong> AI jest bardzo dobre w wąskich, dobrze opisanych zadaniach. W złożonym systemie wartość powstaje z kontekstu, testów, decyzji i odpowiedzialności — a tego model nie bierze na siebie.</div>"
+    },
+    {
+      "slug": "dlaczego-js-react",
+      "title": "Dlaczego JS i React nadal mają sens",
+      "summary": "Zasięg języka, ekosystem, mobile i prognoza zatrudnienia — z konkretnymi źródłami.",
+      "minutes": 20,
+      "body_html": "<p>JavaScript nie jest popularny „bo tak”. Jest językiem, który działa w każdej przeglądarce, a przez Node także poza nią. React i React Native pozwalają wykorzystać ten sam model myślenia na webie i w mobile.</p>\n<h2>Liczby</h2>\n<ul>\n<li>Stack Overflow 2025: <strong>66%</strong> wszystkich respondentów i <strong>68,8%</strong> profesjonalnych deweloperów pracowało z JavaScriptem w ciągu roku.</li>\n<li>TypeScript: <strong>48,8%</strong> profesjonalistów. To nie „osobny świat” — to typowany JavaScript.</li>\n<li>npm: w tygodniu 21–27 października 2026 pakiet <code>react</code> miał <strong>205 386 791</strong> pobrań, a <code>react-native</code> <strong>16 378 971</strong>.</li>\n<li>BLS (USA) prognozuje wzrost zatrudnienia „software developers” o <strong>10,2%</strong> w latach 2025–2035, z 1,72 mln do 1,89 mln miejsc.</li>\n</ul>\n<p>To nie znaczy, że każdy projekt potrzebuje Reacta ani że prognoza BLS gwarantuje pracę. Pobrania ≠ etaty. Ale pokazują skalę utrzymania, bibliotek, narzędzi i zespołów, które trzeba rozwijać.</p>\n<h2>Gdzie AI nie wyręcza</h2>\n<p>Wygenerowanie komponentu to początek. Dalej zostaje: dostępność, wydajność, obsługa błędów, integracja z API, uprawnienia, testy, przegląd i wdrożenie. DORA 2025 wprost pisze, że AI „amplifikuje” istniejące mocne i słabe strony organizacji. Bez zrozumienia JS/React nie odróżnisz dobrego wzorca od ładnie sformatowanego długu.</p>\n<div class=\"lesson-callout\"><strong>Praktyczny wniosek:</strong> ucz się JavaScriptu, TypeScriptu i Reacta nie po to, by konkurować z autouzupełnianiem. Ucz się po to, by <strong>weryfikować, projektować i brać odpowiedzialność</strong> za system, który AI współtworzy.</div>"
+    },
+    {
+      "slug": "kariera-z-ai",
+      "title": "Kariera z AI, nie obok AI",
+      "summary": "Czytanie kodu, debugowanie, testy, bezpieczeństwo i portfolio — konkretny plan.",
+      "minutes": 20,
+      "body_html": "<p>Nie musisz udawać, że AI nie istnieje. Nie musisz też wierzyć, że jedna umiejętność zniknie. Najbardziej przenośne kompetencje to te, których nie da się sprowadzić do wygenerowania linijki kodu.</p>\n<h2>Co trenować</h2>\n<ul>\n<li><strong>Czytanie kodu</strong> — umiejętność oceny cudzego rozwiązania, także wygenerowanego.</li>\n<li><strong>Debugowanie</strong> — od objawu do hipotezy i testu, nie zgadywanie.</li>\n<li><strong>Testy</strong> — kontrakt, przypadki brzegowe, regresje.</li>\n<li><strong>Bezpieczeństwo</strong> — XSS, walidacja wejścia, uprawnienia, sekrety.</li>\n<li><strong>Architektura</strong> — granice, stan, zależności, kompromisy.</li>\n<li><strong>Komunikacja</strong> — opis problemu, decyzji i ryzyka.</li>\n</ul>\n<h2>Jak używać AI, żeby się uczyć</h2>\n<p>Nie proś tylko o rozwiązanie. Proś o <strong>testy, alternatywy, wyjaśnienie błędów i pytania kontrolne</strong>. Potem uruchom kod, przeczytaj go linia po linii i spróbuj wyjaśnić bez podpowiedzi. Jeśli nie potrafisz — to nie jest jeszcze Twoja umiejętność.</p>\n<h2>Portfolio w erze AI</h2>\n<p>Jedna działająca aplikacja z testami, README, decyzją architektoniczną i wdrożeniem mówi więcej niż dziesięć wygenerowanych snippetów. Pokaż, <strong>co sprawdziłeś i co odrzuciłeś</strong>. To dowód osądu, którego model nie zastąpi.</p>\n<div class=\"lesson-callout\"><strong>Fakt do zapamiętania:</strong> w badaniu Stack Overflow 2025 64% deweloperów nie postrzega AI jako zagrożenia dla swojej pracy. To deklaracja, nie gwarancja. Twoją przewagą jest umiejętność pracy z systemem, nie wiara w jedną prognozę.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-aiwork-b1",
+      "difficulty": "beginner",
+      "prompt": "Ilu deweloperów używa AI według Stack Overflow 2025?",
+      "choices": [
+        "80%",
+        "29%",
+        "10%",
+        "99%"
+      ],
+      "answer": 0,
+      "explanation": "Badanie z 2025 roku (49 000+ respondentów) podaje 80% użycia AI. Zaufanie do dokładności deklaruje 29% — to dwa różne wskaźniki."
+    },
+    {
+      "key": "js-aiwork-b2",
+      "difficulty": "beginner",
+      "prompt": "Co oznacza problem „almost right” w kodzie AI?",
+      "choices": [
+        "Kod wygląda dobrze, ale wymaga czasu na znalezienie i poprawienie subtelnych błędów",
+        "Kod jest zawsze niebezpieczny",
+        "AI odmawia wykonania zadania",
+        "Kod nie kompiluje się w ogóle"
+      ],
+      "answer": 0,
+      "explanation": "45% respondentów wskazało „prawie dobre” odpowiedzi jako główną frustrację; 66% twierdzi, że spędza więcej czasu na ich poprawianiu."
+    },
+    {
+      "key": "js-aiwork-i1",
+      "difficulty": "intermediate",
+      "prompt": "Co DORA 2025 zaobserwowała przy wyższej adopcji AI?",
+      "choices": [
+        "Wzrost przepustowości i wzrost niestabilności dostarczania",
+        "Wyłącznie spadek kosztów",
+        "Całkowite wyeliminowanie przeglądów kodu",
+        "Brak jakiegokolwiek wpływu"
+      ],
+      "answer": 0,
+      "explanation": "DORA opisuje jednocześnie wzrost throughput i instability oraz „podatek weryfikacji”. AI amplifikuje istniejące praktyki organizacji."
+    },
+    {
+      "key": "js-aiwork-i2",
+      "difficulty": "intermediate",
+      "prompt": "Co wykazało randomizowane badanie METR z początku 2025?",
+      "choices": [
+        "Doświadczeni deweloperzy open source pracowali z AI średnio 19% dłużej",
+        "AI skróciło każdą pracę o 50%",
+        "AI zastąpiło wszystkich uczestników",
+        "Nie dało się zmierzyć czasu"
+      ],
+      "answer": 0,
+      "explanation": "Wynik 19% dłużej miał przedział +2% do +39%. Późniejsze badanie sugeruje możliwe przyspieszenie, ale autorzy ostrzegają przed selekcją uczestników."
+    },
+    {
+      "key": "js-aiwork-a1",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego sama liczba pobrań Reacta nie jest dowodem na liczbę miejsc pracy?",
+      "choices": [
+        "Pobrania obejmują CI, cache i instalacje zależności, a nie etaty",
+        "React nie jest używany w produkcji",
+        "npm liczy tylko Polskę",
+        "Pobrania są tajne"
+      ],
+      "answer": 0,
+      "explanation": "To wskaźnik adopcji ekosystemu, nie zatrudnienia. Do prognoz zatrudnienia potrzebne są inne dane, np. BLS."
+    },
+    {
+      "key": "js-aiwork-a2",
+      "difficulty": "advanced",
+      "prompt": "Jaki jest najuczciwszy wniosek z danych o AI i pracy?",
+      "choices": [
+        "Efekt zależy od zadania, kontekstu i weryfikacji; nie ma jednej liczby „AI zastępuje/nie zastępuje”",
+        "AI zawsze przyspiesza o 55%",
+        "AI zawsze spowalnia o 19%",
+        "Prognozy zatrudnienia są gwarancją"
+      ],
+      "answer": 0,
+      "explanation": "Dane są mieszane i zależne od warunków. Uczciwa analiza rozdziela deklaracje, pomiary, kontekst i jakość — zamiast wybierać jedną wygodną liczbę."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-aiwork-f1",
+      "front": "Co mówi Stack Overflow 2025 o zaufaniu do AI?",
+      "back": "80% deweloperów używa AI, ale tylko 29% ufa dokładności odpowiedzi. 66% deklaruje więcej czasu na poprawianie kodu „prawie dobrego”."
+    },
+    {
+      "key": "js-aiwork-f2",
+      "front": "Czym jest „podatek weryfikacji” z DORA 2025?",
+      "back": "Czas zaoszczędzony na generowaniu kodu jest często wydawany na audyt, testy i integrację. DORA wiąże wyższą adopcję AI zarówno ze wzrostem throughput, jak i niestabilności."
+    },
+    {
+      "key": "js-aiwork-f3",
+      "front": "Czy badanie METR dowodzi, że AI zawsze spowalnia?",
+      "back": "Nie. Wczesne badanie z 2025 dało 19% dłużej, ale późniejsze dane sugerują możliwe przyspieszenie. Autorzy ostrzegają, że selekcja uczestników zaniża wiarygodność pomiaru."
+    },
+    {
+      "key": "js-aiwork-f4",
+      "front": "Dlaczego JavaScript ma znaczenie w erze AI?",
+      "back": "To najczęściej używany język w Stack Overflow 2025 (66%; 68,8% wśród profesjonalistów) i działa w przeglądarce, Node oraz React Native. AI generuje kod, ale ktoś musi go zintegrować, przetestować i utrzymać."
+    },
+    {
+      "key": "js-aiwork-f5",
+      "front": "Czego AI nie bierze na siebie?",
+      "back": "Odpowiedzialności za decyzje, kontekstu biznesowego, uprawnień, bezpieczeństwa, dostępności, wydajności i utrzymania. To dlatego warto rozumieć JS/React, a nie tylko akceptować wynik."
+    }
+  ]
+}

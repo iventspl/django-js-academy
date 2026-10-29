@@ -1,0 +1,121 @@
+{% extends "js_academy/base_js.html" %}
+{% load dojo_extras %}
+
+{% block title %}{{ module.title }}{% endblock %}
+{% block body_class %}page-js js-module-page{% endblock %}
+
+{% block content %}
+<div class="page-wrap js-wrap">
+  <div class="js-breadcrumb">
+    <a href="{% url 'js_academy:path' %}"><span aria-hidden="true">←</span> Ścieżka</a>
+    <span>{{ module.get_level_display }}</span>
+  </div>
+
+  <header class="js-module-hero" style="--js-accent: {{ module.accent }};">
+    <div class="js-module-hero-main">
+      <span class="js-hero-glyph">{{ module.glyph }}</span>
+      <div>
+        <p class="eyebrow eyebrow-js">Moduł {{ module.order|add:1 }} · {{ module.duration_minutes }} min</p>
+        <h1>{{ module.title }}</h1>
+        <p class="js-module-subtitle">{{ module.subtitle }}</p>
+        <p class="js-module-description">{{ module.description }}</p>
+      </div>
+    </div>
+    <div class="js-module-actions">
+      {% if progress.next_lesson %}
+        <a class="btn btn-js" href="{{ progress.next_lesson.get_absolute_url }}">{% if progress.completed_lessons %}Kontynuuj lekcję{% else %}Zacznij pierwszą lekcję{% endif %} <span aria-hidden="true">→</span></a>
+      {% else %}
+        <a class="btn btn-js" href="#projekt">Przejdź do projektu <span aria-hidden="true">→</span></a>
+      {% endif %}
+      <form method="post" action="{% url 'js_academy:quiz_start' module.slug %}">
+        {% csrf_token %}
+        <button class="btn btn-dark" type="submit">Sprawdź się: quiz <span aria-hidden="true">?</span></button>
+      </form>
+      <a class="js-text-link" href="{% url 'js_academy:flashcards' module.slug %}">Fiszki modułu{% if cards.due %} · {{ cards.due }} do powtórki{% endif %} <span aria-hidden="true">▣</span></a>
+      {% if module.slug == 'ai-praca' %}
+        <a class="js-text-link js-ai-module-link" href="{% url 'js_academy:ai_career' %}">Fakty, liczby i źródła <span aria-hidden="true">↗</span></a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="js-module-stat-grid">
+    <div><strong>{{ progress.completed_lessons }}/{{ progress.lesson_total }}</strong><span>lekcji</span></div>
+    <div><strong>{{ progress.best_score }}%</strong><span>najlepszy quiz</span></div>
+    <div><strong>{{ cards.reviewed }}/{{ cards.total }}</strong><span>fiszek</span></div>
+    <div><strong>{{ progress.attempt_count }}</strong><span>podejść do quizu</span></div>
+  </div>
+
+  <div class="js-module-layout">
+    <div class="js-module-content">
+      <section class="js-panel" aria-labelledby="lessons-title">
+        <div class="js-panel-head">
+          <div><p class="eyebrow eyebrow-js-dark">Lekcje</p><h2 id="lessons-title">Materiał modułu</h2></div>
+          <span>{{ progress.lesson_percent }}%</span>
+        </div>
+        <div class="progress-track"><span style="--bar: {{ progress.lesson_percent }}%;"></span></div>
+        <ol class="js-lesson-list">
+          {% for lesson in progress.lessons %}
+            <li class="{% if lesson.id in progress.completed_ids %}is-done{% endif %}">
+              <a href="{{ lesson.get_absolute_url }}">
+                <span class="js-lesson-check" aria-hidden="true">{% if lesson.id in progress.completed_ids %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+                <span class="js-lesson-copy"><strong>{{ lesson.title }}</strong><span>{{ lesson.summary }}</span></span>
+                {% if lesson.live_demo_html %}<span class="js-demo-badge">demo</span>{% endif %}
+                <span class="js-lesson-minutes">{{ lesson.minutes }} min</span>
+              </a>
+            </li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <section class="js-panel js-outcomes" aria-labelledby="outcomes-title">
+        <p class="eyebrow eyebrow-js-dark">Po module</p>
+        <h2 id="outcomes-title">Co będziesz umieć</h2>
+        <ul>
+          {% for outcome in module.outcomes|lines %}<li><span aria-hidden="true">✓</span>{{ outcome }}</li>{% endfor %}
+        </ul>
+      </section>
+
+      <section class="js-project" id="projekt" aria-labelledby="project-title">
+        <p class="eyebrow eyebrow-js-dark">Projekt modułu</p>
+        <h2 id="project-title">{{ module.project_title }}</h2>
+        <p>{{ module.project_brief }}</p>
+        <ol>
+          {% for step in module.project_steps|lines %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ step }}</li>{% endfor %}
+        </ol>
+        <p class="js-project-note">Projektu nie oddajesz do systemu — budujesz go u siebie. To on zostaje w portfolio, nie procent z quizu.</p>
+      </section>
+    </div>
+
+    <aside class="js-module-aside">
+      <div class="js-aside-card">
+        <p class="eyebrow eyebrow-js-dark">Status modułu</p>
+        <div class="js-status-line"><span>Lekcje</span><strong>{{ progress.lesson_percent }}%</strong></div>
+        <div class="progress-track"><span style="--bar: {{ progress.lesson_percent }}%;"></span></div>
+        <div class="js-status-line"><span>Quiz</span><strong>{% if progress.best_score %}{{ progress.best_score }}%{% else %}—{% endif %}</strong></div>
+        <div class="js-status-line"><span>Fiszki w obiegu</span><strong>{{ cards.reviewed }}/{{ cards.total }}</strong></div>
+        {% if progress.is_complete %}
+          <div class="js-complete-badge">Lekcje ukończone — zrób projekt i quiz.</div>
+        {% endif %}
+      </div>
+
+      <div class="js-aside-card js-aside-dark">
+        <p class="eyebrow eyebrow-js">Wskazówka</p>
+        <p>Po quizie wróć do błędnych pytań. Jeśli potrafisz wyjaśnić błąd bez patrzenia na odpowiedź, dopiero wtedy odhacz lekcję.</p>
+      </div>
+
+      {% if attempts %}
+        <div class="js-aside-card">
+          <p class="eyebrow eyebrow-js-dark">Ostatnie podejścia</p>
+          <ul class="js-attempt-list">
+            {% for attempt in attempts %}
+              <li>
+                <a href="{% url 'js_academy:quiz_results' attempt.pk %}"><strong>{{ attempt.score_percent }}%</strong><span>{{ attempt.correct_count }}/{{ attempt.length }} · {{ attempt.started_at|date:"j M, H:i" }}</span></a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

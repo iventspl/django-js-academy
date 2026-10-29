@@ -1,0 +1,16 @@
+{% extends "dojo/base.html" %}
+{% block title %}Page not found{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <section class="empty-state" style="margin-top: 10vh;">
+    <span class="empty-mark" aria-hidden="true">404</span>
+    <p class="eyebrow eyebrow-dark">Off the map</p>
+    <h1>This page took<br><em>a wrong turn.</em></h1>
+    <p class="page-lead">The URL does not match a question, deck, or notebook in this dojo. Your progress is safe.</p>
+    <div class="empty-actions">
+      <a class="btn btn-primary" href="/">Back to base camp <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost-dark" href="/quiz/">Start a quiz</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

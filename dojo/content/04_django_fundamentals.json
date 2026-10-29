@@ -1,0 +1,254 @@
+{
+  "topic": {
+    "slug": "django-fundamentals",
+    "name": "Django Fundamentals",
+    "tagline": "Projects, apps, URLs, middleware, and the request lifecycle.",
+    "description": "Build a correct mental model of how a request travels through Django. This is the layer that makes debugging, architecture decisions, and the rest of the framework feel predictable instead of magical.",
+    "glyph": "dj",
+    "accent": "#5BC0BE"
+  },
+  "questions": [
+    {
+      "key": "django-fundamentals-b1",
+      "difficulty": "beginner",
+      "prompt": "In Django's MVT pattern, which component typically contains the request-handling logic?",
+      "choices": ["Model", "View", "Template", "Migration"],
+      "answer": 1,
+      "explanation": "Django's view handles the request, asks models for data, and chooses a template response. The template handles presentation, and models describe and persist data. Django's 'view' is closer to a controller in classic MVC."
+    },
+    {
+      "key": "django-fundamentals-b2",
+      "difficulty": "beginner",
+      "prompt": "What does <int:pk> mean in this URL pattern?",
+      "code": "path(\"articles/<int:pk>/\", views.detail)",
+      "choices": [
+        "The URL must contain the literal text int:pk.",
+        "Capture an integer path segment and pass it to the view as pk.",
+        "Restrict the view to integer users only.",
+        "Create an integer primary key automatically."
+      ],
+      "answer": 1,
+      "explanation": "Path converters capture part of the URL. <int:pk> accepts digits only and passes an int named pk. Other common converters include str, slug, uuid, and path."
+    },
+    {
+      "key": "django-fundamentals-b3",
+      "difficulty": "beginner",
+      "prompt": "What is the difference between a Django project and a Django app?",
+      "choices": [
+        "A project is a reusable package; an app is a deployment target.",
+        "A project holds settings and URL configuration; an app is a reusable bundle of related features.",
+        "They are identical except for their folder name.",
+        "An app can contain only models, never views."
+      ],
+      "answer": 1,
+      "explanation": "A project is the site-level configuration and composition root. An app is a Python package with related models, views, templates, and migrations that can be reused across projects. One project can contain many apps."
+    },
+    {
+      "key": "django-fundamentals-b4",
+      "difficulty": "beginner",
+      "prompt": "Which command starts Django's local development server by default?",
+      "choices": [
+        "python manage.py serve",
+        "python manage.py runserver",
+        "django start --dev",
+        "python manage.py collectstatic"
+      ],
+      "answer": 1,
+      "explanation": "manage.py runserver starts the development server on 127.0.0.1:8000 by default. It is for local development only: it is not hardened, and it does not serve production traffic well."
+    },
+    {
+      "key": "django-fundamentals-b5",
+      "difficulty": "beginner",
+      "prompt": "What is INSTALLED_APPS in settings.py for?",
+      "choices": [
+        "It declares the apps whose models, templates, and other components Django should load.",
+        "It lists every Python package installed in the virtual environment.",
+        "It controls which users may log in.",
+        "It defines the database tables directly."
+      ],
+      "answer": 0,
+      "explanation": "INSTALLED_APPS is Django's application registry. Entries make models discoverable, enable their templates and static files, and wire up app configs. It is not a list of every pip package."
+    },
+    {
+      "key": "django-fundamentals-i1",
+      "difficulty": "intermediate",
+      "prompt": "What is the purpose of include() in a root URLconf?",
+      "choices": [
+        "It imports another app's Python modules into settings.",
+        "It delegates a URL prefix to another URLconf so apps can own their routes.",
+        "It includes static files in the response.",
+        "It merges two Django projects into one database."
+      ],
+      "answer": 1,
+      "explanation": "include() lets a project URLconf delegate a prefix to an app's urls.py. That keeps routing modular and lets an app be reused under different prefixes. Namespaces such as app_name make reverse lookups unambiguous."
+    },
+    {
+      "key": "django-fundamentals-i2",
+      "difficulty": "intermediate",
+      "prompt": "Why prefer reverse() over hardcoding a path in a view?",
+      "choices": [
+        "reverse() is faster at runtime.",
+        "It derives the URL from the route name, so changing the URL pattern does not break callers.",
+        "Hardcoded paths cannot contain slashes.",
+        "reverse() automatically adds a trailing slash on every response."
+      ],
+      "answer": 1,
+      "explanation": "reverse() resolves a named route and its arguments, keeping links and redirects in sync with urls.py. Templates use the {% url %} tag for the same reason. Hardcoded paths quietly rot when routes change."
+    },
+    {
+      "key": "django-fundamentals-i3",
+      "difficulty": "intermediate",
+      "prompt": "In the MIDDLEWARE list, how are requests and responses processed?",
+      "choices": [
+        "Requests go top to bottom; responses go bottom to top.",
+        "Requests go bottom to top; responses go top to bottom.",
+        "Both always run in the same top-to-bottom order.",
+        "Middleware only runs for admin requests."
+      ],
+      "answer": 0,
+      "explanation": "Middleware wraps the request/response cycle like an onion. The request phase enters from the top of the list; the response phase unwinds in reverse. That is why security and session middleware usually sit near the top."
+    },
+    {
+      "key": "django-fundamentals-i4",
+      "difficulty": "intermediate",
+      "prompt": "What is the safe job for AppConfig.ready()?",
+      "choices": [
+        "Run migrations automatically.",
+        "Perform one-time in-memory registration such as connecting signals or registering checks.",
+        "Query models to warm a cache.",
+        "Start a production web server."
+      ],
+      "answer": 1,
+      "explanation": "ready() runs during app loading, potentially before the database is ready and during management commands. Avoid database queries there. Use it for registration work such as signal handlers; move data access to lazy code or explicit commands."
+    },
+    {
+      "key": "django-fundamentals-i5",
+      "difficulty": "intermediate",
+      "prompt": "Why does runserver serve static files during development but not in production?",
+      "choices": [
+        "Django deletes static files when DEBUG is off.",
+        "The development server has a static-file helper; production is expected to use collectstatic and a web server or CDN.",
+        "Static files only work with SQLite.",
+        "Browsers block static files from production domains."
+      ],
+      "answer": 1,
+      "explanation": "runserver automatically serves app static assets when DEBUG is true. Production should run collectstatic, then let a dedicated web server, object store, or CDN serve STATIC_ROOT. Django itself is not optimised to be a static file server."
+    },
+    {
+      "key": "django-fundamentals-a1",
+      "difficulty": "advanced",
+      "prompt": "Which sequence best describes a normal Django request?",
+      "choices": [
+        "Middleware → URL resolver → view → template rendering → response middleware",
+        "URL resolver → middleware → database → template → view",
+        "View → middleware → URL resolver → model → response",
+        "Template → URL resolver → middleware → view"
+      ],
+      "answer": 0,
+      "explanation": "For a normal synchronous request, middleware runs first, then URL resolution selects a view. The view builds data, often with models, and returns a response such as a rendered template. Response middleware unwinds in reverse."
+    },
+    {
+      "key": "django-fundamentals-a2",
+      "difficulty": "advanced",
+      "prompt": "What does app_name = \"blog\" enable in an included URLconf?",
+      "choices": [
+        "It renames the Python package on disk.",
+        "It creates a URL namespace so routes reverse as blog:detail.",
+        "It makes the app's URLs private to staff users.",
+        "It forces every view to be class-based."
+      ],
+      "answer": 1,
+      "explanation": "app_name sets an application namespace. When included with a matching instance namespace, routes reverse as blog:detail. Namespacing prevents collisions when several apps both define a detail route."
+    },
+    {
+      "key": "django-fundamentals-a3",
+      "difficulty": "advanced",
+      "prompt": "Why should startup code avoid hitting the database in AppConfig.ready()?",
+      "choices": [
+        "Django has no database connection during ready().",
+        "ready() can run before migrations are applied and during commands that should not touch the database.",
+        "Database queries in ready() are always cached forever.",
+        "ready() runs once per request, making it too slow."
+      ],
+      "answer": 1,
+      "explanation": "App loading happens for migrate, makemigrations, and management commands, sometimes before the schema exists. A query in ready() can crash a fresh setup or make commands unexpectedly slow. Prefer lazy access or explicit management commands."
+    },
+    {
+      "key": "django-fundamentals-a4",
+      "difficulty": "advanced",
+      "prompt": "What is the practical difference between WSGI and ASGI in Django?",
+      "choices": [
+        "WSGI is asynchronous; ASGI is synchronous.",
+        "WSGI is a synchronous request/response interface; ASGI also supports async views, WebSockets, and long-lived connections.",
+        "ASGI replaces the ORM.",
+        "Only WSGI can run on Windows."
+      ],
+      "answer": 1,
+      "explanation": "WSGI handles one synchronous request at a time per worker. ASGI is an asynchronous interface and can support WebSockets, HTTP/2, and long-lived connections. Django supports both; choose based on the server and features you need."
+    },
+    {
+      "key": "django-fundamentals-a5",
+      "difficulty": "advanced",
+      "prompt": "Which statement about Django signals is most accurate?",
+      "choices": [
+        "Signals are a replacement for model methods and should handle all business rules.",
+        "Signals decouple senders from receivers, but implicit control flow can make behaviour harder to trace and test.",
+        "Signals run in a separate database transaction by default.",
+        "A signal receiver can only be connected in settings.py."
+      ],
+      "answer": 1,
+      "explanation": "Signals are useful for cross-cutting notifications, but they hide dependencies and can fire in surprising contexts such as tests, fixtures, or bulk operations. Prefer explicit service functions or model methods for core business rules; use signals sparingly."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "django-fundamentals-f1",
+      "difficulty": "beginner",
+      "front": "Explain Django's MVT architecture in one minute.",
+      "back": "Model: data structure and persistence. View: receives a request, applies logic, fetches data, and returns a response. Template: presentation layer that renders data. Django's URLconf connects paths to views. MVT is MVC with the framework handling the controller role.",
+      "hint": "Model → View → Template."
+    },
+    {
+      "key": "django-fundamentals-f2",
+      "difficulty": "beginner",
+      "front": "What is the difference between a Django project and an app?",
+      "back": "A project is the site-level container: settings, root URLconf, WSGI/ASGI entry points. An app is a reusable package of features: models, views, templates, migrations. A project can include many apps, and an app can be reused in other projects.",
+      "front_code": "django-admin startproject config .\npython manage.py startapp shop"
+    },
+    {
+      "key": "django-fundamentals-f3",
+      "difficulty": "beginner",
+      "front": "How do path converters work in Django URLs?",
+      "back": "A converter captures part of the path and validates its type. <int:pk> captures digits and passes an int. Use <slug:slug>, <uuid:id>, <str:name>, or <path:rest>. The captured value arrives as a keyword argument to the view.",
+      "front_code": "path(\"posts/<int:pk>/\", views.detail, name=\"detail\")"
+    },
+    {
+      "key": "django-fundamentals-f4",
+      "difficulty": "intermediate",
+      "front": "Why use reverse() and {% url %} instead of hardcoded paths?",
+      "back": "They resolve URLs from route names and parameters, so a change to urls.py propagates everywhere automatically. Hardcoded paths break silently. reverse() is for Python code; {% url %} is the template equivalent.",
+      "front_code": "reverse(\"blog:detail\", args=[42])\n{% url 'blog:detail' post.pk %}"
+    },
+    {
+      "key": "django-fundamentals-f5",
+      "difficulty": "intermediate",
+      "front": "What does middleware do, and in which order does it run?",
+      "back": "Middleware is a layered wrapper around the request/response cycle. Requests run through MIDDLEWARE top to bottom; responses unwind bottom to top. It is suitable for sessions, auth, CSRF, security headers, and cross-cutting request concerns.",
+      "hint": "Onion, not a straight line."
+    },
+    {
+      "key": "django-fundamentals-f6",
+      "difficulty": "advanced",
+      "front": "When would you choose ASGI over WSGI?",
+      "back": "Choose ASGI when you need WebSockets, long-lived connections, HTTP/2, or genuinely concurrent async I/O. For an ordinary server-rendered CRUD app, WSGI with a well-run sync server is still a perfectly good choice. ASGI does not make slow blocking code fast.",
+      "front_code": "# wsgi.py -> WSGI application\n# asgi.py -> ASGI application"
+    },
+    {
+      "key": "django-fundamentals-f7",
+      "difficulty": "advanced",
+      "front": "What is safe to do in AppConfig.ready()?",
+      "back": "Use ready() for in-memory registration: connecting signals, registering system checks, or wiring up plugin hooks. Do not query models or assume migrations have run. Startup code can execute during migrate and management commands.",
+      "hint": "Registration, not data access."
+    }
+  ]
+}

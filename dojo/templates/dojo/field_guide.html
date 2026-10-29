@@ -1,0 +1,133 @@
+{% extends "dojo/base.html" %}
+
+{% block title %}Field guide · recipes, blueprints & releases{% endblock %}
+{% block body_class %}page-guide{% endblock %}
+
+{% block content %}
+<div class="page-wrap guide-wrap">
+  <header class="guide-hero">
+    <div class="guide-hero-copy">
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Beyond the tutorial</p>
+      <h1>The field guide.<br><em>For the messy middle.</em></h1>
+      <p class="page-lead">Quizzes teach the concepts. The field guide is for the moment a real feature needs object storage, a safe webhook, a tenant boundary, a background job, or a patch decision. Copy the pattern, then understand the trade-offs.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{% url 'dojo:cheatsheets' %}">Browse recipes <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost-dark" href="{% url 'dojo:architecture_studio' %}">Architecture Studio <span aria-hidden="true">◫</span></a>
+        <a class="btn btn-ghost-dark" href="{% url 'dojo:release_radar' %}">Release radar <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+
+    <aside class="guide-snapshot">
+      <div class="guide-snapshot-head">
+        <span class="tag tag-dark">Release snapshot</span>
+        <span>{{ reviewed_on|date:"j M Y" }}</span>
+      </div>
+      <div class="guide-snapshot-row">
+        <span>Latest stable</span>
+        <strong>{{ latest_stable.latest_version|default:"—" }}</strong>
+      </div>
+      <div class="guide-snapshot-row">
+        <span>Latest LTS</span>
+        <strong>{{ latest_lts.latest_version|default:"—" }}</strong>
+      </div>
+      <div class="guide-snapshot-note">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <p>Patch releases include security and data-loss fixes. Upgrade deliberately, not eventually.</p>
+      </div>
+      <a class="guide-snapshot-link" href="{% url 'dojo:release_radar' %}">See support windows & CVE notes <span aria-hidden="true">→</span></a>
+    </aside>
+  </header>
+
+  <div class="guide-hub-grid">
+    <a class="guide-hub-card guide-hub-recipes" href="{% url 'dojo:cheatsheets' %}">
+      <div class="guide-hub-top"><span class="guide-hub-number">{{ recipe_total }}</span><span class="tag tag-dark">Cheatsheets</span></div>
+      <h2>Recipes for real situations</h2>
+      <p>Short, opinionated patterns for auth, uploads, email, queues, migrations, search, security, and deployment.</p>
+      <span class="guide-hub-link">Browse the recipes <span aria-hidden="true">↗</span></span>
+    </a>
+    <a class="guide-hub-card guide-hub-blueprints" href="{% url 'dojo:blueprints' %}">
+      <div class="guide-hub-top"><span class="guide-hub-number">{{ blueprint_total }}</span><span class="tag tag-dark">Blueprints</span></div>
+      <h2>Real-world app shapes</h2>
+      <p>Models, screens, starter code, checklists, and the production traps behind six common products.</p>
+      <span class="guide-hub-link">Study the blueprints <span aria-hidden="true">↗</span></span>
+    </a>
+    <a class="guide-hub-card guide-hub-releases" href="{% url 'dojo:release_radar' %}">
+      <div class="guide-hub-top"><span class="guide-hub-number">{{ release_note_total }}</span><span class="tag tag-dark">Release notes</span></div>
+      <h2>Stay on a supported patch</h2>
+      <p>Current versions, LTS windows, CVE summaries, and a practical upgrade routine — not just a changelog dump.</p>
+      <span class="guide-hub-link">Read the radar <span aria-hidden="true">↗</span></span>
+    </a>
+  </div>
+
+  <a class="guide-arch-strip" href="{% url 'dojo:architecture_studio' %}">
+    <div>
+      <p class="eyebrow eyebrow-light">Go one level up</p>
+      <h2>Architecture Studio</h2>
+      <p>Eight system-design labs for the part AI cannot own: boundaries, data ownership, failure, and trade-offs.</p>
+    </div>
+    <span class="guide-arch-cta">Enter the studio <span aria-hidden="true">→</span></span>
+  </a>
+
+  <section class="section" aria-labelledby="latest-recipes-title">
+    <div class="section-head section-head-tight">
+      <div>
+        <p class="eyebrow eyebrow-dark">From the notebook</p>
+        <h2 id="latest-recipes-title">A few situations you will meet this month.</h2>
+      </div>
+      <a class="text-link" href="{% url 'dojo:cheatsheets' %}">All {{ recipe_total }} recipes →</a>
+    </div>
+    <div class="recipe-preview-grid">
+      {% for recipe in recipes %}
+        <a class="recipe-preview" href="{{ recipe.get_absolute_url }}">
+          <span class="recipe-category">{{ recipe.category }}</span>
+          <h3>{{ recipe.title }}</h3>
+          <p>{{ recipe.summary }}</p>
+          <span class="recipe-open">Open recipe <span aria-hidden="true">→</span></span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="blueprint-preview-title">
+    <div class="section-head section-head-tight">
+      <div>
+        <p class="eyebrow eyebrow-dark">Application blueprints</p>
+        <h2 id="blueprint-preview-title">Whole products, not isolated snippets.</h2>
+      </div>
+      <a class="text-link" href="{% url 'dojo:blueprints' %}">All blueprints →</a>
+    </div>
+    <div class="blueprint-preview-grid">
+      {% for blueprint in blueprints %}
+        <a class="blueprint-card" href="{{ blueprint.get_absolute_url }}">
+          <div class="blueprint-card-top">
+            <span class="blueprint-index">{{ forloop.counter|stringformat:"02d" }}</span>
+            <span class="tag tag-cream">{{ blueprint.get_complexity_display }}</span>
+          </div>
+          <h3>{{ blueprint.name }}</h3>
+          <p>{{ blueprint.tagline }}</p>
+          <span class="blueprint-open">Open blueprint <span aria-hidden="true">↗</span></span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="guide-release-band" aria-labelledby="release-preview-title">
+    <div class="guide-release-copy">
+      <p class="eyebrow eyebrow-light">Release radar</p>
+      <h2 id="release-preview-title">Your version is a security decision.</h2>
+      <p>Django 6.1.2, 6.0.9, and 5.2.18 addressed four CVEs in October 2026. Read the concise “why it matters” and the action for each release, with links to the official notes.</p>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:release_radar' %}">Read the full radar <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="guide-release-list">
+      {% for note in latest_notes %}
+        <a class="guide-release-item" href="{% url 'dojo:release_radar' %}#release-{{ note.version|slugify }}">
+          <div><span class="release-kind release-kind-{{ note.kind }}">{{ note.get_kind_display }}</span><span class="release-date">{{ note.released_on|date:"j M Y" }}</span></div>
+          <strong>Django {{ note.version }}</strong>
+          <p>{{ note.headline }}</p>
+          <span aria-hidden="true">↗</span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

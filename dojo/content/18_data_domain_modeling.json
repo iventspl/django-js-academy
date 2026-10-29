@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "data-domain-modeling",
+    "name": "Data & Domain Modeling",
+    "tagline": "Invariants, aggregates, history, ledgers, and schema evolution.",
+    "description": "AI can generate a model in seconds; deciding what must always be true is the hard part. Learn to model invariants, aggregate boundaries, temporal history, money, polymorphic data, and schema changes that do not break production.",
+    "glyph": "dom",
+    "accent": "#E9C46A"
+  },
+  "questions": [
+    {
+      "key": "data-domain-modeling-b1",
+      "difficulty": "beginner",
+      "prompt": "What is a domain invariant?",
+      "choices": [
+        "A condition that must always hold for the business data, regardless of which code path writes it.",
+        "A database index that must exist.",
+        "A CSS rule for spacing.",
+        "A property that changes on every request."
+      ],
+      "answer": 0,
+      "explanation": "Examples: an order total equals the sum of its lines, a booking cannot overlap, or an account balance cannot go negative under the chosen policy. Put critical invariants in the database where possible and enforce them in one domain layer."
+    },
+    {
+      "key": "data-domain-modeling-b2",
+      "difficulty": "beginner",
+      "prompt": "What is the basic trade-off between normalization and denormalization?",
+      "choices": [
+        "Normalization reduces duplication and update anomalies; denormalization can speed reads but creates consistency and maintenance work.",
+        "Normalization always makes reads faster.",
+        "Denormalization removes the need for transactions.",
+        "They are unrelated to data integrity."
+      ],
+      "answer": 0,
+      "explanation": "Normalize the source of truth first. Denormalize deliberately for read performance or historical snapshots, then define how copies are updated or rebuilt. Duplicated data without an owner becomes contradictory data."
+    },
+    {
+      "key": "data-domain-modeling-b3",
+      "difficulty": "beginner",
+      "prompt": "Why use a foreign key constraint instead of only storing an ID?",
+      "choices": [
+        "The database guarantees the referenced row exists and can enforce deletion behavior.",
+        "It makes every query slower by definition.",
+        "It automatically encrypts the column.",
+        "It removes the need for indexes."
+      ],
+      "answer": 0,
+      "explanation": "A foreign key protects referential integrity at the database boundary, including writes from scripts, admin, or future services. Django's ForeignKey creates one by default. Application checks can race; constraints are the final backstop."
+    },
+    {
+      "key": "data-domain-modeling-b4",
+      "difficulty": "beginner",
+      "prompt": "What is a hidden cost of soft deletion (is_deleted=True)?",
+      "choices": [
+        "Every query, unique constraint, relation, and report must consistently account for deleted rows.",
+        "It automatically violates foreign keys.",
+        "It cannot be implemented in Django.",
+        "It makes backups impossible."
+      ],
+      "answer": 0,
+      "explanation": "Soft delete preserves history but leaks into every read path: unique constraints, admin, search, counts, and joins. Decide retention and visibility explicitly. For high-value records, an archive table or status model may be clearer than a boolean."
+    },
+    {
+      "key": "data-domain-modeling-b5",
+      "difficulty": "beginner",
+      "prompt": "Why is updated_at not a sufficient audit trail?",
+      "choices": [
+        "It records only the last change; it does not capture who changed what, before/after values, or intermediate history.",
+        "It is always in the wrong timezone.",
+        "It cannot be indexed.",
+        "It is stored as a string."
+      ],
+      "answer": 0,
+      "explanation": "Compliance, support, and debugging need actor, action, target, timestamp, and often change details. An audit/event table is append-only and separate from the mutable business row. Treat access to it as sensitive."
+    },
+    {
+      "key": "data-domain-modeling-i1",
+      "difficulty": "intermediate",
+      "prompt": "What defines an aggregate boundary in domain modeling?",
+      "choices": [
+        "A consistency boundary: objects that must change together in one transaction and have one entry point for invariants.",
+        "A group of tables that share a database server.",
+        "Every model with the same app label.",
+        "A collection of API endpoints."
+      ],
+      "answer": 0,
+      "explanation": "An Order and its OrderLines may form an aggregate because the total and line rules must be consistent together. Reference other aggregates by ID and coordinate across them with explicit transactions or events, rather than loading one giant object graph."
+    },
+    {
+      "key": "data-domain-modeling-i2",
+      "difficulty": "intermediate",
+      "prompt": "When is a polymorphic association such as GenericForeignKey a poor fit?",
+      "choices": [
+        "When the relation needs database-level foreign keys, simple joins, clear ownership, or many queries across targets.",
+        "When the target types are genuinely open-ended and few.",
+        "When you need a generic activity feed with mixed targets.",
+        "When you are prototyping."
+      ],
+      "answer": 0,
+      "explanation": "GenericForeignKey trades integrity and query simplicity for flexibility. Use explicit nullable FKs, a shared base table, or separate link tables when the set of targets is known and you need constraints, joins, and predictable performance."
+    },
+    {
+      "key": "data-domain-modeling-i3",
+      "difficulty": "intermediate",
+      "prompt": "What is a temporal (effective-dated) model useful for?",
+      "choices": [
+        "Representing facts that change over time, such as prices or plan terms, while preserving what was valid on a given date.",
+        "Caching templates.",
+        "Storing passwords.",
+        "Replacing all foreign keys."
+      ],
+      "answer": 0,
+      "explanation": "An order should snapshot the price actually charged; a pricing table may keep valid_from/valid_to ranges. Temporal modeling answers 'what was true then?' and prevents current edits from rewriting history. Define overlap constraints and timezone boundaries."
+    },
+    {
+      "key": "data-domain-modeling-i4",
+      "difficulty": "intermediate",
+      "prompt": "When is an append-only event table enough, without full event sourcing?",
+      "choices": [
+        "When you need an audit trail or integration history but current state remains the source of truth.",
+        "When every read must replay all events.",
+        "When you want to eliminate all database constraints.",
+        "When you need strong consistency without transactions."
+      ],
+      "answer": 0,
+      "explanation": "An audit/event log plus mutable current state is simpler than event sourcing and covers many needs. Event sourcing makes the event stream the source of truth, requiring projections, replay, and schema evolution. Choose the smallest model that satisfies the business."
+    },
+    {
+      "key": "data-domain-modeling-i5",
+      "difficulty": "intermediate",
+      "prompt": "When is a JSONField a good modeling choice?",
+      "choices": [
+        "For sparse, flexible, document-like attributes that are not central to joins or constraints.",
+        "For core relational entities with many foreign keys and reports.",
+        "For every field, to avoid migrations.",
+        "For passwords and secrets."
+      ],
+      "answer": 0,
+      "explanation": "JSONB is useful for metadata, provider payloads, or settings that vary by integration. It weakens schema validation and relational querying. Model stable, queried domain entities as typed columns; keep JSON for the genuinely dynamic edges."
+    },
+    {
+      "key": "data-domain-modeling-a1",
+      "difficulty": "advanced",
+      "prompt": "What makes a data backfill migration safe on a large table?",
+      "choices": [
+        "Batching, idempotency, progress tracking, throttling, and the ability to resume or roll back without locking the table.",
+        "One UPDATE statement for every row regardless of size.",
+        "Deleting the table first.",
+        "Running it inside a request."
+      ],
+      "answer": 0,
+      "explanation": "Large updates can lock rows, bloat WAL, and lag replicas. Backfill in primary-key batches, make the operation idempotent, pause/throttle, monitor locks and lag, and verify counts before making the new field required."
+    },
+    {
+      "key": "data-domain-modeling-a2",
+      "difficulty": "advanced",
+      "prompt": "What is the expand/contract approach to a breaking schema change?",
+      "choices": [
+        "Add the new structure, deploy dual-write/dual-read compatibility, backfill, migrate consumers, then remove the old structure.",
+        "Rename the column and deploy everything at once.",
+        "Drop the old table before writing the new code.",
+        "Stop serving traffic indefinitely."
+      ],
+      "answer": 0,
+      "explanation": "Expand/contract lets old and new application versions coexist during a rollout. Add nullable structures, backfill, switch reads, verify, then remove. Destructive changes happen only after no deployed code depends on the old shape."
+    },
+    {
+      "key": "data-domain-modeling-a3",
+      "difficulty": "advanced",
+      "prompt": "Why model financial movements in an append-only ledger?",
+      "choices": [
+        "It preserves an auditable history; balances are derived or checked from immutable entries rather than overwritten in place.",
+        "It makes every transaction faster.",
+        "It eliminates the need for idempotency.",
+        "It allows floating-point rounding."
+      ],
+      "answer": 0,
+      "explanation": "A ledger records charges, fees, refunds, and payouts as immutable entries with references. Corrections are new compensating entries, not silent edits. Use integer minor units, explicit currency, and reconciliation. A cached balance is a derived projection."
+    },
+    {
+      "key": "data-domain-modeling-a4",
+      "difficulty": "advanced",
+      "prompt": "What is a read model/projection?",
+      "choices": [
+        "A denormalized view optimized for a query, built and updated from the write model or event stream.",
+        "A database backup.",
+        "A form validation class.",
+        "A user permission."
+      ],
+      "answer": 0,
+      "explanation": "Read models serve specific queries without forcing the write model to support every join. They can be tables, materialized views, search indexes, or caches. They add synchronization lag and rebuild procedures, so define ownership and freshness requirements."
+    },
+    {
+      "key": "data-domain-modeling-a5",
+      "difficulty": "advanced",
+      "prompt": "What is a data contract between services?",
+      "choices": [
+        "An explicit agreement about schema, semantics, quality, ownership, and compatibility expectations for shared data or events.",
+        "A legal document that replaces testing.",
+        "A UI stylesheet.",
+        "A database password."
+      ],
+      "answer": 0,
+      "explanation": "Contracts cover field meanings, required/optional fields, versioning, null semantics, and change rules. Validate events at boundaries and test compatibility in CI. Without a contract, producer changes silently break consumers."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "data-domain-modeling-f1",
+      "difficulty": "beginner",
+      "front": "What is a domain invariant?",
+      "back": "A rule that must always hold, such as an order total matching its lines or a booking never overlapping. Enforce critical invariants in the database and one domain layer, not separately in every view or script.",
+      "hint": "Must always be true."
+    },
+    {
+      "key": "data-domain-modeling-f2",
+      "difficulty": "beginner",
+      "front": "Normalize or denormalize?",
+      "back": "Normalize the source of truth to avoid update anomalies. Denormalize deliberately for read performance or historical snapshots, with an owner and rebuild/update strategy. Duplicated data without a source of truth becomes contradictory data.",
+      "hint": "Normalize core, denormalize edges."
+    },
+    {
+      "key": "data-domain-modeling-f3",
+      "difficulty": "intermediate",
+      "front": "What is an aggregate?",
+      "back": "A consistency boundary grouping objects that must change together under one entry point. Keep aggregates small, enforce invariants inside them, and reference other aggregates by ID rather than loading one giant graph.",
+      "front_code": "Order + OrderLine = one aggregate\nCustomer, Inventory = other aggregates by ID"
+    },
+    {
+      "key": "data-domain-modeling-f4",
+      "difficulty": "intermediate",
+      "front": "How do you model history without event sourcing?",
+      "back": "Use append-only audit/event tables, effective-dated rows, snapshots on business documents, or revision tables. Keep current state as the source of truth when full replay is unnecessary. Define retention and privacy rules for history.",
+      "hint": "Audit table is not event sourcing."
+    },
+    {
+      "key": "data-domain-modeling-f5",
+      "difficulty": "advanced",
+      "front": "How do you backfill a large table safely?",
+      "back": "Expand first with nullable fields. Backfill in primary-key batches with idempotent updates, throttling, progress tracking, and monitoring for locks and replica lag. Verify, then enforce NOT NULL/constraints in a separate deploy.",
+      "hint": "Small batches, resumable."
+    },
+    {
+      "key": "data-domain-modeling-f6",
+      "difficulty": "advanced",
+      "front": "Why use an append-only ledger for money?",
+      "back": "Immutable entries preserve auditability and allow balances to be rebuilt or verified. Corrections are compensating entries. Use integer minor units, explicit currency, idempotency keys, and reconciliation — never mutable floats as the source of truth.",
+      "front_code": "entry(kind=\"charge\", amount_cents=1200)\nentry(kind=\"refund\", amount_cents=-1200)"
+    },
+    {
+      "key": "data-domain-modeling-f7",
+      "difficulty": "advanced",
+      "front": "What is expand/contract schema evolution?",
+      "back": "Add new schema compatibly, deploy code that writes/reads both shapes, backfill and verify, switch consumers, then remove the old shape. This lets old and new app versions coexist during a rolling deploy without downtime.",
+      "hint": "Three deploys, not one big bang."
+    }
+  ]
+}

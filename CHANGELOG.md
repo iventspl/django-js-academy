@@ -1,0 +1,251 @@
+# Changelog
+
+## 4.6 — 2026-10-29
+
+### MVC in JavaScript
+
+- Added the **MVC w JavaScript** module: 4 lessons, 8 questions and 6 flashcards.
+- Added a long-form `/js/mvc/` guide covering:
+  - model/view/controller responsibilities and when MVC is overkill,
+  - `currentView`, `currentSort`, `currentQuery`, `currentCategory`, `currentPage` and `pageSize` in one view-state object,
+  - why `currentView` is presentation-only and must not affect filtering,
+  - `currentSort` as `{ key, direction }`,
+  - pure `filterProducts`, `sortProducts`, `paginate` and `selectProducts` functions,
+  - immutable updates, page resets, pagination clamping, URL sync, async races and testable reducers.
+- Added a live MVC demo and the **Lista produktów MVC** component with search, category, sort, grid/list and pagination.
+- Added the **MVC** navigation entry and module/component links.
+- Added a 31st challenge: **Selektor produktów MVC** (filter + sort + paginate).
+- JS Akademia now has **18 modules, 55 lessons, 119 questions, 111 flashcards, 11 demos, 31 challenges and 13 components**.
+
+### Verification
+
+- **80 tests pass**.
+- MVC guide, module, demo and component are covered by tests.
+- All component and demo scripts are syntax-checked with Node.
+
+## 4.5 — 2026-10-29
+
+### Ready-made component library
+
+- Added **12 real-world components** with live previews and separate HTML, CSS and JavaScript code:
+  - product filter and cart
+  - form validation
+  - debounced search with cancellation
+  - accessible tabs
+  - native dialog modal
+  - toast queue
+  - sortable table
+  - image upload preview
+  - countdown timer
+  - star rating
+  - canvas bar chart
+  - drag & drop list
+- Added the **Komponenty** tab and pages at `/js/komponenty/` and `/js/komponenty/<slug>/`.
+- Each component page has a sandboxed iframe preview, copyable code tabs, a list of JavaScript functions used in context, and notes about production use.
+- Added a home-page feature band and navigation entry.
+- Added component model, JSON loading, fingerprinting, admin, preview builder and tests.
+- Added tests for component rendering, categories and preview documents.
+
+### Verification
+
+- **78 tests pass**.
+- All 12 component scripts are syntax-checked with Node.
+- Component previews render through the same sandboxed iframe policy as lessons and challenges.
+
+## 4.4 — 2026-10-29
+
+### More challenges and a live playground
+
+- Expanded the challenge lab from **18 to 30 tasks**.
+- Added pure-data challenges (palindrome, word count, `range`, `slugify`, `sumBy`, intersection, `zipObject`, query parsing, partitioning) and async challenges (`sleep`, `retry`).
+- The challenge runner now supports **async `solve` functions**; tests await the result.
+- Added **Piaskownica** at `/js/piaskownica/`: a free-form code editor with a sandboxed iframe output console, examples, `Ctrl/Cmd+Enter`, and no server-side execution.
+- Added links from the challenge index and challenge sidebar to the playground.
+- Added tests for the playground and an async challenge.
+- Updated the challenge count and documentation.
+
+### Verification
+
+- **75 tests pass**.
+- All 30 challenge solutions are executed against their tests, including async cases.
+- The generated iframe runner and playground scripts are syntax-checked with Node.
+
+## 4.3 — 2026-10-29
+
+### AI and programmer careers
+
+- Added the **AI a praca programisty** module: 3 lessons, 6 questions and 5 flashcards.
+- Added a special, source-backed page at `/js/wiedza/ai-praca/` with 8 facts, limitations, a learning plan and 9 primary sources.
+- The page separates measured data from claims:
+  - Stack Overflow 2025: 80% use AI, 29% trust accuracy, 66% spend more time fixing “almost right” code.
+  - DORA 2025: 90% adoption, 30% little/no trust, verification tax and higher instability.
+  - METR 2025: 19% longer for experienced open-source developers; later results and selection limits are stated explicitly.
+  - Veracode 2025: 45% of AI-generated samples failed security tests.
+  - BLS: +10.2% projected software developer employment, 2025–2035.
+  - Stack Overflow 2025: 68.8% of professionals use JavaScript; 48.8% use TypeScript.
+  - npm: 205,386,791 React downloads in the week of 21–27 October 2026.
+- Added an explicit “what these numbers do not prove” section: projections are not guarantees, surveys are self-reports, npm downloads are not jobs, and METR has selection effects.
+- Added a home-page feature band and module-to-section link.
+- JS Akademia now has **17 modules, 51 lessons, 111 questions and 105 flashcards**.
+
+### Verification
+
+- **73 tests pass**.
+- Every career fact has an HTTPS source URL and a reviewed date.
+- The AI page is covered by tests for key facts, sources and module routing.
+
+## 4.2 — 2026-10-29
+
+### JS Akademia — practice pack
+
+- Added **18 coding challenges** with a sandboxed in-browser editor, automatic tests, progressive hints and solutions.
+- Added **36 curiosities** about JavaScript, the browser, React, security and AI.
+- Added a **50-term glossary** with Polish definitions and practical snippets.
+- Added **30 interview questions** with model answers and follow-up questions.
+- Added the **Mistrzostwo JS** module: 3 lessons, 15 mixed questions and 25 flashcards.
+- JS Akademia now has **16 modules, 48 lessons, 105 questions and 100 flashcards**.
+- Added **XP, levels and daily streaks** based on completed lessons, quizzes, flashcards and challenges.
+- Added a daily fact and daily challenge to the JS home page.
+- Challenge completion is stored per learner and awards XP once.
+- Added tests for challenges, knowledge pages, gamification and content counts.
+
+### Verification
+
+- **70 tests pass**.
+- Challenge solutions are executed against every test case in Node.
+- The challenge runner is checked for JavaScript syntax.
+- Final ZIP is extracted and verified with the full suite.
+
+## 4.1 — 2026-10-29
+
+### JS Akademia — więcej modułów, fiszek i żywych dem
+
+- Expanded JS Akademia from 8 to **15 modules**, from 24 to **45 lessons**, from 48 to **90 quiz questions**, and from 24 to **75 flashcards**.
+- Added seven advanced modules:
+  - Wzorce i architektura frontendu
+  - Struktury danych i algorytmy
+  - Node.js i narzędzia
+  - React w praktyce
+  - React Native w produkcji
+  - JavaScript + AI
+  - Bezpieczeństwo i wydajność frontendu
+- Added **10 interactive iframe demos** embedded in lessons:
+  - cart total with `reduce`
+  - async/await loading and errors
+  - live form validation
+  - state → render model
+  - form state machine
+  - expense grouping with Map/reduce
+  - event-loop ordering
+  - LLM streaming simulation with stop
+  - XSS: `textContent` vs `innerHTML`
+  - offline queue
+- Demos are self-contained HTML documents rendered in a sandboxed iframe with `allow-scripts` only and no same-origin access.
+- Added live-demo fields, validation, seeding, admin support, and tests.
+- Added sixteen extra flashcards to the original eight modules.
+
+### Verification
+
+- **64 tests pass**.
+- JS content: 15 modules, 45 lessons, 90 questions, 75 flashcards, 10 demos.
+- Iframe sandbox and lesson rendering are tested.
+
+## 4.0.1 — 2026-10-29
+
+### Fixed
+
+- **Flashcard rating did not advance to the next card.** The double-submit guard disabled the clicked submit button before the browser serialized the form, so the `rating` value was omitted and the server redirected back to the same card. The guard now keeps the submitter enabled and uses a form-level submitting flag instead.
+- Added cache-busting query strings for the shared CSS/JS so the fixed script is loaded without a hard refresh.
+- Added a regression test for the rating submission script.
+
+## 4.0 — 2026-10-29
+
+### JS Akademia — nowa platforma w Django Quest
+
+- Added a separate **JavaScript tab** in the sidebar with a yellow visual identity and full Polish interface (`lang="pl"`).
+- Added a guided path: **JavaScript → TypeScript → React → React Native**.
+- Added **8 modules, 24 lessons, 48 quiz questions, 24 flashcards and 8 projects**.
+- Added lesson completion tracking, module quizzes with answer explanations, spaced-repetition flashcards, and a Polish progress notebook.
+- Added module-level projects, learning outcomes, time estimates, and a roadmap with prerequisites/order.
+- Content lives in `js_academy/content/*.json` with validation, fingerprinting, and `seed_js`.
+- Added a platform switcher so Django Quest and JS Akademia remain one local app with independent progress.
+- Added **18 JS Academy tests**; the full suite now has **63 tests**.
+
+## 3.0 — 2026-10-29
+
+### Architecture Studio
+
+- Added **8 system-design labs** with scenario, scale, requirements, constraints, reference components, data flow, data model sketch, decision log, starter code, failure modes, trade-offs, and evolution.
+- Labs cover AI document RAG, tool-using agents, multi-tenant SaaS, webhook platforms, marketplace ledgers, real-time notifications, analytics pipelines, and legacy modernization.
+- Added the **AI-era durable skills map** and a “what AI changes / what it does not change” explanation.
+- Added a top-level Architecture navigation section and a home-page studio teaser.
+
+### More advanced paths
+
+- Grew the quiz bank from 225 to **330 questions**, flashcards from 105 to **154**, and topics from 15 to **22**.
+- Added:
+  - Software Architecture & Boundaries
+  - Distributed Systems & Reliability
+  - Data & Domain Modeling
+  - AI Integration Architecture
+  - AI-Assisted Engineering
+  - Platform Engineering & Operations
+  - Security Architecture & Threat Modeling
+
+### Field guide expansion
+
+- Grew cheatsheets from 19 to **28**, adding LLM gateways, RAG citations, structured AI output, human approval for tools, eval harnesses, prompt-injection defence, ADRs, architecture fitness tests, and AI cost budgets.
+- Extended validation, seeding, admin, and tests for architecture cases.
+
+### Verification
+
+- **44 automated tests pass** on Django 6.1.2.
+- Main routes, architecture labs, field guide, blueprints, releases, and progress pages were live-checked.
+- Portable ZIP is rebuilt and validated with the full test suite.
+
+## 2.0 — 2026-10-29
+
+### Expanded curriculum
+
+- Grew the quiz bank from 120 to **225 questions** and from 8 to **15 topics**.
+- Grew the flashcard bank from 56 to **105 cards**.
+- Added seven advanced paths:
+  - APIs & Django REST Framework
+  - Files, Email & Storage
+  - Admin & Internal Tools
+  - Search & PostgreSQL
+  - Tasks, Queues & Realtime
+  - Architecture & Multi-Tenant SaaS
+  - Modern Django & Release Radar
+
+### Field guide
+
+- Added **19 real-world cheatsheets** with code, situations, and production traps.
+- Added **6 application blueprints** with domain models, screens, starter code, checklists, and pitfalls.
+- Added a **Release Radar** with support windows, patch summaries, CVE notes, and links to official sources.
+- Added server-side recipe search and category filtering, copyable code blocks, and linked release anchors.
+
+### Platform and maintenance
+
+- Upgraded and verified against **Django 6.1.2**.
+- Changed requirements to `Django>=5.2,<6.2`: Python 3.12+ receives 6.1.x, Python 3.10–3.11 receives 5.2 LTS.
+- Added content fingerprinting so `start.py` seeds new/updated JSON without overwriting admin edits on every launch.
+- Added `start.py --update` for intentional dependency upgrades.
+- Added field-guide validation, seeding, admin registration, and automated tests.
+- Increased the test suite to **40 tests**, including field-guide search, blueprints, release content, and link checks.
+
+### Release snapshot
+
+The release data was reviewed on **29 October 2026**. Current lines at that time:
+
+- Latest stable: **Django 6.1.2**
+- Latest LTS: **Django 5.2.18**
+- 6.0 patch line: **6.0.9**, in extended support
+- 4.2 is unsupported
+
+The in-app radar is curated documentation, not a live advisory feed. Always verify against the [official Django download page](https://www.djangoproject.com/download/) and release notes before deploying.
+
+## 1.0
+
+- Initial local-first Django quiz and fiszki app.
+- 120 questions, 56 flashcards, 8 topics, spaced repetition, XP, streaks, achievements, and cross-platform launcher.

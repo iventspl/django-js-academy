@@ -1,0 +1,57 @@
+{% extends "dojo/base.html" %}
+{% load dojo_extras %}
+
+{% block title %}Application blueprints · real-world Django apps{% endblock %}
+{% block body_class %}page-blueprints{% endblock %}
+
+{% block content %}
+<div class="page-wrap guide-wrap">
+  <header class="guide-page-header">
+    <div>
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Application blueprints</p>
+      <h1>Six real products.<br><em>One honest architecture each.</em></h1>
+      <p class="page-lead">Not generated scaffolds. These are studies of the models, flows, starter code, permissions, and production failure modes behind common Django products. Use them to plan your own build before writing a line of code.</p>
+    </div>
+    <div class="blueprint-note">
+      <span class="tag tag-dark">How to read one</span>
+      <p>Start with the problem. Sketch the screens. Copy the starter code only after the data model and boundaries make sense.</p>
+    </div>
+  </header>
+
+  <nav class="category-chips" aria-label="Filter blueprints by complexity">
+    <a class="category-chip {% if not active_complexity %}is-active{% endif %}" href="{% url 'dojo:blueprints' %}">All shapes</a>
+    {% for value, label in complexity_choices %}
+      <a class="category-chip {% if active_complexity == value %}is-active{% endif %}" href="{% url 'dojo:blueprints' %}?complexity={{ value }}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="blueprint-grid">
+    {% for blueprint in blueprints %}
+      <article class="blueprint-card blueprint-card-large">
+        <a class="blueprint-card-link" href="{{ blueprint.get_absolute_url }}">
+          <div class="blueprint-card-top">
+            <span class="blueprint-index">{{ forloop.counter|stringformat:"02d" }}</span>
+            <span class="tag tag-cream">{{ blueprint.get_complexity_display }}</span>
+          </div>
+          <h2>{{ blueprint.name }}</h2>
+          <p class="blueprint-tagline">{{ blueprint.tagline }}</p>
+          <p>{{ blueprint.problem }}</p>
+          <div class="blueprint-meta">
+            <span>{{ blueprint.screens|lines|length }} flows</span>
+            <span>{{ blueprint.structure|lines|length }} modules</span>
+            {% if blueprint.topic %}<span>{{ blueprint.topic.name }}</span>{% endif %}
+          </div>
+          <span class="blueprint-open">Open the blueprint <span aria-hidden="true">↗</span></span>
+        </a>
+      </article>
+    {% empty %}
+      <div class="guide-empty"><h2>No blueprints at this complexity yet.</h2><a class="btn btn-primary" href="{% url 'dojo:blueprints' %}">Show all</a></div>
+    {% endfor %}
+  </div>
+
+  <div class="guide-bottom-cta">
+    <div><p class="eyebrow eyebrow-light">Need a specific pattern?</p><h2>The cheatsheets cover the individual moves.</h2></div>
+    <a class="btn btn-primary" href="{% url 'dojo:cheatsheets' %}">Open cheatsheets <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+{% endblock %}

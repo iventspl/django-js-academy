@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "admin-internal-tools",
+    "name": "Admin & Internal Tools",
+    "tagline": "Fast back-office work without giving away the castle.",
+    "description": "Django admin is a powerful internal product surface. Learn how to shape changelists, add safe actions, protect sensitive operations, avoid N+1 queries, and know when a custom staff dashboard is a better tool than stretching the admin.",
+    "glyph": "adm",
+    "accent": "#F7B2D9"
+  },
+  "questions": [
+    {
+      "key": "admin-internal-tools-b1",
+      "difficulty": "beginner",
+      "prompt": "What is Django admin designed for?",
+      "choices": [
+        "A public customer-facing storefront.",
+        "Trusted staff and internal content/operations work.",
+        "Replacing the application's public API.",
+        "Serving static files."
+      ],
+      "answer": 1,
+      "explanation": "Admin is an internal CRUD interface for trusted staff. It exposes broad access to data and should be protected with strong authentication, least privilege, and network controls. It is not a substitute for a customer-facing product UI."
+    },
+    {
+      "key": "admin-internal-tools-b2",
+      "difficulty": "beginner",
+      "prompt": "Which ModelAdmin options control the change list columns and search?",
+      "choices": [
+        "list_display, search_fields, and list_filter",
+        "models.py only",
+        "TEMPLATES and STATIC_ROOT",
+        "MIDDLEWARE and ALLOWED_HOSTS"
+      ],
+      "answer": 0,
+      "explanation": "list_display chooses columns, search_fields enables the search box, and list_filter adds sidebar filters. Add list_select_related/prefetch for related columns and keep the list page fast."
+    },
+    {
+      "key": "admin-internal-tools-b3",
+      "difficulty": "beginner",
+      "prompt": "Who can access a registered model in Django admin by default?",
+      "choices": [
+        "Every authenticated user.",
+        "Users with is_staff=True and the relevant model permissions.",
+        "Anyone who knows the URL.",
+        "Only superusers, always."
+      ],
+      "answer": 1,
+      "explanation": "Admin requires a staff user, and model-level add/change/delete/view permissions are checked. Superusers bypass permission checks. Staff status alone is not least privilege; grant only the model permissions the person needs."
+    },
+    {
+      "key": "admin-internal-tools-b4",
+      "difficulty": "beginner",
+      "prompt": "What is an admin action?",
+      "choices": [
+        "A CSS animation.",
+        "A callable that operates on selected objects from the change list.",
+        "A URL redirect.",
+        "A database migration."
+      ],
+      "answer": 1,
+      "explanation": "Actions appear in the change-list action menu. Modern Django uses @admin.action(description=...) and receives modeladmin, request, queryset. Make them safe for large or unexpected selections and return a user-visible result."
+    },
+    {
+      "key": "admin-internal-tools-b5",
+      "difficulty": "beginner",
+      "prompt": "What do inlines let you edit in the admin?",
+      "choices": [
+        "Related child objects on the parent's form.",
+        "Raw SQL queries.",
+        "Only static files.",
+        "Middleware order."
+      ],
+      "answer": 0,
+      "explanation": "Inline classes such as TabularInline and StackedInline edit related objects on the same page. They are powered by model formsets, so validation, performance, and child permissions still matter."
+    },
+    {
+      "key": "admin-internal-tools-i1",
+      "difficulty": "intermediate",
+      "prompt": "A change list calls post.author.name for every row. What should you add?",
+      "choices": [
+        "list_select_related = ('author',) and possibly get_queryset() with select_related.",
+        "A CSS rule.",
+        "More middleware.",
+        "A second database."
+      ],
+      "answer": 0,
+      "explanation": "Related columns can trigger one query per row. Set list_select_related or override get_queryset() with select_related/prefetch_related. Verify query count, because admin's own filters and counts add queries too."
+    },
+    {
+      "key": "admin-internal-tools-i2",
+      "difficulty": "intermediate",
+      "prompt": "What is the difference between readonly_fields and removing a field?",
+      "choices": [
+        "readonly_fields still displays the value but cannot be edited; removing it hides it from the form.",
+        "They are identical.",
+        "readonly_fields applies only to superusers.",
+        "Removing a field also deletes the column."
+      ],
+      "answer": 0,
+      "explanation": "Use readonly_fields for audit or computed values that staff should see but not change. Removing a field from fields/fieldsets hides it. Neither is a substitute for model/database constraints or API permissions."
+    },
+    {
+      "key": "admin-internal-tools-i3",
+      "difficulty": "intermediate",
+      "prompt": "Why might queryset.update(is_active=True) inside an admin action be risky?",
+      "choices": [
+        "It bypasses model save(), signals, and full_clean() validation.",
+        "It cannot update more than one row.",
+        "It always rolls back.",
+        "It requires a foreign key."
+      ],
+      "answer": 0,
+      "explanation": "update() is fast and atomic per statement but skips per-object logic. If deactivating a user must cancel subscriptions or write audit rows, perform that explicitly in a service/transaction, or iterate deliberately. Do not assume model hooks ran."
+    },
+    {
+      "key": "admin-internal-tools-i4",
+      "difficulty": "intermediate",
+      "prompt": "What should a save_model() override usually do first?",
+      "choices": [
+        "Call super().save_model(request, obj, form, change).",
+        "Delete the object.",
+        "Start a new thread.",
+        "Change the admin URL."
+      ],
+      "answer": 0,
+      "explanation": "Call super() to preserve the normal save behavior, then add trusted fields or side effects. save_model() runs inside the admin's transaction and has the request, so it is a reasonable place to set created_by or updated_by, not to send slow external calls."
+    },
+    {
+      "key": "admin-internal-tools-i5",
+      "difficulty": "intermediate",
+      "prompt": "What does autocomplete_fields require on the related model's ModelAdmin?",
+      "choices": [
+        "search_fields must be defined so the autocomplete endpoint can search.",
+        "The model must be deleted first.",
+        "A public API key.",
+        "list_editable must be enabled."
+      ],
+      "answer": 0,
+      "explanation": "autocomplete_fields uses the related admin's search endpoint. Without search_fields, Django raises an admin check error. This improves usability for large foreign-key sets and avoids rendering thousands of select options."
+    },
+    {
+      "key": "admin-internal-tools-a1",
+      "difficulty": "advanced",
+      "prompt": "An admin list_display method calls obj.orders.count() for each row. What is the best fix?",
+      "choices": [
+        "Annotate orders_count=Count('orders') in get_queryset and return that annotation.",
+        "Disable pagination.",
+        "Move the count into a template.",
+        "Use a larger worker."
+      ],
+      "answer": 0,
+      "explanation": "Counting per row creates N+1 queries. Annotate the count in get_queryset() and return the annotation from the display method. For complex metrics, consider a cached/materialized report rather than computing them in the change list."
+    },
+    {
+      "key": "admin-internal-tools-a2",
+      "difficulty": "advanced",
+      "prompt": "How should an admin action that emails 50,000 customers be implemented?",
+      "choices": [
+        "Loop and send synchronously while the request is open.",
+        "Record an intent/outbox row and enqueue a background job in chunks, returning immediately with a status.",
+        "Use a JavaScript alert.",
+        "Increase the request timeout only."
+      ],
+      "answer": 1,
+      "explanation": "Long actions block workers, time out, and may be retried, duplicating sends. Wrap the selection in a durable job, chunk it, make each batch idempotent, and show progress/status. Admin should start the operation, not perform 50,000 network calls inside the request."
+    },
+    {
+      "key": "admin-internal-tools-a3",
+      "difficulty": "advanced",
+      "prompt": "Which measure most reduces the risk of a compromised staff account taking over the admin?",
+      "choices": [
+        "A custom admin URL.",
+        "Strong authentication such as SSO/2FA, least-privilege permissions, network restrictions, and an audit trail.",
+        "Renaming the User model.",
+        "Disabling CSRF for admin."
+      ],
+      "answer": 1,
+      "explanation": "A secret URL is obscurity, not security. Use SSO or MFA, restrict access by network/VPN where possible, grant minimal model permissions, log sensitive actions, and monitor unusual exports or bulk changes. Consider a separate admin host."
+    },
+    {
+      "key": "admin-internal-tools-a4",
+      "difficulty": "advanced",
+      "prompt": "What does on_delete=PROTECT do when deleting a referenced parent in the admin?",
+      "choices": [
+        "It silently deletes the children.",
+        "It blocks the deletion with ProtectedError until the referencing rows are handled.",
+        "It sets the foreign key to NULL.",
+        "It duplicates the parent."
+      ],
+      "answer": 1,
+      "explanation": "PROTECT prevents accidental cascades but can make admin deletes confusing. Catch/display the conflict clearly, provide a workflow to archive or reassign the children, and avoid granting bulk delete casually. Consider soft deletion for high-value records."
+    },
+    {
+      "key": "admin-internal-tools-a5",
+      "difficulty": "advanced",
+      "prompt": "Why is a custom staff dashboard often better than stretching Django admin for heavy operations?",
+      "choices": [
+        "Admin is insecure by definition.",
+        "Admin is generic CRUD; purpose-built workflows can enforce approvals, staged validation, background jobs, and explicit audit rules.",
+        "Custom pages never need permissions.",
+        "Admin cannot use models."
+      ],
+      "answer": 1,
+      "explanation": "Admin is excellent for trusted CRUD and quick tools. Complex approval flows, bulk imports, financial adjustments, and customer support actions benefit from purpose-built screens with explicit states, permissions, and audit records. Use admin where it fits; do not turn it into an ERP."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "admin-internal-tools-f1",
+      "difficulty": "beginner",
+      "front": "What makes Django admin safe to expose?",
+      "back": "It is not safe by default. Treat it as an internal high-privilege surface: strong staff authentication, least-privilege model permissions, network restrictions, HTTPS, audit logging, and careful action design. Never expose it as the public app.",
+      "hint": "Internal, least privilege, monitored."
+    },
+    {
+      "key": "admin-internal-tools-f2",
+      "difficulty": "beginner",
+      "front": "Which ModelAdmin attributes make a changelist useful?",
+      "back": "list_display for columns, search_fields for the search box, list_filter for facets, ordering for stable sorting, and list_select_related/prefetch for related data. Keep the columns meaningful and the query count low.",
+      "front_code": "list_display = (\"name\", \"status\", \"created_at\")\nsearch_fields = (\"name\", \"email\")\nlist_filter = (\"status\",)"
+    },
+    {
+      "key": "admin-internal-tools-f3",
+      "difficulty": "intermediate",
+      "front": "How do you write a safe custom admin action?",
+      "back": "Use @admin.action with a clear description, validate the selection, use transaction.atomic for related writes, avoid unbounded synchronous external calls, enqueue heavy work, and message the result. Remember the queryset may include far more rows than expected.",
+      "front_code": "@admin.action(description=\"Archive selected orders\")\ndef archive(self, request, queryset):\n    updated = queryset.update(archived=True)\n    self.message_user(request, f\"Archived {updated} orders\")"
+    },
+    {
+      "key": "admin-internal-tools-f4",
+      "difficulty": "intermediate",
+      "front": "What is the risk of queryset.update() in admin?",
+      "back": "It bypasses model save(), full_clean(), and signals, and updates many rows in one statement. That is good for a simple flag, but dangerous when side effects, audit records, or invariant checks are required. Put those in a service inside a transaction.",
+      "hint": "Fast path skips hooks."
+    },
+    {
+      "key": "admin-internal-tools-f5",
+      "difficulty": "advanced",
+      "front": "How do you keep admin changelists fast?",
+      "back": "Select/prefetch related columns, annotate aggregates, avoid per-row methods that query, use autocomplete_fields for large FKs, paginate, and measure query count. Admin filters and counts also cost queries, so test with realistic data volumes.",
+      "hint": "Measure with realistic row counts."
+    },
+    {
+      "key": "admin-internal-tools-f6",
+      "difficulty": "advanced",
+      "front": "When should a workflow leave Django admin?",
+      "back": "When it needs multi-step approvals, strict separation of duties, complex bulk imports, financial controls, customer-facing UX, or an audit trail beyond generic log entries. Build a focused staff tool with explicit permissions and state transitions.",
+      "hint": "Generic CRUD vs controlled workflow."
+    },
+    {
+      "key": "admin-internal-tools-f7",
+      "difficulty": "advanced",
+      "front": "How do you reduce the blast radius of a compromised staff account?",
+      "back": "MFA/SSO, least-privilege groups, no shared accounts, network restrictions, short sessions, audited sensitive actions, export limits, and alerting on bulk changes. A separate admin hostname and an approval step for destructive actions add defence in depth.",
+      "hint": "Assume credentials can be stolen."
+    }
+  ]
+}

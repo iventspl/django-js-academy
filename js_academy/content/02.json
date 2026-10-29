@@ -1,0 +1,160 @@
+{
+  "module": {
+    "slug": "nowoczesny-js",
+    "title": "Nowoczesny JavaScript",
+    "subtitle": "Moduły, asynchroniczność, fetch i praca z API bez callbackowego piekła.",
+    "description": "Ten moduł przygotowuje Cię do aplikacji, które rozmawiają z siecią. Opanujesz import/export, Promise, async/await i bezpieczne aktualizowanie danych.",
+    "level": "core",
+    "glyph": "02",
+    "accent": "#C9B458",
+    "duration_minutes": 65,
+    "outcomes": [
+      "Dzielisz kod na moduły i rozumiesz różnicę między eksportem domyślnym a nazwanym.",
+      "Wyjaśniasz, czym jest Promise i kiedy używać async/await.",
+      "Pobierasz dane przez fetch i odróżniasz błąd sieci od odpowiedzi HTTP 4xx/5xx.",
+      "Aktualizujesz zagnieżdżone dane bez mutowania stanu."
+    ],
+    "project_title": "Klient API z czytelnym obsługiwaniem błędów",
+    "project_brief": "Napisz moduł, który pobiera listę użytkowników, sprawdza response.ok, mapuje dane do prostszego kształtu i zwraca czytelny wynik albo komunikat błędu.",
+    "project_steps": [
+      "Podziel kod na api.js i app.js.",
+      "Zaimplementuj funkcję fetchUsers z async/await i sprawdzaniem response.ok.",
+      "Dodaj timeout lub AbortController dla zbyt wolnego żądania.",
+      "Przetestuj sukces, 404, 500 i brak internetu."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "moduly-es",
+      "title": "Moduły ES: import i export",
+      "summary": "Jak dzielić kod, unikać globalnego zasięgu i projektować czytelne granice modułów.",
+      "minutes": 12,
+      "body_html": "<p>Moduły pozwalają dzielić aplikację na małe pliki z jawnymi zależnościami. Zamiast globalnych zmiennych importujesz dokładnie to, czego potrzebujesz.</p>\n<h2>Eksport nazwany i domyślny</h2>\n<pre><code>// math.js\nexport const add = (a, b) =&gt; a + b;\nexport function multiply(a, b) {\n  return a * b;\n}\nexport default function subtract(a, b) {\n  return a - b;\n}\n\n// app.js\nimport subtract, { add, multiply } from \"./math.js\";</code></pre>\n<p>Moduł może mieć wiele eksportów nazwanych, ale tylko jeden domyślny. Eksporty nazwane są zwykle czytelniejsze, bo wymagają użycia właściwej nazwy.</p>\n<h2>Import przestrzeni nazw</h2>\n<pre><code>import * as math from \"./math.js\";\nmath.add(2, 3);</code></pre>\n<h2>Granice modułów</h2>\n<p>Dobry moduł ma jasny interfejs publiczny i ukrywa szczegóły. Nie importuj przypadkowych plików z wnętrza innego modułu tylko dlatego, że są dostępne. W Reactach często organizuje się kod według funkcji, nie według typów plików.</p>\n<div class=\"lesson-callout\"><strong>Uwaga:</strong> w przeglądarce moduły wymagają <code>type=\"module\"</code>. W nowoczesnym toolchainie (Vite, Next.js, Metro) importy są przetwarzane automatycznie.</div>"
+    },
+    {
+      "slug": "promise-async",
+      "title": "Promise i async/await",
+      "summary": "Asynchroniczność bez zgadywania: stany Promise, await, równoległość i obsługa błędów.",
+      "minutes": 14,
+      "body_html": "<p><strong>Promise</strong> reprezentuje wynik operacji asynchronicznej, który będzie dostępny teraz, później albo nigdy. Ma trzy stany: pending, fulfilled i rejected.</p>\n<h2>async/await</h2>\n<pre><code>async function loadUser(id) {\n  try {\n    const response = await fetch(`/api/users/${id}`);\n    if (!response.ok) {\n      throw new Error(`HTTP ${response.status}`);\n    }\n    return await response.json();\n  } catch (error) {\n    console.error(\"Nie udało się pobrać użytkownika\", error);\n    throw error;\n  }\n}</code></pre>\n<p>Funkcja z <code>async</code> zawsze zwraca Promise. <code>await</code> wstrzymuje tylko tę funkcję, nie cały wątek przeglądarki.</p>\n<h2>Równolegle, nie sekwencyjnie</h2>\n<pre><code>// wolniej: drugie żądanie czeka na pierwsze\nconst user = await loadUser(1);\nconst posts = await loadPosts(1);\n\n// szybciej: oba startują razem\nconst [user2, posts2] = await Promise.all([\n  loadUser(1),\n  loadPosts(1),\n]);</code></pre>\n<p><code>Promise.all</code> kończy się błędem, gdy jeden element się odrzuci. <code>Promise.allSettled</code> czeka na wszystkie wyniki i pozwala obsłużyć częściowe porażki.</p>\n<div class=\"lesson-callout\"><strong>Zapamiętaj:</strong> await nie zamienia kodu w synchroniczny. Nadal musisz myśleć o współbieżności, anulowaniu i kolejności efektów.</div>"
+    },
+    {
+      "slug": "fetch-bledy",
+      "title": "fetch, HTTP i błędy sieciowe",
+      "summary": "Dlaczego fetch nie rzuca błędu przy 404 i jak zbudować solidnego klienta API.",
+      "minutes": 13,
+      "body_html": "<p><code>fetch</code> odrzuca Promise głównie przy błędach sieciowych. Odpowiedź HTTP 404 lub 500 jest nadal „udanym” zakończeniem żądania — musisz sprawdzić <code>response.ok</code>.</p>\n<pre><code>async function getJson(url, options = {}) {\n  const response = await fetch(url, {\n    ...options,\n    headers: {\n      Accept: \"application/json\",\n      ...options.headers,\n    },\n  });\n\n  if (!response.ok) {\n    const body = await response.text();\n    throw new Error(`HTTP ${response.status}: ${body.slice(0, 200)}`);\n  }\n\n  return response.json();\n}</code></pre>\n<h2>Timeout i anulowanie</h2>\n<pre><code>const controller = new AbortController();\nconst timer = setTimeout(() =&gt; controller.abort(), 8000);\n\ntry {\n  const data = await getJson(\"/api/data\", { signal: controller.signal });\n} finally {\n  clearTimeout(timer);\n}</code></pre>\n<h2>Nie ufaj kształtowi danych</h2>\n<p>API może zwrócić inny typ, brak pola albo HTML z błędem. Waliduj dane na granicy systemu. W TypeScripcie możesz opisać oczekiwany kształt, ale typy nie sprawdzają danych w runtime.</p>\n<div class=\"lesson-callout\"><strong>Praktyka:</strong> osobny klient API powinien mieć jedną strategię błędów, nagłówków, base URL i timeoutów. Nie powtarzaj tego w każdym komponencie.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-modern-b1",
+      "difficulty": "beginner",
+      "prompt": "Ile eksportów domyślnych może mieć jeden moduł ES?",
+      "choices": [
+        "Zero lub jeden",
+        "Dokładnie dwa",
+        "Dowolną liczbę",
+        "Tylko w React"
+      ],
+      "answer": 0,
+      "explanation": "Moduł może mieć jeden eksport domyślny (export default) i wiele eksportów nazwanych. Większość zespołów preferuje nazwane eksporty dla czytelności."
+    },
+    {
+      "key": "js-modern-b2",
+      "difficulty": "beginner",
+      "prompt": "Co zwraca funkcja oznaczona jako async?",
+      "choices": [
+        "Zawsze Promise",
+        "Zawsze string",
+        "Wynik synchroniczny",
+        "undefined"
+      ],
+      "answer": 0,
+      "explanation": "async zawsze zwraca Promise. Wartość return staje się rozwiązaniem Promise, a rzucony błąd — odrzuceniem."
+    },
+    {
+      "key": "js-modern-i1",
+      "difficulty": "intermediate",
+      "prompt": "Co się stanie, gdy jedno żądanie w Promise.all zostanie odrzucone?",
+      "choices": [
+        "Promise.all zwróci częściowe wyniki.",
+        "Cały Promise.all zostanie odrzucony.",
+        "Błąd zostanie zignorowany.",
+        "Pozostałe żądania zostaną anulowane automatycznie."
+      ],
+      "answer": 1,
+      "explanation": "Promise.all odrzuca się przy pierwszym błędzie. Jeśli chcesz otrzymać wyniki wszystkich żądań wraz ze statusami, użyj Promise.allSettled."
+    },
+    {
+      "key": "js-modern-i2",
+      "difficulty": "intermediate",
+      "prompt": "Dlaczego response.ok jest ważne po fetch?",
+      "choices": [
+        "Bo fetch odrzuca Promise dla każdego 404.",
+        "Bo fetch traktuje 404/500 jako udaną odpowiedź HTTP, a response.ok mówi, czy status jest 2xx.",
+        "Bo response.ok zwraca JSON.",
+        "Bo bez niego przeglądarka nie wyśle żądania."
+      ],
+      "answer": 1,
+      "explanation": "fetch nie odrzuca Promise dla statusów 4xx/5xx. response.ok jest true dla 200–299. Musisz sam zdecydować, jak obsłużyć błąd HTTP."
+    },
+    {
+      "key": "js-modern-a1",
+      "difficulty": "advanced",
+      "prompt": "Który zapis bezpiecznie odczyta miasto, gdy address może być null?",
+      "choices": [
+        "address.city",
+        "address?.city",
+        "address.city ?? null",
+        "address!.city"
+      ],
+      "answer": 1,
+      "explanation": "Opcjonalny operator ?. zwraca undefined, jeśli address jest null/undefined, zamiast rzucać TypeError. ! to zapewnienie w TypeScripcie, nie zabezpieczenie runtime."
+    },
+    {
+      "key": "js-modern-a2",
+      "difficulty": "advanced",
+      "prompt": "Która aktualizacja stanu jest niemutowalna?",
+      "choices": [
+        "items.push(newItem)",
+        "items.splice(0, 1, newItem)",
+        "const next = [...items, newItem]",
+        "items[0] = newItem"
+      ],
+      "answer": 2,
+      "explanation": "Spread tworzy nową tablicę, więc React może wykryć zmianę referencji. Pozostałe operacje mutują istniejącą tablicę."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-modern-f1",
+      "difficulty": "beginner",
+      "front": "Czym różni się eksport nazwany od domyślnego?",
+      "back": "Eksport nazwany wymaga konkretnej nazwy przy imporcie i może być wiele takich eksportów. Domyślny jest jeden i można go zaimportować pod dowolną nazwą. Nazwane eksporty zwykle ułatwiają wyszukiwanie i refaktoryzację."
+    },
+    {
+      "key": "js-modern-f2",
+      "difficulty": "intermediate",
+      "front": "Promise.all czy Promise.allSettled?",
+      "back": "Promise.all odrzuca się przy pierwszym błędzie i traci pozostałe wyniki. Promise.allSettled czeka na wszystkie operacje i zwraca tablicę statusów fulfilled/rejected — dobre do raportów częściowych.",
+      "front_code": "const results = await Promise.allSettled(tasks);"
+    },
+    {
+      "key": "js-modern-f3",
+      "difficulty": "intermediate",
+      "front": "Dlaczego fetch nie wystarcza jako pełny klient API?",
+      "back": "fetch to niskopoziomowe narzędzie. Nie narzuca timeoutu, nie sprawdza response.ok, nie waliduje JSON, nie dodaje nagłówków ani nie normalizuje błędów. Zbuduj jedną funkcję klienta z tymi zasadami."
+    },
+    {
+      "key": "js-modern-f4",
+      "front": "Do czego służy AbortController?",
+      "back": "Pozwala anulować fetch lub strumień. Przekazujesz controller.signal do żądania i wywołujesz abort(), gdy zapytanie nie jest już potrzebne. Obsłuż AbortError osobno."
+    },
+    {
+      "key": "js-modern-f5",
+      "front": "Promise.all czy Promise.allSettled?",
+      "back": "Promise.all odrzuca się przy pierwszym błędzie i traci pozostałe wyniki. Promise.allSettled czeka na wszystkie i zwraca statusy fulfilled/rejected, co jest lepsze do raportów częściowych."
+    }
+  ]
+}

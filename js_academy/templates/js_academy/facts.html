@@ -1,0 +1,32 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Ciekawostki o JS{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-facts-wrap">
+  <nav class="js-breadcrumb"><a href="{% url 'js_academy:knowledge' %}">Wiedza</a><span>/</span><span>Ciekawostki</span></nav>
+  <header class="js-page-header">
+    <p class="eyebrow eyebrow-js">36 rzeczy, które warto wiedzieć</p>
+    <h1>Ciekawostki,<br><em>które zostają.</em></h1>
+    <p class="js-lead">Krótkie historie o języku, przeglądarce, Reactcie i bezpieczeństwie. Każda z nich tłumaczy coś, co spotkasz w prawdziwym kodzie.</p>
+  </header>
+
+  <nav class="js-filter-row" aria-label="Kategorie ciekawostek">
+    <a class="js-filter {% if not category %}is-active{% endif %}" href="{% url 'js_academy:facts' %}">Wszystkie</a>
+    {% for item in categories %}
+      <a class="js-filter {% if category == item %}is-active{% endif %}" href="?category={{ item|urlencode }}">{{ item }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="js-facts-grid">
+    {% for fact in facts %}
+      <article class="js-fact-card">
+        <div class="js-fact-top"><span class="tag tag-js-dark">{{ fact.category }}</span><span class="js-fact-index">{{ forloop.counter|stringformat:"02d" }}</span></div>
+        <h2>{{ fact.title }}</h2>
+        <p>{{ fact.body }}</p>
+      </article>
+    {% empty %}
+      <p class="js-empty-inline"><span>Brak ciekawostek w tej kategorii.</span><a href="{% url 'js_academy:facts' %}">Pokaż wszystkie</a></p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

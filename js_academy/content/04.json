@@ -1,0 +1,160 @@
+{
+  "module": {
+    "slug": "typescript",
+    "title": "TypeScript w praktyce",
+    "subtitle": "Typy, unie, generiki i typowanie komponentów React.",
+    "description": "TypeScript zmniejsza liczbę błędów w większych aplikacjach, ale nie zastępuje walidacji runtime. Nauczysz się typować dane, API i propsy tak, aby typy pomagały, a nie przeszkadzały.",
+    "level": "advanced",
+    "glyph": "TS",
+    "accent": "#3178C6",
+    "duration_minutes": 70,
+    "outcomes": [
+      "Odróżniasz any od unknown i wiesz, dlaczego unknown jest bezpieczniejsze.",
+      "Modelujesz dane przez interfejsy, typy unii i zawężanie typów.",
+      "Piszesz proste funkcje generyczne.",
+      "Typujesz propsy, stan i zdarzenia w React."
+    ],
+    "project_title": "Typowany koszyk zakupowy",
+    "project_brief": "Zbuduj moduł koszyka z typami Product, CartItem i CartSummary. Dodaj funkcje dodawania, usuwania i liczenia sumy oraz obsłuż unię stanów pusty/pełny.",
+    "project_steps": [
+      "Zdefiniuj interfejsy Product i CartItem.",
+      "Napisz funkcję addItem przyjmującą poprawnie typowane argumenty.",
+      "Zmodeluj wynik obliczeń jako typ z sumą i liczbą pozycji.",
+      "Dodaj test typu dla niepoprawnego wejścia w edytorze."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "typy-wnioskowanie",
+      "title": "Typy i wnioskowanie",
+      "summary": "Prymitywy, tablice, obiekty, any vs unknown i sensowny typ zwracany.",
+      "minutes": 14,
+      "body_html": "<p><strong>TypeScript</strong> dodaje statyczne typy do JavaScriptu. Typy są usuwane podczas kompilacji — nie istnieją w runtime. To ważne: typ nie waliduje odpowiedzi z API.</p>\n<h2>Wnioskowanie</h2>\n<pre><code>let name = \"Ala\";       // string\nconst age = 30;         // 30 (literal), ale zwykle wystarcza number\nconst scores = [1, 2];  // number[]</code></pre>\n<p>Nie dopisuj typów wszędzie. Pozwól kompilatorowi wnioskować, a typy dodawaj na granicach: parametrach publicznych funkcji, danych z API i modelach domenowych.</p>\n<h2>any vs unknown</h2>\n<pre><code>function parse(value: unknown) {\n  if (typeof value === \"string\") {\n    return value.toUpperCase();\n  }\n  return null;\n}\n\nlet dangerous: any = \"tekst\";\ndangerous.anything.goes(); // kompilator nie pomoże</code></pre>\n<p><code>unknown</code> wymaga sprawdzenia typu przed użyciem. <code>any</code> wyłącza ochronę. Na granicach danych preferuj <code>unknown</code> i zawężaj typ.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> typy mają opisywać kontrakt, a nie zaklinać rzeczywistość. Jeśli dane z API mogą być złe, sprawdź je w runtime (np. Zod) zamiast pisać <code>as User</code>.</div>"
+    },
+    {
+      "slug": "interfejsy-unie",
+      "title": "Interfejsy, unie i zawężanie",
+      "summary": "Modelowanie kształtu danych, stanów i wariantów bez booleanów-widmo.",
+      "minutes": 14,
+      "body_html": "<p>Interfejs opisuje kształt obiektu. Unia opisuje, że wartość może być jednym z kilku wariantów. Razem pozwalają modelować stany tak, aby nielegalne kombinacje były niemożliwe.</p>\n<pre><code>interface User {\n  id: string;\n  name: string;\n  email?: string;\n}\n\ntype RequestState =\n  | { status: \"idle\" }\n  | { status: \"loading\" }\n  | { status: \"success\"; data: User[] }\n  | { status: \"error\"; message: string };</code></pre>\n<h2>Zawężanie typów</h2>\n<pre><code>function render(state: RequestState) {\n  switch (state.status) {\n    case \"idle\": return \"Gotowe\";\n    case \"loading\": return \"Ładowanie...\";\n    case \"success\": return state.data.map((u) =&gt; u.name);\n    case \"error\": return state.message;\n  }\n}</code></pre>\n<p>Kompilator wymusza obsłużenie wszystkich wariantów. To dużo bezpieczniejsze niż cztery niezależne boolean-y, które mogą być jednocześnie true.</p>\n<div class=\"lesson-callout\"><strong>W React:</strong> modeluj ładowanie, błąd i sukces jako jedną unię. Dzięki temu nie wyrenderujesz danych i błędu naraz.</div>"
+    },
+    {
+      "slug": "typy-react",
+      "title": "TypeScript w React",
+      "summary": "Props, useState, zdarzenia i children bez walki z typami.",
+      "minutes": 14,
+      "body_html": "<p>W React TypeScript najbardziej pomaga na granicach komponentów. Typuj propsy, stan i zdarzenia; nie typuj każdej zmiennej lokalnej.</p>\n<pre><code>type ButtonProps = {\n  label: string;\n  onClick: () =&gt; void;\n  disabled?: boolean;\n};\n\nfunction Button({ label, onClick, disabled = false }: ButtonProps) {\n  return (\n    &lt;button onClick={onClick} disabled={disabled}&gt;\n      {label}\n    &lt;/button&gt;\n  );\n}</code></pre>\n<h2>Stan i zdarzenia</h2>\n<pre><code>const [query, setQuery] = useState&lt;string&gt;(\"\");\n\nfunction handleChange(event: React.ChangeEvent&lt;HTMLInputElement&gt;) {\n  setQuery(event.target.value);\n}</code></pre>\n<p>Nie używaj <code>React.FC</code> bez potrzeby. Zwykła funkcja z jawnie typowanym argumentem jest czytelna i dobrze współpracuje z generykami.</p>\n<h2>children</h2>\n<pre><code>type CardProps = {\n  title: string;\n  children: React.ReactNode;\n};</code></pre>\n<div class=\"lesson-callout\"><strong>Praktyka:</strong> jeśli komponent przyjmuje zbyt wiele luźno powiązanych propsów, to sygnał, że jego granica jest źle zaprojektowana. Typy ujawniają problem wcześniej.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-ts-b1",
+      "difficulty": "beginner",
+      "prompt": "Który typ jest bezpieczniejszy dla nieznanej wartości z zewnątrz?",
+      "choices": [
+        "any",
+        "unknown",
+        "object",
+        "never"
+      ],
+      "answer": 1,
+      "explanation": "unknown wymaga zawężenia typu przed użyciem, więc kompilator nie pozwoli wywołać dowolnej metody. any wyłącza sprawdzanie i przenosi błąd do runtime."
+    },
+    {
+      "key": "js-ts-b2",
+      "difficulty": "beginner",
+      "prompt": "Co opisuje interfejs w TypeScripcie?",
+      "choices": [
+        "Kształt obiektu i kontrakt jego pól.",
+        "Tylko klasy dziedziczące.",
+        "Sposób renderowania HTML.",
+        "Konfigurację bazy danych."
+      ],
+      "answer": 0,
+      "explanation": "Interfejs opisuje kształt wartości: nazwy pól, typy i opcjonalność. Nie istnieje w runtime i nie waliduje danych."
+    },
+    {
+      "key": "js-ts-i1",
+      "difficulty": "intermediate",
+      "prompt": "Po co używać unii dyskryminowanej przez pole status?",
+      "choices": [
+        "Aby uniemożliwić TypeScriptowi sprawdzanie typów.",
+        "Aby modelować wzajemnie wykluczające się stany i wymusić ich obsługę.",
+        "Aby zastąpić wszystkie interfejsy.",
+        "Aby dane były mutowalne."
+      ],
+      "answer": 1,
+      "explanation": "Unia z polem status pozwala zawężać typ i wymusza obsłużenie każdego wariantu. Nie można mieć jednocześnie data i error w poprawnie zaprojektowanym stanie."
+    },
+    {
+      "key": "js-ts-i2",
+      "difficulty": "intermediate",
+      "prompt": "Co oznacza email?: string w interfejsie?",
+      "choices": [
+        "Pole jest zawsze wymagane.",
+        "Pole może być pominięte lub mieć typ undefined.",
+        "Pole jest tylko do odczytu.",
+        "Pole jest liczbą."
+      ],
+      "answer": 1,
+      "explanation": "Znak ? oznacza właściwość opcjonalną. Wartość może być stringiem, undefined lub pole może nie istnieć."
+    },
+    {
+      "key": "js-ts-a1",
+      "difficulty": "advanced",
+      "prompt": "Co robi typ generyczny w funkcji identity<T>(value: T): T?",
+      "choices": [
+        "Zamienia wartość na string.",
+        "Zachowuje związek między typem argumentu i wyniku.",
+        "Wyłącza sprawdzanie typów.",
+        "Tworzy nową klasę."
+      ],
+      "answer": 1,
+      "explanation": "Generyk T pozwala funkcji zachować konkretny typ argumentu w wyniku. identity(42) zwraca number, a identity(\"a\") — string."
+    },
+    {
+      "key": "js-ts-a2",
+      "difficulty": "advanced",
+      "prompt": "Który typ jest poprawny dla zdarzenia zmiany inputa w React?",
+      "choices": [
+        "React.ChangeEvent<HTMLInputElement>",
+        "React.MouseEvent<HTMLDivElement>",
+        "string",
+        "HTMLInputElement"
+      ],
+      "answer": 0,
+      "explanation": "Zdarzenie zmiany inputa to React.ChangeEvent<HTMLInputElement>. Ma target.value i pozwala poprawnie typować obsługę formularza."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-ts-f1",
+      "difficulty": "beginner",
+      "front": "Czym różni się any od unknown?",
+      "back": "any wyłącza sprawdzanie typów — możesz zrobić wszystko. unknown jest bezpieczne: musisz zawęzić typ przed użyciem. Na granicach danych używaj unknown."
+    },
+    {
+      "key": "js-ts-f2",
+      "difficulty": "intermediate",
+      "front": "Po co modelować stan jako unię?",
+      "back": "Unia dyskryminowana przez status uniemożliwia nielegalne kombinacje, np. jednoczesne data i error. TypeScript wymusza obsłużenie wszystkich wariantów w switch.",
+      "front_code": "type State =\n  | { status: \"loading\" }\n  | { status: \"success\"; data: User[] }\n  | { status: \"error\"; message: string };"
+    },
+    {
+      "key": "js-ts-f3",
+      "difficulty": "advanced",
+      "front": "Czy TypeScript waliduje dane z API w runtime?",
+      "back": "Nie. Typy są usuwane przy kompilacji. response.json() nadal może zwrócić inny kształt. Do walidacji runtime użyj np. Zod albo ręcznych strażników typu."
+    },
+    {
+      "key": "js-ts-f4",
+      "front": "type czy interface w TypeScripcie?",
+      "back": "Interface dobrze opisuje kształt obiektu i może być rozszerzany. Type jest bardziej elastyczny: unie, przecięcia, typy warunkowe. W praktyce wybierz jeden styl i nie duplikuj modeli."
+    },
+    {
+      "key": "js-ts-f5",
+      "front": "Co oznacza typ never?",
+      "back": "Wartość, która nigdy nie występuje: funkcja zawsze rzuca wyjątek albo pętla jest nieskończona. never pomaga w wyczerpującym sprawdzaniu unii w switch."
+    }
+  ]
+}

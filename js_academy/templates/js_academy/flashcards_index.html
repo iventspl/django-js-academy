@@ -1,0 +1,65 @@
+{% extends "js_academy/base_js.html" %}
+
+{% block title %}Fiszki JavaScript{% endblock %}
+{% block body_class %}page-js js-fiszki-page{% endblock %}
+
+{% block content %}
+<div class="page-wrap js-wrap">
+  <header class="js-flash-hero">
+    <div>
+      <p class="eyebrow eyebrow-js"><span class="pulse-dot" aria-hidden="true"></span> Fiszki · aktywna powtórka</p>
+      <h1>Pytanie z przodu.<br><em>Odpowiedź z tyłu.</em></h1>
+      <p class="js-lead">Fiszki wymagają przypomnienia sobie odpowiedzi, a nie rozpoznania jej wśród czterech opcji. Przeczytaj pytanie, odpowiedz na głos, odwróć kartę i oceń szczerze.</p>
+      <div class="hero-actions">
+        {% if stats.due_cards %}<a class="btn btn-js" href="{% url 'js_academy:flashcards_review' %}">Powtórz {{ stats.due_cards }} fiszek <span aria-hidden="true">→</span></a>{% else %}<span class="btn btn-disabled">Wszystko powtórzone <span aria-hidden="true">✓</span></span>{% endif %}
+        <a class="btn btn-ghost-dark" href="{% url 'js_academy:path' %}">Wróć do ścieżki <span aria-hidden="true">▤</span></a>
+      </div>
+    </div>
+    <aside class="js-flash-card">
+      <span class="tag tag-js-dark">Twój zestaw</span>
+      <div class="js-flash-big">{{ stats.due_cards }}<span>do powtórki</span></div>
+      <div class="js-flash-pair">
+        <div><strong>{{ stats.reviewed_cards }}</strong><span>poznanych</span></div>
+        <div><strong>{{ stats.card_total }}</strong><span>wszystkich</span></div>
+      </div>
+      <div class="progress-track"><span style="--bar: {{ stats.card_percent }}%;"></span></div>
+      <p>Ocena „Jeszcze raz” wraca jutro. „Łatwe” daje większy odstęp. System nie zgaduje — Ty oceniasz swoją pamięć.</p>
+    </aside>
+  </header>
+
+  <section class="section" aria-labelledby="decks-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-js">Zestawy</p><h2 id="decks-title">Fiszki według modułów.</h2></div>
+      <a class="text-link" href="{% url 'js_academy:flashcards_review' %}">Powtórka mieszana →</a>
+    </div>
+    <div class="js-deck-grid">
+      {% for deck in decks %}
+        <article class="js-deck-card" style="--js-accent: {{ deck.module.accent }};">
+          <div class="js-deck-top">
+            <span class="js-module-glyph">{{ deck.module.glyph }}</span>
+            {% if deck.due %}<span class="js-due">{{ deck.due }} do powtórki</span>{% else %}<span class="js-due js-due-clear">na dziś ✓</span>{% endif %}
+          </div>
+          <h3>{{ deck.module.title }}</h3>
+          <p>{{ deck.total }} fiszek · {{ deck.reviewed }} poznanych</p>
+          <div class="progress-track"><span style="--bar: {{ deck.percent }}%;"></span></div>
+          <div class="js-deck-foot">
+            <a href="{% url 'js_academy:flashcards' deck.module.slug %}">{% if deck.due %}Ucz się {{ deck.due }} fiszek{% else %}Otwórz zestaw{% endif %} <span aria-hidden="true">→</span></a>
+            <span>{{ deck.percent }}%</span>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="js-flash-method" aria-labelledby="method-title">
+    <p class="eyebrow eyebrow-js">Jak oceniać</p>
+    <h2 id="method-title">Cztery przyciski, zero oszukiwania.</h2>
+    <div class="js-rating-guide">
+      <div class="js-rating-guide-item js-rating-again"><strong>Jeszcze raz</strong><span>Nie pamiętałeś. Karta wróci jutro.</span></div>
+      <div class="js-rating-guide-item js-rating-hard"><strong>Trudne</strong><span>Przypomniałeś sobie z wysiłkiem.</span></div>
+      <div class="js-rating-guide-item js-rating-good"><strong>Dobre</strong><span>Poprawnie, bez dużego wahania.</span></div>
+      <div class="js-rating-guide-item js-rating-easy"><strong>Łatwe</strong><span>Natychmiastowa, pewna odpowiedź.</span></div>
+    </div>
+  </section>
+</div>
+{% endblock %}

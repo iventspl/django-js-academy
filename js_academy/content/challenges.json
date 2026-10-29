@@ -1,0 +1,1641 @@
+{
+  "challenges": [
+    {
+      "slug": "sum-array",
+      "title": "Suma tablicy",
+      "difficulty": "beginner",
+      "module": "fundamenty-js",
+      "prompt": "Napisz funkcję <code>solve(numbers)</code>, która zwraca sumę wszystkich liczb w tablicy. Dla pustej tablicy zwróć 0.",
+      "starter_code": "function solve(numbers) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(numbers) {\n  return numbers.reduce((sum, n) => sum + n, 0);\n}\n",
+      "tests": [
+        {
+          "name": "sumuje dodatnie",
+          "args": [
+            [
+              1,
+              2,
+              3,
+              4
+            ]
+          ],
+          "expected": 10
+        },
+        {
+          "name": "pusta tablica",
+          "args": [
+            []
+          ],
+          "expected": 0
+        },
+        {
+          "name": "liczby ujemne",
+          "args": [
+            [
+              -2,
+              5,
+              -3
+            ]
+          ],
+          "expected": 0
+        }
+      ],
+      "hints": "Pętla albo reduce z akumulatorem 0.\nPamiętaj o wartości początkowej, inaczej pusta tablica rzuci błąd.",
+      "explanation": "reduce z akumulatorem 0 jestczytelny i bezpieczny dla pustej tablicy. Pętla for też jest poprawna — ważny jest wynik, nie styl.",
+      "xp": 20
+    },
+    {
+      "slug": "fizzbuzz",
+      "title": "FizzBuzz",
+      "difficulty": "beginner",
+      "module": "fundamenty-js",
+      "prompt": "Napisz <code>solve(n)</code>, która zwraca tablicę od 1 do n. Dla wielokrotności 3 wstaw \"Fizz\", dla 5 \"Buzz\", a dla obu \"FizzBuzz\".",
+      "starter_code": "function solve(n) {\n  const result = [];\n  // Twoje rozwiązanie\n  return result;\n}\n",
+      "solution_code": "function solve(n) {\n  const result = [];\n  for (let i = 1; i <= n; i++) {\n    if (i % 15 === 0) result.push(\"FizzBuzz\");\n    else if (i % 3 === 0) result.push(\"Fizz\");\n    else if (i % 5 === 0) result.push(\"Buzz\");\n    else result.push(i);\n  }\n  return result;\n}\n",
+      "tests": [
+        {
+          "name": "do 5",
+          "args": [
+            5
+          ],
+          "expected": [
+            1,
+            2,
+            "Fizz",
+            4,
+            "Buzz"
+          ]
+        },
+        {
+          "name": "do 15",
+          "args": [
+            15
+          ],
+          "expected": [
+            1,
+            2,
+            "Fizz",
+            4,
+            "Buzz",
+            "Fizz",
+            7,
+            8,
+            "Fizz",
+            "Buzz",
+            11,
+            "Fizz",
+            13,
+            14,
+            "FizzBuzz"
+          ]
+        },
+        {
+          "name": "zero",
+          "args": [
+            0
+          ],
+          "expected": []
+        }
+      ],
+      "hints": "Sprawdzaj najpierw podzielność przez 15.\nKolejność warunków ma znaczenie: 15 jest też podzielne przez 3.",
+      "explanation": "Warunek i % 15 === 0 musi być pierwszy. Inaczej liczba 15 zostałaby opisana jako Fizz i nigdy nie osiągnęłaby FizzBuzz.",
+      "xp": 20
+    },
+    {
+      "slug": "count-vowels",
+      "title": "Liczenie samogłosek",
+      "difficulty": "beginner",
+      "module": "nowoczesny-js",
+      "prompt": "Napisz <code>solve(text)</code>, która zwraca liczbę samogłosek a, e, i, o, u, y (wielkość liter bez znaczenia). Nie uwzględniaj polskich znaków diakrytycznych.",
+      "starter_code": "function solve(text) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(text) {\n  const vowels = \"aeiouy\";\n  return [...text.toLowerCase()].filter((ch) => vowels.includes(ch)).length;\n}\n",
+      "tests": [
+        {
+          "name": "Ala ma kota",
+          "args": [
+            "Ala ma kota"
+          ],
+          "expected": 5
+        },
+        {
+          "name": "bez samogłosek",
+          "args": [
+            "rhythm"
+          ],
+          "expected": 1
+        },
+        {
+          "name": "wielkie litery",
+          "args": [
+            "AEIOU"
+          ],
+          "expected": 5
+        }
+      ],
+      "hints": "Najpierw zmień tekst na małe litery.\nMożesz użyć pętli, filter lub reduce.",
+      "explanation": "Rozwiązanie normalizuje wielkość liter i sprawdza przynależność znaku do zbioru. Uwaga: y jest samogłoską w tym zadaniu, mimo że w języku polskim bywa inaczej klasyfikowane.",
+      "xp": 20
+    },
+    {
+      "slug": "capitalize-words",
+      "title": "Wielka litera w każdym słowie",
+      "difficulty": "beginner",
+      "module": "dom-przegladarka",
+      "prompt": "Napisz <code>solve(text)</code>, która zwraca tekst z pierwszą wielką literą każdego słowa. Pozostałe litery mają być małe. Słowa rozdzielone są pojedynczą spacją.",
+      "starter_code": "function solve(text) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(text) {\n  return text\n    .split(\" \")\n    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())\n    .join(\" \");\n}\n",
+      "tests": [
+        {
+          "name": "proste zdanie",
+          "args": [
+            "ala ma kota"
+          ],
+          "expected": "Ala Ma Kota"
+        },
+        {
+          "name": "mieszane litery",
+          "args": [
+            "JAN kOWALSKI"
+          ],
+          "expected": "Jan Kowalski"
+        },
+        {
+          "name": "pusty tekst",
+          "args": [
+            ""
+          ],
+          "expected": ""
+        }
+      ],
+      "hints": "Podziel tekst po space, przekształć każde słowo i połącz z powrotem.\nslice(1) zwraca resztę słowa.",
+      "explanation": "split/map/join to klasyczny łańcuch transformacji. charAt(0) jest bezpieczne dla pustego słowa, ale w tym zadaniu słowa nie są puste.",
+      "xp": 20
+    },
+    {
+      "slug": "unique-values",
+      "title": "Unikalne wartości",
+      "difficulty": "beginner",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(items)</code>, która zwraca nową tablicę bez duplikatów, zachowując kolejność pierwszego wystąpienia.",
+      "starter_code": "function solve(items) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(items) {\n  return [...new Set(items)];\n}\n",
+      "tests": [
+        {
+          "name": "liczby",
+          "args": [
+            [
+              3,
+              1,
+              3,
+              2,
+              1
+            ]
+          ],
+          "expected": [
+            3,
+            1,
+            2
+          ]
+        },
+        {
+          "name": "stringi",
+          "args": [
+            [
+              "a",
+              "b",
+              "a"
+            ]
+          ],
+          "expected": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "name": "pusta",
+          "args": [
+            []
+          ],
+          "expected": []
+        }
+      ],
+      "hints": "Set przechowuje unikalne wartości i zachowuje kolejność wstawiania.\nZamień Set z powrotem na tablicę przez spread.",
+      "explanation": "new Set(items) usuwa duplikaty, a spread tworzy nową tablicę. To rozwiązanie jest krótkie i czytelne, ale działa dla wartości porównywanych przez SameValueZero.",
+      "xp": 20
+    },
+    {
+      "slug": "reverse-words",
+      "title": "Odwróć kolejność słów",
+      "difficulty": "beginner",
+      "module": "nowoczesny-js",
+      "prompt": "Napisz <code>solve(text)</code>, która odwraca kolejność słów, ale nie odwraca liter w słowach. Słowa rozdzielone są pojedynczą spacją.",
+      "starter_code": "function solve(text) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(text) {\n  return text.split(\" \").reverse().join(\" \");\n}\n",
+      "tests": [
+        {
+          "name": "trzy słowa",
+          "args": [
+            "ala ma kota"
+          ],
+          "expected": "kota ma ala"
+        },
+        {
+          "name": "jedno słowo",
+          "args": [
+            "JavaScript"
+          ],
+          "expected": "JavaScript"
+        },
+        {
+          "name": "pusty",
+          "args": [
+            ""
+          ],
+          "expected": ""
+        }
+      ],
+      "hints": "split, reverse, join.\nreverse mutuje tablicę, ale tutaj tworzysz ją od zera.",
+      "explanation": "split tworzy nową tablicę, więc reverse jest bezpieczne. Gdybyś odwracał istniejącą tablicę użytkownika, najpierw zrób kopię.",
+      "xp": 20
+    },
+    {
+      "slug": "group-by",
+      "title": "Grupowanie po kluczu",
+      "difficulty": "intermediate",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(items, key)</code>, która zwraca obiekt z tablicami elementów pogrupowanymi po wartości pola <code>key</code>.",
+      "starter_code": "function solve(items, key) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(items, key) {\n  return items.reduce((groups, item) => {\n    const value = item[key];\n    (groups[value] ??= []).push(item);\n    return groups;\n  }, {});\n}\n",
+      "tests": [
+        {
+          "name": "po typie",
+          "args": [
+            [
+              {
+                "type": "a",
+                "n": 1
+              },
+              {
+                "type": "b",
+                "n": 2
+              },
+              {
+                "type": "a",
+                "n": 3
+              }
+            ],
+            "type"
+          ],
+          "expected": {
+            "a": [
+              {
+                "type": "a",
+                "n": 1
+              },
+              {
+                "type": "a",
+                "n": 3
+              }
+            ],
+            "b": [
+              {
+                "type": "b",
+                "n": 2
+              }
+            ]
+          }
+        },
+        {
+          "name": "pusta lista",
+          "args": [
+            [],
+            "type"
+          ],
+          "expected": {}
+        }
+      ],
+      "hints": "reduce z akumulatorem {} jest naturalny.\nOperator ??= utworzy tablicę tylko przy pierwszym wystąpieniu klucza.",
+      "explanation": "Grupowanie w reduce to jedno przejście po danych. Uważaj na klucze takie jak __proto__; w produkcji użyj Map lub Object.create(null).",
+      "xp": 30
+    },
+    {
+      "slug": "chunk-array",
+      "title": "Dzielenie na kawałki",
+      "difficulty": "intermediate",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(items, size)</code>, która dzieli tablicę na podtablice o długości size. Ostatnia może być krótsza. Dla size <= 0 zwróć pustą tablicę.",
+      "starter_code": "function solve(items, size) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(items, size) {\n  if (size <= 0) return [];\n  const chunks = [];\n  for (let i = 0; i < items.length; i += size) {\n    chunks.push(items.slice(i, i + size));\n  }\n  return chunks;\n}\n",
+      "tests": [
+        {
+          "name": "podział po 2",
+          "args": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            2
+          ],
+          "expected": [
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              5
+            ]
+          ]
+        },
+        {
+          "name": "za duży rozmiar",
+          "args": [
+            [
+              1,
+              2
+            ],
+            5
+          ],
+          "expected": [
+            [
+              1,
+              2
+            ]
+          ]
+        },
+        {
+          "name": "rozmiar zero",
+          "args": [
+            [
+              1,
+              2
+            ],
+            0
+          ],
+          "expected": []
+        }
+      ],
+      "hints": "Pętla for z krokiem size.\nslice(i, i + size) nie mutuje oryginału.",
+      "explanation": "slice jest bezpieczne i czytelne. Pamiętaj o przypadku size <= 0, inaczej pętla może się zapętlić.",
+      "xp": 30
+    },
+    {
+      "slug": "flatten-array",
+      "title": "Spłaszczanie zagnieżdżonej tablicy",
+      "difficulty": "intermediate",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(items)</code>, która zwraca głęboko spłaszczoną tablicę (dowolny poziom zagnieżdżenia).",
+      "starter_code": "function solve(items) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(items) {\n  return items.flat(Infinity);\n}\n",
+      "tests": [
+        {
+          "name": "dwa poziomy",
+          "args": [
+            [
+              1,
+              [
+                2,
+                [
+                  3,
+                  4
+                ]
+              ],
+              5
+            ]
+          ],
+          "expected": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "name": "pusta",
+          "args": [
+            []
+          ],
+          "expected": []
+        },
+        {
+          "name": "same liczby",
+          "args": [
+            [
+              1,
+              2
+            ]
+          ],
+          "expected": [
+            1,
+            2
+          ]
+        }
+      ],
+      "hints": "flat przyjmuje głębokość; Infinity oznacza dowolną.\nAlternatywnie rekurencja z concat.",
+      "explanation": "flat(Infinity) jest najprostsze, ale uważaj na bardzo głębokie struktury i cykle. Wtedy bezpieczniejsza jest iteracja z jawnym stosem.",
+      "xp": 30
+    },
+    {
+      "slug": "valid-parentheses",
+      "title": "Poprawne nawiasy",
+      "difficulty": "intermediate",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(text)</code>, która zwraca true, jeśli nawiasy (), [] i {} są poprawnie zamknięte i zagnieżdżone.",
+      "starter_code": "function solve(text) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(text) {\n  const pairs = { \")\": \"(\", \"]\": \"[\", \"}\": \"{\" };\n  const stack = [];\n  for (const ch of text) {\n    if (\"([{\".includes(ch)) stack.push(ch);\n    else if (pairs[ch]) {\n      if (stack.pop() !== pairs[ch]) return false;\n    }\n  }\n  return stack.length === 0;\n}\n",
+      "tests": [
+        {
+          "name": "poprawne",
+          "args": [
+            "([]{})"
+          ],
+          "expected": true
+        },
+        {
+          "name": "złe zamknięcie",
+          "args": [
+            "(]"
+          ],
+          "expected": false
+        },
+        {
+          "name": "brak zamknięcia",
+          "args": [
+            "(["
+          ],
+          "expected": false
+        },
+        {
+          "name": "tekst bez nawiasów",
+          "args": [
+            "hello"
+          ],
+          "expected": true
+        }
+      ],
+      "hints": "Użyj stosu (tablicy).\nPrzy zamykającym sprawdź, czy wierzchołek stosu pasuje.",
+      "explanation": "Stos jest naturalny dla zagnieżdżonych struktur. Na końcu stos musi być pusty — inaczej zostały otwarte nawiasy.",
+      "xp": 30
+    },
+    {
+      "slug": "deep-get",
+      "title": "Bezpieczne odczytywanie ścieżki",
+      "difficulty": "intermediate",
+      "module": "wzorce-frontendu",
+      "prompt": "Napisz <code>solve(object, path)</code>, która zwraca wartość pod ścieżką typu \"a.b.c\". Jeśli po drodze jest null/undefined, zwróć null.",
+      "starter_code": "function solve(object, path) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(object, path) {\n  return path.split(\".\").reduce((value, key) => {\n    if (value == null) return null;\n    return value[key] ?? null;\n  }, object);\n}\n",
+      "tests": [
+        {
+          "name": "istniejąca ścieżka",
+          "args": [
+            {
+              "a": {
+                "b": {
+                  "c": 42
+                }
+              }
+            },
+            "a.b.c"
+          ],
+          "expected": 42
+        },
+        {
+          "name": "brakująca",
+          "args": [
+            {
+              "a": {}
+            },
+            "a.b.c"
+          ],
+          "expected": null
+        },
+        {
+          "name": "null po drodze",
+          "args": [
+            {
+              "a": null
+            },
+            "a.b"
+          ],
+          "expected": null
+        }
+      ],
+      "hints": "Podziel ścieżkę po kropce.\nreduce z wartością początkową object i sprawdzaniem null.",
+      "explanation": "Odczytywanie ścieżki to mini-wersja optional chaining. Zwracanie null zamiast wyjątku upraszcza UI, ale nie ukrywaj nim błędów walidacji.",
+      "xp": 30
+    },
+    {
+      "slug": "anagram",
+      "title": "Anagramy",
+      "difficulty": "intermediate",
+      "module": "nowoczesny-js",
+      "prompt": "Napisz <code>solve(a, b)</code>, która zwraca true, jeśli dwa teksty są anagramami (bez spacji i wielkości liter).",
+      "starter_code": "function solve(a, b) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(a, b) {\n  const normalize = (text) => text.toLowerCase().replace(/\\s/g, \"\").split(\"\").sort().join(\"\");\n  return normalize(a) === normalize(b);\n}\n",
+      "tests": [
+        {
+          "name": "listen/silent",
+          "args": [
+            "listen",
+            "silent"
+          ],
+          "expected": true
+        },
+        {
+          "name": "różne",
+          "args": [
+            "hello",
+            "world"
+          ],
+          "expected": false
+        },
+        {
+          "name": "spacje i wielkość",
+          "args": [
+            "Dormitory",
+            "dirty room"
+          ],
+          "expected": true
+        }
+      ],
+      "hints": "Znormalizuj oba teksty: małe litery, bez spacji.\nPosortowane znaki są równe dla anagramów.",
+      "explanation": "Sortowanie znaków daje prostą normalizację O(n log n). Dla długich tekstów można policzyć częstości znaków w Mapie i porównać.",
+      "xp": 30
+    },
+    {
+      "slug": "binary-search",
+      "title": "Wyszukiwanie binarne",
+      "difficulty": "advanced",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(sorted, target)</code>, która zwraca indeks target w posortowanej tablicy lub -1. Użyj wyszukiwania binarnego.",
+      "starter_code": "function solve(sorted, target) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(sorted, target) {\n  let left = 0;\n  let right = sorted.length - 1;\n  while (left <= right) {\n    const mid = Math.floor((left + right) / 2);\n    if (sorted[mid] === target) return mid;\n    if (sorted[mid] < target) left = mid + 1;\n    else right = mid - 1;\n  }\n  return -1;\n}\n",
+      "tests": [
+        {
+          "name": "środek",
+          "args": [
+            [
+              1,
+              3,
+              5,
+              7,
+              9
+            ],
+            5
+          ],
+          "expected": 2
+        },
+        {
+          "name": "brak",
+          "args": [
+            [
+              1,
+              3,
+              5
+            ],
+            4
+          ],
+          "expected": -1
+        },
+        {
+          "name": "pierwszy",
+          "args": [
+            [
+              1,
+              3,
+              5
+            ],
+            1
+          ],
+          "expected": 0
+        },
+        {
+          "name": "pusta",
+          "args": [
+            [],
+            1
+          ],
+          "expected": -1
+        }
+      ],
+      "hints": "Utrzymuj left i right jako domknięty przedział.\nWarunek pętli to left <= right.",
+      "explanation": "Wyszukiwanie binarne ma O(log n), ale wymaga posortowanych danych. Częsty błąd to nieaktualizowanie granic lub wyjście poza zakres.",
+      "xp": 40
+    },
+    {
+      "slug": "longest-common-prefix",
+      "title": "Najdłuższy wspólny prefiks",
+      "difficulty": "advanced",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(words)</code>, która zwraca najdłuższy wspólny prefiks wszystkich słów. Dla pustej listy zwróć \"\".",
+      "starter_code": "function solve(words) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(words) {\n  if (!words.length) return \"\";\n  let prefix = words[0];\n  for (const word of words.slice(1)) {\n    while (!word.startsWith(prefix)) {\n      prefix = prefix.slice(0, -1);\n      if (!prefix) return \"\";\n    }\n  }\n  return prefix;\n}\n",
+      "tests": [
+        {
+          "name": "wspólny",
+          "args": [
+            [
+              "flower",
+              "flow",
+              "flight"
+            ]
+          ],
+          "expected": "fl"
+        },
+        {
+          "name": "brak",
+          "args": [
+            [
+              "dog",
+              "racecar",
+              "car"
+            ]
+          ],
+          "expected": ""
+        },
+        {
+          "name": "pusta",
+          "args": [
+            []
+          ],
+          "expected": ""
+        }
+      ],
+      "hints": "Zacznij od pierwszego słowa jako prefiksu.\nSkracaj prefiks, aż każde słowo zaczyna się od niego.",
+      "explanation": "Algorytm skraca prefiks w miarę potrzeb. W najgorszym przypadku O(n * m), gdzie m to długość najkrótszego słowa.",
+      "xp": 40
+    },
+    {
+      "slug": "two-sum",
+      "title": "Two Sum",
+      "difficulty": "advanced",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(numbers, target)</code>, która zwraca indeksy dwóch liczb sumujących się do target. Załóż, że istnieje dokładnie jedno rozwiązanie. Zwróć indeksy rosnąco.",
+      "starter_code": "function solve(numbers, target) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(numbers, target) {\n  const seen = new Map();\n  for (let i = 0; i < numbers.length; i++) {\n    const need = target - numbers[i];\n    if (seen.has(need)) return [seen.get(need), i];\n    seen.set(numbers[i], i);\n  }\n  return [];\n}\n",
+      "tests": [
+        {
+          "name": "para",
+          "args": [
+            [
+              2,
+              7,
+              11,
+              15
+            ],
+            9
+          ],
+          "expected": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "późna para",
+          "args": [
+            [
+              3,
+              2,
+              4
+            ],
+            6
+          ],
+          "expected": [
+            1,
+            2
+          ]
+        },
+        {
+          "name": "ta sama liczba",
+          "args": [
+            [
+              3,
+              3
+            ],
+            6
+          ],
+          "expected": [
+            0,
+            1
+          ]
+        }
+      ],
+      "hints": "Mapa przechowuje wartość → indeks.\nSprawdź, czy brakująca liczba już była widziana.",
+      "explanation": "Jedno przejście z Map daje O(n). Porównywanie każdej pary dawałoby O(n²).",
+      "xp": 40
+    },
+    {
+      "slug": "merge-intervals",
+      "title": "Scalanie przedziałów",
+      "difficulty": "advanced",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(intervals)</code>, która scala nachodzące lub stykające się przedziały [start, end]. Zwróć posortowaną listę.",
+      "starter_code": "function solve(intervals) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(intervals) {\n  if (!intervals.length) return [];\n  const sorted = [...intervals].sort((a, b) => a[0] - b[0]);\n  const result = [sorted[0]];\n  for (const [start, end] of sorted.slice(1)) {\n    const last = result[result.length - 1];\n    if (start <= last[1]) last[1] = Math.max(last[1], end);\n    else result.push([start, end]);\n  }\n  return result;\n}\n",
+      "tests": [
+        {
+          "name": "scalanie",
+          "args": [
+            [
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                6
+              ],
+              [
+                8,
+                10
+              ],
+              [
+                15,
+                18
+              ]
+            ]
+          ],
+          "expected": [
+            [
+              1,
+              6
+            ],
+            [
+              8,
+              10
+            ],
+            [
+              15,
+              18
+            ]
+          ]
+        },
+        {
+          "name": "stykające",
+          "args": [
+            [
+              [
+                1,
+                4
+              ],
+              [
+                4,
+                5
+              ]
+            ]
+          ],
+          "expected": [
+            [
+              1,
+              5
+            ]
+          ]
+        },
+        {
+          "name": "pusta",
+          "args": [
+            []
+          ],
+          "expected": []
+        }
+      ],
+      "hints": "Najpierw posortuj po początku.\nPorównuj start z końcem ostatniego przedziału w wyniku.",
+      "explanation": "Sortowanie umożliwia jedno przejście. Uwaga: rozwiązanie mutuje ostatni przedział w wyniku, ale nie wejściową tablicę dzięki kopii.",
+      "xp": 40
+    },
+    {
+      "slug": "rotate-matrix",
+      "title": "Obrót macierzy",
+      "difficulty": "advanced",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(matrix)</code>, która obraca kwadratową macierz o 90 stopni zgodnie z ruchem wskazówek zegara i zwraca nową macierz.",
+      "starter_code": "function solve(matrix) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(matrix) {\n  return matrix[0].map((_, col) =>\n    matrix.map((row) => row[col]).reverse()\n  );\n}\n",
+      "tests": [
+        {
+          "name": "2x2",
+          "args": [
+            [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          ],
+          "expected": [
+            [
+              3,
+              1
+            ],
+            [
+              4,
+              2
+            ]
+          ]
+        },
+        {
+          "name": "3x3",
+          "args": [
+            [
+              [
+                1,
+                2,
+                3
+              ],
+              [
+                4,
+                5,
+                6
+              ],
+              [
+                7,
+                8,
+                9
+              ]
+            ]
+          ],
+          "expected": [
+            [
+              7,
+              4,
+              1
+            ],
+            [
+              8,
+              5,
+              2
+            ],
+            [
+              9,
+              6,
+              3
+            ]
+          ]
+        }
+      ],
+      "hints": "Nowa macierz ma kolumny ze starych kolumn.\nDla obrotu zgodnie z zegarem odwróć kolejność w kolumnie.",
+      "explanation": "Transpozycja plus odwrócenie wierszy to klasyczny obrót. Rozwiązanie tworzy nowe tablice i nie mutuje wejścia.",
+      "xp": 40
+    },
+    {
+      "slug": "deep-equal",
+      "title": "Porównanie głębokie",
+      "difficulty": "advanced",
+      "module": "wzorce-frontendu",
+      "prompt": "Napisz <code>solve(a, b)</code>, która zwraca true, jeśli dwie wartości są głęboko równe (tablice i obiekty porównywane rekurencyjnie).",
+      "starter_code": "function solve(a, b) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(a, b) {\n  if (Object.is(a, b)) return true;\n  if (typeof a !== \"object\" || typeof b !== \"object\" || a === null || b === null) return false;\n  if (Array.isArray(a) !== Array.isArray(b)) return false;\n  const keysA = Object.keys(a);\n  const keysB = Object.keys(b);\n  if (keysA.length !== keysB.length) return false;\n  return keysA.every((key) => solve(a[key], b[key]));\n}\n",
+      "tests": [
+        {
+          "name": "równe obiekty",
+          "args": [
+            {
+              "a": 1,
+              "b": [
+                2
+              ]
+            },
+            {
+              "a": 1,
+              "b": [
+                2
+              ]
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "różne",
+          "args": [
+            {
+              "a": 1
+            },
+            {
+              "a": 2
+            }
+          ],
+          "expected": false
+        },
+        {
+          "name": "tablice",
+          "args": [
+            [
+              1,
+              [
+                2,
+                3
+              ]
+            ],
+            [
+              1,
+              [
+                2,
+                3
+              ]
+            ]
+          ],
+          "expected": true
+        },
+        {
+          "name": "różne typy",
+          "args": [
+            [],
+            {}
+          ],
+          "expected": false
+        }
+      ],
+      "hints": "Najpierw Object.is dla wartości prostych.\nPorównaj długości kluczy i rekurencyjnie wartości.",
+      "explanation": "Głębokie porównanie musi obsłużyć null, tablice i obiekty. Uwaga: prawdziwe biblioteki obsługują też Map, Set, Date i cykle.",
+      "xp": 40
+    },
+    {
+      "slug": "is-palindrome",
+      "title": "Palindrom",
+      "difficulty": "beginner",
+      "module": "nowoczesny-js",
+      "prompt": "Napisz <code>solve(text)</code>, która zwraca true, jeśli tekst jest palindromem. Ignoruj wielkość liter, spacje i znaki interpunkcyjne.",
+      "starter_code": "function solve(text) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(text) {\n  const clean = text.toLowerCase().replace(/[^a-z0-9]/g, \"\");\n  return clean === [...clean].reverse().join(\"\");\n}\n",
+      "tests": [
+        {
+          "name": "Panama",
+          "args": [
+            "A man, a plan, a canal: Panama"
+          ],
+          "expected": true
+        },
+        {
+          "name": "Ala",
+          "args": [
+            "Ala"
+          ],
+          "expected": true
+        },
+        {
+          "name": "hello",
+          "args": [
+            "hello"
+          ],
+          "expected": false
+        }
+      ],
+      "hints": "Zostaw tylko litery i cyfry, zamień na małe litery.\nPorównaj tekst z jego odwróconą wersją.",
+      "explanation": "Normalizacja usuwa interpunkcję i wielkość liter. Spread działa lepiej niż split('') dla znaków Unicode.",
+      "xp": 20
+    },
+    {
+      "slug": "count-words",
+      "title": "Liczenie słów",
+      "difficulty": "beginner",
+      "module": "nowoczesny-js",
+      "prompt": "Napisz <code>solve(text)</code>, która zwraca liczbę słów. Słowa rozdzielone są białymi znakami; pusty tekst ma 0.",
+      "starter_code": "function solve(text) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(text) {\n  return text.trim().split(/\\s+/).filter(Boolean).length;\n}\n",
+      "tests": [
+        {
+          "name": "trzy słowa",
+          "args": [
+            "ala ma kota"
+          ],
+          "expected": 3
+        },
+        {
+          "name": "spacje",
+          "args": [
+            "   "
+          ],
+          "expected": 0
+        },
+        {
+          "name": "jedno",
+          "args": [
+            "JavaScript"
+          ],
+          "expected": 1
+        }
+      ],
+      "hints": "trim usuwa skrajne spacje.\nPodziel po białych znakach i usuń puste elementy.",
+      "explanation": "trim plus split(/\\s+/) to klasyka. Bez trim pusty tekst dałby tablicę z jednym pustym elementem.",
+      "xp": 20
+    },
+    {
+      "slug": "remove-falsy",
+      "title": "Usuń wartości falsy",
+      "difficulty": "beginner",
+      "module": "fundamenty-js",
+      "prompt": "Napisz <code>solve(items)</code>, która zwraca nową tablicę bez wartości falsy (false, 0, \"\", null, undefined, NaN).",
+      "starter_code": "function solve(items) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(items) {\n  return items.filter(Boolean);\n}\n",
+      "tests": [
+        {
+          "name": "mieszane",
+          "args": [
+            [
+              0,
+              1,
+              false,
+              2,
+              "",
+              3,
+              null
+            ]
+          ],
+          "expected": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "name": "pusta",
+          "args": [
+            []
+          ],
+          "expected": []
+        },
+        {
+          "name": "same prawdy",
+          "args": [
+            [
+              1,
+              "a",
+              true
+            ]
+          ],
+          "expected": [
+            1,
+            "a",
+            true
+          ]
+        }
+      ],
+      "hints": "filter z Boolean wykorzystuje konwersję do boolean.\nPamiętaj, że 0 i pusty string też są falsy.",
+      "explanation": "filter(Boolean) jest krótkie, ale usuwa też 0 i \"\". Jeśli zero jest poprawne, użyj value !== null && value !== undefined.",
+      "xp": 20
+    },
+    {
+      "slug": "range",
+      "title": "Zakres liczb",
+      "difficulty": "beginner",
+      "module": "fundamenty-js",
+      "prompt": "Napisz <code>solve(start, end, step)</code>, która zwraca liczby od start (włącznie) do end (wyłącznie), z krokiem step. Dla step <= 0 zwróć pustą tablicę.",
+      "starter_code": "function solve(start, end, step) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(start, end, step) {\n  if (step <= 0) return [];\n  const result = [];\n  for (let n = start; n < end; n += step) result.push(n);\n  return result;\n}\n",
+      "tests": [
+        {
+          "name": "rosnąco",
+          "args": [
+            1,
+            5,
+            1
+          ],
+          "expected": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "name": "krok dwa",
+          "args": [
+            0,
+            10,
+            2
+          ],
+          "expected": [
+            0,
+            2,
+            4,
+            6,
+            8
+          ]
+        },
+        {
+          "name": "zły krok",
+          "args": [
+            1,
+            5,
+            0
+          ],
+          "expected": []
+        }
+      ],
+      "hints": "Zacznij od start i dodawaj step, dopóki n < end.\nZabezpiecz step <= 0, inaczej pętla się zapętli.",
+      "explanation": "Prosty for jest czytelny i nie tworzy pośrednich tablic. Zawsze obsłuż step <= 0.",
+      "xp": 20
+    },
+    {
+      "slug": "slugify",
+      "title": "Slug z tekstu",
+      "difficulty": "beginner",
+      "module": "dom-przegladarka",
+      "prompt": "Napisz <code>solve(text)</code>, która tworzy slug: małe litery, polskie znaki na ASCII, spacje i znaki specjalne na myślniki, bez myślników na brzegach.",
+      "starter_code": "function solve(text) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "const map = { \"ą\":\"a\", \"ć\":\"c\", \"ę\":\"e\", \"ł\":\"l\", \"ń\":\"n\", \"ó\":\"o\", \"ś\":\"s\", \"ź\":\"z\", \"ż\":\"z\" };\nfunction solve(text) {\n  return text.toLowerCase()\n    .replace(/[ąćęłńóśźż]/g, (ch) => map[ch])\n    .normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\")\n    .replace(/[^a-z0-9]+/g, \"-\")\n    .replace(/^-|-$/g, \"\");\n}\n",
+      "tests": [
+        {
+          "name": "polskie znaki",
+          "args": [
+            "Zażółć gęślą jaźń"
+          ],
+          "expected": "zazolc-gesla-jazn"
+        },
+        {
+          "name": "interpunkcja",
+          "args": [
+            "Hello, World!"
+          ],
+          "expected": "hello-world"
+        },
+        {
+          "name": "spacje",
+          "args": [
+            "  Ala ma kota  "
+          ],
+          "expected": "ala-ma-kota"
+        }
+      ],
+      "hints": "Najpierw zamień polskie znaki, potem normalizuj Unicode.\nZamień grupy znaków innych niż a-z0-9 na pojedynczy myślnik.",
+      "explanation": "NFD nie rozkłada ł, więc potrzebna jest jawna mapa. Na końcu usuwamy myślniki z brzegów.",
+      "xp": 20
+    },
+    {
+      "slug": "sum-by",
+      "title": "Sumowanie po kluczu",
+      "difficulty": "intermediate",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(items, key)</code>, która grupuje po <code>category</code> i sumuje wartości pola key.",
+      "starter_code": "function solve(items, key) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(items, key) {\n  return items.reduce((sums, item) => {\n    const group = item.category;\n    sums[group] = (sums[group] ?? 0) + item[key];\n    return sums;\n  }, {});\n}\n",
+      "tests": [
+        {
+          "name": "kategorie",
+          "args": [
+            [
+              {
+                "category": "a",
+                "amount": 2
+              },
+              {
+                "category": "b",
+                "amount": 5
+              },
+              {
+                "category": "a",
+                "amount": 3
+              }
+            ],
+            "amount"
+          ],
+          "expected": {
+            "a": 5,
+            "b": 5
+          }
+        },
+        {
+          "name": "pusta",
+          "args": [
+            [],
+            "amount"
+          ],
+          "expected": {}
+        }
+      ],
+      "hints": "reduce z akumulatorem {}.\nUżyj ?? 0, aby pierwsza wartość zaczynała od zera.",
+      "explanation": "Grupowanie i sumowanie w jednym przejściu. W produkcji rozważ Map dla kluczy innych niż stringi.",
+      "xp": 30
+    },
+    {
+      "slug": "intersection",
+      "title": "Część wspólna",
+      "difficulty": "intermediate",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(a, b)</code>, która zwraca unikalne wartości występujące w obu tablicach, w kolejności pierwszej tablicy.",
+      "starter_code": "function solve(a, b) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(a, b) {\n  const setB = new Set(b);\n  return [...new Set(a.filter((value) => setB.has(value)))];\n}\n",
+      "tests": [
+        {
+          "name": "liczby",
+          "args": [
+            [
+              1,
+              2,
+              3
+            ],
+            [
+              2,
+              3,
+              4
+            ]
+          ],
+          "expected": [
+            2,
+            3
+          ]
+        },
+        {
+          "name": "duplikaty",
+          "args": [
+            [
+              1,
+              1,
+              2
+            ],
+            [
+              1
+            ]
+          ],
+          "expected": [
+            1
+          ]
+        },
+        {
+          "name": "brak",
+          "args": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ],
+          "expected": []
+        }
+      ],
+      "hints": "Set daje szybkie has() i usuwa duplikaty.\nFiltruj pierwszą tablicę, zachowując kolejność.",
+      "explanation": "Set dla drugiej tablicy daje O(n+m) zamiast zagnieżdżonej pętli O(n*m).",
+      "xp": 30
+    },
+    {
+      "slug": "zip-object",
+      "title": "Łączenie kluczy i wartości",
+      "difficulty": "intermediate",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(keys, values)</code>, która zwraca obiekt z par klucz-wartość. Długość wynika z krótszej tablicy.",
+      "starter_code": "function solve(keys, values) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(keys, values) {\n  const result = {};\n  const length = Math.min(keys.length, values.length);\n  for (let i = 0; i < length; i++) result[keys[i]] = values[i];\n  return result;\n}\n",
+      "tests": [
+        {
+          "name": "pary",
+          "args": [
+            [
+              "a",
+              "b"
+            ],
+            [
+              1,
+              2
+            ]
+          ],
+          "expected": {
+            "a": 1,
+            "b": 2
+          }
+        },
+        {
+          "name": "krótsze values",
+          "args": [
+            [
+              "a",
+              "b",
+              "c"
+            ],
+            [
+              1
+            ]
+          ],
+          "expected": {
+            "a": 1
+          }
+        },
+        {
+          "name": "puste",
+          "args": [
+            [],
+            []
+          ],
+          "expected": {}
+        }
+      ],
+      "hints": "Math.min chroni przed undefined.\nPrzypisz values[i] do result[keys[i]].",
+      "explanation": "To odwrotność Object.entries. Pamiętaj o kluczach __proto__; Object.create(null) bywa bezpieczniejszy.",
+      "xp": 30
+    },
+    {
+      "slug": "parse-query",
+      "title": "Parametry query",
+      "difficulty": "intermediate",
+      "module": "dom-przegladarka",
+      "prompt": "Napisz <code>solve(query)</code>, która zamienia query string (z lub bez ?) na obiekt. Obsłuż + jako spację i dekodowanie procentowe.",
+      "starter_code": "function solve(query) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(query) {\n  return Object.fromEntries(new URLSearchParams(query).entries());\n}\n",
+      "tests": [
+        {
+          "name": "proste",
+          "args": [
+            "?a=1&b=2"
+          ],
+          "expected": {
+            "a": "1",
+            "b": "2"
+          }
+        },
+        {
+          "name": "plus i dekodowanie",
+          "args": [
+            "q=hello+world&tag=js"
+          ],
+          "expected": {
+            "q": "hello world",
+            "tag": "js"
+          }
+        },
+        {
+          "name": "puste",
+          "args": [
+            ""
+          ],
+          "expected": {}
+        }
+      ],
+      "hints": "URLSearchParams sam obsługuje ? i +.\nObject.fromEntries(params) tworzy obiekt.",
+      "explanation": "URLSearchParams jest standardowym API przeglądarki i Node. Powtórzone klucze zostaną nadpisane przez fromEntries.",
+      "xp": 30
+    },
+    {
+      "slug": "partition",
+      "title": "Podział na parzyste i nieparzyste",
+      "difficulty": "intermediate",
+      "module": "struktury-danych",
+      "prompt": "Napisz <code>solve(numbers)</code>, która zwraca obiekt { even, odd } z liczbami parzystymi i nieparzystymi, zachowując kolejność.",
+      "starter_code": "function solve(numbers) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(numbers) {\n  return numbers.reduce((acc, n) => {\n    (n % 2 === 0 ? acc.even : acc.odd).push(n);\n    return acc;\n  }, { even: [], odd: [] });\n}\n",
+      "tests": [
+        {
+          "name": "mieszane",
+          "args": [
+            [
+              1,
+              2,
+              3,
+              4
+            ]
+          ],
+          "expected": {
+            "even": [
+              2,
+              4
+            ],
+            "odd": [
+              1,
+              3
+            ]
+          }
+        },
+        {
+          "name": "puste",
+          "args": [
+            []
+          ],
+          "expected": {
+            "even": [],
+            "odd": []
+          }
+        },
+        {
+          "name": "ujemne",
+          "args": [
+            [
+              -2,
+              -1
+            ]
+          ],
+          "expected": {
+            "even": [
+              -2
+            ],
+            "odd": [
+              -1
+            ]
+          }
+        }
+      ],
+      "hints": "reduce z dwiema tablicami w akumulatorze.\nOperator warunkowy wybiera tablicę, do której pushujesz.",
+      "explanation": "Partycjonowanie w jednym przejściu. Uwaga: ujemne liczby nieparzyste mają resztę -1, ale n % 2 !== 0 nadal działa.",
+      "xp": 30
+    },
+    {
+      "slug": "async-sleep",
+      "title": "Asynchroniczny sleep",
+      "difficulty": "advanced",
+      "module": "node-narzedzia",
+      "prompt": "Napisz <code>async solve(value, ms)</code>, która zwraca Promise rozwiązujący się wartością value po ms milisekundach. Testy czekają na wynik.",
+      "starter_code": "async function solve(value, ms) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "async function solve(value, ms) {\n  await new Promise((resolve) => setTimeout(resolve, ms));\n  return value;\n}\n",
+      "tests": [
+        {
+          "name": "string",
+          "args": [
+            "ok",
+            5
+          ],
+          "expected": "ok"
+        },
+        {
+          "name": "liczba",
+          "args": [
+            42,
+            1
+          ],
+          "expected": 42
+        }
+      ],
+      "hints": "setTimeout nie zwraca Promise — opakuj go w new Promise.\nawait wstrzymuje funkcję, nie blokuje wątku.",
+      "explanation": "To podstawa opóźnień i retry. setTimeout nie gwarantuje dokładnego czasu; to minimalne opóźnienie.",
+      "xp": 40
+    },
+    {
+      "slug": "retry-task",
+      "title": "Retry z limitem",
+      "difficulty": "advanced",
+      "module": "node-narzedzia",
+      "prompt": "Napisz <code>async solve(maxAttempts, succeedAt)</code>, która symuluje próby: każda trwa chwilę, a sukces następuje przy próbie succeedAt. Zwróć numer udanej próby.",
+      "starter_code": "async function solve(maxAttempts, succeedAt) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "async function solve(maxAttempts, succeedAt) {\n  for (let attempt = 1; attempt <= maxAttempts; attempt++) {\n    await new Promise((resolve) => setTimeout(resolve, 5));\n    if (attempt >= succeedAt) return attempt;\n  }\n  throw new Error(\"Wyczerpano próby\");\n}\n",
+      "tests": [
+        {
+          "name": "druga próba",
+          "args": [
+            3,
+            2
+          ],
+          "expected": 2
+        },
+        {
+          "name": "pierwsza",
+          "args": [
+            1,
+            1
+          ],
+          "expected": 1
+        },
+        {
+          "name": "piąta",
+          "args": [
+            5,
+            5
+          ],
+          "expected": 5
+        }
+      ],
+      "hints": "Pętla for od 1 do maxAttempts.\nawait w każdej próbie; zwróć attempt po sukcesie.",
+      "explanation": "Retry wymaga limitu, opóźnienia i obsługi ostatecznego błędu. W produkcji dodaj backoff i idempotencję.",
+      "xp": 40
+    },
+    {
+      "slug": "mvc-select-products",
+      "title": "Selektor produktów MVC",
+      "difficulty": "advanced",
+      "module": "mvc-w-js",
+      "prompt": "Napisz <code>solve(products, viewState)</code>, która filtruje po <code>currentQuery</code> i <code>currentCategory</code>, sortuje po <code>currentSort</code> i zwraca nazwy produktów z aktualnej strony. Użyj <code>currentPage</code> i <code>pageSize</code>.",
+      "starter_code": "function solve(products, viewState) {\n  // Twoje rozwiązanie\n}\n",
+      "solution_code": "function solve(products, viewState) {\n  const query = viewState.currentQuery.trim().toLowerCase();\n  const filtered = products.filter((product) => {\n    const matchesQuery = product.name.toLowerCase().includes(query);\n    const matchesCategory = viewState.currentCategory === \"all\" || product.category === viewState.currentCategory;\n    return matchesQuery && matchesCategory;\n  });\n  const { key, direction } = viewState.currentSort;\n  const factor = direction === \"desc\" ? -1 : 1;\n  const sorted = [...filtered].sort((a, b) => {\n    if (key === \"price\") return (a.price - b.price) * factor;\n    return String(a[key]).localeCompare(String(b[key]), \"pl\") * factor;\n  });\n  const start = (viewState.currentPage - 1) * viewState.pageSize;\n  return sorted.slice(start, start + viewState.pageSize).map((product) => product.name);\n}\n",
+      "tests": [
+        {
+          "name": "query i cena malejąco",
+          "args": [
+            [
+              {
+                "name": "Mysz",
+                "price": 89,
+                "category": "tech"
+              },
+              {
+                "name": "Monitor",
+                "price": 899,
+                "category": "tech"
+              },
+              {
+                "name": "Lampa",
+                "price": 129,
+                "category": "home"
+              }
+            ],
+            {
+              "currentQuery": "m",
+              "currentCategory": "all",
+              "currentSort": {
+                "key": "price",
+                "direction": "desc"
+              },
+              "currentPage": 1,
+              "pageSize": 2
+            }
+          ],
+          "expected": [
+            "Monitor",
+            "Lampa"
+          ]
+        },
+        {
+          "name": "kategoria i cena rosnąco",
+          "args": [
+            [
+              {
+                "name": "Mysz",
+                "price": 89,
+                "category": "tech"
+              },
+              {
+                "name": "Lampa",
+                "price": 129,
+                "category": "home"
+              },
+              {
+                "name": "Kubek",
+                "price": 39,
+                "category": "home"
+              },
+              {
+                "name": "Poduszka",
+                "price": 59,
+                "category": "home"
+              }
+            ],
+            {
+              "currentQuery": "",
+              "currentCategory": "home",
+              "currentSort": {
+                "key": "price",
+                "direction": "asc"
+              },
+              "currentPage": 1,
+              "pageSize": 2
+            }
+          ],
+          "expected": [
+            "Kubek",
+            "Poduszka"
+          ]
+        },
+        {
+          "name": "druga strona",
+          "args": [
+            [
+              {
+                "name": "Klawiatura",
+                "price": 249,
+                "category": "tech"
+              },
+              {
+                "name": "Kubek",
+                "price": 39,
+                "category": "home"
+              },
+              {
+                "name": "Lampa",
+                "price": 129,
+                "category": "home"
+              },
+              {
+                "name": "Monitor",
+                "price": 899,
+                "category": "tech"
+              }
+            ],
+            {
+              "currentQuery": "",
+              "currentCategory": "all",
+              "currentSort": {
+                "key": "name",
+                "direction": "asc"
+              },
+              "currentPage": 2,
+              "pageSize": 1
+            }
+          ],
+          "expected": [
+            "Kubek"
+          ]
+        }
+      ],
+      "hints": "Filtruj, potem sortuj kopię, na końcu slice według currentPage i pageSize.\ncurrentView nie wpływa na wynik — to tylko sposób prezentacji.",
+      "explanation": "To dokładnie ten sam przepływ co w module MVC: filtr, sort, paginacja. currentView nie jest potrzebny selektorowi, bo nie zmienia danych.",
+      "xp": 40
+    }
+  ]
+}

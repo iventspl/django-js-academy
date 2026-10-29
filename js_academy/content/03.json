@@ -1,0 +1,160 @@
+{
+  "module": {
+    "slug": "dom-przegladarka",
+    "title": "DOM, formularze i przeglądarka",
+    "subtitle": "Zdarzenia, walidacja, localStorage i dostępność — zanim wejdziesz do Reacta.",
+    "description": "React nie zastępuje zrozumienia przeglądarki. Ten moduł uczy, jak działają elementy DOM, zdarzenia, formularze, storage i podstawy dostępności.",
+    "level": "core",
+    "glyph": "03",
+    "accent": "#7AD0C0",
+    "duration_minutes": 55,
+    "outcomes": [
+      "Wybierasz elementy DOM i reagujesz na zdarzenia bez wycieków pamięci.",
+      "Obsługujesz formularze, walidację i preventDefault.",
+      "Zapisujesz i odczytujesz dane z localStorage z poprawną serializacją.",
+      "Budujesz interfejs dostępny z klawiatury i dla czytników ekranu."
+    ],
+    "project_title": "Lista zadań w czystym JavaScript",
+    "project_brief": "Zbuduj aplikację listy zadań: dodawanie, oznaczanie jako wykonane, filtrowanie i zapis w localStorage. Wszystko bez frameworka.",
+    "project_steps": [
+      "Zbuduj formularz i listę w HTML z semantycznymi elementami.",
+      "Obsłuż submit, preventDefault i renderowanie listy.",
+      "Dodaj filtr wszystkich/aktywnych/wykonanych.",
+      "Zapisz stan w localStorage i odtwórz go po odświeżeniu."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "dom-i-zdarzenia",
+      "title": "DOM i zdarzenia",
+      "summary": "Selekcja elementów, addEventListener, delegacja i czyszczenie listenerów.",
+      "minutes": 13,
+      "body_html": "<p><strong>DOM</strong> to drzewo obiektów reprezentujące stronę. JavaScript może je czytać i modyfikować, ale każda zmiana może powodować layout i paint, więc nie rób tego w gorących pętlach.</p>\n<h2>Selekcja elementów</h2>\n<pre><code>const title = document.querySelector(\"h1\");\nconst buttons = document.querySelectorAll(\"button\");</code></pre>\n<p><code>querySelector</code> zwraca pierwszy pasujący element lub null. <code>querySelectorAll</code> zwraca statyczną NodeList — nie aktualizuje się automatycznie po zmianach DOM.</p>\n<h2>Zdarzenia</h2>\n<pre><code>const button = document.querySelector(\"#save\");\nfunction handleSave() {\n  console.log(\"zapisano\");\n}\nbutton.addEventListener(\"click\", handleSave);\n// przy usuwaniu: button.removeEventListener(\"click\", handleSave);</code></pre>\n<h2>Delegacja zdarzeń</h2>\n<pre><code>list.addEventListener(\"click\", (event) =&gt; {\n  const button = event.target.closest(\"button[data-id]\");\n  if (!button) return;\n  removeItem(button.dataset.id);\n});</code></pre>\n<p>Delegacja jest przydatna, gdy elementy listy są dynamiczne. Ustawiasz jeden listener na rodzicu zamiast setek na dzieciach.</p>\n<div class=\"lesson-callout\"><strong>Dostępność:</strong> klikalny <code>div</code> nie jest przyciskiem. Używaj <code>button</code>, obsługuj klawiaturę i dawaj widoczny focus. React nie naprawi złego HTML.</div>"
+    },
+    {
+      "slug": "formularze-walidacja",
+      "title": "Formularze i walidacja",
+      "summary": "submit, preventDefault, FormData, komunikaty błędów i bezpieczne renderowanie danych.",
+      "minutes": 12,
+      "body_html": "<p>Formularz to główny sposób wprowadzania danych. Przeglądarka daje walidację HTML, ale serwer i logika aplikacji muszą i tak sprawdzić dane.</p>\n<pre><code>const form = document.querySelector(\"#todo-form\");\nconst input = form.elements.title;\n\nform.addEventListener(\"submit\", (event) =&gt; {\n  event.preventDefault();\n\n  const title = input.value.trim();\n  if (title.length &lt; 3) {\n    showError(\"Tytuł musi mieć min. 3 znaki\");\n    return;\n  }\n\n  addTodo({ id: crypto.randomUUID(), title, done: false });\n  form.reset();\n});</code></pre>\n<h2>Nie wstawiaj HTML bez kontroli</h2>\n<p>Użycie <code>innerHTML</code> z danymi użytkownika może prowadzić do XSS. Preferuj <code>textContent</code> lub twórz elementy przez <code>createElement</code>.</p>\n<pre><code>// ryzykowne\nitem.innerHTML = `&lt;span&gt;${title}&lt;/span&gt;`;\n\n// bezpieczniejsze\nconst span = document.createElement(\"span\");\nspan.textContent = title;\nitem.append(span);</code></pre>\n<div class=\"lesson-callout\"><strong>Checklist formularza:</strong> label powiązany z polem, autocomplete, komunikat błędu przy polu, blokada wielokrotnego submitu i jasny stan sukcesu.</div>"
+    },
+    {
+      "slug": "storage-dostepnosc",
+      "title": "localStorage i dostępność",
+      "summary": "Trwały stan w przeglądarce, serializacja JSON i podstawy dostępności interfejsu.",
+      "minutes": 12,
+      "body_html": "<p><code>localStorage</code> przechowuje dane jako stringi i działa per origin. Nie nadaje się do sekretów ani dużych danych.</p>\n<pre><code>const KEY = \"todo-items-v1\";\n\nfunction saveTodos(todos) {\n  localStorage.setItem(KEY, JSON.stringify(todos));\n}\n\nfunction loadTodos() {\n  try {\n    return JSON.parse(localStorage.getItem(KEY) ?? \"[]\");\n  } catch {\n    return [];\n  }\n}</code></pre>\n<p>Zawsze obsługuj uszkodzony JSON i wersjonuj klucz, gdy zmienia się format danych.</p>\n<h2>Dostępność w praktyce</h2>\n<ul>\n<li>Używaj semantycznych elementów: <code>button</code>, <code>nav</code>, <code>main</code>, <code>label</code>.</li>\n<li>Nie usuwaj outline bez zamiennika. Focus musi być widoczny.</li>\n<li>Komunikaty błędów powiąż z polem przez <code>aria-describedby</code>.</li>\n<li>Nie przekazuj informacji wyłącznie kolorem.</li>\n<li>Testuj Tab, Shift+Tab, Enter i Escape.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Dobra wiadomość:</strong> dostępność to nie dodatkowa warstwa. To jakość podstawowego HTML. React pomaga ją utrzymać, jeśli tworzysz komponenty z myślą o semantyce.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-dom-b1",
+      "difficulty": "beginner",
+      "prompt": "Co zwraca document.querySelector(\"h1\")?",
+      "choices": [
+        "Wszystkie nagłówki h1",
+        "Pierwszy pasujący element lub null",
+        "Zawsze string",
+        "Tablicę elementów"
+      ],
+      "answer": 1,
+      "explanation": "querySelector zwraca pierwszy pasujący element lub null. Do wszystkich pasujących elementów służy querySelectorAll."
+    },
+    {
+      "key": "js-dom-b2",
+      "difficulty": "beginner",
+      "prompt": "Do czego służy event.preventDefault() w obsłudze formularza?",
+      "choices": [
+        "Zatrzymuje domyślne przeładowanie strony po submit.",
+        "Usuwa formularz z DOM.",
+        "Czyści wszystkie pola.",
+        "Wysyła dane na serwer."
+      ],
+      "answer": 0,
+      "explanation": "Domyślna akcja submit to wysłanie formularza i przeładowanie strony. preventDefault zatrzymuje tę akcję, gdy chcesz obsłużyć dane w JavaScript."
+    },
+    {
+      "key": "js-dom-i1",
+      "difficulty": "intermediate",
+      "prompt": "Co przechowuje localStorage?",
+      "choices": [
+        "Dowolne obiekty JavaScript",
+        "Tylko stringi",
+        "Tylko liczby",
+        "Pliki binarne bez limitu"
+      ],
+      "answer": 1,
+      "explanation": "localStorage przechowuje stringi. Obiekty trzeba serializować przez JSON.stringify i parsować przy odczycie, obsługując błędy."
+    },
+    {
+      "key": "js-dom-i2",
+      "difficulty": "intermediate",
+      "prompt": "Dlaczego delegacja zdarzeń jest przydatna dla dynamicznych list?",
+      "choices": [
+        "Pozwala ustawić jeden listener na rodzicu zamiast listenera na każdym elemencie.",
+        "Automatycznie usuwa elementy z DOM.",
+        "Blokuje wszystkie zdarzenia.",
+        "Zastępuje potrzebę używania przycisków."
+      ],
+      "answer": 0,
+      "explanation": "Jeden listener na kontenerze obsługuje także elementy dodane później. To mniej listenerów i mniejsze ryzyko wycieków pamięci."
+    },
+    {
+      "key": "js-dom-a1",
+      "difficulty": "advanced",
+      "prompt": "Który sposób wstawienia tytułu jest najbezpieczniejszy?",
+      "choices": [
+        "item.innerHTML = title",
+        "item.innerHTML = `<span>${title}</span>`",
+        "item.textContent = title",
+        "item.outerHTML = title"
+      ],
+      "answer": 2,
+      "explanation": "textContent traktuje dane jako tekst, a nie HTML. innerHTML z danymi użytkownika może pozwolić na XSS."
+    },
+    {
+      "key": "js-dom-a2",
+      "difficulty": "advanced",
+      "prompt": "Który element jest najlepszy dla akcji „dodaj zadanie”?",
+      "choices": [
+        "div z onclick",
+        "span z cursor: pointer",
+        "button type=\"submit\"",
+        "a href=\"#\""
+      ],
+      "answer": 2,
+      "explanation": "button jest semantyczny, dostępny z klawiatury i domyślnie obsługuje Enter/Space. div i span wymagają ręcznego odtwarzania zachowania przycisku."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-dom-f1",
+      "difficulty": "beginner",
+      "front": "Czym jest DOM?",
+      "back": "Drzewo obiektów reprezentujące dokument HTML. JavaScript może je odczytywać i modyfikować. Zmiany DOM mogą powodować layout i paint, więc unikaj zbędnych operacji w pętlach."
+    },
+    {
+      "key": "js-dom-f2",
+      "difficulty": "intermediate",
+      "front": "Jak bezpiecznie zapisać obiekt w localStorage?",
+      "back": "Zserializuj go przez JSON.stringify, a przy odczycie użyj JSON.parse w try/catch. Pamiętaj o wersjonowaniu klucza i obsłudze uszkodzonych danych.",
+      "front_code": "localStorage.setItem(\"todos\", JSON.stringify(todos));\nconst todos = JSON.parse(localStorage.getItem(\"todos\") ?? \"[]\");"
+    },
+    {
+      "key": "js-dom-f3",
+      "difficulty": "advanced",
+      "front": "Dlaczego semantyczny HTML jest ważny dla dostępności?",
+      "back": "Przyciski, label, nav i nagłówki mają wbudowane zachowania i role dla czytników ekranu. Zły HTML wymaga ręcznego odtwarzania klawiatury, focusu i ARIA — zwykle gorzej."
+    },
+    {
+      "key": "js-dom-f4",
+      "front": "Czym jest event bubbling?",
+      "back": "Zdarzenie wywołane na elemencie przechodzi przez jego przodków. Dzięki temu można użyć delegacji i jednego listenera na kontenerze. event.stopPropagation() zatrzymuje bąbelkowanie, ale używaj go ostrożnie."
+    },
+    {
+      "key": "js-dom-f5",
+      "front": "Kiedy użyć FormData?",
+      "back": "Do wysyłania formularzy, w tym plików, bez ręcznego składania JSON. FormData odczytuje pola po name; przy file upload pamiętaj o enctype multipart/form-data."
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{% extends "js_academy/base_js.html" %}
+
+{% block title %}JavaScript od podstaw do React Native{% endblock %}
+{% block body_class %}page-js js-home{% endblock %}
+
+{% block content %}
+<div class="page-wrap js-wrap">
+  <section class="js-hero">
+    <div class="js-hero-copy">
+      <p class="eyebrow eyebrow-js"><span class="pulse-dot" aria-hidden="true"></span> Polska ścieżka od podstaw do mobile</p>
+      <h1>Od <em>console.log()</em><br>do React Native.</h1>
+      <p class="js-lead">Najpierw zrozumiesz JavaScript, potem TypeScript, React i wreszcie React Native. Bez przeskakiwania do frameworka z dziurami w fundamentach. Wszystko po polsku, lokalnie i z praktycznymi projektami.</p>
+      <div class="hero-actions">
+        {% if continue_item %}
+          <a class="btn btn-js" href="{{ continue_item.lesson.get_absolute_url }}">Kontynuuj: {{ continue_item.lesson.title }} <span aria-hidden="true">→</span></a>
+        {% else %}
+          <a class="btn btn-js" href="{% url 'js_academy:path' %}">Zobacz ścieżkę <span aria-hidden="true">→</span></a>
+        {% endif %}
+        <a class="btn btn-ghost-dark" href="{% url 'js_academy:path' %}">Cała ścieżka <span aria-hidden="true">▤</span></a>
+      </div>
+      <div class="js-route" aria-label="Kolejność nauki">
+        <span>JavaScript</span><i aria-hidden="true">→</i><span>TypeScript</span><i aria-hidden="true">→</i><span>React</span><i aria-hidden="true">→</i><span class="js-route-target">React Native</span>
+      </div>
+    </div>
+
+    <aside class="js-progress-card">
+      <div class="js-progress-head">
+        <span class="tag tag-js-dark">Twój postęp</span>
+        <span>{{ stats.completed_modules }}/{{ stats.module_total }} modułów</span>
+      </div>
+      <div class="js-progress-ring" style="--value: {{ stats.lesson_percent }}%;">
+        <div><strong>{{ stats.lesson_percent }}%</strong><span>lekcji</span></div>
+      </div>
+      <div class="js-progress-stats">
+        <div><strong>{{ stats.completed_lessons }}</strong><span>ukończonych lekcji</span></div>
+        <div><strong>{{ stats.reviewed_cards }}</strong><span>poznanych fiszek</span></div>
+        <div><strong>{{ stats.best_score }}%</strong><span>najlepszy quiz</span></div>
+      </div>
+      <div class="js-game-strip">
+        <div><span>Poziom</span><strong>{{ stats.level_name }}</strong></div>
+        <div><span>XP</span><strong>{{ stats.xp }}</strong></div>
+        <div><span>Seria</span><strong>{{ stats.streak }} dni</strong></div>
+      </div>
+      <a class="js-progress-link" href="{% url 'js_academy:progress' %}">Zobacz pełne postępy <span aria-hidden="true">↗</span></a>
+    </aside>
+  </section>
+
+  <div class="js-stat-strip">
+    <div><strong>{{ stats.module_total }}</strong><span>modułów</span></div>
+    <div><strong>{{ stats.lesson_total }}</strong><span>lekcji</span></div>
+    <div><strong>{{ stats.demo_total }}</strong><span>dem na żywo</span></div>
+    <div><strong>{{ stats.card_total }}</strong><span>fiszek</span></div>
+    <div><strong>{{ stats.challenge_total }}</strong><span>wyzwań</span></div>
+    <div><strong>{{ stats.due_cards }}</strong><span>do powtórki</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="modules-title">
+    <div class="section-head section-head-tight">
+      <div>
+        <p class="eyebrow eyebrow-js">Plan nauki</p>
+        <h2 id="modules-title">Osiemnaście modułów. Jedna spójna droga.</h2>
+      </div>
+      <a class="text-link" href="{% url 'js_academy:path' %}">Widok całej ścieżki →</a>
+    </div>
+
+    <div class="js-module-grid">
+      {% for row in modules %}
+        <article class="js-module-card" style="--js-accent: {{ row.module.accent }};">
+          <a class="js-module-link" href="{{ row.module.get_absolute_url }}">
+            <div class="js-module-top">
+              <span class="js-module-glyph">{{ row.module.glyph }}</span>
+              <span class="js-level js-level-{{ row.module.level }}">{{ row.module.get_level_display }}</span>
+            </div>
+            <h3>{{ row.module.title }}</h3>
+            <p>{{ row.module.subtitle }}</p>
+            <div class="js-module-meta">
+              <span>{{ row.lesson_total }} lekcji</span>
+              <span>{{ row.module.duration_minutes }} min</span>
+              {% if row.best_score %}<span>quiz {{ row.best_score }}%</span>{% endif %}
+            </div>
+            <div class="js-module-progress">
+              <div class="progress-label"><span>Ukończone</span><strong>{{ row.lesson_percent }}%</strong></div>
+              <div class="progress-track progress-track-dark"><span style="--bar: {{ row.lesson_percent }}%;"></span></div>
+            </div>
+            <div class="js-module-foot">
+              {% if row.next_lesson %}
+                <span>Następna: {{ row.next_lesson.title }}</span>
+                <span aria-hidden="true">→</span>
+              {% elif row.lesson_total %}
+                <span>Moduł ukończony — czas na quiz</span>
+                <span aria-hidden="true">✓</span>
+              {% else %}
+                <span>Wkrótce</span>
+              {% endif %}
+            </div>
+          </a>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="js-how" aria-labelledby="how-title">
+    <div class="js-how-intro">
+      <p class="eyebrow eyebrow-js">Jak tu pracować</p>
+      <h2 id="how-title">Czytaj. Przepisuj. Buduj. Sprawdzaj.</h2>
+      <p>Nie klikaj lekcji jak serialu. Po każdym przykładzie napisz własny wariant i sprawdź go w konsoli. Dopiero potem quiz.</p>
+    </div>
+    <div class="js-how-steps">
+      <div><span>01</span><h3>Lekcja</h3><p>Zrozum pojęcie i przepisz przykład bez kopiowania.</p></div>
+      <div><span>02</span><h3>Quiz</h3><p>Sprawdź, czy potrafisz wyjaśnić „dlaczego”, nie tylko „co”.</p></div>
+      <div><span>03</span><h3>Fiszki</h3><p>Powtarzaj definicje i pułapki, aż odpowiedź będzie automatyczna.</p></div>
+      <div><span>04</span><h3>Projekt</h3><p>Połącz moduły w małą aplikację. To ona idzie do portfolio.</p></div>
+    </div>
+  </section>
+
+  <section class="js-daily-grid" aria-labelledby="daily-title">
+    <div class="js-daily-intro">
+      <p class="eyebrow eyebrow-js">Na dziś</p>
+      <h2 id="daily-title">Jedna ciekawostka.<br>Jedno wyzwanie.</h2>
+      <p>Mała dawka codziennie działa lepiej niż jeden wielki zryw. Wróć jutro po nową.</p>
+    </div>
+    {% if fact_of_day %}
+      <a class="js-daily-card js-daily-fact" href="{% url 'js_academy:facts' %}">
+        <span class="tag tag-js-dark">Ciekawostka · {{ fact_of_day.category }}</span>
+        <h3>{{ fact_of_day.title }}</h3>
+        <p>{{ fact_of_day.body|truncatewords:32 }}</p>
+        <span class="js-daily-link">Więcej ciekawostek →</span>
+      </a>
+    {% endif %}
+    {% if challenge_of_day %}
+      <a class="js-daily-card js-daily-challenge" href="{{ challenge_of_day.get_absolute_url }}">
+        <span class="tag tag-js-dark">{{ challenge_of_day.get_difficulty_display }} · +{{ challenge_of_day.xp }} XP</span>
+        <h3>{{ challenge_of_day.title }}</h3>
+        <p>Napisz funkcję <code>solve</code> i sprawdź ją automatycznymi testami w przeglądarce.</p>
+        <span class="js-daily-link">Otwórz wyzwanie →</span>
+      </a>
+    {% endif %}
+  </section>
+
+  {% if recent_attempts %}
+    <section class="section" aria-labelledby="recent-js-title">
+      <div class="section-head section-head-tight">
+        <div><p class="eyebrow eyebrow-js">Ostatnie quizy</p><h2 id="recent-js-title">Wróć do trudnych tematów.</h2></div>
+        <a class="text-link" href="{% url 'js_academy:progress' %}">Wszystkie wyniki →</a>
+      </div>
+      <div class="js-recent-grid">
+        {% for attempt in recent_attempts %}
+          <a class="js-recent" href="{% url 'js_academy:quiz_results' attempt.pk %}">
+            <span class="tag tag-js-dark">{{ attempt.module.title }}</span>
+            <strong>{{ attempt.score_percent }}%</strong>
+            <span>{{ attempt.correct_count }}/{{ attempt.length }} poprawnych · {{ attempt.started_at|timesince }} temu</span>
+            <span class="js-recent-link">Zobacz odpowiedzi →</span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  <a class="js-ai-band" href="{% url 'js_academy:ai_career' %}">
+    <span class="js-ai-band-mark">AI</span>
+    <div>
+      <p class="eyebrow eyebrow-js">Specjalna sekcja · fakty i źródła</p>
+      <strong>AI a praca programisty: co naprawdę wynika z danych?</strong>
+      <p>80% używa AI, 29% ufa jej dokładności, 66% poprawia „prawie dobry” kod. Sprawdź liczby, źródła i wniosek dla nauki JS/React.</p>
+    </div>
+    <span class="js-ai-band-link">Otwórz sekcję →</span>
+  </a>
+
+  <a class="js-ai-band js-ai-band-components" href="{% url 'js_academy:components' %}">
+    <span class="js-ai-band-mark">◧</span>
+    <div>
+      <p class="eyebrow eyebrow-js">Nowa biblioteka</p>
+      <strong>13 gotowych komponentów HTML / CSS / JS</strong>
+      <p>Koszyk, walidacja, debounce, taby, dialog, toasty, tabela, upload, countdown, gwiazdki, canvas i drag &amp; drop — z podglądem i kodem.</p>
+    </div>
+    <span class="js-ai-band-link">Otwórz bibliotekę →</span>
+  </a>
+
+  <div class="js-bottom-cta">
+    <div><p class="eyebrow eyebrow-js-dark">Najpierw fundament</p><h2>Nie zaczynaj Reacta od „useEffect”.</h2><p>Moduł pierwszy daje Ci model mentalny, bez którego hooki są zgadywaniem.</p></div>
+    <a class="btn btn-js" href="{% url 'js_academy:module' 'fundamenty-js' %}">Zacznij od fundamentów <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+{% endblock %}

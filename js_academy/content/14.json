@@ -1,0 +1,167 @@
+{
+  "module": {
+    "slug": "javascript-ai",
+    "title": "JavaScript + AI",
+    "subtitle": "Strumieniowanie, kontekst, RAG, guardrails i koszty w aplikacji LLM.",
+    "description": "AI w frontendzie to nie tylko pole promptu. Ten moduł uczy bezpiecznie połączyć JavaScript z modelem: streaming, anulowanie, kontekst, cytowania, walidację i ewaluację.",
+    "level": "advanced",
+    "glyph": "14",
+    "accent": "#A78BFA",
+    "duration_minutes": 75,
+    "outcomes": [
+      "Obsługujesz strumieniowanie odpowiedzi i anulowanie żądania.",
+      "Rozumiesz tokeny, kontekst i rolę RAG.",
+      "Rozpoznajesz prompt injection i projektujesz least privilege.",
+      "Walidujesz odpowiedzi i mierzysz jakość, koszt oraz opóźnienie."
+    ],
+    "project_title": "Asystent notatek z cytowaniami",
+    "project_brief": "Zbuduj interfejs, który wysyła pytanie do backendu LLM, streamuje odpowiedź, pozwala ją zatrzymać i pokazuje źródła. Bez klucza API w przeglądarce.",
+    "project_steps": [
+      "Zaprojektuj endpoint backendu proxujący model.",
+      "Dodaj streaming lub symulację tokenów.",
+      "Dodaj przycisk Stop i obsługę błędów.",
+      "Dodaj walidację odpowiedzi i źródła."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "streaming-fetch",
+      "title": "Strumieniowanie i anulowanie",
+      "summary": "ReadableStream, SSE, AbortController i obsługa błędów w UI.",
+      "minutes": 16,
+      "body_html": "<p>Model może generować odpowiedź przez kilka sekund. Zamiast czekać na całość, streamuj fragmenty. Użytkownik widzi postęp, a Ty możesz przerwać kosztowne generowanie.</p>\n<pre><code>const controller = new AbortController();\n\nconst response = await fetch(\"/api/chat\", {\n  method: \"POST\",\n  headers: { \"Content-Type\": \"application/json\" },\n  body: JSON.stringify({ message }),\n  signal: controller.signal,\n});\n\nif (!response.ok) throw new Error(\"HTTP \" + response.status);\n\nconst reader = response.body.getReader();\nconst decoder = new TextDecoder();\n\nwhile (true) {\n  const { value, done } = await reader.read();\n  if (done) break;\n  const text = decoder.decode(value, { stream: true });\n  appendToOutput(text);\n}</code></pre>\n<h2>SSE</h2>\n<p>Serwer może wysyłać zdarzenia <code>data:</code>. Wtedy parsujesz linie i reagujesz na eventy. Zawsze obsłuż niepełne linie i zamknięcie strumienia.</p>\n<div class=\"lesson-callout\"><strong>Bezpieczeństwo:</strong> klucz API modelu zostaje na backendzie. Przeglądarka dostaje tylko własny, uwierzytelniony endpoint. Nigdy nie wkładaj sekretu do bundle'a.</div>"
+    },
+    {
+      "slug": "kontekst-rag",
+      "title": "Kontekst, tokeny i RAG",
+      "summary": "Dlaczego model nie pamięta aplikacji i jak dostarczyć mu właściwe źródła.",
+      "minutes": 15,
+      "body_html": "<p>Model nie zna Twojej bazy danych. Otrzymuje tylko to, co wyśle aplikacja: instrukcje, historię i fragmenty dokumentów. Tokeny są limitem i kosztem, więc kontekst trzeba projektować.</p>\n<h2>RAG w praktyce</h2>\n<pre><code>1. pytanie użytkownika\n2. embedding zapytania\n3. wyszukanie najlepszych fragmentów\n4. filtr uprawnień i tenanta\n5. prompt z oznaczonymi źródłami\n6. odpowiedź + cytowania\n</code></pre>\n<p>Fragmenty muszą mieć metadane: dokument, stronę, sekcję, tenant. Cytowanie to nie ozdoba — pozwala zweryfikować odpowiedź.</p>\n<h2>Historia rozmowy</h2>\n<p>Nie wysyłaj nieskończonej historii. Podsumowuj starsze tury i pobieraj tylko istotne informacje. Pamiętaj, że „pamięć” aplikacji to zwykle baza, nie model.</p>\n<div class=\"lesson-callout\"><strong>Pytanie kontrolne:</strong> czy odpowiedź można sprawdzić w źródle? Jeśli nie, może to być ładnie brzmiąca halucynacja.</div>"
+    },
+    {
+      "slug": "guardrails-evals",
+      "title": "Guardrails, ewaluacja i koszt",
+      "summary": "Walidacja odpowiedzi, prompt injection, testy jakości i budżet tokenów.",
+      "minutes": 16,
+      "body_html": "<p>Model jest niedeterministyczny i może być manipulowany przez treść. Nie traktuj jego odpowiedzi jako zaufanego kodu ani decyzji biznesowej.</p>\n<h2>Walidacja</h2>\n<pre><code>const parsed = PlanSchema.safeParse(JSON.parse(raw));\nif (!parsed.success) {\n  return fallback(\"Nie udało się przetworzyć odpowiedzi\");\n}\n// Dopiero potem wykonuj akcję — i nadal sprawdź uprawnienia.\n</code></pre>\n<h2>Prompt injection</h2>\n<p>Treść dokumentu może zawierać instrukcję „zignoruj zasady”. Model nie odróżnia jej niezawodnie od polecenia systemowego. Ogranicz narzędzia, waliduj argumenty i wymagaj zatwierdzenia dla ryzykownych akcji.</p>\n<h2>Ewaluacja</h2>\n<p>Zbuduj zestaw przypadków: poprawne odpowiedzi, odmowy, próby injection, brak źródeł, zbyt długi kontekst. Mierz jakość, koszt i opóźnienie. Zmiana promptu to zmiana produkcyjna.</p>\n<div class=\"lesson-callout\"><strong>Budżet:</strong> ustaw limit tokenów na użytkownika/tenant, kadź odpowiedzi, ale nie kosztem bezpieczeństwa. Cięcie kontekstu może pogorszyć jakość.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-ai-b1",
+      "difficulty": "beginner",
+      "prompt": "Dlaczego klucz API modelu nie powinien być w frontendzie?",
+      "code": "",
+      "choices": [
+        "Każdy użytkownik mógłby go przejąć i użyć poza aplikacją",
+        "Przeglądarka nie obsługuje HTTPS",
+        "Zwiększa to rozmiar CSS",
+        "Model nie przyjmuje kluczy"
+      ],
+      "answer": 0,
+      "explanation": "Bundle jest publiczny. Klucz musi zostać na backendzie, który uwierzytelnia użytkownika i egzekwuje limity."
+    },
+    {
+      "key": "js-ai-b2",
+      "difficulty": "beginner",
+      "prompt": "Co to jest RAG?",
+      "code": "",
+      "choices": [
+        "Wyszukanie źródeł i dołączenie ich do kontekstu modelu",
+        "Trenowanie modelu na każde pytanie",
+        "Kompresja obrazów",
+        "Rodzaj CSS"
+      ],
+      "answer": 0,
+      "explanation": "RAG łączy retrieval z generowaniem. Jakość zależy od wyszukiwania, fragmentacji, uprawnień i cytowań."
+    },
+    {
+      "key": "js-ai-i1",
+      "difficulty": "intermediate",
+      "prompt": "Po co używać AbortController przy streamingu?",
+      "code": "",
+      "choices": [
+        "Aby przerwać generowanie i zwolnić zasoby",
+        "Aby przyspieszyć model",
+        "Aby ominąć CORS",
+        "Aby zapisać odpowiedź w cache"
+      ],
+      "answer": 0,
+      "explanation": "AbortController przerywa fetch i strumień. UI może pokazać „Zatrzymano” zamiast dalej dopisywać tekst."
+    },
+    {
+      "key": "js-ai-i2",
+      "difficulty": "intermediate",
+      "prompt": "Czym jest prompt injection?",
+      "code": "",
+      "choices": [
+        "Treść próbująca zmienić instrukcje lub wywołać niebezpieczne narzędzie",
+        "Błąd składni JavaScript",
+        "Atak na CSS",
+        "Timeout API"
+      ],
+      "answer": 0,
+      "explanation": "Może przyjść z dokumentu, strony, e-maila lub wyniku narzędzia. Sam prompt nie wystarczy — potrzebne są uprawnienia i walidacja."
+    },
+    {
+      "key": "js-ai-a1",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego odpowiedź modelu trzeba walidować schematem?",
+      "code": "",
+      "choices": [
+        "Model może zwrócić zły kształt, typ lub brak pola",
+        "JSON zawsze jest poprawny",
+        "Schema zastępuje autoryzację",
+        "Walidacja zmniejsza liczbę tokenów"
+      ],
+      "answer": 0,
+      "explanation": "Nawet z structured output mogą wystąpić błędy. Waliduj dane i reguły biznesowe przed użyciem."
+    },
+    {
+      "key": "js-ai-a2",
+      "difficulty": "advanced",
+      "prompt": "Co powinien zawierać zestaw ewaluacyjny LLM?",
+      "code": "",
+      "choices": [
+        "Reprezentatywne przypadki, edge case'y i próby injection",
+        "Tylko pytanie „cześć”",
+        "Tylko najdłuższy prompt",
+        "Tylko metrykę liczby tokenów"
+      ],
+      "answer": 0,
+      "explanation": "Ewaluacja musi obejmować jakość, bezpieczeństwo, odmowy, koszt i opóźnienie. Inaczej optymalizujesz jedną metrykę kosztem produktu."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-ai-f1",
+      "front": "Jak działa streaming LLM?",
+      "back": "Serwer proxuje strumień (np. SSE), a frontend czyta ReadableStream i dopisuje fragmenty. Użytkownik widzi postęp i może przerwać przez AbortController.",
+      "hint": ""
+    },
+    {
+      "key": "js-ai-f2",
+      "front": "Czym są tokeny i kontekst?",
+      "back": "Model przetwarza tekst w tokenach. Okno kontekstu obejmuje instrukcje, historię, źródła i odpowiedź. Dłuższy kontekst to większy koszt i opóźnienie.",
+      "hint": ""
+    },
+    {
+      "key": "js-ai-f3",
+      "front": "Czym jest prompt injection?",
+      "back": "Próba zmiany instrukcji przez niezaufaną treść, np. dokument lub wynik narzędzia. Bronią jest least privilege, walidacja i zatwierdzanie akcji.",
+      "hint": ""
+    },
+    {
+      "key": "js-ai-f4",
+      "front": "Jak oceniać funkcję AI?",
+      "back": "Użyj zestawu przypadków, deterministycznych asercji, oceny człowieka lub modelu jako wsparcia oraz metryk kosztu i opóźnienia. Śledź regresje przy każdej zmianie.",
+      "hint": ""
+    },
+    {
+      "key": "js-ai-f5",
+      "front": "Jak przerwać generowanie?",
+      "back": "Zapisz AbortController, przekaż signal do fetch, a przy kliknięciu „Stop” wywołaj abort(). Obsłuż AbortError bez pokazywania błędu użytkownikowi.",
+      "hint": ""
+    }
+  ]
+}

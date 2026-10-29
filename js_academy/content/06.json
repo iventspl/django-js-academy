@@ -1,0 +1,160 @@
+{
+  "module": {
+    "slug": "react-architektura",
+    "title": "React — hooki i architektura",
+    "subtitle": "Własne hooki, context, reducer i wydajność bez przedwczesnej optymalizacji.",
+    "description": "Nauczysz się wyciągać logikę z komponentów, dzielić stan odpowiedzialnie i mierzyć wydajność zamiast zgadywać, gdzie wstawić memo.",
+    "level": "advanced",
+    "glyph": "06",
+    "accent": "#A78BFA",
+    "duration_minutes": 75,
+    "outcomes": [
+      "Tworzysz własne hooki z jasnym kontraktem i testujesz je.",
+      "Używasz context i useReducer bez robienia globalnego monolitu.",
+      "Podnosisz stan tylko tak wysoko, jak wymaga współpraca komponentów.",
+      "Rozumiesz React.memo, useMemo i useCallback oraz ich koszty."
+    ],
+    "project_title": "Mini sklep z filtrami i koszykiem",
+    "project_brief": "Zbuduj listę produktów z wyszukiwaniem, filtrem kategorii i koszykiem. Wydziel logikę filtrowania i koszyka do hooków, a stan współdzielony obsłuż świadomie.",
+    "project_steps": [
+      "Zaprojektuj kształt stanu koszyka i filtrów.",
+      "Wydziel useProductFilters i useCart.",
+      "Dodaj context tylko dla danych potrzebnych w wielu miejscach.",
+      "Zmierz renderowanie listy i dodaj optymalizację dopiero po pomiarze."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "custom-hooks",
+      "title": "Własne hooki",
+      "summary": "Jak wyciągnąć logikę bez łamania zasad hooków i utrzymać czytelne API.",
+      "minutes": 15,
+      "body_html": "<p>Własny hook to funkcja, która zaczyna się od <code>use</code> i może wywoływać inne hooki. Służy do współdzielenia logiki stanowej, nie do dziedziczenia komponentów.</p>\n<pre><code>import { useEffect, useState } from \"react\";\n\nexport function useDebouncedValue(value: string, delay = 300) {\n  const [debounced, setDebounced] = useState(value);\n\n  useEffect(() =&gt; {\n    const id = setTimeout(() =&gt; setDebounced(value), delay);\n    return () =&gt; clearTimeout(id);\n  }, [value, delay]);\n\n  return debounced;\n}</code></pre>\n<p>Użycie:</p>\n<pre><code>const [query, setQuery] = useState(\"\");\nconst debouncedQuery = useDebouncedValue(query);</code></pre>\n<h2>Dobre API hooka</h2>\n<ul>\n<li>Konkretny problem: <code>useCart</code>, <code>useDebouncedValue</code>, <code>useFetchUser</code>.</li>\n<li>Jawne dane wejściowe i wyjściowe; unikaj zwracania ogromnego obiektu z wszystkim.</li>\n<li>Brak ukrytych zależności od globalnego kontekstu, jeśli nie jest to celowe.</li>\n<li>Testy logiki bez renderowania całej strony, gdy to możliwe.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Nie każda funkcja to hook.</strong> Jeśli nie używa hooków ani stanu, zwykła funkcja jest prostsza i łatwiejsza do testowania.</div>"
+    },
+    {
+      "slug": "context-reducer",
+      "title": "Context i useReducer",
+      "summary": "Współdzielony stan bez prop drillingu i złożone przejścia stanu w jednym miejscu.",
+      "minutes": 16,
+      "body_html": "<p><strong>Context</strong> rozwiązuje problem przekazywania tych samych danych przez wiele poziomów. Nie jest globalnym magazynem na wszystko — nadal ma właściciela i zakres.</p>\n<pre><code>type CartContextValue = {\n  items: CartItem[];\n  add: (item: CartItem) =&gt; void;\n  remove: (id: string) =&gt; void;\n};\n\nconst CartContext = createContext&lt;CartContextValue | null&gt;(null);\n\nfunction CartProvider({ children }: { children: React.ReactNode }) {\n  const [items, dispatch] = useReducer(cartReducer, []);\n  const value = {\n    items,\n    add: (item) =&gt; dispatch({ type: \"add\", item }),\n    remove: (id) =&gt; dispatch({ type: \"remove\", id }),\n  };\n  return &lt;CartContext value={value}&gt;{children}&lt;/CartContext&gt;;\n}</code></pre>\n<p>W React 19 możesz renderować provider jako <code>&lt;Context value=...&gt;</code>. W starszych wersjach użyj <code>&lt;Context.Provider&gt;</code>.</p>\n<h2>useReducer</h2>\n<p>Reducer przenosi logikę przejść do czystej funkcji <code>(state, action) =&gt; state</code>. To dobre dla koszyka, kreatora wieloetapowego lub złożonych filtrów. Nie każdy stan potrzebuje reducera.</p>\n<div class=\"lesson-callout\"><strong>Wydajność contextu:</strong> zmiana wartości contextu renderuje wszystkich konsumentów. Dziel konteksty według częstotliwości zmian i unikaj wkładania do jednego obiektu wszystkiego.</div>"
+    },
+    {
+      "slug": "kompozycja-wydajnosc",
+      "title": "Kompozycja i wydajność",
+      "summary": "Podnoszenie stanu, dzieci jako kompozycja oraz kiedy naprawdę potrzebujesz memo.",
+      "minutes": 15,
+      "body_html": "<p>React zachęca do kompozycji: przekazujesz JSX jako <code>children</code>, zamiast tworzyć dziesiątki propsów-konfiguracji.</p>\n<pre><code>function Card({ title, children }: { title: string; children: React.ReactNode }) {\n  return (\n    &lt;section className=\"card\"&gt;\n      &lt;h2&gt;{title}&lt;/h2&gt;\n      {children}\n    &lt;/section&gt;\n  );\n}</code></pre>\n<h2>Gdzie trzymać stan?</h2>\n<p>Stan trzymaj najniżej, jak się da, ale wystarczająco wysoko, aby wszystkie potrzebujące komponenty miały do niego dostęp. Jeśli dwa komponenty muszą być zsynchronizowane, wspólny rodzic jest zwykle lepszy niż globalny store.</p>\n<h2>memo, useMemo, useCallback</h2>\n<pre><code>const Row = memo(function Row({ item }: { item: Item }) {\n  return &lt;li&gt;{item.name}&lt;/li&gt;;\n});\n\nconst handleSelect = useCallback((id: string) =&gt; {\n  setSelectedId(id);\n}, []);</code></pre>\n<p><code>memo</code> porównuje propsy płytko. <code>useMemo</code> zapamiętuje wartość, a <code>useCallback</code> funkcję. Każde z nich ma koszt. Najpierw zmierz, potem optymalizuj. Często lepszym rozwiązaniem jest mniejszy komponent lub przesunięcie stanu niżej.</p>\n<div class=\"lesson-callout\"><strong>Antywzorzec:</strong> owijanie wszystkiego w memo „na wszelki wypadek”. To zwiększa złożoność i rzadko rozwiązuje rzeczywisty bottleneck.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-react-arch-b1",
+      "difficulty": "beginner",
+      "prompt": "Jak musi zaczynać się nazwa własnego hooka?",
+      "choices": [
+        "Od get",
+        "Od use",
+        "Od hook",
+        "Od react"
+      ],
+      "answer": 1,
+      "explanation": "Konwencja use jest wymagana przez linter i pomaga Reactowi oraz programistom rozpoznać, że funkcja może wywoływać hooki."
+    },
+    {
+      "key": "js-react-arch-b2",
+      "difficulty": "beginner",
+      "prompt": "Jaki problem rozwiązuje context?",
+      "choices": [
+        "Prop drilling — przekazywanie tych samych danych przez wiele poziomów.",
+        "Brak internetu.",
+        "Wszystkie problemy wydajności.",
+        "Potrzebę używania stanu."
+      ],
+      "answer": 0,
+      "explanation": "Context udostępnia wartość poddrzewu bez przekazywania jej przez każdy poziom propsów. Nie zastępuje jednak lokalnego stanu ani nie jest domyślnie optymalny wydajnościowo."
+    },
+    {
+      "key": "js-react-arch-i1",
+      "difficulty": "intermediate",
+      "prompt": "Kiedy useReducer jest lepszy od wielu useState?",
+      "choices": [
+        "Gdy przejścia stanu są złożone i zależą od poprzedniego stanu oraz akcji.",
+        "Zawsze, bo useState jest przestarzały.",
+        "Tylko w React Native.",
+        "Gdy nie ma stanu."
+      ],
+      "answer": 0,
+      "explanation": "Reducer porządkuje złożone przejścia i pozwala testować logikę jako czystą funkcję. Dla prostego licznika useState jest czytelniejszy."
+    },
+    {
+      "key": "js-react-arch-i2",
+      "difficulty": "intermediate",
+      "prompt": "Co oznacza podniesienie stanu (lifting state up)?",
+      "choices": [
+        "Przeniesienie stanu do wspólnego rodzica, aby kilka komponentów mogło go używać.",
+        "Przeniesienie stanu do bazy danych.",
+        "Usunięcie wszystkich propsów.",
+        "Użycie contextu zamiast komponentów."
+      ],
+      "answer": 0,
+      "explanation": "Jeśli dwa komponenty muszą współdzielić stan, przenosi się go do najbliższego wspólnego przodka i przekazuje dane oraz callbacki w dół."
+    },
+    {
+      "key": "js-react-arch-a1",
+      "difficulty": "advanced",
+      "prompt": "Kiedy React.memo może nie przynieść korzyści?",
+      "choices": [
+        "Gdy komponent i tak często dostaje nowe referencje propsów lub jest tani w renderowaniu.",
+        "Gdy komponent ma propsy.",
+        "Gdy używa JSX.",
+        "Zawsze przynosi korzyść."
+      ],
+      "answer": 0,
+      "explanation": "memo porównuje propsy płytko. Nowe obiekty/funkcje przy każdym renderze niweczą optymalizację, a dla taniego komponentu narzut może przewyższyć zysk."
+    },
+    {
+      "key": "js-react-arch-a2",
+      "difficulty": "advanced",
+      "prompt": "Po co useCallback, jeśli funkcja i tak jest tworzona przy renderze?",
+      "choices": [
+        "Aby zachować tę samą referencję funkcji między renderami, gdy zależy od niej memo lub efekt.",
+        "Aby funkcja działała szybciej w JavaScript.",
+        "Aby zastąpić useState.",
+        "Aby uniknąć wszystkich renderów."
+      ],
+      "answer": 0,
+      "explanation": "useCallback nie czyni funkcji szybszą. Stabilizuje referencję, co ma znaczenie, gdy przekazujesz funkcję do memoizowanego dziecka lub używasz jej w zależnościach efektu."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-react-arch-f1",
+      "difficulty": "beginner",
+      "front": "Kiedy wydzielić własny hook?",
+      "back": "Gdy powtarzasz logikę stanową lub efektową w kilku komponentach, albo gdy komponent stał się zbyt trudny do przeczytania. Hook powinien mieć konkretne, nazwane API — nie być workiem na wszystko."
+    },
+    {
+      "key": "js-react-arch-f2",
+      "difficulty": "intermediate",
+      "front": "Context czy zwykłe propsy?",
+      "back": "Props są prostsze i bardziej jawne, dopóki nie trzeba ich przekazywać przez wiele poziomów. Context wybierz dla danych faktycznie współdzielonych w poddrzewie: motyw, sesja, koszyk. Dziel go, gdy różne części zmieniają się niezależnie.",
+      "front_code": "const CartContext = createContext<CartValue | null>(null);"
+    },
+    {
+      "key": "js-react-arch-f3",
+      "difficulty": "advanced",
+      "front": "Jak podchodzić do optymalizacji Reacta?",
+      "back": "Najpierw zmierz (React DevTools Profiler), potem zmniejsz zakres renderów, przesuń stan niżej lub popraw strukturę komponentów. Dopiero potem memo/useMemo/useCallback. Optymalizacja bez pomiaru często dodaje złożoność bez zysku."
+    },
+    {
+      "key": "js-react-arch-f4",
+      "front": "Kiedy dzielić context?",
+      "back": "Gdy różne części wartości zmieniają się niezależnie i powodują zbędne rendery. Rozdziel np. motyw, sesję i koszyk, zamiast wkładać wszystko do jednego obiektu."
+    },
+    {
+      "key": "js-react-arch-f5",
+      "front": "useReducer czy useState?",
+      "back": "useState dla prostego, niezależnego stanu. useReducer gdy przejścia są złożone, zależą od poprzedniego stanu i chcesz testować logikę jako czystą funkcję."
+    }
+  ]
+}

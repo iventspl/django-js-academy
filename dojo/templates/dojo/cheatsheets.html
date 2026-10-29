@@ -1,0 +1,102 @@
+{% extends "dojo/base.html" %}
+{% load dojo_extras %}
+
+{% block title %}Cheatsheets · real-world Django recipes{% endblock %}
+{% block body_class %}page-cheatsheets{% endblock %}
+
+{% block content %}
+<div class="page-wrap guide-wrap">
+  <header class="guide-page-header">
+    <div>
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Field notes · {{ total_count }} recipes</p>
+      <h1>Cheatsheets<br><em>for real Django work.</em></h1>
+      <p class="page-lead">Each recipe starts with the situation, gives you a pattern you can adapt, and names the traps that usually bite in production. Search by keyword or filter by category.</p>
+    </div>
+    <div class="guide-page-stats">
+      <div><strong>{{ total_count }}</strong><span>recipes</span></div>
+      <div><strong>{{ categories|length }}</strong><span>categories</span></div>
+      <div><strong>0</strong><span>magic</span></div>
+    </div>
+  </header>
+
+  <form class="recipe-toolbar" method="get" role="search">
+    <div class="recipe-search">
+      <label class="sr-only" for="recipe-q">Search cheatsheets</label>
+      <span aria-hidden="true">⌕</span>
+      <input id="recipe-q" type="search" name="q" value="{{ search_query }}" placeholder="Search: uploads, webhook, N+1, permissions…">
+      {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+    </div>
+    <button class="btn btn-primary btn-small" type="submit">Search</button>
+    {% if search_query or active_category %}<a class="recipe-clear" href="{% url 'dojo:cheatsheets' %}">Clear</a>{% endif %}
+  </form>
+
+  <nav class="category-chips" aria-label="Filter by category">
+    <a class="category-chip {% if not active_category %}is-active{% endif %}" href="{% url 'dojo:cheatsheets' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}">All</a>
+    {% for category in categories %}
+      <a class="category-chip {% if active_category == category %}is-active{% endif %}" href="{% url 'dojo:cheatsheets' %}?category={{ category|urlencode }}{% if search_query %}&amp;q={{ search_query|urlencode }}{% endif %}">{{ category }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="recipe-countline">
+    <span>{{ result_count }} recipe{{ result_count|pluralize }} in view</span>
+    {% if search_query %}<span>matching “{{ search_query }}”</span>{% endif %}
+    {% if active_category %}<span>in {{ active_category }}</span>{% endif %}
+  </div>
+
+  <div class="recipe-list">
+    {% for recipe in recipes %}
+      <details class="recipe" id="recipe-{{ recipe.key }}" {% if result_count == 1 %}open{% endif %}>
+        <summary>
+          <span class="recipe-number">{{ forloop.counter|stringformat:"02d" }}</span>
+          <span class="recipe-summary-main">
+            <span class="recipe-category">{{ recipe.category }}</span>
+            <strong>{{ recipe.title }}</strong>
+            <span class="recipe-summary-text">{{ recipe.summary }}</span>
+          </span>
+          <span class="recipe-toggle" aria-hidden="true">+</span>
+        </summary>
+        <div class="recipe-body">
+          <div class="recipe-context">
+            <div>
+              <p class="eyebrow eyebrow-dark">When to use it</p>
+              <p>{{ recipe.when_to_use }}</p>
+            </div>
+            {% if recipe.topic %}
+              <a class="recipe-topic" href="{% url 'dojo:quiz_setup' %}?topic={{ recipe.topic.slug }}">
+                <span class="topic-glyph topic-glyph-small" style="--accent: {{ recipe.topic.accent }};">{{ recipe.topic.glyph }}</span>
+                <span>Practice {{ recipe.topic.name }} <span aria-hidden="true">→</span></span>
+              </a>
+            {% endif %}
+          </div>
+
+          <div class="code-block recipe-code">
+            <div class="code-bar"><span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>{{ recipe.language }}</span><button class="copy-code" type="button" data-copy-code>Copy</button></div>
+            <pre><code>{{ recipe.code }}</code></pre>
+          </div>
+
+          {% if recipe.pitfalls %}
+            <div class="recipe-pitfalls">
+              <p class="eyebrow eyebrow-dark">Production traps</p>
+              <ul>
+                {% for pitfall in recipe.pitfalls|lines %}<li>{{ pitfall }}</li>{% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        </div>
+      </details>
+    {% empty %}
+      <div class="guide-empty">
+        <span class="empty-mark" aria-hidden="true">0</span>
+        <h2>No recipe matches that.</h2>
+        <p>Try a broader keyword or clear the category filter.</p>
+        <a class="btn btn-primary" href="{% url 'dojo:cheatsheets' %}">Reset the search</a>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="guide-bottom-cta">
+    <div><p class="eyebrow eyebrow-light">Want the whole shape?</p><h2>Recipes are ingredients. Blueprints are the meal.</h2></div>
+    <a class="btn btn-primary" href="{% url 'dojo:blueprints' %}">Study app blueprints <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+{% endblock %}

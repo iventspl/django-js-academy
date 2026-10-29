@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "ai-integration",
+    "name": "AI Integration Architecture",
+    "tagline": "LLM boundaries, RAG, tools, evals, guardrails, and cost control.",
+    "description": "The valuable AI skill is not memorising prompts. It is designing a controllable system around probabilistic components: retrieval, tool permissions, structured contracts, evaluation, privacy, latency, and graceful failure.",
+    "glyph": "ai",
+    "accent": "#B8A1FF"
+  },
+  "questions": [
+    {
+      "key": "ai-integration-b1",
+      "difficulty": "beginner",
+      "prompt": "How should your application treat a typical LLM API call?",
+      "choices": [
+        "As an external, stateless service where your app supplies the relevant context and validates the result.",
+        "As a local database that remembers every user forever.",
+        "As a trusted source of facts that needs no verification.",
+        "As a synchronous function that can never time out."
+      ],
+      "answer": 0,
+      "explanation": "Most LLM APIs are request/response services. Your app owns conversation state, retrieval, permissions, and persistence. Treat outputs as untrusted suggestions that must pass validation, policy checks, and often human review."
+    },
+    {
+      "key": "ai-integration-b2",
+      "difficulty": "beginner",
+      "prompt": "What is retrieval-augmented generation (RAG)?",
+      "choices": [
+        "Retrieve relevant documents from your data, add them to the model's context, and generate an answer grounded in them.",
+        "Fine-tune a model on every user request.",
+        "A database migration technique.",
+        "A method for compressing images."
+      ],
+      "answer": 0,
+      "explanation": "RAG keeps proprietary or fast-changing knowledge outside the model. It retrieves candidate passages, ranks/trims them, and includes them in the prompt. Quality depends on ingestion, chunking, retrieval, citations, and evaluation — not only the model."
+    },
+    {
+      "key": "ai-integration-b3",
+      "difficulty": "beginner",
+      "prompt": "What is a token in an LLM system?",
+      "choices": [
+        "A small unit of text the model processes and bills against; it is not necessarily a word.",
+        "A user login credential.",
+        "A database row.",
+        "A GPU."
+      ],
+      "answer": 0,
+      "explanation": "Text is tokenised into subword units. Context limits and pricing are measured in tokens. Long documents, chat history, retrieved chunks, and outputs all consume budget, so measure rather than assuming character counts are equivalent."
+    },
+    {
+      "key": "ai-integration-b4",
+      "difficulty": "beginner",
+      "prompt": "What happens in tool calling?",
+      "choices": [
+        "The model proposes a structured call; your application authorises and executes it, then returns the result.",
+        "The model directly runs arbitrary code on your server.",
+        "The model bypasses all permissions.",
+        "The model writes to the database without validation."
+      ],
+      "answer": 0,
+      "explanation": "Tool calling is a contract between model and application. The model emits a name and arguments; your code validates, authorises, executes, and returns a result. Never grant a model unchecked database or shell access."
+    },
+    {
+      "key": "ai-integration-b5",
+      "difficulty": "beginner",
+      "prompt": "Why stream an LLM response to the user?",
+      "choices": [
+        "It reduces perceived latency by showing partial output while generation continues.",
+        "It guarantees the answer is correct.",
+        "It removes token costs.",
+        "It prevents prompt injection."
+      ],
+      "answer": 0,
+      "explanation": "Streaming improves UX for long generations but complicates moderation, persistence, cancellation, and error handling. You may need to hold back unsafe content, mark incomplete messages, and handle client disconnects."
+    },
+    {
+      "key": "ai-integration-i1",
+      "difficulty": "intermediate",
+      "prompt": "What is an embedding used for in a RAG system?",
+      "choices": [
+        "Mapping text to a vector so semantically similar passages can be retrieved by similarity search.",
+        "Encrypting documents at rest.",
+        "Counting tokens exactly.",
+        "Executing tool calls."
+      ],
+      "answer": 0,
+      "explanation": "Embeddings are numeric representations compared with cosine/dot-product similarity. Store vectors with source metadata and tenant filters. Similarity is not truth: retrieved passages can be outdated, irrelevant, or malicious, so rank, threshold, and evaluate."
+    },
+    {
+      "key": "ai-integration-i2",
+      "difficulty": "intermediate",
+      "prompt": "Why does chunking strategy matter in RAG?",
+      "choices": [
+        "Chunks that are too large waste context and dilute relevance; chunks that are too small lose meaning and citations.",
+        "Chunking only affects CSS.",
+        "All documents should be one chunk.",
+        "Chunking eliminates the need for retrieval."
+      ],
+      "answer": 0,
+      "explanation": "Good chunks are coherent, self-contained, and tied to source metadata. Consider headings, sentence boundaries, overlap, tables, and code blocks. Test retrieval quality with real questions instead of choosing a universal chunk size."
+    },
+    {
+      "key": "ai-integration-i3",
+      "difficulty": "intermediate",
+      "prompt": "How should an app handle a model response that is supposed to be JSON?",
+      "choices": [
+        "Validate it against a schema and handle parse/validation failures explicitly before using it.",
+        "Trust any text that looks like JSON.",
+        "eval() the response to turn it into Python.",
+        "Store it without checking the shape."
+      ],
+      "answer": 0,
+      "explanation": "Use structured output or a schema-aware parser, then validate types, required fields, enums, and business rules. On failure, retry with constraints, ask for repair, or fall back. Never eval untrusted model output."
+    },
+    {
+      "key": "ai-integration-i4",
+      "difficulty": "intermediate",
+      "prompt": "What is the context window in an LLM application?",
+      "choices": [
+        "The maximum amount of text/tokens the model can consider in one call; it is not durable memory by itself.",
+        "The browser window size.",
+        "The database cache size.",
+        "The number of users allowed."
+      ],
+      "answer": 0,
+      "explanation": "Conversation history, retrieved documents, tool results, and output all compete for the context window. Long histories must be summarised, pruned, or retrieved selectively. Persistence and memory are application responsibilities."
+    },
+    {
+      "key": "ai-integration-i5",
+      "difficulty": "intermediate",
+      "prompt": "Why version prompts and log model/request metadata?",
+      "choices": [
+        "So behaviour changes can be traced, compared, and rolled back; prompt/model changes are production changes.",
+        "To make prompts longer.",
+        "To avoid writing tests.",
+        "To guarantee determinism."
+      ],
+      "answer": 0,
+      "explanation": "A prompt, model version, retrieval configuration, and tool schema together define behaviour. Store versions and evaluation results, log latency/token usage/error categories, and roll out changes gradually. Do not silently edit production prompts."
+    },
+    {
+      "key": "ai-integration-a1",
+      "difficulty": "advanced",
+      "prompt": "What is prompt injection in a RAG or agent system?",
+      "choices": [
+        "Untrusted content in retrieved documents, web pages, tool output, or user input tries to override instructions or trigger unsafe actions.",
+        "A SQL injection caused by an ORM.",
+        "A CSS attack on the model.",
+        "A timeout in the LLM API."
+      ],
+      "answer": 0,
+      "explanation": "The model cannot reliably distinguish instructions from data. Treat retrieved/tool content as untrusted, isolate it with clear delimiters, strip active instructions where possible, minimise tool privileges, and require confirmation for risky actions. Prompt wording alone is not a security boundary."
+    },
+    {
+      "key": "ai-integration-a2",
+      "difficulty": "advanced",
+      "prompt": "Which design is safest for an AI agent that can issue refunds?",
+      "choices": [
+        "Give it a scoped refund tool with maximum amounts, policy checks, idempotency, audit logging, and human approval above a threshold.",
+        "Give it the database root password so it can decide.",
+        "Let it call any internal HTTP endpoint.",
+        "Disable logging to reduce latency."
+      ],
+      "answer": 0,
+      "explanation": "Use least-privilege tools, validate arguments server-side, enforce business limits outside the model, make actions idempotent, and require human approval for irreversible or high-value operations. The model proposes; the system authorises."
+    },
+    {
+      "key": "ai-integration-a3",
+      "difficulty": "advanced",
+      "prompt": "What is an evaluation harness for an LLM feature?",
+      "choices": [
+        "A repeatable set of representative cases with assertions, scoring, and human review used to compare prompt/model/retrieval changes.",
+        "A load test that only measures CPU.",
+        "A prompt stored in a secret file.",
+        "A way to avoid all production monitoring."
+      ],
+      "answer": 0,
+      "explanation": "LLM outputs are probabilistic and can regress invisibly. Curate tasks, expected properties, edge cases, and adversarial inputs. Use deterministic checks where possible, human/LLM judges where necessary, track scores over time, and gate releases on quality/cost/latency."
+    },
+    {
+      "key": "ai-integration-a4",
+      "difficulty": "advanced",
+      "prompt": "Which combination best controls LLM cost and latency without silently degrading quality?",
+      "choices": [
+        "Token budgets, retrieval trimming, caching, model routing for easier tasks, batching where appropriate, and evaluation of each route.",
+        "Always use the largest model for every request.",
+        "Remove all logging.",
+        "Increase timeouts and retries without limits."
+      ],
+      "answer": 0,
+      "explanation": "Cost and latency are product constraints. Measure tokens per workflow, cache stable results, route simple tasks to cheaper models, reduce unnecessary context, and stream where it helps. Evaluate quality per route; a cheaper model that fails more can cost more in support."
+    },
+    {
+      "key": "ai-integration-a5",
+      "difficulty": "advanced",
+      "prompt": "What is the most important tenant-isolation concern in a multi-tenant RAG system?",
+      "choices": [
+        "Every retrieval and vector query must be filtered by tenant before results reach the model; never rely on the model to keep data separate.",
+        "Making the model larger.",
+        "Storing all tenants in one prompt.",
+        "Disabling citations."
+      ],
+      "answer": 0,
+      "explanation": "Vector search without tenant filters can retrieve another customer's documents and leak them through an answer. Enforce tenant scope in the data layer, store tenant IDs in metadata/index partitions, test cross-tenant queries, and redact sensitive fields before prompt construction."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "ai-integration-f1",
+      "difficulty": "beginner",
+      "front": "How should you think about an LLM API?",
+      "back": "As a stateless external dependency that returns probabilistic suggestions. Your app owns context, permissions, persistence, validation, retries, cost, and the final decision. Treat output as untrusted input.",
+      "hint": "Probabilistic dependency, not an oracle."
+    },
+    {
+      "key": "ai-integration-f2",
+      "difficulty": "beginner",
+      "front": "What is RAG in one sentence?",
+      "back": "Retrieve relevant trusted content, put the best passages into the model's context, and generate a grounded answer with citations. Quality depends on ingestion, chunking, retrieval, ranking, and evaluation.",
+      "front_code": "question -> embed -> search(top_k) -> rerank -> prompt -> answer + citations"
+    },
+    {
+      "key": "ai-integration-f3",
+      "difficulty": "intermediate",
+      "front": "How do tool calls actually work?",
+      "back": "The model returns a structured request with a tool name and arguments. Your application validates, authorises, executes, and returns a result. The model never gets to bypass permissions just by asking.",
+      "hint": "Model proposes, app authorises."
+    },
+    {
+      "key": "ai-integration-f4",
+      "difficulty": "intermediate",
+      "front": "Why validate structured LLM output?",
+      "back": "Models can omit fields, invent enum values, or produce malformed JSON. Validate with a schema and business rules, retry with constraints, and fall back safely. Never eval model output or write it straight into critical state.",
+      "front_code": "class Answer(BaseModel):\n    summary: str\n    citations: list[str]\n\ntry:\n    parsed = Answer.model_validate_json(text)\nexcept ValidationError:\n    ..."
+    },
+    {
+      "key": "ai-integration-f5",
+      "difficulty": "advanced",
+      "front": "What is prompt injection?",
+      "back": "Untrusted content tries to override instructions or trigger unsafe tool actions. It can arrive via retrieved docs, web pages, emails, or tool output. Prompt wording alone cannot stop it; use least privilege, isolation, validation, and human approval.",
+      "hint": "Data is not instructions."
+    },
+    {
+      "key": "ai-integration-f6",
+      "difficulty": "advanced",
+      "front": "What belongs in an LLM evaluation harness?",
+      "back": "Representative tasks, edge cases, adversarial inputs, expected properties, deterministic checks, human/judge scores, and cost/latency metrics. Run it on every prompt/model/retrieval change and track regressions over time.",
+      "hint": "Tests for probabilistic behaviour."
+    },
+    {
+      "key": "ai-integration-f7",
+      "difficulty": "advanced",
+      "front": "How do you prevent cross-tenant leaks in RAG?",
+      "back": "Filter every document and vector query by tenant in the data layer, partition or tag indexes, redact sensitive fields, and test cross-tenant retrieval. Never rely on the model to obey tenant isolation instructions.",
+      "hint": "Filter before the model sees it."
+    }
+  ]
+}

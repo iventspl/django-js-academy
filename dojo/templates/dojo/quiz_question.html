@@ -1,0 +1,129 @@
+{% extends "dojo/base.html" %}
+
+{% block title %}Question {{ question_number }} · {{ attempt.scope_label }}{% endblock %}
+{% block body_class %}page-quiz{% endblock %}
+
+{% block content %}
+<div class="page-wrap quiz-wrap">
+  <div class="quiz-main">
+    <div class="quiz-topline">
+      <a class="back-link" href="{% url 'dojo:home' %}"><span aria-hidden="true">←</span> Base camp</a>
+      <span class="quiz-position">Question {{ question_number }} <span>/ {{ attempt.length }}</span></span>
+      <span class="tag tag-cream">{{ attempt.difficulty_label }}</span>
+    </div>
+
+    <div class="run-progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ attempt.length }}" aria-valuenow="{{ question_number }}">
+      <span style="--progress: {{ progress_percent }}%;"></span>
+    </div>
+
+    <article class="question-card">
+      <div class="question-meta">
+        <span class="topic-chip" style="--accent: {{ question.topic.accent }};">{{ question.topic.name }}</span>
+        <span class="difficulty-chip difficulty-{{ question.difficulty }}">{{ question.get_difficulty_display }}</span>
+      </div>
+
+      <h1 class="question-prompt">{{ question.prompt }}</h1>
+
+      {% if question.code %}
+        <div class="code-block">
+          <div class="code-bar"><span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>python</span></div>
+          <pre><code>{{ question.code }}</code></pre>
+        </div>
+      {% endif %}
+
+      {% if answered %}
+        <div class="answer-list answer-list-locked">
+          {% for choice in choices %}
+            <div class="answer-option
+              {% if choice.is_correct %}is-correct{% elif selected == choice %}is-wrong{% else %}is-muted{% endif %}">
+              <span class="answer-key">{{ forloop.counter }}</span>
+              <span class="answer-text">{{ choice.text }}</span>
+              <span class="answer-status">
+                {% if choice.is_correct %}Correct answer{% elif selected == choice %}Your answer{% endif %}
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+
+        <section class="feedback {% if is_correct %}feedback-correct{% else %}feedback-wrong{% endif %}" aria-live="polite">
+          <div class="feedback-head">
+            <span class="feedback-mark" aria-hidden="true">{% if is_correct %}✓{% else %}×{% endif %}</span>
+            <div>
+              <h2>{% if is_correct %}Correct.{% else %}Not quite.{% endif %}</h2>
+              <p>
+                {% if is_correct %}
+                  Locked in: {{ selected.text }}
+                {% else %}
+                  You picked “{{ selected.text }}”. The right answer is “{{ correct_choice.text }}”.
+                {% endif %}
+              </p>
+            </div>
+          </div>
+          <div class="feedback-why">
+            <p class="eyebrow eyebrow-dark">Why</p>
+            <p>{{ question.explanation|linebreaks }}</p>
+            {% if question.explanation_code %}
+              <pre class="inline-code"><code>{{ question.explanation_code }}</code></pre>
+            {% endif %}
+          </div>
+          <form method="post" class="feedback-next">
+            {% csrf_token %}
+            <button class="btn btn-dark" type="submit" name="action" value="next" data-next-button>
+              {% if question_number == attempt.length %}See my results{% else %}Next question{% endif %}
+              <span aria-hidden="true">→</span>
+            </button>
+            <span class="keyboard-hint">or press <kbd>Enter</kbd></span>
+          </form>
+        </section>
+      {% else %}
+        <form method="post" class="answer-form" data-quiz-form>
+          {% csrf_token %}
+          <fieldset class="answer-fieldset">
+            <legend class="sr-only">Choose one answer</legend>
+            <div class="answer-list">
+              {% for choice in choices %}
+                <label class="answer-option answer-option-input">
+                  <input type="radio" name="choice" value="{{ choice.pk }}" data-answer-input>
+                  <span class="answer-key">{{ forloop.counter }}</span>
+                  <span class="answer-text">{{ choice.text }}</span>
+                  <span class="answer-check" aria-hidden="true"></span>
+                </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          <div class="answer-submit-row">
+            <button class="btn btn-primary" type="submit" name="action" value="answer">Lock in answer <span aria-hidden="true">→</span></button>
+            <span class="keyboard-hint">Press <kbd>1</kbd>–<kbd>4</kbd> to choose, <kbd>Enter</kbd> to submit</span>
+          </div>
+        </form>
+      {% endif %}
+    </article>
+  </div>
+
+  <aside class="quiz-rail">
+    <div class="rail-card">
+      <p class="eyebrow eyebrow-dark">Run notes</p>
+      <div class="rail-topic">
+        <span class="topic-glyph topic-glyph-small" style="--accent: {{ question.topic.accent }};">{{ question.topic.glyph }}</span>
+        <div><strong>{{ attempt.scope_label }}</strong><span>{{ attempt.difficulty_label }}</span></div>
+      </div>
+      <dl class="rail-stats">
+        <div><dt>Question</dt><dd>{{ question_number }} / {{ attempt.length }}</dd></div>
+        <div><dt>Correct so far</dt><dd>{{ attempt.correct_count }}</dd></div>
+        <div><dt>Mode</dt><dd>Learning</dd></div>
+      </dl>
+      <div class="rail-note">
+        <span class="rail-note-mark" aria-hidden="true">i</span>
+        <p>Wrong answers still earn +2 XP. The explanation is the real reward.</p>
+      </div>
+    </div>
+
+    <div class="rail-tip">
+      <span aria-hidden="true">⌘</span>
+      <p><strong>Slow is smooth.</strong> Explain your choice to yourself before you lock it in.</p>
+    </div>
+
+    <a class="rail-leave" href="{% url 'dojo:home' %}">Leave run &amp; save progress</a>
+  </aside>
+</div>
+{% endblock %}

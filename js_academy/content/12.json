@@ -1,0 +1,167 @@
+{
+  "module": {
+    "slug": "react-projekt",
+    "title": "React w praktyce",
+    "subtitle": "Routing, formularze, dane i błędy w prawdziwej aplikacji.",
+    "description": "Ten moduł składa Reacta w produkt: adresy URL jako stan, formularze z błędami serwera, ładowanie danych, wyścigi i bezpieczne granice błędów.",
+    "level": "advanced",
+    "glyph": "12",
+    "accent": "#22D3EE",
+    "duration_minutes": 75,
+    "outcomes": [
+      "Projektujesz routing tak, aby URL był źródłem prawdy dla widoku.",
+      "Budujesz formularze z walidacją i obsługą błędów serwera.",
+      "Modelujesz ładowanie, sukces i błąd bez sprzecznych stanów.",
+      "Chronisz UI przed nieaktualnymi odpowiedziami i błędami komponentów."
+    ],
+    "project_title": "Panel produktów z routingiem",
+    "project_brief": "Zbuduj listę produktów z filtrami w URL, ekranem szczegółów, formularzem dodawania i obsługą błędów API. Odświeżenie URL ma odtwarzać ten sam widok.",
+    "project_steps": [
+      "Dodaj routing listy i szczegółów.",
+      "Przenieś filtry do parametrów URL.",
+      "Zbuduj formularz z walidacją po stronie klienta i serwera.",
+      "Dodaj loading, empty, error i anulowanie żądań."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "routing",
+      "title": "Routing i URL jako stan",
+      "summary": "Adres URL powinien opisywać widok, filtry i kontekst, który można udostępnić.",
+      "minutes": 15,
+      "body_html": "<p>URL to publiczny stan aplikacji. Jeśli filtr kategorii i页码 trzymasz tylko w <code>useState</code>, użytkownik nie może wysłać linku do tego widoku, a odświeżenie gubi kontekst.</p>\n<pre><code>// React Router\n&lt;Route path=\"/products\" element={&lt;Products /&gt;} /&gt;\n&lt;Route path=\"/products/:id\" element={&lt;ProductDetails /&gt;} /&gt;\n</code></pre>\n<h2>Parametry i query</h2>\n<pre><code>const [params] = useSearchParams();\nconst category = params.get(\"category\") ?? \"all\";\nconst page = Number(params.get(\"page\") ?? \"1\");\n\nfunction setCategory(next: string) {\n  setParams({ category: next, page: \"1\" });\n}</code></pre>\n<p>Parametry ścieżki identyfikują zasób (<code>/products/42</code>). Query opisuje widok listy (<code>?category=books&amp;page=2</code>).</p>\n<h2>Chronione trasy</h2>\n<p>Sprawdzenie sesji w komponencie to nie autoryzacja. Serwer i tak musi sprawdzić dostęp. Routing chroniony poprawia UX, ale nie zastępuje backendu.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> otwórz link z filtrem w nowej karcie. Widok powinien odtworzyć się bez klikania od zera.</div>"
+    },
+    {
+      "slug": "formularze",
+      "title": "Formularze i błędy serwera",
+      "summary": "Kontrolowane pola, walidacja, stany wysyłania i komunikaty przy polach.",
+      "minutes": 15,
+      "body_html": "<p>Formularz to jeden z niewielu miejsc, gdzie użytkownik może zniszczyć dane. Walidacja klienta poprawia UX, ale serwer jest źródłem prawdy.</p>\n<pre><code>const [values, setValues] = useState({ email: \"\", name: \"\" });\nconst [errors, setErrors] = useState({});\nconst [submitting, setSubmitting] = useState(false);\n\nasync function onSubmit(event) {\n  event.preventDefault();\n  setSubmitting(true);\n  setErrors({});\n  try {\n    const response = await api.createUser(values);\n    navigate(\"/users/\" + response.id);\n  } catch (error) {\n    setErrors(error.fieldErrors ?? { _form: \"Spróbuj ponownie\" });\n  } finally {\n    setSubmitting(false);\n  }\n}</code></pre>\n<h2>Błędy serwera</h2>\n<p>Serwer może zwrócić błędy per pole. Nie wrzucaj wszystkiego w jeden alert. Powiąż komunikat z polem i ustaw <code>aria-invalid</code> / <code>aria-describedby</code>.</p>\n<h2>Podwójne wysłanie</h2>\n<p>Zablokuj przycisk na czas wysyłania, ale nie polegaj tylko na tym. Backend powinien mieć idempotencję dla operacji, które mogą się powtórzyć.</p>\n<div class=\"lesson-callout\"><strong>Dostępność:</strong> każdy input ma label, błąd jest opisany tekstem, a fokus po błędzie trafia w sensowne miejsce.</div>"
+    },
+    {
+      "slug": "dane-bledy",
+      "title": "Dane, wyścigi i granice błędów",
+      "summary": "Fetch w praktyce: ładowanie, puste dane, błąd, anulowanie i error boundary.",
+      "minutes": 15,
+      "body_html": "<p>Ekran danych ma zwykle kilka stanów: loading, success, empty, error. Modeluj je jawnie, zamiast trzymać kilka niezależnych booleanów.</p>\n<pre><code>type ViewState&lt;T&gt; =\n  | { status: \"loading\" }\n  | { status: \"empty\" }\n  | { status: \"success\"; data: T }\n  | { status: \"error\"; message: string };</code></pre>\n<h2>Anulowanie</h2>\n<p>Przy zmianie filtra lub odmontowaniu komponentu anuluj żądanie. Inaczej stara odpowiedź może nadpisać nową. Użyj <code>AbortController</code> i sprawdzaj <code>error.name === \"AbortError\"</code>.</p>\n<h2>Error boundary</h2>\n<pre><code>class ErrorBoundary extends React.Component {\n  state = { hasError: false };\n  static getDerivedStateFromError() {\n    return { hasError: true };\n  }\n  render() {\n    if (this.state.hasError) return &lt;ErrorScreen /&gt;;\n    return this.props.children;\n  }\n}</code></pre>\n<p>Error boundary łapie błędy renderowania komponentów poniżej. Nie łapie błędów w event handlerach ani asynchronicznych — te obsłuż lokalnie.</p>\n<div class=\"lesson-callout\"><strong>Puste dane to nie błąd.</strong> „Brak wyników” i „nie udało się pobrać” wymagają różnych komunikatów i różnych akcji.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-reactproj-b1",
+      "difficulty": "beginner",
+      "prompt": "Dlaczego filtry listy warto trzymać w URL?",
+      "code": "",
+      "choices": [
+        "Można udostępnić link i odtworzyć widok po odświeżeniu",
+        "URL jest szybszy niż stan",
+        "React wymaga URL do useState",
+        "To ukrywa błędy"
+      ],
+      "answer": 0,
+      "explanation": "URL jest publicznym, kopiowalnym stanem widoku. Parametry query dobrze opisują filtry i paginację."
+    },
+    {
+      "key": "js-reactproj-b2",
+      "difficulty": "beginner",
+      "prompt": "Co powinien robić formularz podczas wysyłania?",
+      "code": "",
+      "choices": [
+        "Pokazać stan wysyłania i zablokować wielokrotne wysłanie",
+        "Usunąć wszystkie pola",
+        "Przeładować stronę",
+        "Ukryć błędy"
+      ],
+      "answer": 0,
+      "explanation": "Stan submitting chroni przed podwójnym kliknięciem i daje użytkownikowi informację zwrotną. Backend i tak powinien być idempotentny."
+    },
+    {
+      "key": "js-reactproj-i1",
+      "difficulty": "intermediate",
+      "prompt": "Skąd pochodzą błędy walidacji pól?",
+      "code": "",
+      "choices": [
+        "Z walidacji klienta i odpowiedzi serwera",
+        "Tylko z CSS",
+        "Tylko z URL",
+        "Z localStorage"
+      ],
+      "answer": 0,
+      "explanation": "Klient daje szybką informację, ale serwer jest źródłem prawdy. Błędy per pole trzeba pokazać przy właściwym inpucie."
+    },
+    {
+      "key": "js-reactproj-i2",
+      "difficulty": "intermediate",
+      "prompt": "Jak modelować stany ekranu danych?",
+      "code": "",
+      "choices": [
+        "Jako jedną unię loading/empty/success/error",
+        "Jako pięć niezależnych booleanów",
+        "Tylko jako null",
+        "Tylko w Reduxie"
+      ],
+      "answer": 0,
+      "explanation": "Unia wyklucza sprzeczne stany i wymusza obsłużenie każdego wariantu w UI."
+    },
+    {
+      "key": "js-reactproj-a1",
+      "difficulty": "advanced",
+      "prompt": "Jak zapobiec nadpisaniu nowych danych przez starą odpowiedź?",
+      "code": "",
+      "choices": [
+        "Anulować poprzednie żądanie przez AbortController",
+        "Zwiększyć timeout",
+        "Użyć setTimeout",
+        "Wyłączyć cache"
+      ],
+      "answer": 0,
+      "explanation": "AbortController przerywa nieaktualne żądanie. Dodatkowo można porównywać identyfikator zapytania."
+    },
+    {
+      "key": "js-reactproj-a2",
+      "difficulty": "advanced",
+      "prompt": "Czego nie złapie error boundary?",
+      "code": "",
+      "choices": [
+        "Błędów w event handlerach i kodzie asynchronicznym",
+        "Błędów renderowania dzieci",
+        "Błędów w komponencie pod sobą",
+        "Błędów w JSX"
+      ],
+      "answer": 0,
+      "explanation": "Error boundary obsługuje błędy renderowania, lifecycle i konstruktorów. Błędy eventów i async wymagają try/catch lub globalnego handlera."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-reactproj-f1",
+      "front": "Kiedy URL powinien przechowywać stan?",
+      "back": "Gdy stan opisuje widok i powinien być kopiowalny: filtry, paginacja, sortowanie, aktywna zakładka. Nie wkładaj tam tymczasowych animacji.",
+      "hint": ""
+    },
+    {
+      "key": "js-reactproj-f2",
+      "front": "Jak obsłużyć błędy formularza z serwera?",
+      "back": "Mapuj błędy na pola, pokazuj je przy inputach, ustaw aria-invalid/aria-describedby oraz komunikat ogólny dla błędu całego formularza.",
+      "hint": ""
+    },
+    {
+      "key": "js-reactproj-f3",
+      "front": "Jakie stany ma ekran danych?",
+      "back": "loading, empty, success i error. Modeluj je jako jeden wariant, aby nie renderować sprzecznych komunikatów jednocześnie.",
+      "hint": ""
+    },
+    {
+      "key": "js-reactproj-f4",
+      "front": "Dlaczego anulować fetch?",
+      "back": "Aby uniknąć wyścigu odpowiedzi i niepotrzebnej pracy. Stare żądanie nie powinno nadpisywać nowego stanu.",
+      "hint": ""
+    },
+    {
+      "key": "js-reactproj-f5",
+      "front": "Co łapie error boundary?",
+      "back": "Błędy renderowania komponentów poniżej. Nie łapie event handlerów, setTimeout ani odrzuconych Promise bez dodatkowej obsługi.",
+      "hint": ""
+    }
+  ]
+}

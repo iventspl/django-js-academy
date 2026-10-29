@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "distributed-reliability",
+    "name": "Distributed Systems & Reliability",
+    "tagline": "Failures, retries, consistency, backpressure, and operability.",
+    "description": "The moment a system has a queue, a second service, or a network call, failure becomes normal. Learn the patterns that make partial failure survivable: idempotency, timeouts, backoff, circuit breakers, outboxes, sagas, and observability.",
+    "glyph": "net",
+    "accent": "#F4A261"
+  },
+  "questions": [
+    {
+      "key": "distributed-reliability-b1",
+      "difficulty": "beginner",
+      "prompt": "What is the difference between latency and throughput?",
+      "choices": [
+        "Latency is how long one request takes; throughput is how many requests the system completes per unit of time.",
+        "Latency is database size; throughput is CPU count.",
+        "They are identical measures.",
+        "Throughput is always more important than latency."
+      ],
+      "answer": 0,
+      "explanation": "A system can have high throughput and poor tail latency, or low latency for one request but low capacity. Measure both, and pay attention to p95/p99 latency rather than only averages."
+    },
+    {
+      "key": "distributed-reliability-b2",
+      "difficulty": "beginner",
+      "prompt": "Why must every network call have a timeout?",
+      "choices": [
+        "Without one, a slow dependency can hold workers indefinitely and cascade into an outage.",
+        "Timeouts make responses more accurate.",
+        "HTTP requires a timeout header.",
+        "Timeouts eliminate the need for retries."
+      ],
+      "answer": 0,
+      "explanation": "A missing or excessive timeout lets one slow service consume connection pools and worker threads. Use short, explicit timeouts, propagate deadlines where possible, and degrade gracefully when a dependency is slow."
+    },
+    {
+      "key": "distributed-reliability-b3",
+      "difficulty": "beginner",
+      "prompt": "What does idempotent mean in a distributed system?",
+      "choices": [
+        "The same operation can be retried without changing the final result beyond the first successful application.",
+        "The operation can never fail.",
+        "Every request must be processed twice.",
+        "The operation must be synchronous."
+      ],
+      "answer": 0,
+      "explanation": "Networks create ambiguity: a client may not know whether a request succeeded. Idempotency lets it retry safely. Use idempotency keys, unique constraints, or state guards; 'exactly once' delivery is generally not guaranteed."
+    },
+    {
+      "key": "distributed-reliability-b4",
+      "difficulty": "beginner",
+      "prompt": "Why add jitter to exponential backoff?",
+      "choices": [
+        "It prevents many clients from retrying in sync and creating a thundering herd.",
+        "It makes retries happen instantly.",
+        "It removes the need for a maximum retry count.",
+        "It encrypts the request."
+      ],
+      "answer": 0,
+      "explanation": "Without jitter, failed clients retry at the same intervals and repeatedly hammer a recovering dependency. Randomised backoff spreads load. Cap attempts and move exhausted work to a dead-letter/alert path."
+    },
+    {
+      "key": "distributed-reliability-b5",
+      "difficulty": "beginner",
+      "prompt": "What does the CAP theorem say in practical terms?",
+      "choices": [
+        "During a network partition, a distributed system cannot guarantee both linearizable consistency and full availability; you must choose behavior.",
+        "You can always have consistency, availability, and partition tolerance at the same time.",
+        "CAP only applies to SQL databases.",
+        "Network partitions never happen in cloud systems."
+      ],
+      "answer": 0,
+      "explanation": "Partitions happen. During one, the system must choose between rejecting some operations to preserve consistency or serving potentially stale data to stay available. Real systems make this choice per operation and expose the resulting semantics."
+    },
+    {
+      "key": "distributed-reliability-i1",
+      "difficulty": "intermediate",
+      "prompt": "What is the difference between at-most-once and at-least-once delivery?",
+      "choices": [
+        "At-most-once may lose a message but never duplicates it; at-least-once may duplicate but should not lose it.",
+        "At-most-once guarantees delivery forever.",
+        "At-least-once guarantees exactly one delivery.",
+        "They are both impossible with queues."
+      ],
+      "answer": 0,
+      "explanation": "At-most-once sends and forgets. At-least-once retries until acknowledged, so consumers must handle duplicates. Most reliable systems choose at-least-once plus idempotent effects rather than claim exactly-once."
+    },
+    {
+      "key": "distributed-reliability-i2",
+      "difficulty": "intermediate",
+      "prompt": "How does a circuit breaker help?",
+      "choices": [
+        "After repeated failures, it stops sending traffic to the unhealthy dependency for a cooldown, then tests recovery with limited traffic.",
+        "It retries every request forever.",
+        "It makes the database strongly consistent.",
+        "It removes the need for timeouts."
+      ],
+      "answer": 0,
+      "explanation": "A breaker fails fast when a dependency is unhealthy, protecting workers and giving the dependency room to recover. It normally has closed, open, and half-open states. Pair it with timeouts, bounded retries, and fallback behavior."
+    },
+    {
+      "key": "distributed-reliability-i3",
+      "difficulty": "intermediate",
+      "prompt": "Why is a transactional outbox more reliable than a database commit followed by an immediate queue publish?",
+      "choices": [
+        "The outbox row commits atomically with the business change, so a crash between commit and publish does not lose the event.",
+        "It removes the need for a worker.",
+        "It makes the queue transactional.",
+        "It guarantees the consumer processes messages in order."
+      ],
+      "answer": 0,
+      "explanation": "A crash after commit but before publish is a dual-write failure. Writing an outbox row in the same transaction makes the intent durable; a relay publishes and stamps it. Delivery can still be at-least-once, so consumers must be idempotent."
+    },
+    {
+      "key": "distributed-reliability-i4",
+      "difficulty": "intermediate",
+      "prompt": "What is backpressure?",
+      "choices": [
+        "A mechanism that slows producers or rejects work when consumers cannot keep up, instead of letting queues and memory grow without bound.",
+        "A database index.",
+        "A type of authentication.",
+        "A way to increase request timeouts."
+      ],
+      "answer": 0,
+      "explanation": "Unbounded queues hide overload until latency or memory collapses. Backpressure can be bounded queues, rate limits, concurrency limits, 429/503 responses, or pausing intake. It makes overload explicit and preserves the ability to recover."
+    },
+    {
+      "key": "distributed-reliability-i5",
+      "difficulty": "intermediate",
+      "prompt": "What does read-your-writes consistency guarantee?",
+      "choices": [
+        "A user who successfully writes data will see that write on subsequent reads.",
+        "Every replica is always perfectly in sync.",
+        "All users see the same data at the same time.",
+        "Writes never fail."
+      ],
+      "answer": 0,
+      "explanation": "With asynchronous replicas, a write can be visible to the writer but not yet to a read replica. Read-your-writes can be implemented by routing the user's reads to the primary briefly, using a consistency token, or designing the UX for lag."
+    },
+    {
+      "key": "distributed-reliability-a1",
+      "difficulty": "advanced",
+      "prompt": "What is the role of a compensating action in a saga?",
+      "choices": [
+        "It semantically reverses or mitigates a completed local step when a later step fails.",
+        "It guarantees a distributed transaction commits atomically.",
+        "It deletes the entire database.",
+        "It replaces idempotency."
+      ],
+      "answer": 0,
+      "explanation": "A saga cannot roll back a remote side effect like an email or payment with a local rollback. It records forward progress and runs compensating actions such as refund, release, or cancel. Intermediate states must be valid and observable to users."
+    },
+    {
+      "key": "distributed-reliability-a2",
+      "difficulty": "advanced",
+      "prompt": "What does a queue partition key typically control?",
+      "choices": [
+        "Which ordered partition/stream a message belongs to, affecting ordering and parallelism.",
+        "The database column type.",
+        "The user's authentication role.",
+        "The HTTP status code."
+      ],
+      "answer": 0,
+      "explanation": "Messages with the same key usually go to the same partition and preserve order within it. Different keys can process in parallel. Choose keys by the ordering requirement, but beware hot partitions and uneven load."
+    },
+    {
+      "key": "distributed-reliability-a3",
+      "difficulty": "advanced",
+      "prompt": "Why are fencing tokens important with distributed locks?",
+      "choices": [
+        "A lock can expire while a slow holder still acts; a monotonically increasing token lets storage reject the stale holder.",
+        "They encrypt the lock key.",
+        "They make locks permanent.",
+        "They remove the need for a database."
+      ],
+      "answer": 0,
+      "explanation": "Distributed timeouts and pauses can create two apparent lock holders. A fencing token is attached to writes so the resource accepts only the newest holder, preventing an expired client from overwriting newer work. Prefer idempotent, conflict-aware operations over perfect locks."
+    },
+    {
+      "key": "distributed-reliability-a4",
+      "difficulty": "advanced",
+      "prompt": "What is an error budget in an SLO-driven system?",
+      "choices": [
+        "The allowed amount of unreliability over a window; spending it too fast should change priorities toward reliability.",
+        "A budget for buying more servers.",
+        "The maximum number of database rows.",
+        "A fixed number of retries."
+      ],
+      "answer": 0,
+      "explanation": "If an SLO is 99.9% over 30 days, roughly 43 minutes of downtime is the budget. It aligns product and engineering decisions: when the budget is exhausted, reliability work takes priority over new scope. Measure user-facing indicators, not only CPU."
+    },
+    {
+      "key": "distributed-reliability-a5",
+      "difficulty": "advanced",
+      "prompt": "Why propagate a trace/request ID across services and queue jobs?",
+      "choices": [
+        "It lets operators correlate logs, metrics, and events for one user action across asynchronous boundaries.",
+        "It makes the system strongly consistent.",
+        "It replaces authentication.",
+        "It guarantees messages are processed in order."
+      ],
+      "answer": 0,
+      "explanation": "Distributed workflows cross HTTP, workers, and retries. A correlation ID (plus spans/traces) turns disconnected logs into one narrative. Include tenant/request IDs carefully, avoid leaking sensitive data into logs, and propagate context into tasks."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "distributed-reliability-f1",
+      "difficulty": "beginner",
+      "front": "Why are timeouts mandatory?",
+      "back": "A slow dependency without a timeout can pin workers and connections until the whole system stalls. Set explicit, short timeouts, propagate deadlines, and fail gracefully rather than waiting forever.",
+      "hint": "Fail fast, protect workers."
+    },
+    {
+      "key": "distributed-reliability-f2",
+      "difficulty": "beginner",
+      "front": "How do you make a retry safe?",
+      "back": "Use an idempotency key or unique constraint so repeated attempts have one effect. Bound retries, use exponential backoff with jitter, and send exhausted work to a dead-letter path with alerting.",
+      "hint": "Same request, same effect."
+    },
+    {
+      "key": "distributed-reliability-f3",
+      "difficulty": "intermediate",
+      "front": "What does the transactional outbox solve?",
+      "back": "It removes the dual-write gap: the business write and an outbox event commit in one local transaction. A relay publishes events and retries. Delivery is at-least-once, so consumers must deduplicate.",
+      "front_code": "with transaction.atomic():\n    order = Order.objects.create(...)\n    Outbox.objects.create(topic=\"order.created\", payload={\"id\": order.pk})"
+    },
+    {
+      "key": "distributed-reliability-f4",
+      "difficulty": "intermediate",
+      "front": "What is backpressure?",
+      "back": "A way to make overload explicit: bounded queues, concurrency limits, rate limits, 429/503 responses, or slowing producers. Without it, memory and latency grow until the system collapses.",
+      "hint": "Push back before you fall over."
+    },
+    {
+      "key": "distributed-reliability-f5",
+      "difficulty": "advanced",
+      "front": "What is a saga, and why does it need compensations?",
+      "back": "A saga coordinates local transactions across services. There is no global rollback, so each completed step needs a compensating action (refund, release, cancel) if a later step fails. Design visible intermediate states and idempotent compensations.",
+      "hint": "No global rollback, only repair."
+    },
+    {
+      "key": "distributed-reliability-f6",
+      "difficulty": "advanced",
+      "front": "What is an error budget?",
+      "back": "The amount of unreliability allowed by an SLO over a window. A 99.9% monthly SLO allows about 43 minutes of bad time. Exhausting the budget should pause risky releases and prioritise reliability work.",
+      "hint": "Reliability has a budget."
+    },
+    {
+      "key": "distributed-reliability-f7",
+      "difficulty": "advanced",
+      "front": "Why does distributed tracing matter?",
+      "back": "One user action can cross HTTP, queues, workers, and retries. A propagated correlation/trace ID connects logs and spans so operators can find where time and failures occur. It is essential for debugging eventual consistency.",
+      "front_code": "X-Request-ID: 0f8c...\nTrace: api -> outbox relay -> worker -> email provider"
+    }
+  ]
+}

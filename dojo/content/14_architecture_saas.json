@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "architecture-saas",
+    "name": "Architecture & Multi-Tenant SaaS",
+    "tagline": "Boundaries, tenancy, billing, audits, and systems that stay sane.",
+    "description": "Go beyond a single CRUD screen. Learn where business logic belongs, how to isolate tenants, how to design billing and audit flows, and which trade-offs matter when the app becomes a product with real operational and legal obligations.",
+    "glyph": "arc",
+    "accent": "#B9A7FF"
+  },
+  "questions": [
+    {
+      "key": "architecture-saas-b1",
+      "difficulty": "beginner",
+      "prompt": "Where should the logic for 'place an order' live?",
+      "choices": [
+        "Entirely inside the view, including payment calls and emails.",
+        "In a focused service/domain function or method that the view calls, with the view handling HTTP concerns.",
+        "In the template.",
+        "In urls.py."
+      ],
+      "answer": 1,
+      "explanation": "Views should parse HTTP input, enforce access, call application logic, and shape a response. A service function can coordinate validation, transactions, stock, payment, and events, and can be reused by the admin, API, and tasks."
+    },
+    {
+      "key": "architecture-saas-b2",
+      "difficulty": "beginner",
+      "prompt": "Why define AUTH_USER_MODEL and a custom user model at the start of a project?",
+      "choices": [
+        "It makes every page faster.",
+        "Changing the user model after migrations and foreign keys exist is a painful, risky migration.",
+        "Django requires a custom user model to run.",
+        "It removes the need for authentication."
+      ],
+      "answer": 1,
+      "explanation": "Even if the default User fits today, a custom subclass (or a model with a UUID/email login) gives room to grow. Set AUTH_USER_MODEL before the first migration. Retrofitting later touches many tables and third-party apps."
+    },
+    {
+      "key": "architecture-saas-b3",
+      "difficulty": "beginner",
+      "prompt": "Where should production secrets such as database passwords and API keys live?",
+      "choices": [
+        "Committed in settings.py so every environment is identical.",
+        "In environment variables or a secrets manager, injected at deploy time and never committed.",
+        "In a public JavaScript file.",
+        "In the database as plain text."
+      ],
+      "answer": 1,
+      "explanation": "Settings should read secrets from the environment or a secret manager. Keep a safe .env.example with names only. Rotate exposed keys, restrict access, and ensure debug pages/logs do not print secrets."
+    },
+    {
+      "key": "architecture-saas-b4",
+      "difficulty": "beginner",
+      "prompt": "What is an audit log for?",
+      "choices": [
+        "Recording who changed sensitive data or performed privileged actions, when, and from where.",
+        "Caching every page.",
+        "Replacing database backups.",
+        "Storing user passwords."
+      ],
+      "answer": 0,
+      "explanation": "An audit trail supports security investigations, compliance, and customer support. Record actor, action, target, before/after where appropriate, timestamp, and request context. Treat it as append-only and protect it from normal app edits."
+    },
+    {
+      "key": "architecture-saas-b5",
+      "difficulty": "beginner",
+      "prompt": "What is a feature flag useful for?",
+      "choices": [
+        "Turning a feature on or off for selected users, tenants, or a percentage without redeploying.",
+        "Encrypting the database.",
+        "Replacing permissions.",
+        "Making migrations reversible."
+      ],
+      "answer": 0,
+      "explanation": "Feature flags separate deployment from release and support gradual rollouts, beta access, and fast rollback. They add state and cleanup work. Do not use flags as a substitute for authorization or delete them once fully rolled out."
+    },
+    {
+      "key": "architecture-saas-i1",
+      "difficulty": "intermediate",
+      "prompt": "What is the main trade-off between shared-schema tenancy and schema-per-tenant?",
+      "choices": [
+        "Shared schema is simpler and cheaper but requires rigorous tenant scoping; schema-per-tenant isolates data but multiplies migrations and connections.",
+        "Schema-per-tenant is always faster for every query.",
+        "Shared schema automatically prevents cross-tenant leaks.",
+        "They only differ in CSS."
+      ],
+      "answer": 0,
+      "explanation": "Shared schema with tenant_id is operationally simple and common. Schema-per-tenant provides stronger isolation but complicates migrations, backups, routing, and connection pools. Database-per-tenant goes further with more cost. Choose based on isolation, scale, and ops capacity."
+    },
+    {
+      "key": "architecture-saas-i2",
+      "difficulty": "intermediate",
+      "prompt": "A view uses Invoice.objects.get(pk=request.POST[\"invoice_id\"]). What is missing?",
+      "choices": [
+        "A database index only.",
+        "A query scoped to the requesting user/tenant so an ID from another account cannot be fetched.",
+        "A template forloop.",
+        "A CSRF cookie."
+      ],
+      "answer": 1,
+      "explanation": "Never trust an object ID from the client. Use get_object_or_404(Invoice, pk=..., tenant=request.tenant) or a scoped manager. ID enumeration is one of the most common cross-tenant leaks. Add object-level permissions for the action too."
+    },
+    {
+      "key": "architecture-saas-i3",
+      "difficulty": "intermediate",
+      "prompt": "What should a billing webhook endpoint verify before changing a subscription?",
+      "choices": [
+        "The request's browser cookie only.",
+        "The provider signature, the event type/version, and an idempotent event record; then reconcile against server-side state.",
+        "That the JSON looks plausible.",
+        "The request came from the same IP forever."
+      ],
+      "answer": 1,
+      "explanation": "Verify the raw-body signature with the provider secret, reject stale/replayed events, deduplicate by event ID, and make state transitions idempotent. Do not trust customer-supplied plan or price IDs; map them to server-side records."
+    },
+    {
+      "key": "architecture-saas-i4",
+      "difficulty": "intermediate",
+      "prompt": "What context should a background job carry in a multi-tenant system?",
+      "choices": [
+        "Nothing; it can discover the tenant later.",
+        "The tenant identifier and the minimal entity IDs needed, with the worker re-establishing tenant-scoped access.",
+        "A copy of every tenant's database.",
+        "The browser session cookie."
+      ],
+      "answer": 1,
+      "explanation": "Tasks must not rely on an ambient request context. Carry tenant_id and entity IDs explicitly, re-fetch data, and enforce scoping in the worker. Prevent jobs from one tenant reading another's rows; add tests that switch tenant context."
+    },
+    {
+      "key": "architecture-saas-i5",
+      "difficulty": "intermediate",
+      "prompt": "What is a modular monolith?",
+      "choices": [
+        "One deployment with explicit internal modules/boundaries, shared infrastructure, and disciplined interfaces between domains.",
+        "A microservice per database table.",
+        "A monolith where every module imports every other module.",
+        "A frontend-only application."
+      ],
+      "answer": 0,
+      "explanation": "A modular monolith keeps deployment simple while drawing boundaries around billing, accounts, catalog, and other domains. Modules communicate through services/events rather than reaching into each other's tables. You can extract a module later if scale demands it."
+    },
+    {
+      "key": "architecture-saas-a1",
+      "difficulty": "advanced",
+      "prompt": "Which additional control most reduces the risk of a cross-tenant data leak?",
+      "choices": [
+        "A larger server.",
+        "Defence in depth: scoped querysets/managers, tenant-aware permissions, database constraints, tests, and optional row-level security.",
+        "A custom 404 page only.",
+        "Caching the response longer."
+      ],
+      "answer": 1,
+      "explanation": "One scoped query is not enough. Use a tenant-aware data-access layer, object permissions, unique constraints including tenant_id, automated isolation tests, and Postgres row-level security where appropriate. Log and alert on unusual cross-tenant access attempts."
+    },
+    {
+      "key": "architecture-saas-a2",
+      "difficulty": "advanced",
+      "prompt": "Why is a database transaction not enough to guarantee a billing state change plus an external event?",
+      "choices": [
+        "The external system is outside the transaction and can succeed while the database rolls back, or vice versa.",
+        "Django transactions cannot update rows.",
+        "Webhooks are always encrypted.",
+        "Billing providers do not use HTTP."
+      ],
+      "answer": 0,
+      "explanation": "You cannot atomically commit a local transaction and an external API call. Use idempotency keys, an outbox, provider reconciliation, and a state machine with clear pending/succeeded/failed states. Never assume a 200 response means the whole workflow is consistent."
+    },
+    {
+      "key": "architecture-saas-a3",
+      "difficulty": "advanced",
+      "prompt": "A customer requests deletion under privacy rules. What is the most complete approach?",
+      "choices": [
+        "Delete the User row and assume all data is gone.",
+        "Inventory personal data, delete or anonymise records across services, handle backups/retention and audit obligations, and record the request.",
+        "Only delete the profile photo.",
+        "Disable the customer's login and keep everything."
+      ],
+      "answer": 1,
+      "explanation": "Deletion is a cross-cutting data-governance workflow: discover copies, handle relational references, anonymise where deletion conflicts with legal retention, expire backups according to policy, and verify. Keep a minimal audit record of the request without retaining the deleted content."
+    },
+    {
+      "key": "architecture-saas-a4",
+      "difficulty": "advanced",
+      "prompt": "What is the key risk of sending reads to a replica immediately after a write?",
+      "choices": [
+        "Replication lag can return stale data or a missing row.",
+        "Read replicas cannot run SELECT.",
+        "Django forbids multiple databases.",
+        "Replicas automatically delete writes."
+      ],
+      "answer": 0,
+      "explanation": "Replication is usually asynchronous. A read-after-write workflow may need to stick to the primary for a short window, use a consistent-read token, or route the specific query to the writer. Design UX for eventual consistency where it is acceptable."
+    },
+    {
+      "key": "architecture-saas-a5",
+      "difficulty": "advanced",
+      "prompt": "One tenant starts a huge export and slows everyone down. What is the best response?",
+      "choices": [
+        "Give every tenant unlimited resources.",
+        "Use per-tenant quotas, rate limits, fair queues, and background exports with throttling and status reporting.",
+        "Delete the tenant's data.",
+        "Disable database indexes."
+      ],
+      "answer": 1,
+      "explanation": "Noisy-neighbour control is an architectural requirement. Apply per-tenant quotas and concurrency limits, separate heavy jobs from interactive traffic, stream or chunk large exports, and surface progress. Protect shared resources before a customer discovers the limit for you."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "architecture-saas-f1",
+      "difficulty": "beginner",
+      "front": "Where should business logic live in a Django app?",
+      "back": "Not spread across fat views, templates, and model save overrides. Put meaningful workflows in services/domain functions with explicit inputs, transactions, and side effects. Views handle HTTP; models own data invariants; tasks call the same services.",
+      "hint": "Thin view, explicit service."
+    },
+    {
+      "key": "architecture-saas-f2",
+      "difficulty": "beginner",
+      "front": "Why start with a custom user model?",
+      "back": "It gives you room to change identifiers, add fields, or use email login without a brutal migration later. Set AUTH_USER_MODEL before the first migration. Do not overbuild it; a simple subclass is enough to start.",
+      "front_code": "class User(AbstractUser):\n    ...\n\nAUTH_USER_MODEL = \"accounts.User\""
+    },
+    {
+      "key": "architecture-saas-f3",
+      "difficulty": "intermediate",
+      "front": "Shared schema or schema-per-tenant?",
+      "back": "Shared schema with tenant_id is simpler and cheaper but demands rigorous scoping. Schema-per-tenant offers stronger isolation with heavier migrations, connections, and ops. Database-per-tenant isolates further at higher cost. Choose based on isolation and operational capacity.",
+      "hint": "Isolation versus operational cost."
+    },
+    {
+      "key": "architecture-saas-f4",
+      "difficulty": "intermediate",
+      "front": "How do you prevent IDOR/cross-tenant access?",
+      "back": "Scope every query by the authenticated user/tenant, check object permissions, validate foreign-key ownership, and add tests that attempt cross-tenant access. Never rely on unguessable IDs. Use 404 for resources the caller should not know exist.",
+      "front_code": "get_object_or_404(Invoice, pk=pk, tenant=request.tenant)"
+    },
+    {
+      "key": "architecture-saas-f5",
+      "difficulty": "advanced",
+      "front": "How do you keep billing state correct across webhooks and your database?",
+      "back": "Verify signatures, deduplicate event IDs, store a state machine, use idempotency keys, and reconcile against the provider. Use an outbox for outbound events. Treat webhook delivery as at-least-once and never trust client-supplied plan/price data.",
+      "hint": "Verify, dedupe, reconcile."
+    },
+    {
+      "key": "architecture-saas-f6",
+      "difficulty": "advanced",
+      "front": "What belongs in an audit log?",
+      "back": "Actor, action, target, timestamp, source/request context, and relevant before/after values for sensitive changes. Protect it as append-only, redact secrets, define retention, and make it queryable for investigations. Do not turn it into a second mutable business table.",
+      "hint": "Who did what to what, when."
+    },
+    {
+      "key": "architecture-saas-f7",
+      "difficulty": "advanced",
+      "front": "Why plan for noisy neighbours in a SaaS?",
+      "back": "One tenant's export, webhook flood, or expensive query can starve everyone. Apply per-tenant quotas, concurrency/rate limits, fair queues, query timeouts, and separate heavy jobs from interactive traffic. Measure per-tenant cost and enforce it.",
+      "hint": "Shared resources need fairness."
+    }
+  ]
+}

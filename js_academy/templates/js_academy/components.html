@@ -1,0 +1,52 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Komponenty JS{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-components-wrap">
+  <header class="js-page-header">
+    <p class="eyebrow eyebrow-js">Gotowe komponenty · HTML + CSS + JS</p>
+    <h1>Kod, który<br><em>możesz wziąć.</em></h1>
+    <p class="js-lead">13 gotowych fragmentów interfejsu: podgląd na żywo, pełny kod HTML, CSS i JavaScript oraz wyjaśnienie funkcji, które naprawdę wykonują pracę.</p>
+    <div class="js-path-summary">
+      <div><strong>{{ component_total }}</strong><span>komponentów</span></div>
+      <div><strong>3</strong><span>warstwy kodu</span></div>
+      <div><strong>1</strong><span>podgląd iframe</span></div>
+      <div><strong>0</strong><span>zależności</span></div>
+    </div>
+  </header>
+
+  <nav class="js-filter-row" aria-label="Kategorie komponentów">
+    <a class="js-filter {% if not category %}is-active{% endif %}" href="{% url 'js_academy:components' %}">Wszystkie</a>
+    {% for item in categories %}
+      <a class="js-filter {% if category == item %}is-active{% endif %}" href="?category={{ item|urlencode }}">{{ item }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="js-component-grid">
+    {% for component in components %}
+      <a class="js-component-card" href="{{ component.get_absolute_url }}">
+        <div class="js-component-top">
+          <span class="tag tag-js-dark">{{ component.category }}</span>
+          <span class="js-level">{{ component.get_difficulty_display }}</span>
+        </div>
+        <h2>{{ component.title }}</h2>
+        <p>{{ component.description|truncatewords:28 }}</p>
+        <div class="js-component-functions">
+          {% for function in component.functions %}<span>{{ function }}</span>{% endfor %}
+        </div>
+        <div class="js-component-foot">
+          <span>HTML · CSS · JS</span>
+          <span>Otwórz →</span>
+        </div>
+      </a>
+    {% empty %}
+      <p class="js-empty-inline"><span>Brak komponentów w tej kategorii.</span><a href="{% url 'js_academy:components' %}">Pokaż wszystkie</a></p>
+    {% endfor %}
+  </div>
+
+  <div class="js-bottom-cta">
+    <div><p class="eyebrow eyebrow-js-dark">Chcesz poeksperymentować?</p><h2>Skopiuj kod. Zmień. Uruchom.</h2><p>Każdy komponent ma podgląd w sandboxie i osobne zakładki HTML, CSS i JS. Piaskownica pozwala sprawdzić własny wariant.</p></div>
+    <a class="btn btn-js" href="{% url 'js_academy:playground' %}">Otwórz piaskownicę <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+{% endblock %}

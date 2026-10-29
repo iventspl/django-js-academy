@@ -1,0 +1,248 @@
+{
+  "topic": {
+    "slug": "functions-iteration",
+    "name": "Functions & Iteration",
+    "tagline": "Scope, closures, decorators, generators, and lazy pipelines.",
+    "description": "Functions are Python's main unit of composition. This deck goes past def and return into closures, decorator mechanics, generator protocols, and context managers — the tools that make Django internals and clean application code easier to read.",
+    "glyph": "fn",
+    "accent": "#7DD3B0"
+  },
+  "questions": [
+    {
+      "key": "functions-iteration-b1",
+      "difficulty": "beginner",
+      "prompt": "What is the value of label after these calls?",
+      "code": "def label(text, prefix=\"INFO\"):\n    return f\"[{prefix}] {text}\"\n\nlabel(\"saved\")",
+      "choices": [
+        "[INFO] saved",
+        "saved INFO",
+        "None",
+        "It raises TypeError"
+      ],
+      "answer": 0,
+      "explanation": "The prefix parameter has a default, so it can be omitted. Defaults should be immutable values. A mutable default such as [] is created once at function definition time and is shared across calls."
+    },
+    {
+      "key": "functions-iteration-b2",
+      "difficulty": "beginner",
+      "prompt": "What does a function return if it has no return statement?",
+      "choices": ["An empty string", "0", "None", "It raises ValueError"],
+      "answer": 2,
+      "explanation": "Falling off the end of a function returns None. This is also why methods that mutate in place, such as list.sort() or QuerySet.update(), return None rather than the mutated object."
+    },
+    {
+      "key": "functions-iteration-b3",
+      "difficulty": "beginner",
+      "prompt": "What are args and kwargs inside this call?",
+      "code": "def show(*args, **kwargs):\n    print(args, kwargs)\n\nshow(1, 2, mode=\"fast\")",
+      "choices": [
+        "(1, 2) {'mode': 'fast'}",
+        "[1, 2] {'mode': 'fast'}",
+        "((1, 2), {'mode': 'fast'})",
+        "It raises TypeError"
+      ],
+      "answer": 0,
+      "explanation": "*args collects extra positional arguments into a tuple. **kwargs collects extra keyword arguments into a dict. Neither name is magic; the * and ** are what matter."
+    },
+    {
+      "key": "functions-iteration-b4",
+      "difficulty": "beginner",
+      "prompt": "Which expression produces a generator, not a fully built list?",
+      "choices": [
+        "[x * 2 for x in range(5)]",
+        "(x * 2 for x in range(5))",
+        "{x * 2 for x in range(5)}",
+        "list(x * 2 for x in range(5))"
+      ],
+      "answer": 1,
+      "explanation": "Parentheses with a single comprehension-like expression create a generator expression. It produces items lazily, one at a time. Square brackets build a list; a set comprehension builds a set; list(...) consumes the generator into a list."
+    },
+    {
+      "key": "functions-iteration-b5",
+      "difficulty": "beginner",
+      "prompt": "What is the result of sorted(users, key=lambda u: u.name)?",
+      "choices": [
+        "A new sorted list, leaving users unchanged.",
+        "The users list sorted in place; the return value is None.",
+        "A tuple sorted by the lambda's return value.",
+        "A new list sorted by name in descending order."
+      ],
+      "answer": 0,
+      "explanation": "sorted() returns a new list. The key function is called for each item to produce its sort key. The original iterable is not mutated. Use users.sort(key=...) for an in-place sort."
+    },
+    {
+      "key": "functions-iteration-i1",
+      "difficulty": "intermediate",
+      "prompt": "Why is nonlocal required in this counter?",
+      "code": "def make_counter():\n    count = 0\n    def increment():\n        nonlocal count\n        count += 1\n        return count\n    return increment",
+      "choices": [
+        "Without it, count += 1 creates a new local variable and never updates the closure's count.",
+        "Without it, Python raises SyntaxError for every nested function.",
+        "It makes count a global variable.",
+        "It freezes count so it cannot change."
+      ],
+      "answer": 0,
+      "explanation": "Assignment normally makes a name local to the function. nonlocal tells Python to rebind the name in the nearest enclosing function scope instead. global does the same for module scope, which is rarely what you want."
+    },
+    {
+      "key": "functions-iteration-i2",
+      "difficulty": "intermediate",
+      "prompt": "What does this print?",
+      "code": "funcs = [lambda: i for i in range(3)]\nprint([f() for f in funcs])",
+      "choices": ["[0, 1, 2]", "[2, 2, 2]", "[0, 0, 0]", "[3, 3, 3]"],
+      "answer": 1,
+      "explanation": "A lambda closes over the variable i, not its current value. By the time each lambda runs, the loop has finished and i is 2. Bind the value with a default (lambda i=i: i) or use functools.partial to capture it."
+    },
+    {
+      "key": "functions-iteration-i3",
+      "difficulty": "intermediate",
+      "prompt": "What does this print?",
+      "code": "def shout(func):\n    def wrapper(*args, **kwargs):\n        return func(*args, **kwargs).upper()\n    return wrapper\n\n@shout\ndef greet(name):\n    return f\"hello {name}\"\n\nprint(greet(\"Ada\"))",
+      "choices": [
+        "hello Ada",
+        "HELLO ADA",
+        "None",
+        "It raises AttributeError"
+      ],
+      "answer": 1,
+      "explanation": "The decorator replaces greet with wrapper. wrapper calls the original function and uppercases its result. A production decorator should also use functools.wraps(func) to preserve the original function's name and docstring."
+    },
+    {
+      "key": "functions-iteration-i4",
+      "difficulty": "intermediate",
+      "prompt": "What happens when this function is called as shown?",
+      "code": "def move(x, *, y):\n    return x + y\n\nmove(1, 2)",
+      "choices": [
+        "It returns 3.",
+        "It raises TypeError because y is keyword-only.",
+        "It raises TypeError because x has no default.",
+        "It silently treats 2 as y."
+      ],
+      "answer": 1,
+      "explanation": "A bare * separates positional parameters from keyword-only parameters. y must be passed as move(1, y=2). Keyword-only arguments make call sites clearer, especially for boolean flags."
+    },
+    {
+      "key": "functions-iteration-i5",
+      "difficulty": "intermediate",
+      "prompt": "What is true about a generator function?",
+      "choices": [
+        "Nothing runs until it is called, and then the whole body executes immediately.",
+        "Calling it runs no body code; each next() runs until the next yield.",
+        "It must return a list.",
+        "It can only be iterated once, even if it yields no values."
+      ],
+      "answer": 1,
+      "explanation": "A generator function returns a generator object. The body starts on the first next() and pauses at each yield, preserving local state. Generators are lazy and single-pass: once exhausted, they do not restart."
+    },
+    {
+      "key": "functions-iteration-a1",
+      "difficulty": "advanced",
+      "prompt": "What does the final expression evaluate to?",
+      "code": "def gen():\n    x = yield 1\n    yield x * 2\n\ng = gen()\nnext(g)\nresult = g.send(5)\nprint(result)",
+      "choices": ["1", "5", "10", "None"],
+      "answer": 2,
+      "explanation": "next(g) starts the generator and pauses at yield 1. send(5) resumes it, making the yield expression evaluate to 5, assigns x = 5, then yields 10. send() both resumes and delivers a value into the generator."
+    },
+    {
+      "key": "functions-iteration-a2",
+      "difficulty": "advanced",
+      "prompt": "What does this print?",
+      "code": "def inner():\n    yield 1\n    return 42\n\ndef outer():\n    value = yield from inner()\n    yield value\n\nprint(list(outer()))",
+      "choices": ["[1]", "[1, 42]", "[42]", "It raises StopIteration"],
+      "answer": 1,
+      "explanation": "yield from delegates iteration to inner, yielding 1. When inner returns, its StopIteration.value (42) becomes the value of the yield from expression. outer then yields that value."
+    },
+    {
+      "key": "functions-iteration-a3",
+      "difficulty": "advanced",
+      "prompt": "In a contextlib.contextmanager generator, what does code after yield represent?",
+      "code": "@contextmanager\ndef managed():\n    setup()\n    yield resource\n    teardown()",
+      "choices": [
+        "It runs before entering the with block.",
+        "It runs when the with block exits, including on exceptions.",
+        "It never runs unless the with block returns a value.",
+        "It replaces the with block body."
+      ],
+      "answer": 1,
+      "explanation": "Everything before yield runs on __enter__; everything after runs on __exit__. To handle exceptions inside the context, wrap yield in try/finally. A generator-based context manager can suppress an exception by catching it and not re-raising."
+    },
+    {
+      "key": "functions-iteration-a4",
+      "difficulty": "advanced",
+      "prompt": "What happens when a cached function is called with an unhashable argument?",
+      "code": "@functools.lru_cache(maxsize=100)\ndef load(rows):\n    ...\n\nload([1, 2, 3])",
+      "choices": [
+        "The list is converted to a tuple automatically.",
+        "The call works but is never cached.",
+        "It raises TypeError because cache keys must be hashable.",
+        "It raises RecursionError."
+      ],
+      "answer": 2,
+      "explanation": "lru_cache builds a key from the arguments, so they must be hashable. Convert the list to a tuple at the boundary, or cache a function that accepts stable scalar arguments. The cache also keeps results alive until evicted."
+    },
+    {
+      "key": "functions-iteration-a5",
+      "difficulty": "advanced",
+      "prompt": "Which shape correctly implements a decorator that takes its own arguments?",
+      "choices": [
+        "def deco(arg, func): return func",
+        "def deco(arg): return lambda func: func",
+        "def deco(func, arg): return func(arg)",
+        "deco = lambda func, arg: func"
+      ],
+      "answer": 1,
+      "explanation": "A decorator with arguments is a decorator factory: deco(arg) must return the actual decorator, which receives the function and returns a callable. That is why the pattern has three layers: factory, decorator, wrapper."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "functions-iteration-f1",
+      "difficulty": "beginner",
+      "front": "How does Python resolve a name inside a function?",
+      "back": "It follows the LEGB rule: Local, Enclosing function scope, Global module scope, then Builtins. Assignment makes a name local unless you declare global or nonlocal.",
+      "hint": "Local → Enclosing → Global → Builtins."
+    },
+    {
+      "key": "functions-iteration-f2",
+      "difficulty": "beginner",
+      "front": "What do *args and **kwargs collect?",
+      "back": "*args collects extra positional arguments into a tuple. **kwargs collects extra keyword arguments into a dict. They let a wrapper forward arbitrary calls without knowing the original signature.",
+      "front_code": "def wrapper(*args, **kwargs):\n    return original(*args, **kwargs)"
+    },
+    {
+      "key": "functions-iteration-f3",
+      "difficulty": "intermediate",
+      "front": "What is a closure?",
+      "back": "A closure is a nested function that remembers variables from its enclosing scope after the outer function has returned. Reading works automatically; rebinding the variable requires nonlocal.",
+      "front_code": "def make_adder(n):\n    def add(x):\n        return x + n\n    return add"
+    },
+    {
+      "key": "functions-iteration-f4",
+      "difficulty": "intermediate",
+      "front": "What does a decorator actually do?",
+      "back": "A decorator is a callable that receives a function and returns a replacement callable. The @decorator syntax is equivalent to func = decorator(func). Use functools.wraps to preserve metadata.",
+      "front_code": "@logged\ndef pay():\n    ...\n\n# same as: pay = logged(pay)"
+    },
+    {
+      "key": "functions-iteration-f5",
+      "difficulty": "intermediate",
+      "front": "When should you reach for a generator instead of a list?",
+      "back": "Use a generator for large or streaming sequences, or when you only need one pass. It uses constant memory and is lazy. Use a list when you need indexing, repeated iteration, len(), or to mutate the collection.",
+      "hint": "One pass, low memory."
+    },
+    {
+      "key": "functions-iteration-f6",
+      "difficulty": "advanced",
+      "front": "What is the difference between yield and return in a generator?",
+      "back": "yield emits a value and suspends the function, preserving local state for the next resume. return ends the generator and sets StopIteration.value. next() retrieves yielded values; send() also injects a value into the paused yield expression.",
+      "front_code": "def gen():\n    received = yield \"ready\"\n    yield received"
+    },
+    {
+      "key": "functions-iteration-f7",
+      "difficulty": "advanced",
+      "front": "Why is a generator-based context manager useful?",
+      "back": "It packages setup and guaranteed cleanup around a block. Code before yield is __enter__, code after yield is __exit__. A try/finally ensures teardown runs even when the block raises, and exceptions can be translated or suppressed deliberately.",
+      "front_code": "@contextmanager\ndef transaction():\n    begin()\n    try:\n        yield\n        commit()\n    except Exception:\n        rollback()\n        raise"
+    }
+  ]
+}

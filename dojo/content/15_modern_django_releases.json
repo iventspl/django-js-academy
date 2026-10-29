@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "modern-django-releases",
+    "name": "Modern Django & Release Radar",
+    "tagline": "5.2 LTS, 6.0, 6.1, security patches, and what to upgrade next.",
+    "description": "Django moves fast. This path turns release notes into decisions: which version is supported, what changed in 5.2/6.0/6.1, why patch releases matter, and how to upgrade without discovering a breaking change in production.",
+    "glyph": "new",
+    "accent": "#FF8FAB"
+  },
+  "questions": [
+    {
+      "key": "modern-django-releases-b1",
+      "difficulty": "beginner",
+      "prompt": "At the late-October 2026 snapshot, which pair is correct?",
+      "choices": [
+        "Latest stable 6.0.0; latest LTS 4.2.",
+        "Latest stable 6.1.2; latest LTS 5.2.18.",
+        "Latest stable 5.2.18; latest LTS 6.1.2.",
+        "Latest stable 7.0; latest LTS 6.0."
+      ],
+      "answer": 1,
+      "explanation": "Django 6.1.2 is the current feature release, and 5.2.18 is the current 5.2 LTS patch. 6.0 is still receiving extended fixes for a while, but 6.1 is the latest stable line. Check the official download page before quoting versions."
+    },
+    {
+      "key": "modern-django-releases-b2",
+      "difficulty": "beginner",
+      "prompt": "What does Django mean when it says patch releases are 100% compatible with their feature release?",
+      "choices": [
+        "They never include security fixes.",
+        "They are intended to be safe drop-in upgrades for that series, unless a security or data-loss fix makes strict compatibility impossible.",
+        "They require rewriting all models.",
+        "They only work on the latest Python."
+      ],
+      "answer": 1,
+      "explanation": "Patch releases fix bugs and security issues within a release series. The default assumption should be to upgrade promptly. Read the notes for the rare exception, especially security mitigations that intentionally tighten behaviour."
+    },
+    {
+      "key": "modern-django-releases-b3",
+      "difficulty": "beginner",
+      "prompt": "How long is Django 5.2 LTS supported?",
+      "choices": [
+        "Until the next minor release only.",
+        "With security and data-loss fixes through April 2028 under the published support policy.",
+        "Forever.",
+        "Exactly six months."
+      ],
+      "answer": 1,
+      "explanation": "Django 5.2 is an LTS release with extended support through April 2028 at the time of this snapshot. LTS is a good fit when you need a longer upgrade cadence. Django 6.2 will be the next LTS, planned for April 2027."
+    },
+    {
+      "key": "modern-django-releases-b4",
+      "difficulty": "beginner",
+      "prompt": "Which set of features shipped in Django 6.0?",
+      "choices": [
+        "Built-in CSP support, template partials, and a Tasks framework.",
+        "Composite primary keys, async auth methods, and a new admin theme.",
+        "Fetch modes, MAILERS, and database-level delete options.",
+        "WebSockets in core and a built-in React renderer."
+      ],
+      "answer": 0,
+      "explanation": "Django 6.0 (December 2025) added built-in Content Security Policy support, template partials, and django.tasks, plus modern email handling and other changes. 6.1 added fetch modes and mailers; 5.2 added composite primary keys."
+    },
+    {
+      "key": "modern-django-releases-b5",
+      "difficulty": "beginner",
+      "prompt": "Which Python versions does Django 6.1.2 officially support at this snapshot?",
+      "choices": [
+        "Python 2.7 and 3.6+",
+        "Python 3.10 and 3.11 only",
+        "Python 3.12, 3.13, and 3.14",
+        "Only Python 3.14"
+      ],
+      "answer": 2,
+      "explanation": "Django 6.1.2 supports Python 3.12–3.14. The 6.1 release notes also list Python 3.15 support as of 6.1.3, so verify the exact patch before relying on 3.15. Django 5.2 was the last series to support Python 3.10 and 3.11."
+    },
+    {
+      "key": "modern-django-releases-i1",
+      "difficulty": "intermediate",
+      "prompt": "What did CompositePrimaryKey enable in Django 5.2?",
+      "choices": [
+        "A table primary key made from multiple fields, addressed through models.CompositePrimaryKey.",
+        "Multiple databases per model.",
+        "A primary key that is also a foreign key to every table.",
+        "Automatic UUIDs on every model."
+      ],
+      "answer": 0,
+      "explanation": "CompositePrimaryKey lets a table use multiple columns as its primary key, useful for join tables and legacy schemas. It introduces a tuple-like pk and has implications for relations and forms. Not every third-party package understands it yet."
+    },
+    {
+      "key": "modern-django-releases-i2",
+      "difficulty": "intermediate",
+      "prompt": "Why run tests with python -Wd during an upgrade?",
+      "choices": [
+        "It disables warnings.",
+        "It surfaces deprecation warnings so you can fix code before the next Django release removes the API.",
+        "It makes tests run in parallel.",
+        "It installs the next Django version automatically."
+      ],
+      "answer": 1,
+      "explanation": "Django emits deprecation warnings for APIs scheduled for removal. -Wd (or a warnings filter that does not hide them) makes them visible in test output. Fix warnings while the old API still works, not after the removal release."
+    },
+    {
+      "key": "modern-django-releases-i3",
+      "difficulty": "intermediate",
+      "prompt": "What is changing with Django's calendar versioning?",
+      "choices": [
+        "Django is moving to monthly releases named after months.",
+        "Django 6.2 is the final A.B release; from 2028, feature releases use YYYY and every feature release gets three years of support.",
+        "Django will stop using semantic version numbers for patches.",
+        "LTS releases are being eliminated immediately."
+      ],
+      "answer": 1,
+      "explanation": "DEP 20 introduces annual calendar versioning. Django 6.2 (April 2027) is the last under the old scheme, then releases are named 2028, 2029, and so on. Warning classes were renamed accordingly, such as RemovedInDjango2028Warning."
+    },
+    {
+      "key": "modern-django-releases-i4",
+      "difficulty": "intermediate",
+      "prompt": "What is the role of the new MAILERS setting in Django 6.1?",
+      "choices": [
+        "It configures multiple named email backends, similar to CACHES or DATABASES, and supports using=\"alias\".",
+        "It replaces SMTP with a proprietary service.",
+        "It controls how many emails a user can receive per day.",
+        "It stores email bodies in the database."
+      ],
+      "answer": 0,
+      "explanation": "MAILERS provides named backend configurations. The old EMAIL_* settings and connection arguments are deprecated in favour of aliases and the using argument. Plan the migration, but do not rip out working email configuration without testing providers and backends."
+    },
+    {
+      "key": "modern-django-releases-i5",
+      "difficulty": "intermediate",
+      "prompt": "What do Django 6.1 model field fetch modes control?",
+      "choices": [
+        "How unfetched fields are loaded when accessed: one instance, all peer instances, or raise.",
+        "Which database engine is used.",
+        "How CSS is minified.",
+        "Whether forms use CSRF."
+      ],
+      "answer": 0,
+      "explanation": "FETCH_ONE is the existing on-demand behaviour; FETCH_PEERS batches a missing field for instances from the same queryset; FETCH_RAISE blocks unexpected lazy queries. Fetch modes are a performance and correctness tool, not a replacement for understanding the query shape."
+    },
+    {
+      "key": "modern-django-releases-a1",
+      "difficulty": "advanced",
+      "prompt": "What is the main caveat of FETCH_PEERS?",
+      "choices": [
+        "It always disables pagination.",
+        "It reduces N+1 access by batching peer instances, but it still performs extra work and is not a substitute for deliberate select_related/prefetch_related on hot paths.",
+        "It only works for many-to-many fields.",
+        "It loads every row in the database into memory."
+      ],
+      "answer": 1,
+      "explanation": "FETCH_PEERS can turn a loop of lazy foreign-key loads into a batched query. It is convenient for dynamic access patterns, but explicit relation loading remains clearer and more predictable for performance-critical endpoints. FETCH_RAISE is useful to catch accidental queries in critical code."
+    },
+    {
+      "key": "modern-django-releases-a2",
+      "difficulty": "advanced",
+      "prompt": "Why does DB_CASCADE require extra care?",
+      "choices": [
+        "It is slower than Python-level CASCADE.",
+        "Deletion happens in the database and does not trigger Django's pre_delete/post_delete signals.",
+        "It cannot delete related rows.",
+        "It only works with SQLite."
+      ],
+      "answer": 1,
+      "explanation": "DB_CASCADE delegates deletion to SQL ON DELETE CASCADE for efficiency, but signal-based cleanup, file deletion, audit hooks, and cache invalidation will not run. Move those effects to explicit design, database triggers, or jobs, and test cascades carefully."
+    },
+    {
+      "key": "modern-django-releases-a3",
+      "difficulty": "advanced",
+      "prompt": "Which application is most directly affected by CVE-2026-87975 fixed in 6.1.2/6.0.9/5.2.18?",
+      "choices": [
+        "Any app using static files.",
+        "Apps using model formsets where the model's primary key is editable/assignable through the form, such as a UUID/natural PK or a OneToOneField PK.",
+        "Apps that only use BigAutoField and plain forms.",
+        "Apps using SQLite only."
+      ],
+      "answer": 1,
+      "explanation": "The vulnerability involved forged POST data in model formsets with editable primary keys, allowing deletion outside the limiting queryset or creation via edit-only formsets. Default BigAutoField models were not affected. Upgrade and review formset permissions and PK exposure regardless."
+    },
+    {
+      "key": "modern-django-releases-a4",
+      "difficulty": "advanced",
+      "prompt": "What is the safest way to adopt a new Django patch release?",
+      "choices": [
+        "Upgrade production directly and skip tests because patches are compatible.",
+        "Pin exact versions, read the release notes, run the full test suite and migrations in staging, deploy gradually, and monitor errors and query behaviour.",
+        "Wait until the next LTS and never patch.",
+        "Only upgrade when a feature you need is released."
+      ],
+      "answer": 1,
+      "explanation": "Patch releases are intended to be safe, but security mitigations can change edge-case behavior and data-loss fixes should be verified against your data. Pin versions for reproducibility, review notes, test migrations, and monitor after rollout. Never defer security patches indefinitely."
+    },
+    {
+      "key": "modern-django-releases-a5",
+      "difficulty": "advanced",
+      "prompt": "Why should you patch even if you believe your app is not affected by a recent CVE?",
+      "choices": [
+        "Because the CVE details may be incomplete and the security fix can also include hardening, data-loss fixes, or dependency changes.",
+        "Because Django refuses to run old versions.",
+        "Because all CVEs affect every app equally.",
+        "Because patches remove features automatically."
+      ],
+      "answer": 0,
+      "explanation": "Attack paths and affected configurations can be broader than a short advisory suggests, and releases bundle bug/data-loss fixes. Risk-based exceptions are reasonable for a short time, but track them explicitly and patch quickly. Treat security releases as operational priority."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "modern-django-releases-f1",
+      "difficulty": "beginner",
+      "front": "What are the current Django release lines at the October 2026 snapshot?",
+      "back": "Latest stable: 6.1.2. Latest LTS: 5.2.18. Django 6.0 is on extended support for a limited window. Always verify the official download page because patch numbers move quickly.",
+      "hint": "6.1 stable, 5.2 LTS."
+    },
+    {
+      "key": "modern-django-releases-f2",
+      "difficulty": "beginner",
+      "front": "Why upgrade to the latest patch release?",
+      "back": "Patch releases fix security issues, crashes, regressions, and sometimes data loss. Django intends them to be drop-in compatible within a series. Pin versions, read the notes, test, and deploy security patches promptly.",
+      "hint": "Security and data loss."
+    },
+    {
+      "key": "modern-django-releases-f3",
+      "difficulty": "intermediate",
+      "front": "What did Django 6.0 add for security and templates?",
+      "back": "Built-in Content Security Policy support via middleware/settings/nonces, template partials for in-file component reuse, and the django.tasks framework. It also moved email handling to Python's modern email API.",
+      "front_code": "SECURE_CSP = {\n    \"default-src\": [CSP.SELF],\n    \"script-src\": [CSP.SELF, CSP.NONCE],\n}"
+    },
+    {
+      "key": "modern-django-releases-f4",
+      "difficulty": "intermediate",
+      "front": "What are Django 6.1 fetch modes?",
+      "back": "Per-queryset controls for lazy field fetching. FETCH_ONE is the old behaviour; FETCH_PEERS batches missing fields for peer instances; FETCH_RAISE raises instead of querying. Use them deliberately and still profile hot paths.",
+      "front_code": "books = Book.objects.fetch_mode(models.FETCH_PEERS)"
+    },
+    {
+      "key": "modern-django-releases-f5",
+      "difficulty": "advanced",
+      "front": "What changed with mail configuration in Django 6.1?",
+      "back": "MAILERS introduces named email backends with OPTIONS, and sending functions gain using=\"alias\". The older EMAIL_* settings and connection arguments are deprecated. Plan a tested migration rather than a blind search-and-replace.",
+      "front_code": "MAILERS = {\n  \"default\": {\n    \"BACKEND\": \"django.core.mail.backends.smtp.EmailBackend\",\n    \"OPTIONS\": {\"host\": \"smtp.example.com\"},\n  }\n}"
+    },
+    {
+      "key": "modern-django-releases-f6",
+      "difficulty": "advanced",
+      "front": "What were the 6.1.2/6.0.9/5.2.18 security fixes about?",
+      "back": "A low-severity language-code DoS, a moderate header-parsing DoS, a moderate GeoDjango spatial lookup SSRF/forgery issue, and a moderate model-formset privilege issue with editable primary keys. The same patch set also fixed a GeoDjango data-loss bug. Upgrade and read the official notes.",
+      "hint": "Four CVEs, three severity moderate or low."
+    },
+    {
+      "key": "modern-django-releases-f7",
+      "difficulty": "advanced",
+      "front": "How do you plan a Django upgrade safely?",
+      "back": "Read all release notes between versions, pin exact versions, run tests with deprecation warnings, check third-party compatibility, test migrations on a copy, deploy to staging, and roll out with monitoring. Keep a rollback plan and never skip security patches for convenience.",
+      "front_code": "python -Wall manage.py test"
+    }
+  ]
+}

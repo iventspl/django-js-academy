@@ -1,0 +1,159 @@
+{
+  "module": {
+    "slug": "testy-publikacja",
+    "title": "Testy, jakość i publikacja",
+    "subtitle": "Od pierwszego testu do aplikacji w App Store i Google Play.",
+    "description": "Ostatni moduł uczy, jak nie wypuścić przypadkiem zepsutej aplikacji: testy jednostkowe, integracyjne i E2E, mockowanie API, buildy, OTA, monitoring i bezpieczeństwo.",
+    "level": "advanced",
+    "glyph": "08",
+    "accent": "#F472B6",
+    "duration_minutes": 70,
+    "outcomes": [
+      "Piszesz testy React Testing Library z perspektywy użytkownika.",
+      "Mockujesz sieć i testujesz stany ładowania, błędu i sukcesu.",
+      "Rozumiesz piramidę testów i miejsce E2E.",
+      "Przygotowujesz build, aktualizację i monitoring aplikacji mobilnej."
+    ],
+    "project_title": "Wydanie aplikacji z checklistą",
+    "project_brief": "Przygotuj aplikację do publikacji: testy krytycznych ścieżek, build produkcyjny, wersjonowanie, uprawnienia, obsługa błędów i plan monitoringu.",
+    "project_steps": [
+      "Dodaj testy formularza i listy w React Testing Library.",
+      "Dodaj test integracyjny przepływu dodawania zadania.",
+      "Zbuduj wersję produkcyjną i sprawdź na urządzeniu.",
+      "Przejdź checklistę sklepową, uprawnień i monitoringu."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "testy-rtl",
+      "title": "Testy z React Testing Library",
+      "summary": "Testuj zachowanie widoczne dla użytkownika, a nie implementację komponentu.",
+      "minutes": 15,
+      "body_html": "<p><strong>React Testing Library</strong> zachęca do testowania przez role, etykiety i tekst widoczny dla użytkownika. Dzięki temu testy są odporne na refaktoryzację wnętrza komponentu.</p>\n<pre><code>import { render, screen } from \"@testing-library/react\";\nimport userEvent from \"@testing-library/user-event\";\n\ntest(\"dodaje zadanie\", async () =&gt; {\n  const user = userEvent.setup();\n  render(&lt;App /&gt;);\n\n  await user.type(screen.getByLabelText(\"Nowe zadanie\"), \"Kup mleko\");\n  await user.click(screen.getByRole(\"button\", { name: \"Dodaj\" }));\n\n  expect(screen.getByText(\"Kup mleko\")).toBeInTheDocument();\n});</code></pre>\n<h2>Dobre zapytania</h2>\n<ul>\n<li><code>getByRole</code> — najlepsze, odzwierciedla dostępność.</li>\n<li><code>getByLabelText</code> — formularze.</li>\n<li><code>getByText</code> — widoczna treść, ale mniej semantyczne.</li>\n<li><code>findBy...</code> — gdy element pojawia się asynchronicznie.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Nie testuj stanu wewnętrznego.</strong> Testuj to, co użytkownik widzi i robi. Jeśli test wymaga sięgania do prywatnych pól, często testujesz implementację zamiast zachowania.</div>"
+    },
+    {
+      "slug": "integracja-e2e",
+      "title": "Integracja, mocki i E2E",
+      "summary": "Piramida testów, mockowanie fetch i testy całych ścieżek.",
+      "minutes": 14,
+      "body_html": "<p>Piramida testów to nie sztywna reguła, ale sposób myślenia: dużo szybkich testów jednostkowych, mniej integracyjnych, kilka wolnych E2E krytycznych ścieżek.</p>\n<h2>Mockowanie API</h2>\n<pre><code>global.fetch = vi.fn().mockResolvedValue({\n  ok: true,\n  json: async () =&gt; [{ id: \"1\", title: \"Test\" }],\n});</code></pre>\n<p>Mock powinien odzwierciedlać kontrakt API, ale też testować błędy: 404, 500, timeout i niepoprawny JSON. Inaczej testy potwierdzają tylko happy path.</p>\n<h2>Testy E2E</h2>\n<p>E2E (np. Playwright, Detox, Maestro) uruchamia prawdziwą aplikację i sprawdza przepływ: logowanie, dodanie zadania, zapis, powrót. Są wolniejsze i bardziej kruche, więc wybieraj kilka najważniejszych.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> im wyżej w piramidzie, tym mniej testów, ale bardziej realistyczne środowisko. Nie zastępuj unitów dziesiątkami E2E.</div>"
+    },
+    {
+      "slug": "publikacja-monitoring",
+      "title": "Publikacja, aktualizacje i monitoring",
+      "summary": "Buildy, wersjonowanie, OTA, sklepy, crash reporting i bezpieczeństwo premierowe.",
+      "minutes": 15,
+      "body_html": "<p>Publikacja to nie „wyślij build”. To proces: build, testy na urządzeniu, wersja, podpis, zgłoszenie do sklepu, rollout i monitoring.</p>\n<h2>Wersje i OTA</h2>\n<p>Aktualizacje OTA (np. Expo Updates, CodePush) mogą dostarczyć zmiany JavaScript bez nowej wersji w sklepie. Nie mogą jednak zmienić natywnego kodu, uprawnień ani konfiguracji wymagającej przebudowania aplikacji.</p>\n<pre><code>// package.json\n&quot;version&quot;: &quot;1.4.0&quot;,\n&quot;buildNumber&quot;: &quot;42&quot;</code></pre>\n<h2>Przed premierą</h2>\n<ul>\n<li>Testuj krytyczne ścieżki na prawdziwym urządzeniu, nie tylko symulatorze.</li>\n<li>Sprawdź uprawnienia, prywatność, politykę prywatności i wiek treści.</li>\n<li>Dodaj crash reporting i analitykę bez wrażliwych danych.</li>\n<li>Przygotuj plan rollbacku i komunikację dla użytkowników.</li>\n<li>Nie loguj tokenów, haseł ani pełnych danych osobowych.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Monitoring:</strong> crash rate, czas startu, błędy sieci i porzucenia to sygnały produktowe. Wypuszczaj stopniowo (staged rollout) i obserwuj, zanim zwiększysz zasięg.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-test-b1",
+      "difficulty": "beginner",
+      "prompt": "Które zapytanie RTL jest zwykle najlepsze dla przycisku?",
+      "choices": [
+        "getByText",
+        "getByRole(\"button\", { name: ... })",
+        "getByTestId",
+        "document.querySelector"
+      ],
+      "answer": 1,
+      "explanation": "getByRole odzwierciedla semantykę i dostępność. TestId jest fallbackiem, gdy nie ma lepszego zapytania."
+    },
+    {
+      "key": "js-test-b2",
+      "difficulty": "beginner",
+      "prompt": "Po co używać userEvent zamiast fireEvent?",
+      "choices": [
+        "Aby symulować bardziej realistyczne interakcje użytkownika.",
+        "Aby pominąć renderowanie.",
+        "Aby testować tylko CSS.",
+        "Aby usunąć potrzebę asercji."
+      ],
+      "answer": 0,
+      "explanation": "userEvent modeluje sekwencje zachowań (klikanie, pisanie, focus) bliżej prawdziwego użytkownika. fireEvent jest niższego poziomu."
+    },
+    {
+      "key": "js-test-i1",
+      "difficulty": "intermediate",
+      "prompt": "Co powinien obejmować dobry mock API w teście?",
+      "choices": [
+        "Tylko odpowiedź 200.",
+        "Sukces, błędy HTTP, błąd sieci i niepoprawny kształt danych.",
+        "Tylko adres URL.",
+        "Tylko nagłówki."
+      ],
+      "answer": 1,
+      "explanation": "Testy powinny sprawdzać zachowanie aplikacji w realistycznych scenariuszach awarii, nie tylko happy path."
+    },
+    {
+      "key": "js-test-i2",
+      "difficulty": "intermediate",
+      "prompt": "Gdzie w piramidzie testów znajdują się testy E2E?",
+      "choices": [
+        "Na dole, jest ich najwięcej",
+        "Na górze, jest ich najmniej, ale są najwolniejsze",
+        "Zastępują wszystkie testy jednostkowe",
+        "Nie powinny istnieć"
+      ],
+      "answer": 1,
+      "explanation": "E2E są najbardziej realistyczne, ale wolne i kruche. Utrzymuje się ich kilka dla krytycznych ścieżek, a większość logiki pokrywa się niżej."
+    },
+    {
+      "key": "js-test-a1",
+      "difficulty": "advanced",
+      "prompt": "Czego nie da się zmienić przez aktualizację OTA w React Native?",
+      "choices": [
+        "Tekstów w aplikacji.",
+        "Natywnego kodu i uprawnień wymagających nowego builda.",
+        "Styli komponentów.",
+        "Logiki walidacji w JavaScript."
+      ],
+      "answer": 1,
+      "explanation": "OTA podmienia bundle JavaScript. Zmiany natywne, uprawnienia i konfiguracja wymagają nowej wersji w sklepie."
+    },
+    {
+      "key": "js-test-a2",
+      "difficulty": "advanced",
+      "prompt": "Po co wdrażać aplikację etapowo (staged rollout)?",
+      "choices": [
+        "Aby ograniczyć wpływ błędów do małej grupy użytkowników i móc zatrzymać wdrożenie.",
+        "Aby zwiększyć rozmiar aplikacji.",
+        "Aby ominąć testy.",
+        "Aby uniknąć monitoringu."
+      ],
+      "answer": 0,
+      "explanation": "Stopniowe wdrażanie ogranicza blast radius. Obserwuj crash rate i opinie, zanim zwiększysz procent użytkowników."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-test-f1",
+      "difficulty": "beginner",
+      "front": "Jakie zapytania RTL są preferowane?",
+      "back": "getByRole, getByLabelText i inne zapytania semantyczne. Odzwierciedlają doświadczenie użytkownika i dostępność. getByTestId to fallback, gdy nie ma dobrego zapytania."
+    },
+    {
+      "key": "js-test-f2",
+      "difficulty": "intermediate",
+      "front": "Czym jest piramida testów?",
+      "back": "Model proporcji: wiele szybkich testów jednostkowych, mniej integracyjnych, kilka E2E krytycznych ścieżek. Nie chodzi o sztywne liczby, ale o świadomy koszt i realizm."
+    },
+    {
+      "key": "js-test-f3",
+      "difficulty": "advanced",
+      "front": "Co powinna zawierać checklista przed publikacją aplikacji?",
+      "back": "Testy na urządzeniu, wersjonowanie, uprawnienia, politykę prywatności, obsługę błędów, crash reporting, bezpieczeństwo logów, plan rollbacku i staged rollout oraz monitoring po premierze."
+    },
+    {
+      "key": "js-test-f4",
+      "front": "Czym różni się getBy od findBy w RTL?",
+      "back": "getBy oczekuje elementu już teraz i rzuca błąd, jeśli go nie ma. findBy zwraca Promise i czeka, aż element pojawi się asynchronicznie — używaj przy ładowaniu danych."
+    },
+    {
+      "key": "js-test-f5",
+      "front": "Czym jest staged rollout?",
+      "back": "Stopniowe udostępnianie wersji coraz większej grupie użytkowników. Pozwala ograniczyć skutki błędów i zatrzymać wdrożenie po monitoringu crashy oraz metryk."
+    }
+  ]
+}

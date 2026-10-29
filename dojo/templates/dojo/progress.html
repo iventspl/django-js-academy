@@ -1,0 +1,194 @@
+{% extends "dojo/base.html" %}
+
+{% block title %}Progress notebook{% endblock %}
+{% block body_class %}page-progress{% endblock %}
+
+{% block content %}
+<div class="page-wrap progress-wrap">
+  <header class="progress-hero">
+    <div>
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> The notebook</p>
+      <h1>A longer view<br>of <em>getting better.</em></h1>
+      <p class="page-lead">No streak guilt, no fake urgency. This is the evidence: what you have met, what stuck, and what the schedule wants to revisit.</p>
+    </div>
+    <div class="level-card">
+      <div class="level-card-top">
+        <span class="level-number">{{ stats.level.number|stringformat:"02d" }}</span>
+        <div>
+          <span>Current rank</span>
+          <strong>{{ stats.level.title }}</strong>
+        </div>
+      </div>
+      <div class="level-xp"><strong>{{ stats.xp }}</strong><span>total XP</span></div>
+      <div class="progress-track progress-track-cream"><span style="--bar: {{ stats.level.percent }}%;"></span></div>
+      <p class="level-next">
+        {% if stats.level.next_threshold %}
+          {{ stats.level.to_next }} XP to level {{ stats.level.number|add:1 }}
+        {% else %}
+          Top rank reached. Keep the edge sharp.
+        {% endif %}
+      </p>
+    </div>
+  </header>
+
+  <div class="stat-grid">
+    <div class="stat-tile stat-tile-yellow">
+      <span class="stat-label">Questions answered</span>
+      <strong>{{ stats.answered }}</strong>
+      <p>{{ stats.correct }} correct · {{ stats.accuracy }}% accuracy</p>
+    </div>
+    <div class="stat-tile stat-tile-mint">
+      <span class="stat-label">Current streak</span>
+      <strong>{{ stats.streak }}<small> days</small></strong>
+      <p>{% if stats.streak %}Keep it alive with one card.{% else %}One answer starts the chain.{% endif %}</p>
+    </div>
+    <div class="stat-tile stat-tile-coral">
+      <span class="stat-label">Cards met</span>
+      <strong>{{ stats.reviewed_cards }}<small>/{{ stats.total_cards }}</small></strong>
+      <p>{{ stats.due_cards }} due now · {{ stats.card_progress }}% of decks</p>
+    </div>
+    <div class="stat-tile stat-tile-blue">
+      <span class="stat-label">Quiz runs finished</span>
+      <strong>{{ stats.completed_attempts }}</strong>
+      <p>{{ stats.mastery_percent }}% of all questions mastered</p>
+    </div>
+  </div>
+
+  <section class="section progress-section" aria-labelledby="mastery-title">
+    <div class="section-head section-head-tight">
+      <div>
+        <p class="eyebrow eyebrow-dark">Mastery map</p>
+        <h2 id="mastery-title">Where the knowledge lives.</h2>
+      </div>
+      <p class="section-aside">A question counts as mastered once you answer it correctly. Coverage counts questions you have seen at all.</p>
+    </div>
+    <div class="mastery-list">
+      {% for row in stats.topics %}
+        <div class="mastery-row" style="--accent: {{ row.topic.accent }};">
+          <span class="topic-glyph topic-glyph-small">{{ row.topic.glyph }}</span>
+          <div class="mastery-name">
+            <strong>{{ row.topic.name }}</strong>
+            <span>{{ row.mastered }} mastered · {{ row.seen }} seen of {{ row.question_total }}</span>
+          </div>
+          <div class="mastery-bars">
+            <div class="progress-track progress-track-dark"><span style="--bar: {{ row.mastery }}%;"></span></div>
+            <div class="mastery-numbers"><strong>{{ row.mastery }}%</strong><span>{{ row.accuracy }}% accuracy</span></div>
+          </div>
+          <a class="mastery-link" href="{% url 'dojo:quiz_setup' %}?topic={{ row.topic.slug }}" aria-label="Practice {{ row.topic.name }}">Practice <span aria-hidden="true">→</span></a>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="progress-two-col">
+    <section class="activity-card" aria-labelledby="activity-title">
+      <div class="activity-head">
+        <div>
+          <p class="eyebrow eyebrow-dark">Last 28 days</p>
+          <h2 id="activity-title">A quiet record of showing up.</h2>
+        </div>
+        <div class="heat-legend" aria-hidden="true"><span>less</span><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>more</span></div>
+      </div>
+      <div class="heatmap">
+        {% for day in activity_days %}
+          <div class="heat-cell" data-level="{{ day.intensity }}" title="{{ day.label }} · {{ day.xp }} XP" {% if day.is_today %}aria-current="date"{% endif %}>
+            <span class="sr-only">{{ day.label }}: {{ day.xp }} XP</span>
+          </div>
+        {% endfor %}
+      </div>
+      <p class="heat-foot">Each square is one day. Hover for the exact XP. {{ stats.daily_percent }}% of today's {{ stats.daily_goal }} XP goal is in the notebook.</p>
+    </section>
+
+    <section class="badges-card" aria-labelledby="badges-title">
+      <div class="activity-head">
+        <div>
+          <p class="eyebrow eyebrow-dark">Trophies</p>
+          <h2 id="badges-title">Proof of effort.</h2>
+        </div>
+      </div>
+      <div class="badge-grid">
+        {% for badge in achievements %}
+          <div class="badge {% if badge.earned %}is-earned{% endif %}">
+            <span class="badge-glyph" aria-hidden="true">{{ badge.glyph }}</span>
+            <div><strong>{{ badge.name }}</strong><p>{{ badge.description }}</p></div>
+            <span class="badge-state">{% if badge.earned %}Earned{% else %}Locked{% endif %}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <section class="section history-section" aria-labelledby="history-title">
+    <div class="section-head section-head-tight">
+      <div>
+        <p class="eyebrow eyebrow-dark">Field log</p>
+        <h2 id="history-title">Recent quiz runs.</h2>
+      </div>
+      <a class="text-link" href="{% url 'dojo:quiz_setup' %}">Start another →</a>
+    </div>
+    {% if recent_attempts %}
+      <div class="history-table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr><th>Run</th><th>Level</th><th>Score</th><th>XP</th><th>Finished</th><th><span class="sr-only">Open</span></th></tr>
+          </thead>
+          <tbody>
+            {% for attempt in recent_attempts %}
+              <tr>
+                <td><strong>{{ attempt.scope_label }}</strong></td>
+                <td><span class="tag tag-cream">{{ attempt.difficulty_label }}</span></td>
+                <td>{{ attempt.score_percent }}% <span class="table-muted">{{ attempt.correct_count }}/{{ attempt.length }}</span></td>
+                <td>+{{ attempt.xp_earned }}</td>
+                <td class="table-muted">{{ attempt.completed_at|date:"j M, H:i" }}</td>
+                <td><a class="table-link" href="{% url 'dojo:quiz_results' attempt.pk %}">Review →</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="history-empty">
+        <p>No completed runs yet. That is a blank page, not a problem.</p>
+        <a class="text-link" href="{% url 'dojo:quiz_setup' %}">Start the first one →</a>
+      </div>
+    {% endif %}
+  </section>
+
+  {% if activities %}
+    <section class="activity-feed" aria-labelledby="feed-title">
+      <div class="section-head section-head-tight">
+        <div>
+          <p class="eyebrow eyebrow-dark">Live feed</p>
+          <h2 id="feed-title">The last few moves.</h2>
+        </div>
+      </div>
+      <div class="feed-list">
+        {% for item in activities %}
+          <div class="feed-item">
+            <span class="feed-dot feed-dot-{{ item.event.kind }}" aria-hidden="true"></span>
+            <div><strong>{{ item.kind }}</strong><span>{% if item.topic %}{{ item.topic.name }}{% else %}Bonus{% endif %}</span></div>
+            <span class="feed-xp">+{{ item.xp }} XP</span>
+            <span class="feed-time">{{ item.when|timesince }} ago</span>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="danger-zone" aria-labelledby="reset-title">
+    <div>
+      <p class="eyebrow eyebrow-dark">Fresh notebook</p>
+      <h2 id="reset-title">Start over, deliberately.</h2>
+      <p>This clears quiz history, card scheduling, XP, and streaks. The question bank and flashcards stay put.</p>
+    </div>
+    <details class="reset-details">
+      <summary>Reset my progress</summary>
+      <form method="post" action="{% url 'dojo:progress_reset' %}" data-confirm="Reset every score, card schedule, streak and XP point?">
+        {% csrf_token %}
+        <p>This cannot be undone.</p>
+        <button class="btn btn-danger" type="submit">Yes, clear it all</button>
+      </form>
+    </details>
+  </section>
+</div>
+{% endblock %}

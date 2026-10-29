@@ -1,0 +1,194 @@
+{
+  "module": {
+    "slug": "mvc-w-js",
+    "title": "MVC w JavaScript",
+    "subtitle": "Model, widok, kontroler i stan widoku: currentView, currentSort, currentQuery.",
+    "description": "Praktyczny moduł o MVC bez frameworka. Wyjaśnia, kiedy separacja ma sens, jak trzymać stan widoku w jednym obiekcie i dlaczego filtrowanie oraz sortowanie powinny być czystymi funkcjami.",
+    "level": "advanced",
+    "glyph": "18",
+    "accent": "#60A5FA",
+    "duration_minutes": 80,
+    "outcomes": [
+      "Rozdzielasz model, widok i kontroler według odpowiedzialności, nie według plików.",
+      "Utrzymujesz currentView, currentSort i currentQuery w jednym źródle prawdy.",
+      "Piszesz filtrowanie, sortowanie i paginację jako testowalne funkcje czyste.",
+      "Aktualizujesz stan jednym patchem i renderujesz UI wyłącznie z tego stanu."
+    ],
+    "project_title": "Lista produktów w MVC",
+    "project_brief": "Zbuduj listę produktów z wyszukiwaniem, kategorią, sortowaniem, widokiem grid/list i paginacją. Cały stan widoku trzymaj w jednym obiekcie, a filtrowanie i sortowanie w czystych funkcjach.",
+    "project_steps": [
+      "Zdefiniuj model produktu i dane testowe.",
+      "Zbuduj czyste selektory: filter, sort, paginate.",
+      "Dodaj kontroler aktualizujący stan i render.",
+      "Dodaj empty state, reset filtrów i testy selektorów."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "model-widok-kontroler",
+      "title": "Model, widok, kontroler bez magii",
+      "summary": "Kto odpowiada za dane, kto za DOM, a kto za decyzje i zdarzenia.",
+      "minutes": 20,
+      "body_html": "<p>MVC nie jest biblioteką. To sposób podziału odpowiedzialności. W małej aplikacji możesz mieć trzy funkcje; w większej — trzy warstwy. Sens jest ten sam: <strong>każda część ma jedno główne zadanie</strong>.</p>\n<h2>Trzy role</h2>\n<ul>\n<li><strong>Model</strong> — dane i reguły domenowe: produkty, koszyk, walidacja, uprawnienia. Nie wie, jak wygląda tabela ani przycisk.</li>\n<li><strong>Widok</strong> — zamienia dane na DOM. Nie filtruje, nie sortuje i nie decyduje, co się stanie po kliknięciu.</li>\n<li><strong>Kontroler</strong> — odbiera zdarzenia, aktualizuje stan i wywołuje widok. Zna przepływ, ale nie implementuje reguł biznesowych.</li>\n</ul>\n<h2>Przepływ</h2>\n<pre><code>użytkownik → zdarzenie → kontroler → nowy stan\n                                  ↓\n                              selektory\n                                  ↓\n                                widok → DOM</code></pre>\n<p>Kluczowe pytanie projektowe brzmi: <em>gdy zmieni się reguła filtrowania, ile miejsc musisz poprawić?</em> Jeśli jedno, granica jest dobra.</p>\n<h2>Kiedy MVC ma sens</h2>\n<ul>\n<li>lista lub formularz ma kilka niezależnych filtrów i trybów widoku,</li>\n<li>ten sam stan ma zasilać kilka fragmentów UI,</li>\n<li>chcesz testować logikę bez uruchamiania przeglądarki,</li>\n<li>kilka osób pracuje nad tym samym ekranem.</li>\n</ul>\n<p>Dla pojedynczego przycisku „pokaż/ukryj” MVC to nadmiar. Dla listy z search, sortem, grid/list, paginacją i pustym stanem — porządek szybko się zwraca.</p>\n<div class=\"lesson-callout\"><strong>Uwaga:</strong> MVC nie oznacza trzech plików na siłę. Oznacza trzy odpowiedzialności. Czasem model i selektory mogą mieszkać w jednym module, dopóki nie mieszają się z DOM.</div>"
+    },
+    {
+      "slug": "stan-widoku",
+      "title": "currentView, currentSort, currentQuery",
+      "summary": "Jeden obiekt stanu zamiast pięciu globalnych zmiennych i parametrów w każdej funkcji.",
+      "minutes": 20,
+      "body_html": "<p>W listach z filtrami pojawia się pokusa: osobne zmienne globalne <code>currentView</code>, <code>currentSort</code>, <code>currentQuery</code>, <code>currentPage</code>, <code>currentCategory</code>. Każda funkcja dostaje je jako kolejne argumenty. Po tygodniu nikt nie wie, która kombinacja jest aktualna.</p>\n<h2>Jedno źródło prawdy</h2>\n<pre><code>const state = {\n  currentView: \"grid\",              // \"grid\" | \"list\"\n  currentSort: { key: \"name\", direction: \"asc\" },\n  currentQuery: \"\",\n  currentCategory: \"all\",\n  currentPage: 1,\n  pageSize: 6,\n};</code></pre>\n<p>To jest <strong>stan widoku</strong>, nie model domeny. Produkty nadal żyją w modelu. Stan widoku opisuje, jak je pokazać.</p>\n<h2>Aktualizacja jednym patchem</h2>\n<pre><code>function updateViewState(patch) {\n  state = { ...state, ...patch };\n  if (\"currentQuery\" in patch || \"currentCategory\" in patch) {\n    state.currentPage = 1;\n  }\n  render();\n}</code></pre>\n<p>Zamiast wołać <code>setView</code>, <code>setSort</code>, <code>setQuery</code> i przekazywać wszystko dalej, kontroler tworzy nowy stan i renderuje. Zmiana query resetuje stronę — inaczej użytkownik może wylądować na pustej stronie 7.</p>\n<h2>currentSort: obiekt, nie string</h2>\n<pre><code>// kruche\nlet currentSort = \"price\"; // rosnąco? malejąco? po czym?\n\n// lepsze\nconst currentSort = { key: \"price\", direction: \"desc\" };</code></pre>\n<p>Dzięki temu sortowanie ma jawny kierunek, a funkcja sortująca nie zgaduje. <code>currentView</code> również powinien mieć ograniczony zbiór wartości: <code>grid</code> / <code>list</code>.</p>\n<h2>Stan w URL</h2>\n<p>Jeśli chcesz, aby link odtwarzał widok, zapisz stan w parametrach URL: <code>?q=react&amp;sort=price&amp;dir=desc&amp;view=list</code>. Jedna funkcja czyta URL i tworzy stan; druga serializuje stan do URL. Nie trzymaj dwóch niezależnych kopii.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> ustaw query, sort i widok, odśwież stronę. Czy widok wraca? Jeśli nie, stan prawdopodobnie żyje tylko w przypadkowych zmiennych.</div>"
+    },
+    {
+      "slug": "filtrowanie-sortowanie",
+      "title": "Filtrowanie i sortowanie jako funkcje",
+      "summary": "Selektory przyjmują dane + stan i zwracają nową listę. Bez mutacji i bez DOM.",
+      "minutes": 20,
+      "body_html": "<p>Filtrowanie i sortowanie to logika, nie widok. Powinny być funkcjami, które łatwo wywołać w konsoli i teście.</p>\n<h2>Filtr</h2>\n<pre><code>function filterProducts(products, state) {\n  const query = state.currentQuery.trim().toLowerCase();\n  return products.filter((product) =&gt; {\n    const matchesQuery = product.name.toLowerCase().includes(query);\n    const matchesCategory = state.currentCategory === \"all\"\n      || product.category === state.currentCategory;\n    return matchesQuery &amp;&amp; matchesCategory;\n  });\n}</code></pre>\n<h2>Sort</h2>\n<pre><code>function sortProducts(items, currentSort) {\n  const { key, direction } = currentSort;\n  const factor = direction === \"desc\" ? -1 : 1;\n  return [...items].sort((a, b) =&gt; {\n    if (key === \"price\") return (a.price - b.price) * factor;\n    return a[key].localeCompare(b[key], \"pl\") * factor;\n  });\n}</code></pre>\n<p><code>[...items]</code> jest ważne: <code>sort</code> mutuje tablicę. Bez kopii możesz zmienić kolejność danych modelu, czego nikt się nie spodziewa.</p>\n<h2>Kompozycja</h2>\n<pre><code>function selectProducts(products, state) {\n  const filtered = filterProducts(products, state);\n  const sorted = sortProducts(filtered, state.currentSort);\n  return paginate(sorted, state.currentPage, state.pageSize);\n}</code></pre>\n<p>Każdy krok ma jeden kontrakt. Możesz testować filtr bez sortowania, sortowanie bez DOM i paginację na danych granicznych.</p>\n<h2>Paginacja</h2>\n<pre><code>function paginate(items, page, pageSize) {\n  const start = (page - 1) * pageSize;\n  return items.slice(start, start + pageSize);\n}</code></pre>\n<p>Pamiętaj o pustej liście i o tym, że po filtrze liczba stron może się zmniejszyć. Kontroler powinien poprawić <code>currentPage</code>, jeśli wyjdzie poza zakres.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> selektor nie dotyka DOM, nie czyta globali i nie zapisuje stanu. Dane wchodzą, nowe dane wychodzą.</div>"
+    },
+    {
+      "slug": "mvc-w-praktyce",
+      "title": "Pełny przepływ MVC",
+      "summary": "Kontroler, widok i model połączone w działającą listę z search, sortem i grid/list.",
+      "minutes": 20,
+      "body_html": "<p>Teraz łączymy wszystko. Kontroler jest jedynym miejscem, które zmienia stan. Widok jest jedynym miejscem, które dotyka DOM. Model i selektory nie wiedzą o przeglądarce.</p>\n<h2>Kontroler</h2>\n<pre><code>const state = {\n  currentView: \"grid\",\n  currentSort: { key: \"name\", direction: \"asc\" },\n  currentQuery: \"\",\n  currentCategory: \"all\",\n  currentPage: 1,\n  pageSize: 6,\n};\n\nfunction update(patch) {\n  state = { ...state, ...patch };\n  render();\n}\n\nsearch.addEventListener(\"input\", (event) =&gt; {\n  update({ currentQuery: event.target.value, currentPage: 1 });\n});\n\nsortSelect.addEventListener(\"change\", (event) =&gt; {\n  const [key, direction] = event.target.value.split(\":\");\n  update({ currentSort: { key, direction }, currentPage: 1 });\n});\n\nviewToggle.addEventListener(\"click\", () =&gt; {\n  update({ currentView: state.currentView === \"grid\" ? \"list\" : \"grid\" });\n});</code></pre>\n<h2>Widok</h2>\n<pre><code>function render() {\n  const visible = selectProducts(products, state);\n  list.className = `products products--${state.currentView}`;\n  list.innerHTML = visible.map(productCard).join(\"\");\n  count.textContent = `${visible.length} produktów`;\n  stateView.textContent = JSON.stringify(state, null, 2);\n}</code></pre>\n<p>Widok nie decyduje, co jest filtrowane. Otrzymuje już przygotowaną listę i stan potrzebny do klasy CSS. To pozwala zmienić sposób prezentacji bez ruszania logiki.</p>\n<h2>Dlaczego jeden parametr</h2>\n<p><code>selectProducts(products, state)</code> jest czytelniejsze niż <code>selectProducts(products, query, category, sortKey, direction, page, pageSize, view)</code>. Gdy dojdzie <code>currentView</code>, nie zmieniasz sygnatury w pięciu miejscach. Przekazujesz cały stan widoku.</p>\n<h2>Najczęstsze błędy</h2>\n<ul>\n<li>mutowanie <code>state</code> i oczekiwanie, że widok się odświeży,</li>\n<li>duplikowanie <code>currentPage</code> w DOM i w stanie,</li>\n<li>sortowanie tablicy modelu w miejscu,</li>\n<li>reset strony tylko w jednym z pięciu eventów,</li>\n<li>async fetch, który nadpisuje nowszy query starszą odpowiedzią.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Test kontrolera:</strong> po zmianie query, kategorii i sortu stan musi być spójny, a currentPage musi wrócić do 1. To zachowanie można sprawdzić bez DOM, jeśli wydzielisz reducer.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-mvc-b1",
+      "difficulty": "beginner",
+      "prompt": "Za co odpowiada widok w MVC?",
+      "choices": [
+        "Za zamianę danych na DOM",
+        "Za filtrowanie i sortowanie",
+        "Za reguły biznesowe",
+        "Za pobieranie danych z API"
+      ],
+      "answer": 0,
+      "explanation": "Widok prezentuje dane. Filtrowanie, sortowanie i reguły powinny być poza nim, w modelu lub selektorach."
+    },
+    {
+      "key": "js-mvc-b2",
+      "difficulty": "beginner",
+      "prompt": "Co powinien robić kontroler po zdarzeniu użytkownika?",
+      "choices": [
+        "Zaktualizować stan i wywołać render",
+        "Ręcznie zmienić każdy element DOM",
+        "Wysłać dane bez walidacji",
+        "Usunąć model"
+      ],
+      "answer": 0,
+      "explanation": "Kontroler tłumaczy zdarzenie na zmianę stanu. Widok renderuje nowy stan; kontroler nie powinien grzebać w każdym węźle DOM."
+    },
+    {
+      "key": "js-mvc-i1",
+      "difficulty": "intermediate",
+      "prompt": "Dlaczego currentSort powinien być obiektem, a nie stringiem?",
+      "choices": [
+        "Bo potrzebuje klucza i kierunku sortowania",
+        "Bo stringi są wolne",
+        "Bo MVC tego wymaga",
+        "Bo obiekty są zawsze niemutowalne"
+      ],
+      "answer": 0,
+      "explanation": "Obiekt { key, direction } jasno opisuje, po czym i w jakim kierunku sortować. Sam string nie mówi, czy sortowanie jest rosnące czy malejące."
+    },
+    {
+      "key": "js-mvc-i2",
+      "difficulty": "intermediate",
+      "prompt": "Dlaczego zmiana currentQuery powinna resetować currentPage do 1?",
+      "choices": [
+        "Bo nowy filtr może mieć mniej stron i użytkownik trafi na pustą stronę",
+        "Bo strona 1 jest zawsze szybsza",
+        "Bo MVC zabrania paginacji",
+        "Bo currentQuery jest liczbą"
+      ],
+      "answer": 0,
+      "explanation": "Po zmianie filtra liczba wyników może spaść. Reset strony zapobiega pustemu widokowi i dezorientacji."
+    },
+    {
+      "key": "js-mvc-i3",
+      "difficulty": "intermediate",
+      "prompt": "Co powinna zwracać funkcja filtrująca?",
+      "choices": [
+        "Nową tablicę pasujących elementów",
+        "Ten sam obiekt po mutacji",
+        "Element DOM",
+        "Promise"
+      ],
+      "answer": 0,
+      "explanation": "Filtr powinien być czysty: dane wchodzą, nowa tablica wychodzi. Nie mutuje wejścia i nie dotyka DOM."
+    },
+    {
+      "key": "js-mvc-a1",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego przed sortowaniem warto zrobić kopię tablicy?",
+      "choices": [
+        "Ponieważ sort mutuje tablicę, a model nie powinien zmieniać się przypadkiem",
+        "Ponieważ sortowanie nie działa na oryginale",
+        "Ponieważ kopia przyspiesza sortowanie",
+        "Ponieważ MVC wymaga dwóch tablic"
+      ],
+      "answer": 0,
+      "explanation": "sort działa w miejscu. Kopia chroni kolejność danych modelu i pozwala bezpiecznie renderować różne widoki."
+    },
+    {
+      "key": "js-mvc-a2",
+      "difficulty": "advanced",
+      "prompt": "Jaki jest problem z przekazywaniem query, category, sortKey, direction, page i pageSize jako sześciu osobnych parametrów?",
+      "choices": [
+        "Sygnatura puchnie, łatwo pominąć parametr i trudno dodać nowy stan",
+        "Jest szybsze niż obiekt",
+        "JavaScript nie pozwala na więcej niż cztery parametry",
+        "To łamie MVC"
+      ],
+      "answer": 0,
+      "explanation": "Stan widoku jest jednym pojęciem. Przekazanie obiektu zmniejsza liczbę miejsc do zmiany i wymusza spójny kontrakt."
+    },
+    {
+      "key": "js-mvc-a3",
+      "difficulty": "advanced",
+      "prompt": "Co jest złym pomysłem w kontrolerze?",
+      "choices": [
+        "Mutowanie stanu w miejscu i ręczne poprawianie DOM",
+        "Wywołanie selektora i renderu",
+        "Tworzenie nowego stanu przez spread",
+        "Resetowanie strony po zmianie filtra"
+      ],
+      "answer": 0,
+      "explanation": "Mutacja utrudnia wykrycie zmian i śledzenie przepływu. Kontroler powinien tworzyć nowy stan i przekazać go widokowi."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-mvc-f1",
+      "front": "Czym jest MVC?",
+      "back": "Podział na model (dane i reguły), widok (prezentacja DOM) i kontroler (zdarzenia, stan, koordynacja). To odpowiedzialności, nie wymóg trzech plików."
+    },
+    {
+      "key": "js-mvc-f2",
+      "front": "Kiedy MVC ma sens?",
+      "back": "Gdy lista lub formularz ma wiele filtrów, trybów i zależności, ten sam stan zasila kilka fragmentów UI, a logikę chcesz testować bez przeglądarki."
+    },
+    {
+      "key": "js-mvc-f3",
+      "front": "Czym jest stan widoku?",
+      "back": "Opis tego, jak pokazać dane: currentView, currentSort, currentQuery, kategoria, strona. Nie jest tym samym co model domeny."
+    },
+    {
+      "key": "js-mvc-f4",
+      "front": "Dlaczego jeden obiekt stanu?",
+      "back": "Zmniejsza liczbę parametrów, wymusza spójność i pozwala dodać pole bez zmiany sygnatur w wielu funkcjach. Aktualizuj go przez nowy obiekt."
+    },
+    {
+      "key": "js-mvc-f5",
+      "front": "Jak filtrować i sortować?",
+      "back": "Filtr zwraca nową tablicę pasujących elementów. Sort kopiuje tablicę i używa comparatora z jawnym kierunkiem. Oba są czystymi selektorami."
+    },
+    {
+      "key": "js-mvc-f6",
+      "front": "Po co synchronizować stan z URL?",
+      "back": "Aby link odtwarzał widok, a odświeżenie nie gubiło filtrów. URL i stan powinny mieć jedną funkcję mapującą, nie dwie kopie prawdy."
+    }
+  ]
+}

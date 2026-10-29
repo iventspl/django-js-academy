@@ -1,0 +1,108 @@
+{% extends "dojo/base.html" %}
+
+{% block title %}Build a quiz run{% endblock %}
+{% block body_class %}page-quiz-setup{% endblock %}
+
+{% block content %}
+<div class="page-wrap narrow-wrap">
+  <header class="page-header">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Quiz run</p>
+    <h1>Build a run.<br><em>Stay curious.</em></h1>
+    <p class="page-lead">Choose a slice of the map. Every answer reveals a short explanation with the reasoning behind it — no timer, no penalty for thinking.</p>
+  </header>
+
+  <div class="setup-layout">
+    <form method="post" class="panel setup-panel" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="form-block">
+        <div class="field-head">
+          <label for="id_topic">Topic</label>
+          <span>Where do you want to go?</span>
+        </div>
+        <div class="select-wrap">
+          <select name="topic" id="id_topic">
+            <option value="">All topics · the full map</option>
+            {% for row in topics %}
+              <option value="{{ row.topic.pk }}" {% if form.topic.value|stringformat:"s" == row.topic.pk|stringformat:"s" %}selected{% endif %}>{{ row.topic.name }} · {{ row.question_total }} questions</option>
+            {% endfor %}
+          </select>
+          <span class="select-arrow" aria-hidden="true">⌄</span>
+        </div>
+        {% if form.topic.errors %}<div class="field-error">{{ form.topic.errors }}</div>{% endif %}
+      </div>
+
+      {% with selected_difficulty=form.difficulty.value|default:'' %}
+        <fieldset class="form-block">
+          <legend class="field-head">
+            <span>Difficulty</span>
+            <span>Mix levels for the richest run.</span>
+          </legend>
+          <div class="segmented segmented-four">
+            <label class="segment">
+              <input type="radio" name="difficulty" value="" {% if selected_difficulty == '' %}checked{% endif %}>
+              <span class="segment-body"><strong>Mixed</strong><small>All levels</small></span>
+            </label>
+            <label class="segment">
+              <input type="radio" name="difficulty" value="beginner" {% if selected_difficulty == 'beginner' %}checked{% endif %}>
+              <span class="segment-body"><strong>Beginner</strong><small>Vocabulary</small></span>
+            </label>
+            <label class="segment">
+              <input type="radio" name="difficulty" value="intermediate" {% if selected_difficulty == 'intermediate' %}checked{% endif %}>
+              <span class="segment-body"><strong>Intermediate</strong><small>Fluency</small></span>
+            </label>
+            <label class="segment">
+              <input type="radio" name="difficulty" value="advanced" {% if selected_difficulty == 'advanced' %}checked{% endif %}>
+              <span class="segment-body"><strong>Advanced</strong><small>Sharp edges</small></span>
+            </label>
+          </div>
+          {% if form.difficulty.errors %}<div class="field-error">{{ form.difficulty.errors }}</div>{% endif %}
+        </fieldset>
+      {% endwith %}
+
+      {% with selected_length=form.length.value|default:10|stringformat:"s" %}
+        <fieldset class="form-block">
+          <legend class="field-head">
+            <span>Length</span>
+            <span>A focused run beats a heroic one.</span>
+          </legend>
+          <div class="segmented">
+            {% for value, label in form.fields.length.choices %}
+              <label class="segment segment-small">
+                <input type="radio" name="length" value="{{ value }}" {% if selected_length == value|stringformat:"s" %}checked{% endif %}>
+                <span class="segment-body"><strong>{{ value }}</strong><small>questions</small></span>
+              </label>
+            {% endfor %}
+          </div>
+          {% if form.length.errors %}<div class="field-error">{{ form.length.errors }}</div>{% endif %}
+        </fieldset>
+      {% endwith %}
+
+      <button class="btn btn-primary btn-block" type="submit">Launch the run <span aria-hidden="true">→</span></button>
+      <p class="form-note">You can leave and resume later. Attempts live in your local notebook.</p>
+    </form>
+
+    <aside class="setup-aside">
+      <div class="run-card-dark">
+        <p class="eyebrow eyebrow-light">Inside every run</p>
+        <ul class="feature-list">
+          <li><span>01</span><div><strong>One question at a time</strong><p>Four options, immediate feedback, no guessing penalty.</p></div></li>
+          <li><span>02</span><div><strong>The reasoning, not just the answer</strong><p>Every question carries an explanation and, often, a code sample.</p></div></li>
+          <li><span>03</span><div><strong>XP where it counts</strong><p>+10 for correct, +2 for a useful miss, plus a completion bonus.</p></div></li>
+        </ul>
+      </div>
+
+      <div class="setup-stat-row">
+        <div><strong>{{ question_total }}</strong><span>questions in the bank</span></div>
+        <div><strong>{{ topics|length }}</strong><span>topic paths</span></div>
+        <div><strong>0</strong><span>timers</span></div>
+      </div>
+
+      <p class="aside-quote">“The miss you understand is worth more than the answer you guessed.”</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

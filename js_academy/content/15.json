@@ -1,0 +1,167 @@
+{
+  "module": {
+    "slug": "bezpieczenstwo-wydajnosc",
+    "title": "Bezpieczeństwo i wydajność frontendu",
+    "subtitle": "XSS, CSP, tokeny, Core Web Vitals i szybki interfejs bez psucia jakości.",
+    "description": "Frontend jest publiczny i wrogi. Ten moduł uczy, gdzie naprawdę wycieka XSS, jak przechowywać sesję, po co CSP i jak mierzyć wydajność, zamiast dodawać optymalizacje na wyczucie.",
+    "level": "advanced",
+    "glyph": "15",
+    "accent": "#FB7185",
+    "duration_minutes": 70,
+    "outcomes": [
+      "Rozróżniasz textContent od innerHTML i rozumiesz ryzyko XSS.",
+      "Wiesz, gdzie przechowywać tokeny sesji i jak chronić cookies.",
+      "Konfigurujesz podstawy CSP i rozumiesz jego ograniczenia.",
+      "Mierzysz LCP, INP i CLS oraz dobierasz techniki ładowania."
+    ],
+    "project_title": "Audyt bezpieczeństwa i szybkości",
+    "project_brief": "Przejrzyj małą aplikację frontendową: znajdź miejsca wstrzykiwania HTML, sprawdź przechowywanie tokenów, dodaj lazy loading i zmierz podstawowe metryki.",
+    "project_steps": [
+      "Wypisz wszystkie miejsca, gdzie dane użytkownika trafiają do HTML.",
+      "Zamień niebezpieczne innerHTML na textContent lub sanitizację.",
+      "Sprawdź cookies, CSP i zależności.",
+      "Zmierz LCP/INP/CLS przed i po zmianach."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "xss-csp",
+      "title": "XSS i Content Security Policy",
+      "summary": "Dlaczego dane są kodem, kiedy trafią do innerHTML — i jak ogranicza to CSP.",
+      "minutes": 16,
+      "body_html": "<p><strong>XSS</strong> polega na wstrzyknięciu kodu do strony, którą widzi użytkownik. Najczęstsze źródło to wstawianie niezaufanych danych przez <code>innerHTML</code> lub frameworkowe obejście escapowania.</p>\n<pre><code>// niebezpieczne, jeśli value pochodzi od użytkownika\nelement.innerHTML = value;\n\n// bezpieczne dla tekstu\nelement.textContent = value;\n\n// jeśli naprawdę potrzebujesz HTML, użyj sanitizera\nelement.innerHTML = DOMPurify.sanitize(value);\n</code></pre>\n<h2>CSP</h2>\n<p><code>Content-Security-Policy</code> ogranicza źródła skryptów, stylów i innych zasobów. Dobrze skonfigurowany CSP utrudnia XSS, ale nie zastępuje poprawnego escapowania.</p>\n<pre><code>Content-Security-Policy:\n  default-src 'self';\n  script-src 'self' 'nonce-...';\n  object-src 'none';\n  frame-ancestors 'none';\n</code></pre>\n<p>Unikaj <code>unsafe-inline</code> dla skryptów. Nonce lub hashe pozwalają uruchamiać tylko zatwierdzone bloki.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> dane to dane, kod to kod. Nie łącz ich przez string concatenation. Escapowanie zależy od kontekstu: HTML, atrybut, URL i JavaScript mają różne zasady.</div>"
+    },
+    {
+      "slug": "tokeny-sesje",
+      "title": "Tokeny, cookies i CSRF",
+      "summary": "HttpOnly, Secure, SameSite i dlaczego localStorage nie jest sejfem.",
+      "minutes": 15,
+      "body_html": "<p>Gdzie trzymać token? To decyzja o kompromisie między XSS a CSRF, nie pytanie o wygodę. <code>localStorage</code> jest dostępny dla każdego skryptu na stronie, więc XSS może go ukraść.</p>\n<h2>Cookies sesyjne</h2>\n<pre><code>Set-Cookie: session=...;\n  HttpOnly;\n  Secure;\n  SameSite=Lax;\n  Path=/;\n</code></pre>\n<ul>\n<li><code>HttpOnly</code> — JavaScript nie odczyta cookie.</li>\n<li><code>Secure</code> — tylko HTTPS.</li>\n<li><code>SameSite</code> — ogranicza wysyłanie w żądaniach cross-site.</li>\n</ul>\n<p>Cookie sesyjne nadal wymagają ochrony CSRF dla operacji zmieniających stan. Token w nagłówku Authorization zmniejsza CSRF, ale jeśli jest w localStorage, zwiększa skutki XSS.</p>\n<div class=\"lesson-callout\"><strong>Najważniejsze:</strong> nie ma magicznego miejsca na token. Minimalizuj XSS, używaj HttpOnly tam, gdzie to możliwe, i projektuj backend tak, aby kradzież tokenu miała ograniczony zasięg.</div>"
+    },
+    {
+      "slug": "wydajnosc",
+      "title": "Wydajność i Core Web Vitals",
+      "summary": "LCP, INP, CLS, code splitting, obrazy i debounce bez zgadywania.",
+      "minutes": 16,
+      "body_html": "<p>Wydajność odczuwana przez użytkownika to nie rozmiar bundle'a. Mierzy się ją m.in. przez <strong>LCP</strong> (największy widoczny element), <strong>INP</strong> (responsywność interakcji) i <strong>CLS</strong> (przesunięcia layoutu).</p>\n<h2>Ładowanie</h2>\n<ul>\n<li>Dziel trasy i ciężkie komponenty przez dynamic import / lazy.</li>\n<li>Optymalizuj obrazy: właściwy rozmiar, format, lazy loading poza pierwszym ekranem.</li>\n<li>Nie blokuj głównego wątku długim JavaScriptem; dziel zadania.</li>\n<li>Rezerwuj miejsce na obrazy i reklamy, aby uniknąć CLS.</li>\n</ul>\n<h2>Debounce czy throttle?</h2>\n<pre><code>const debounced = debounce(search, 300); // po serii zdarzeń\nconst throttled = throttle(onScroll, 100); // maks. raz na 100 ms\n</code></pre>\n<p>Debounce czeka, aż użytkownik przestanie pisać. Throttle ogranicza częstotliwość, ale nie czeka na koniec.</p>\n<div class=\"lesson-callout\"><strong>Mierz przed i po.</strong> Lighthouse, WebPageTest i RUM dają różne spojrzenie. Optymalizacja bez pomiaru często przenosi koszt w inne miejsce.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-sec-b1",
+      "difficulty": "beginner",
+      "prompt": "Które wstawienie tekstu użytkownika jest najbezpieczniejsze?",
+      "code": "",
+      "choices": [
+        "element.textContent = value",
+        "element.innerHTML = value",
+        "element.outerHTML = value",
+        "document.write(value)"
+      ],
+      "answer": 0,
+      "explanation": "textContent traktuje dane jako tekst. innerHTML interpretuje je jako HTML i może umożliwić XSS."
+    },
+    {
+      "key": "js-sec-b2",
+      "difficulty": "beginner",
+      "prompt": "Co robi HttpOnly na cookie?",
+      "code": "",
+      "choices": [
+        "Blokuje dostęp do cookie z JavaScriptu",
+        "Szyfruje cookie",
+        "Wysyła cookie tylko na HTTP",
+        "Usuwa cookie po zamknięciu"
+      ],
+      "answer": 0,
+      "explanation": "HttpOnly chroni przed odczytem przez skrypt, co zmniejsza skutki XSS. Nie zastępuje HTTPS ani ochrony CSRF."
+    },
+    {
+      "key": "js-sec-i1",
+      "difficulty": "intermediate",
+      "prompt": "Do czego służy CSP?",
+      "code": "",
+      "choices": [
+        "Ogranicza źródła skryptów, stylów i innych zasobów",
+        "Szyfruje hasła",
+        "Zastępuje testy",
+        "Przyspiesza DNS"
+      ],
+      "answer": 0,
+      "explanation": "CSP to dodatkowa warstwa obrony przed XSS i wstrzykiwaniem treści. Nie naprawia błędów escapowania."
+    },
+    {
+      "key": "js-sec-i2",
+      "difficulty": "intermediate",
+      "prompt": "Co daje lazy loading obrazów?",
+      "code": "",
+      "choices": [
+        "Opóźnia ładowanie obrazów poza widocznym obszarem",
+        "Kompresuje wszystkie obrazy",
+        "Zastępuje CDN",
+        "Usuwa CLS"
+      ],
+      "answer": 0,
+      "explanation": "Lazy loading zmniejsza początkowe pobieranie. Obrazy pierwszego ekranu powinny ładować się od razu, a ich wymiary muszą być zarezerwowane."
+    },
+    {
+      "key": "js-sec-a1",
+      "difficulty": "advanced",
+      "prompt": "Co mierzy LCP?",
+      "code": "",
+      "choices": [
+        "Czas pojawienia się największego widocznego elementu",
+        "Czas odpowiedzi na kliknięcie",
+        "Liczbę przesunięć layoutu",
+        "Liczbę żądań HTTP"
+      ],
+      "answer": 0,
+      "explanation": "LCP koncentruje się na głównej treści pierwszego ekranu. INP mierzy responsywność, a CLS przesunięcia layoutu."
+    },
+    {
+      "key": "js-sec-a2",
+      "difficulty": "advanced",
+      "prompt": "Kiedy debounce jest lepszy od throttle?",
+      "code": "",
+      "choices": [
+        "Gdy chcesz poczekać, aż użytkownik skończy serię zdarzeń, np. pisanie",
+        "Gdy chcesz reagować regularnie podczas scrolla",
+        "Zawsze",
+        "Tylko w React Native"
+      ],
+      "answer": 0,
+      "explanation": "Debounce odkłada wykonanie do końca serii. Throttle gwarantuje maksymalną częstotliwość w trakcie trwania zdarzeń."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-sec-f1",
+      "front": "Czym jest XSS?",
+      "back": "Wstrzyknięciem kodu do strony, którą widzi użytkownik, zwykle przez nieescapowane dane. Broń się przez textContent, sanitizację i CSP.",
+      "hint": ""
+    },
+    {
+      "key": "js-sec-f2",
+      "front": "Jak skonfigurować bezpieczne cookie?",
+      "back": "HttpOnly, Secure i SameSite, ustawione przez backend. Dla operacji zmieniających stan nadal potrzebna jest ochrona CSRF.",
+      "hint": ""
+    },
+    {
+      "key": "js-sec-f3",
+      "front": "Po co CSP?",
+      "back": "Ogranicza, skąd wolno ładować skrypty, style i inne zasoby. Utrudnia XSS, ale nie zastępuje poprawnego escapowania.",
+      "hint": ""
+    },
+    {
+      "key": "js-sec-f4",
+      "front": "Co to LCP?",
+      "back": "Largest Contentful Paint — czas wyświetlenia największego elementu pierwszego ekranu. Optimizuj krytyczne obrazy, fonty i render-blocking zasoby.",
+      "hint": ""
+    },
+    {
+      "key": "js-sec-f5",
+      "front": "Debounce czy throttle?",
+      "back": "Debounce czeka na koniec serii zdarzeń (np. wpisywanie). Throttle wykonuje maksymalnie raz na przedział czasu (np. scroll).",
+      "hint": ""
+    }
+  ]
+}

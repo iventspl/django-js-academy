@@ -1,0 +1,106 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}{{ challenge.title }}{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-challenge-page">
+  <nav class="js-breadcrumb">
+    <a href="{% url 'js_academy:challenges' %}">Wyzwania</a>
+    <span>/</span>
+    <span>{{ challenge.title }}</span>
+  </nav>
+
+  <div class="js-challenge-layout">
+    <article class="js-challenge-main">
+      <header class="js-page-header js-challenge-intro">
+        <p class="eyebrow eyebrow-js">{{ challenge.get_difficulty_display }} · {{ challenge.xp }} XP</p>
+        <h1>{{ challenge.title }}</h1>
+        <div class="js-challenge-prompt">{{ challenge.prompt|safe }}</div>
+        <div class="js-challenge-meta">
+          {% if challenge.module %}<span>Moduł: {{ challenge.module.title }}</span>{% endif %}
+          <span>{{ challenge_total }} wyzwań w lidze</span>
+        </div>
+      </header>
+
+      <section class="js-challenge-runner" aria-labelledby="runner-title">
+        <div class="js-challenge-runner-head">
+          <div>
+            <p class="eyebrow eyebrow-js-dark">Edytor · testy</p>
+            <h2 id="runner-title">Napisz funkcję <code>solve</code></h2>
+          </div>
+          <span class="tag tag-js-demo">sandbox iframe</span>
+        </div>
+        <div class="js-demo-frame js-challenge-frame">
+          <iframe
+            title="{{ challenge.title }} — edytor i testy"
+            srcdoc="{{ runner_html }}"
+            sandbox="allow-scripts"
+            referrerpolicy="no-referrer"
+          ></iframe>
+        </div>
+        <p class="js-demo-note">Testy i kod działają wyłącznie w Twojej przeglądarce, w izolowanym iframe. Aplikacja nie wysyła kodu na serwer.</p>
+      </section>
+
+      {% if completion %}
+        <div class="js-challenge-complete is-done">
+          <span class="js-complete-check">✓</span>
+          <div><strong>Wyzwanie ukończone</strong><p>+{{ challenge.xp }} XP · {{ completion.completed_at|date:"d.m.Y" }}</p></div>
+          <a class="js-text-link" href="{% url 'js_academy:challenges' %}">Następne wyzwanie →</a>
+        </div>
+      {% else %}
+        <div class="js-challenge-complete" id="challenge-complete" hidden>
+          <span class="js-complete-check">✓</span>
+          <div><strong>Testy przechodzą.</strong><p>Oznacz wyzwanie jako ukończone i odbierz +{{ challenge.xp }} XP.</p></div>
+          <form method="post" action="{% url 'js_academy:challenge_complete' challenge.slug %}">
+            {% csrf_token %}
+            <button class="btn btn-js" type="submit">Oznacz jako ukończone</button>
+          </form>
+        </div>
+        <p class="js-challenge-wait" id="challenge-wait">Uruchom testy w edytorze. Formularz ukończenia pojawi się po przejściu wszystkich testów.</p>
+      {% endif %}
+
+      <details class="js-challenge-explanation">
+        <summary>Wyjaśnienie i pułapki</summary>
+        <div>{{ challenge.explanation|safe }}</div>
+      </details>
+    </article>
+
+    <aside class="js-challenge-aside">
+      <div class="js-aside-card">
+        <p class="eyebrow">Jak to działa</p>
+        <ol class="js-challenge-steps">
+          <li>Przeczytaj kontrakt funkcji.</li>
+          <li>Napisz rozwiązanie w edytorze.</li>
+          <li>Kliknij <strong>Uruchom testy</strong>.</li>
+          <li>Oznacz ukończenie po zielonych testach.</li>
+        </ol>
+      </div>
+      <div class="js-aside-card js-aside-dark">
+        <p class="eyebrow">Zasada</p>
+        <p>Najpierw poprawność, potem elegancja. Testy nie sprawdzają stylu — sprawdzają kontrakt.</p>
+      </div>
+      <div class="js-aside-card">
+        <p class="eyebrow">Wskazówka</p>
+        <p>Jeśli utkniesz, użyj przycisku <strong>Podpowiedź</strong> w edytorze. Dopiero potem zajrzyj do rozwiązania.</p>
+        <a class="js-text-link" href="{% url 'js_academy:playground' %}">Otwórz piaskownicę JS →</a>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const frame = document.querySelector(".js-challenge-frame iframe");
+    const box = document.getElementById("challenge-complete");
+    const wait = document.getElementById("challenge-wait");
+    if (!frame || !box) return;
+    window.addEventListener("message", (event) => {
+      if (event.source !== frame.contentWindow) return;
+      if (!event.data || event.data.type !== "js-challenge-passed") return;
+      if (event.data.slug !== "{{ challenge.slug|escapejs }}") return;
+      box.hidden = false;
+      if (wait) wait.hidden = true;
+      box.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}{{ component.title }}{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-component-page">
+  <nav class="js-breadcrumb">
+    <a href="{% url 'js_academy:components' %}">Komponenty</a><span>/</span><span>{{ component.title }}</span>
+  </nav>
+
+  <header class="js-component-header">
+    <div>
+      <p class="eyebrow eyebrow-js">{{ component.category }} · {{ component.get_difficulty_display }}</p>
+      <h1>{{ component.title }}</h1>
+      <p class="js-lead">{{ component.description }}</p>
+      <div class="js-component-function-list">
+        {% for function in component.functions %}<span>{{ function }}</span>{% endfor %}
+      </div>
+    </div>
+    <div class="js-component-header-actions">
+      <a class="btn btn-ghost-dark" href="{% url 'js_academy:playground' %}">Piaskownica <span aria-hidden="true">⌘</span></a>
+      <a class="js-text-link" href="{% url 'js_academy:challenges' %}">Wyzwania z testami →</a>
+    </div>
+  </header>
+
+  <div class="js-component-layout">
+    <section class="js-component-preview" aria-labelledby="preview-title">
+      <div class="js-component-panel-head">
+        <div><p class="eyebrow eyebrow-js-dark">Podgląd na żywo</p><h2 id="preview-title">Działa w iframe</h2></div>
+        <span class="tag tag-js-demo">sandbox</span>
+      </div>
+      <div class="js-demo-frame">
+        <iframe
+          title="{{ component.title }} — podgląd na żywo"
+          srcdoc="{{ preview_html }}"
+          sandbox="allow-scripts"
+          referrerpolicy="no-referrer"
+          loading="lazy"
+        ></iframe>
+      </div>
+      <p class="js-demo-note">Komponent działa w izolowanej ramce. Nie ma dostępu do sesji ani danych aplikacji.</p>
+    </section>
+
+    <aside class="js-component-aside">
+      <div class="js-aside-card">
+        <p class="eyebrow">Co tu ćwiczysz</p>
+        <div class="js-component-function-list js-component-function-list-dark">
+          {% for function in component.functions %}<span>{{ function }}</span>{% endfor %}
+        </div>
+      </div>
+      {% if component.notes %}
+        <div class="js-aside-card">
+          <p class="eyebrow">W realnym kodzie</p>
+          <p class="js-component-notes">{{ component.notes }}</p>
+        </div>
+      {% endif %}
+    </aside>
+  </div>
+
+  <section class="js-code-section" aria-labelledby="code-title">
+    <div class="js-code-head">
+      <div><p class="eyebrow eyebrow-js">Pełny kod</p><h2 id="code-title">HTML, CSS i JavaScript.</h2></div>
+      <button class="btn btn-js btn-small" type="button" id="copy-active">Kopiuj aktywny kod</button>
+    </div>
+    <div class="js-code-tabs" role="tablist" aria-label="Warstwy kodu">
+      <button role="tab" aria-selected="true" data-code-tab="html">HTML</button>
+      <button role="tab" aria-selected="false" data-code-tab="css">CSS</button>
+      <button role="tab" aria-selected="false" data-code-tab="js">JavaScript</button>
+    </div>
+    <div class="js-code-panel" data-code-panel="html">
+      <pre><code>{{ component.html_code }}</code></pre>
+    </div>
+    <div class="js-code-panel" data-code-panel="css" hidden>
+      <pre><code>{{ component.css_code }}</code></pre>
+    </div>
+    <div class="js-code-panel" data-code-panel="js" hidden>
+      <pre><code>{{ component.js_code }}</code></pre>
+    </div>
+    <p class="js-demo-note">Kod jest kompletny, ale zakłada bazowy reset stylów z podglądu. Wklej go do własnego projektu i dostosuj zmienne.</p>
+  </section>
+
+  {% if related %}
+    <section class="js-component-related" aria-labelledby="related-title">
+      <div class="section-head section-head-tight">
+        <div><p class="eyebrow eyebrow-js">Podobne</p><h2 id="related-title">Z tej samej kategorii.</h2></div>
+      </div>
+      <div class="js-component-related-grid">
+        {% for item in related %}
+          <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.description|truncatewords:14 }}</span></a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+</div>
+
+<script>
+  (() => {
+    const tabs = [...document.querySelectorAll("[data-code-tab]")];
+    const panels = [...document.querySelectorAll("[data-code-panel]")];
+    const copy = document.getElementById("copy-active");
+
+    function select(name) {
+      tabs.forEach((tab) => tab.setAttribute("aria-selected", String(tab.dataset.codeTab === name)));
+      panels.forEach((panel) => { panel.hidden = panel.dataset.codePanel !== name; });
+    }
+    tabs.forEach((tab) => tab.addEventListener("click", () => select(tab.dataset.codeTab)));
+
+    copy.addEventListener("click", async () => {
+      const active = document.querySelector("[data-code-tab][aria-selected=true]");
+      const name = active ? active.dataset.codeTab : "html";
+      const panel = document.querySelector(`[data-code-panel="${name}"]`);
+      const text = panel ? panel.textContent : "";
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const helper = document.createElement("textarea");
+          helper.value = text;
+          helper.style.position = "fixed";
+          helper.style.opacity = "0";
+          document.body.appendChild(helper);
+          helper.select();
+          document.execCommand("copy");
+          helper.remove();
+        }
+        const old = copy.textContent;
+        copy.textContent = "Skopiowano";
+        setTimeout(() => { copy.textContent = old; }, 1400);
+      } catch (_) {
+        copy.textContent = "Zaznacz kod ręcznie";
+      }
+    });
+  })();
+</script>
+{% endblock %}

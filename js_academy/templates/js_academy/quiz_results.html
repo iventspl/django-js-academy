@@ -1,0 +1,77 @@
+{% extends "js_academy/base_js.html" %}
+
+{% block title %}Wynik quizu · {{ attempt.module.title }}{% endblock %}
+{% block body_class %}page-js js-quiz-results{% endblock %}
+
+{% block content %}
+<div class="page-wrap js-wrap">
+  <header class="js-result-hero">
+    <div class="js-result-score" style="--value: {{ attempt.score_percent }}%;">
+      <div><strong>{{ attempt.score_percent }}<span>%</span></strong><span>{{ attempt.correct_count }}/{{ attempt.length }}</span></div>
+    </div>
+    <div class="js-result-copy">
+      <p class="eyebrow eyebrow-js">Wynik quizu · {{ attempt.module.title }}</p>
+      <h1>{{ verdict }}</h1>
+      <p>Sprawdź każde pytanie poniżej — także te poprawne. Celem nie jest procent, tylko umiejętność wyjaśnienia odpowiedzi własnymi słowami.</p>
+      <div class="hero-actions">
+        <a class="btn btn-js" href="{{ attempt.module.get_absolute_url }}">Wróć do modułu <span aria-hidden="true">→</span></a>
+        <form method="post" action="{% url 'js_academy:quiz_start' attempt.module.slug %}">
+          {% csrf_token %}
+          <button class="btn btn-ghost-dark" type="submit">Spróbuj ponownie <span aria-hidden="true">↻</span></button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <div class="js-result-stats">
+    <div><strong>{{ attempt.correct_count }}</strong><span>poprawnych</span></div>
+    <div><strong>{{ wrong_count }}</strong><span>błędnych</span></div>
+    <div><strong>{{ attempt.module.duration_minutes }} min</strong><span>moduł</span></div>
+    <div><strong>{{ attempt.started_at|date:"j M, H:i" }}</strong><span>ukończono</span></div>
+  </div>
+
+  <section class="section" aria-labelledby="review-js-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-js">Pełny przegląd</p><h2 id="review-js-title">Każde pytanie z wyjaśnieniem.</h2></div>
+      <a class="text-link" href="{% url 'js_academy:flashcards' attempt.module.slug %}">Fiszki modułu →</a>
+    </div>
+    <div class="review-list">
+      {% for row in rows %}
+        <details class="review-item {% if row.is_correct %}review-correct{% else %}review-wrong{% endif %}" {% if not row.is_correct and forloop.first %}open{% endif %}>
+          <summary>
+            <span class="review-status" aria-hidden="true">{% if row.is_correct %}✓{% else %}×{% endif %}</span>
+            <span class="review-question">{{ row.question.prompt }}</span>
+            <span class="review-meta">{{ row.question.get_difficulty_display }}</span>
+            <span class="review-toggle" aria-hidden="true">+</span>
+          </summary>
+          <div class="review-body">
+            {% if row.question.code %}<pre class="inline-code"><code>{{ row.question.code }}</code></pre>{% endif %}
+            <div class="review-answers">
+              <div class="{% if row.is_correct %}review-answer-good{% else %}review-answer-bad{% endif %}">
+                <span>Twoja odpowiedź</span>
+                <p>{{ row.selected.text|default:"Brak odpowiedzi" }}</p>
+              </div>
+              {% if not row.is_correct %}
+                <div class="review-answer-good"><span>Poprawna odpowiedź</span><p>{{ row.question.correct_choice.text }}</p></div>
+              {% endif %}
+            </div>
+            <div class="review-why">
+              <span class="eyebrow eyebrow-dark">Dlaczego</span>
+              <p>{{ row.question.explanation|linebreaks }}</p>
+              {% if row.question.explanation_code %}<pre class="inline-code"><code>{{ row.question.explanation_code }}</code></pre>{% endif %}
+            </div>
+          </div>
+        </details>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="js-next-step">
+    <div><p class="eyebrow eyebrow-js">Następny krok</p><h2>Powtórz fiszki albo wróć do lekcji.</h2><p>Quiz pokazał luki. Fiszki utrwalą definicje, a projekt sprawdzi, czy potrafisz ich użyć.</p></div>
+    <div class="hero-actions">
+      <a class="btn btn-js" href="{% url 'js_academy:flashcards' attempt.module.slug %}">Fiszki modułu <span aria-hidden="true">▣</span></a>
+      <a class="btn btn-ghost-dark" href="{{ attempt.module.get_absolute_url }}">Wróć do modułu</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

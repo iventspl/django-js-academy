@@ -1,0 +1,138 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}AI a praca programisty{% endblock %}
+{% block body_class %}page-js js-ai-page{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-ai-wrap">
+  <header class="js-ai-hero">
+    <div>
+      <p class="eyebrow eyebrow-js"><span class="pulse-dot" aria-hidden="true"></span> Specjalna sekcja · fakty i źródła</p>
+      <h1>AI pisze szybciej.<br><em>Nie myśli za Ciebie.</em></h1>
+      <p class="js-lead">Co naprawdę wiemy o wpływie AI na pracę programisty? Poniżej liczby z badań, raportów i publicznych danych — z linkami do źródeł. Bez „AI zabierze wszystkie prace” i bez „AI wszystko naprawi”.</p>
+      <div class="hero-actions">
+        <a class="btn btn-js" href="{% url 'js_academy:module' 'ai-praca' %}">Wejdź w moduł AI a praca <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost-dark" href="{% url 'js_academy:challenges' %}">Sprawdź się w kodzie <span aria-hidden="true">⌘</span></a>
+      </div>
+      <p class="js-ai-reviewed">Dane sprawdzone: {{ reviewed_on }}. Liczby dotyczą wskazanych badań i nie są prognozą dla każdej firmy.</p>
+    </div>
+    <aside class="js-ai-verdict">
+      <p class="eyebrow eyebrow-js-dark">Najkrótszy wniosek</p>
+      <strong>AI skraca drogę do pierwszego szkicu. Nie skraca drogi do zaufanego produktu.</strong>
+      <p>Dlatego warto umieć czytać kod, testować, projektować granice i brać odpowiedzialność za decyzje. To nie są umiejętności „przeciw AI” — to umiejętności pracy z AI.</p>
+    </aside>
+  </header>
+
+  <section class="js-ai-stat-grid" aria-label="Liczby o AI i pracy">
+    {% for fact in facts %}
+      <article class="js-ai-stat">
+        <strong>{{ fact.value }}</strong>
+        <h2>{{ fact.label }}</h2>
+        <p>{{ fact.detail }}</p>
+        <a href="{{ fact.url }}" target="_blank" rel="noreferrer">{{ fact.source }} ↗</a>
+      </article>
+    {% endfor %}
+  </section>
+
+  <section class="js-ai-section" aria-labelledby="ai-does-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-js">Podział pracy</p><h2 id="ai-does-title">Co AI robi dobrze, a czego nie bierze na siebie.</h2></div>
+    </div>
+    <div class="js-ai-two-col">
+      <div class="js-ai-column js-ai-good">
+        <h3>AI dobrze radzi sobie z</h3>
+        <ul>
+          <li>pierwszym szkicem i boilerplate'em,</li>
+          <li>przypomnieniem składni i API,</li>
+          <li>podsumowaniem dokumentacji i logów,</li>
+          <li>wariantami rozwiązania do porównania,</li>
+          <li>tłumaczeniem intencji na kod — gdy kontekst jest kompletny.</li>
+        </ul>
+      </div>
+      <div class="js-ai-column js-ai-gap">
+        <h3>AI nie odpowiada za</h3>
+        <ul>
+          <li>kontekst biznesowy i konsekwencje decyzji,</li>
+          <li>uprawnienia, prywatność i bezpieczeństwo,</li>
+          <li>integrację z istniejącym systemem,</li>
+          <li>dostępność, wydajność i utrzymanie,</li>
+          <li>to, czy kod jest naprawdę poprawny.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="js-ai-footnote">DORA 2025 opisuje „podatek weryfikacji”: czas zaoszczędzony na generowaniu jest często wydawany na audyt. To nie znaczy, że AI się nie opłaca. To znaczy, że oszczędność nie kończy się na wygenerowanym pliku.</p>
+  </section>
+
+  <section class="js-ai-section" aria-labelledby="why-js-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-js">Dlaczego JS i React</p><h2 id="why-js-title">Nie „bo AI tego nie umie”. Bo system trzeba utrzymać.</h2></div>
+    </div>
+    <div class="js-ai-why-grid">
+      <article>
+        <strong>66%</strong>
+        <h3>JavaScript w użyciu</h3>
+        <p>Stack Overflow 2025: 66% wszystkich respondentów i 68,8% profesjonalistów. To język przeglądarki, Node i React Native — jeden model myślenia, kilka środowisk.</p>
+      </article>
+      <article>
+        <strong>205 mln</strong>
+        <h3>pobrań Reacta / tydzień</h3>
+        <p>npm, 21–27 października 2026. Skala ekosystemu oznacza dużo istniejącego kodu, bibliotek, ofert i problemów do rozwiązania. Pobrania to nie etaty, ale sygnał utrzymania.</p>
+      </article>
+      <article>
+        <strong>+10,2%</strong>
+        <h3>prognoza BLS 2025–2035</h3>
+        <p>Software developers w USA: z 1,72 mln do 1,89 mln miejsc. To prognoza urzędu, nie gwarancja. Pokazuje jednak, że rynek nie jest opisany jednym zdaniem „AI wszystko zastąpi”.</p>
+      </article>
+    </div>
+    <div class="js-ai-quote">
+      <p>AI nie zastąpiło rygoru inżynierskiego.</p>
+      <span>DORA 2025: organizacje nadal muszą projektować, testować, przeglądać i utrzymywać systemy.</span>
+    </div>
+  </section>
+
+  <section class="js-ai-section" aria-labelledby="plan-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-js">Praktyka</p><h2 id="plan-title">Plan, który działa z AI, a nie wokół niego.</h2></div>
+    </div>
+    <ol class="js-ai-plan">
+      <li><span>01</span><div><strong>Zrozum fundament.</strong><p>DOM, event loop, domknięcia, referencje, typy. Bez tego nie ocenisz, czy AI nie wprowadza błędu.</p></div></li>
+      <li><span>02</span><div><strong>Pisz i uruchamiaj.</strong><p>Każdy przykład przepisz i zmień. Test w edytorze wyzwania jest lepszy niż „wygląda dobrze”.</p></div></li>
+      <li><span>03</span><div><strong>Weryfikuj AI.</strong><p>Proś o testy i alternatywy, sprawdzaj XSS, uprawnienia, błędy i wydajność. Nie akceptuj bez przeglądu.</p></div></li>
+      <li><span>04</span><div><strong>Zbuduj dowód.</strong><p>Jedna aplikacja z testami, README, decyzją architektoniczną i wdrożeniem. Pokaż, co odrzuciłeś i dlaczego.</p></div></li>
+      <li><span>05</span><div><strong>Tłumacz.</strong><p>Jeśli potrafisz wyjaśnić kod bez podpowiedzi, umiesz go użyć. Jeśli nie — wróć do lekcji.</p></div></li>
+    </ol>
+  </section>
+
+  <section class="js-ai-section js-ai-limits" aria-labelledby="limits-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-js">Uczciwe zastrzeżenia</p><h2 id="limits-title">Czego z tych danych nie wynika.</h2></div>
+    </div>
+    <ul>
+      <li><strong>BLS to prognoza, nie obietnica.</strong> Odnosi się do USA i konkretnej klasyfikacji zawodów.</li>
+      <li><strong>Ankiety to deklaracje.</strong> 80% użycia AI i 29% zaufania to odpowiedzi respondentów, nie pomiar jakości kodu.</li>
+      <li><strong>METR ma ograniczenia.</strong> Późniejsze badanie cierpi na selekcję uczestników; autorzy sami nie traktują wyniku jako ostatecznego.</li>
+      <li><strong>Pobrania npm to nie zatrudnienie.</strong> Obejmują CI, cache i instalacje zależności.</li>
+      <li><strong>Veracode testował konkretne zadania.</strong> 45% próbek z podatnościami nie oznacza, że każdy wygenerowany plik jest niebezpieczny — ale pokazuje, że przegląd jest konieczny.</li>
+    </ul>
+  </section>
+
+  <section class="js-ai-sources" aria-labelledby="sources-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-js">Źródła</p><h2 id="sources-title">Sprawdź sam.</h2></div>
+      <span class="js-ai-reviewed">{{ reviewed_on }}</span>
+    </div>
+    <ol>
+      {% for source in sources %}
+        <li>
+          <a href="{{ source.url }}" target="_blank" rel="noreferrer">{{ source.label }} ↗</a>
+          <span>{{ source.detail }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <div class="js-bottom-cta">
+    <div><p class="eyebrow eyebrow-js-dark">Następny krok</p><h2>Nie ucz się „przeciw AI”. Ucz się pracy z AI.</h2><p>Moduł zbiera wnioski w trzy lekcje, quiz i fiszki. Potem sprawdź się w prawdziwym kodzie.</p></div>
+    <a class="btn btn-js" href="{% url 'js_academy:module' 'ai-praca' %}">Otwórz moduł <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+{% endblock %}

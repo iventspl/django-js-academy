@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "auth-security-testing",
+    "name": "Auth, Security & Testing",
+    "tagline": "Permissions, CSRF, XSS, SQL injection, and tests you can trust.",
+    "description": "Secure Django work is mostly disciplined defaults plus a few sharp edges. Learn how authentication and authorisation differ, how common attacks reach a web app, and how to write tests that isolate state and prove the security properties you care about.",
+    "glyph": "se",
+    "accent": "#F58BA2"
+  },
+  "questions": [
+    {
+      "key": "auth-security-testing-b1",
+      "difficulty": "beginner",
+      "prompt": "What does @login_required do to an unauthenticated GET request?",
+      "choices": [
+        "Returns a 500 error.",
+        "Redirects to the login URL with a next parameter pointing back.",
+        "Silently creates an account.",
+        "Returns the protected page with sensitive fields hidden."
+      ],
+      "answer": 1,
+      "explanation": "login_required sends anonymous users to settings.LOGIN_URL and adds ?next=... so they can return after signing in. Validate that next target before redirecting to prevent open-redirect abuse."
+    },
+    {
+      "key": "auth-security-testing-b2",
+      "difficulty": "beginner",
+      "prompt": "What problem does CSRF protection solve?",
+      "choices": [
+        "It encrypts the request body.",
+        "It prevents another site from making a state-changing request using a logged-in user's cookies.",
+        "It blocks SQL injection.",
+        "It hides passwords in the URL."
+      ],
+      "answer": 1,
+      "explanation": "A malicious site can trick a browser into submitting a request to your domain. CSRF tokens prove the request originated from a page your app served with the user's session. They are required for unsafe methods such as POST, PUT, and DELETE."
+    },
+    {
+      "key": "auth-security-testing-b3",
+      "difficulty": "beginner",
+      "prompt": "How should a Django app store user passwords?",
+      "choices": [
+        "As plain text so they can be emailed back.",
+        "With a one-way, salted password hash using Django's password hashers.",
+        "With reversible AES encryption only.",
+        "In the session cookie."
+      ],
+      "answer": 1,
+      "explanation": "Django hashes passwords with salted algorithms and verifies them without storing the original. Never implement your own password hashing or email passwords back. Use set_password() and check_password()."
+    },
+    {
+      "key": "auth-security-testing-b4",
+      "difficulty": "beginner",
+      "prompt": "What is request.user for an anonymous visitor?",
+      "choices": [
+        "None",
+        "An AnonymousUser instance whose is_authenticated is False.",
+        "A temporary User row.",
+        "A 403 exception."
+      ],
+      "answer": 1,
+      "explanation": "AuthenticationMiddleware always provides request.user, using AnonymousUser when no session user exists. Check request.user.is_authenticated instead of testing truthiness, and use permission checks for authorisation."
+    },
+    {
+      "key": "auth-security-testing-b5",
+      "difficulty": "beginner",
+      "prompt": "What is a permission in Django's auth system?",
+      "choices": [
+        "A named capability that can be granted to users or groups.",
+        "A URL path prefix.",
+        "A database migration.",
+        "A password hashing algorithm."
+      ],
+      "answer": 0,
+      "explanation": "Permissions are capability flags, often auto-created as add/change/delete/view permissions for models. They can be assigned to users or groups and checked with user.has_perm() or the permission_required decorator. Permissions describe capabilities, not row-level access."
+    },
+    {
+      "key": "auth-security-testing-i1",
+      "difficulty": "intermediate",
+      "prompt": "Why is Django's TestCase usually faster than TransactionTestCase?",
+      "choices": [
+        "It skips the database entirely.",
+        "It wraps each test in a transaction and rolls it back instead of truncating tables.",
+        "It runs tests in parallel by default.",
+        "It mocks all models."
+      ],
+      "answer": 1,
+      "explanation": "TestCase wraps each test in a transaction and rolls it back, so setup is cheaper. TransactionTestCase actually commits and truncates, which is slower but needed when testing transaction behaviour or code that needs real commits."
+    },
+    {
+      "key": "auth-security-testing-i2",
+      "difficulty": "intermediate",
+      "prompt": "How do you assert that a view rendered a specific template in a Django test?",
+      "choices": [
+        "self.assertEqual(response.template, \"home.html\")",
+        "self.assertTemplateUsed(response, \"home.html\")",
+        "self.assertContains(\"home.html\")",
+        "self.assertHTTPOK(response)"
+      ],
+      "answer": 1,
+      "explanation": "assertTemplateUsed checks the templates recorded on the response. assertContains checks response body text; assertEqual(response.status_code, 200) checks status. Template assertions catch wiring mistakes that a 200 alone would miss."
+    },
+    {
+      "key": "auth-security-testing-i3",
+      "difficulty": "intermediate",
+      "prompt": "Why use User.objects.create_user() instead of User.objects.create() for an account?",
+      "choices": [
+        "create_user handles password hashing; create() stores the password value as given.",
+        "create() cannot set an email address.",
+        "create_user always makes a superuser.",
+        "There is no difference; both hash the password."
+      ],
+      "answer": 0,
+      "explanation": "create_user normalises the email and hashes the password via set_password(). Calling create(password=\"...\") stores the raw string and the user cannot log in normally. Use create_superuser for staff/admin access."
+    },
+    {
+      "key": "auth-security-testing-i4",
+      "difficulty": "intermediate",
+      "prompt": "What does @override_settings do in a test?",
+      "choices": [
+        "It permanently edits settings.py.",
+        "It temporarily changes settings for the test and restores them afterward.",
+        "It overrides the database schema.",
+        "It disables CSRF checks for all requests."
+      ],
+      "answer": 1,
+      "explanation": "override_settings is a decorator/context manager that swaps settings for the duration of the test, then restores them. It is useful for LOGIN_URL, feature flags, cache configs, and email backends. For module-level settings, use modify_settings carefully."
+    },
+    {
+      "key": "auth-security-testing-i5",
+      "difficulty": "intermediate",
+      "prompt": "What is the difference between authentication and authorisation?",
+      "choices": [
+        "Authentication decides what you can do; authorisation proves who you are.",
+        "Authentication proves identity; authorisation decides what that identity may do.",
+        "They are two names for login.",
+        "Authorisation only applies to admin users."
+      ],
+      "answer": 1,
+      "explanation": "Authentication answers 'who are you?' — login, sessions, passwords. Authorisation answers 'are you allowed?' — permissions, ownership checks, row-level rules. A logged-in user is not automatically allowed to edit every object."
+    },
+    {
+      "key": "auth-security-testing-a1",
+      "difficulty": "advanced",
+      "prompt": "Which raw SQL call is parameterized correctly?",
+      "choices": [
+        "cursor.execute(f\"SELECT * FROM shop WHERE id = {user_id}\")",
+        "cursor.execute(\"SELECT * FROM shop WHERE id = %s\", [user_id])",
+        "cursor.execute(\"SELECT * FROM shop WHERE id = '\" + user_id + \"'\")",
+        "cursor.execute(\"SELECT * FROM shop WHERE id = %s\" % user_id)"
+      ],
+      "answer": 1,
+      "explanation": "Pass parameters separately so the database driver quotes them. Never build SQL with f-strings, concatenation, or % formatting using untrusted input. The ORM parameterizes queries for you, but raw() and extra() still require care."
+    },
+    {
+      "key": "auth-security-testing-a2",
+      "difficulty": "advanced",
+      "prompt": "What is assertNumQueries useful for?",
+      "choices": [
+        "Asserting that a view executes exactly a known number of database queries.",
+        "Counting how many users exist.",
+        "Checking that migrations are applied.",
+        "Measuring response size."
+      ],
+      "answer": 0,
+      "explanation": "assertNumQueries wraps code and fails if the query count changes. It is a regression guard for N+1 fixes. A brittle exact count can be annoying, so pair it with CaptureQueriesContext when you need to inspect the SQL."
+    },
+    {
+      "key": "auth-security-testing-a3",
+      "difficulty": "advanced",
+      "prompt": "Why is ModelForm(fields=\"__all__\") risky on a user profile form?",
+      "choices": [
+        "It prevents the form from validating.",
+        "It exposes every model field for mass assignment, including fields users should not control such as is_staff or balance.",
+        "It disables CSRF protection.",
+        "It cannot save to the database."
+      ],
+      "answer": 1,
+      "explanation": "Overposting can let a user set fields they should never control. List fields explicitly and enforce authorisation before saving. A field being absent from the HTML is not a security control; clients can submit arbitrary field names."
+    },
+    {
+      "key": "auth-security-testing-a4",
+      "difficulty": "advanced",
+      "prompt": "Why might transaction.on_commit() callbacks not run inside a standard TestCase?",
+      "choices": [
+        "on_commit only works in production.",
+        "TestCase wraps each test in a transaction that is rolled back, so the outer commit never happens.",
+        "on_commit is disabled when DEBUG is True.",
+        "Callbacks require Celery."
+      ],
+      "answer": 1,
+      "explanation": "TestCase keeps a transaction open and rolls it back. on_commit callbacks fire only on a real commit. Use captureOnCommitCallbacks(execute=True) when the callback matters, or TransactionTestCase for end-to-end transaction behaviour. This matters for emails, cache invalidation, and background jobs."
+    },
+    {
+      "key": "auth-security-testing-a5",
+      "difficulty": "advanced",
+      "prompt": "Why use hmac.compare_digest or secrets.compare_digest for comparing secrets?",
+      "choices": [
+        "They compress secrets before comparison.",
+        "They compare in constant time, reducing timing side-channel leaks.",
+        "They encrypt the values in memory.",
+        "They prevent SQL injection."
+      ],
+      "answer": 1,
+      "explanation": "A naive equality check can return early at the first differing byte, leaking timing information. Constant-time comparison discourages attackers from learning a valid token byte by byte. Use it for signatures, tokens, and other secret comparisons."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "auth-security-testing-f1",
+      "difficulty": "beginner",
+      "front": "Authentication vs authorisation — what is the difference?",
+      "back": "Authentication proves identity (login, session, password). Authorisation decides what that identity may do (permissions, ownership, role checks). Both are required: being logged in does not mean you may edit every object.",
+      "hint": "Who are you? What may you do?"
+    },
+    {
+      "key": "auth-security-testing-f2",
+      "difficulty": "beginner",
+      "front": "How does Django's CSRF protection work at a high level?",
+      "back": "Django issues a CSRF token tied to the user's session/secret. Forms include it in a hidden field, and unsafe requests must present a matching token. The server rejects requests without it, so a third-party site cannot easily forge a state-changing request.",
+      "front_code": "<form method=\"post\">\n  {% csrf_token %}\n  ...\n</form>"
+    },
+    {
+      "key": "auth-security-testing-f3",
+      "difficulty": "beginner",
+      "front": "How should passwords be stored?",
+      "back": "As salted, one-way hashes produced by a slow password hashing algorithm. Django's default hasher is suitable and configurable. Never store plaintext, reversible encryption, or unsalted general-purpose hashes. Use set_password and check_password.",
+      "front_code": "user.set_password(raw_password)\nuser.check_password(raw_password)"
+    },
+    {
+      "key": "auth-security-testing-f4",
+      "difficulty": "intermediate",
+      "front": "When do you use TestCase vs TransactionTestCase?",
+      "back": "Use TestCase for most tests: it isolates each test in a rolled-back transaction and is faster. Use TransactionTestCase when testing commits, on_commit callbacks, database constraints in autocommit, or threaded/real transaction behaviour.",
+      "hint": "Rollback speed vs real commits."
+    },
+    {
+      "key": "auth-security-testing-f5",
+      "difficulty": "intermediate",
+      "front": "How do login and permission checks differ in a view?",
+      "back": "@login_required only checks that a user is authenticated. @permission_required checks a capability and also implies authentication. For object-level rules, combine the query with ownership checks — for example, filter by request.user instead of fetching any object by id.",
+      "front_code": "@login_required\ndef dashboard(request): ...\n\n@permission_required(\"shop.change_order\", raise_exception=True)\ndef edit_order(request): ..."
+    },
+    {
+      "key": "auth-security-testing-f6",
+      "difficulty": "advanced",
+      "front": "How does the ORM protect against SQL injection?",
+      "back": "The ORM builds SQL with bound parameters, separating query structure from values. Injection risk returns when you interpolate user input into raw SQL, extra(), RawSQL, or order_by names. Pass parameters separately and allowlist dynamic column names.",
+      "front_code": "cursor.execute(\n    \"SELECT * FROM shop WHERE id = %s\", [user_id]\n)"
+    },
+    {
+      "key": "auth-security-testing-f7",
+      "difficulty": "advanced",
+      "front": "Why does transaction.on_commit matter?",
+      "back": "It defers side effects until the surrounding transaction commits, so you do not send an email or queue a job for a row that may roll back. In tests, standard TestCase never commits, so capture or execute the callbacks explicitly when verifying them.",
+      "front_code": "transaction.on_commit(lambda: send_email.delay(order.pk))"
+    }
+  ]
+}

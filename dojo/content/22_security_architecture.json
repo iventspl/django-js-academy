@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "security-architecture",
+    "name": "Security Architecture & Threat Modeling",
+    "tagline": "Trust boundaries, least privilege, supply chains, and AI-era threats.",
+    "description": "Security is a system property, not a decorator. Learn to model threats before code exists, place trust boundaries intentionally, constrain identity and secrets, detect abuse, and extend the same discipline to AI features and agentic tools.",
+    "glyph": "sec",
+    "accent": "#F28482"
+  },
+  "questions": [
+    {
+      "key": "security-architecture-b1",
+      "difficulty": "beginner",
+      "prompt": "What is threat modeling?",
+      "choices": [
+        "Structured reasoning about what can go wrong, who could cause it, and which controls reduce risk before building or changing a system.",
+        "Installing a firewall and calling it done.",
+        "A penetration test performed once a year.",
+        "A list of every CVE in the world."
+      ],
+      "answer": 0,
+      "explanation": "Threat modeling maps assets, actors, entry points, trust boundaries, and abuse cases. It informs design decisions early, when controls are cheaper. Revisit it when data flows, providers, or user roles change."
+    },
+    {
+      "key": "security-architecture-b2",
+      "difficulty": "beginner",
+      "prompt": "What is a trust boundary?",
+      "choices": [
+        "A point where data or control crosses between components with different trust levels, requiring validation or authentication.",
+        "A physical office wall.",
+        "A CSS border.",
+        "A database index."
+      ],
+      "answer": 0,
+      "explanation": "Browser to API, app to database, app to third-party API, worker to object storage, and model to tool all cross trust boundaries. At each, validate identity, authorization, input, and output rather than assuming the other side is safe."
+    },
+    {
+      "key": "security-architecture-b3",
+      "difficulty": "beginner",
+      "prompt": "What does least privilege mean?",
+      "choices": [
+        "Every user, service, and tool receives only the permissions needed for its specific task, for the shortest practical time.",
+        "Give everyone admin access to avoid support tickets.",
+        "Use one shared root account for all services.",
+        "Disable logging to reduce exposure."
+      ],
+      "answer": 0,
+      "explanation": "Scope database roles, API tokens, cloud identities, staff groups, and AI tools. Separate read/write, tenant, and environment permissions. Short-lived credentials and approval gates reduce the blast radius of compromise."
+    },
+    {
+      "key": "security-architecture-b4",
+      "difficulty": "beginner",
+      "prompt": "What is defence in depth?",
+      "choices": [
+        "Layering independent controls so one failure does not expose the whole system.",
+        "Relying on a single strong password.",
+        "Adding more CSS.",
+        "Hiding the admin URL as the only control."
+      ],
+      "answer": 0,
+      "explanation": "Combine authentication, authorization, validation, network restrictions, rate limits, encryption, monitoring, and least privilege. Obscurity can be a small layer but never the primary control. Controls should fail safely."
+    },
+    {
+      "key": "security-architecture-b5",
+      "difficulty": "beginner",
+      "prompt": "Why should application secrets be short-lived and scoped?",
+      "choices": [
+        "A leaked broadly scoped long-lived secret gives lasting access; short-lived scoped credentials limit damage and simplify rotation.",
+        "Long-lived secrets are more secure.",
+        "Secrets should be stored in Git for auditability.",
+        "Scoping makes secrets impossible to use."
+      ],
+      "answer": 0,
+      "explanation": "Use workload identity or a secret manager where possible. Scope by service, tenant, and operation; rotate automatically; audit issuance. Never place secrets in client bundles, logs, screenshots, or public repositories."
+    },
+    {
+      "key": "security-architecture-i1",
+      "difficulty": "intermediate",
+      "prompt": "What does STRIDE help categorize?",
+      "choices": [
+        "Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, and Elevation of privilege.",
+        "Six types of database index.",
+        "Six CSS layout modes.",
+        "Six stages of deployment."
+      ],
+      "answer": 0,
+      "explanation": "STRIDE is a prompt for systematic threat brainstorming across a data-flow diagram. For each element/boundary, ask which categories apply and what control addresses them. It is a thinking aid, not a compliance checkbox."
+    },
+    {
+      "key": "security-architecture-i2",
+      "difficulty": "intermediate",
+      "prompt": "What is the difference between authentication and authorization at a service boundary?",
+      "choices": [
+        "Authentication establishes the caller's identity; authorization decides whether that identity may perform the requested action on the specific resource.",
+        "Authorization proves identity; authentication grants every permission.",
+        "They are both handled by CSRF tokens.",
+        "Only browsers need authorization."
+      ],
+      "answer": 0,
+      "explanation": "A valid service token proves identity, not permission. Check scopes, tenant, role, and object ownership on every operation. Internal networks are not authorisation. Prefer deny-by-default and explicit policies."
+    },
+    {
+      "key": "security-architecture-i3",
+      "difficulty": "intermediate",
+      "prompt": "What makes a session or API token design safer?",
+      "choices": [
+        "Short lifetimes, secure transport, rotation/revocation, minimal scopes, safe storage, and binding to the intended audience.",
+        "Long expiry and broad scopes for convenience.",
+        "Storing tokens in URLs and logs.",
+        "Using the same token for every environment."
+      ],
+      "answer": 0,
+      "explanation": "Tokens should have an audience, issuer, expiry, and scope. Store browser sessions in secure HttpOnly cookies with CSRF protection; store mobile tokens in secure storage. Support revocation and detect reuse. Never log bearer tokens."
+    },
+    {
+      "key": "security-architecture-i4",
+      "difficulty": "intermediate",
+      "prompt": "Which pipeline control most directly reduces dependency supply-chain risk?",
+      "choices": [
+        "Pinned lockfiles plus vulnerability scanning, trusted registries, provenance checks, and review of new dependencies.",
+        "Using the newest unpinned package for every build.",
+        "Disabling CI secrets rotation.",
+        "Building directly on production servers."
+      ],
+      "answer": 0,
+      "explanation": "Dependencies execute inside your process. Pin versions, verify sources, scan known vulnerabilities, generate an SBOM, and review new packages. Limit CI/CD credentials and sign artifacts so a compromised build cannot silently ship."
+    },
+    {
+      "key": "security-architecture-i5",
+      "difficulty": "intermediate",
+      "prompt": "What is the strongest foundation for multi-tenant isolation?",
+      "choices": [
+        "Tenant-scoped data access enforced in the data layer, object-level authorization, unique constraints including tenant, and tests that attempt cross-tenant access.",
+        "Hiding tenant IDs in the frontend.",
+        "Using random UUIDs as the only control.",
+        "Trusting model code to filter rows."
+      ],
+      "answer": 0,
+      "explanation": "Isolation must hold for every query, report, admin, API, export, background job, and AI retrieval path. Use scoped managers/services, enforce in the database where possible, add tests, and monitor abnormal access. Random IDs are not authorization."
+    },
+    {
+      "key": "security-architecture-a1",
+      "difficulty": "advanced",
+      "prompt": "What does zero trust imply for service-to-service communication?",
+      "choices": [
+        "Do not trust a request merely because it is inside the network; authenticate the workload, authorize the action, encrypt transport, and apply least privilege.",
+        "Everything inside the VPN is automatically trusted.",
+        "Only human users need identity.",
+        "Disable service authentication to reduce latency."
+      ],
+      "answer": 0,
+      "explanation": "Perimeter security is insufficient after cloud, remote work, and supply-chain compromise. Use workload identity, mTLS or signed service credentials, explicit authorization, short-lived tokens, and segmented network policy. Verify continuously."
+    },
+    {
+      "key": "security-architecture-a2",
+      "difficulty": "advanced",
+      "prompt": "Why is key management more than storing one encryption key in settings.py?",
+      "choices": [
+        "You need key hierarchy, rotation, access control, audit, revocation, and a plan for re-encrypting data when keys change.",
+        "Encryption keys never need rotation.",
+        "Settings files are always encrypted.",
+        "The database encrypts everything automatically."
+      ],
+      "answer": 0,
+      "explanation": "A key in source code is compromised on first commit. Use a KMS/secret manager, envelope encryption, rotation, separation of duties, and audited access. Define what happens to old data and how to revoke a compromised key without losing everything."
+    },
+    {
+      "key": "security-architecture-a3",
+      "difficulty": "advanced",
+      "prompt": "Which AI-specific threat most resembles a classic confused-deputy problem?",
+      "choices": [
+        "An AI agent with broad tool permissions is manipulated by untrusted content into acting on behalf of an attacker.",
+        "A CSS selector is too broad.",
+        "A database index is missing.",
+        "A cache key is too long."
+      ],
+      "answer": 0,
+      "explanation": "The agent has authority the attacker lacks; injected content tricks it into using that authority. Mitigate with least-privilege tools, user confirmation, per-action authorization, input provenance, output validation, and audit logs. Never let the model be the final authority."
+    },
+    {
+      "key": "security-architecture-a4",
+      "difficulty": "advanced",
+      "prompt": "What makes an audit log defensible?",
+      "choices": [
+        "Append-only storage, accurate actor/action/target/time context, integrity protection, restricted access, retention policy, and monitoring.",
+        "A mutable text file on the web server.",
+        "Logging only successful requests.",
+        "Storing passwords in the log for correlation."
+      ],
+      "answer": 0,
+      "explanation": "Audit evidence must be trustworthy and complete. Separate it from normal application logs, restrict writes/deletes, detect tampering, and avoid sensitive payloads. Define retention and access for investigations. Logs that anyone can edit are not evidence."
+    },
+    {
+      "key": "security-architecture-a5",
+      "difficulty": "advanced",
+      "prompt": "What should be ready before a security incident occurs?",
+      "choices": [
+        "An incident response plan, contact/escalation path, evidence preservation, credential rotation, containment playbooks, legal/privacy coordination, and communication templates.",
+        "A promise to figure it out later.",
+        "A single admin password shared by the team.",
+        "Disabling monitoring so attackers cannot see it."
+      ],
+      "answer": 0,
+      "explanation": "Incident response is preparation, not improvisation. Identify roles, preserve logs and forensic evidence, isolate affected systems, rotate credentials, assess data exposure, and meet notification obligations. Rehearse scenarios and learn from exercises."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "security-architecture-f1",
+      "difficulty": "beginner",
+      "front": "What is threat modeling?",
+      "back": "A structured review of assets, actors, entry points, trust boundaries, abuse cases, and controls before or during design. It asks what can go wrong and what reduces the risk. Update it when the system changes.",
+      "hint": "Think like an attacker, design controls."
+    },
+    {
+      "key": "security-architecture-f2",
+      "difficulty": "beginner",
+      "front": "What is a trust boundary?",
+      "back": "A place where data or control crosses between differently trusted components. Browser→API, app→database, app→third party, and model→tool all require validation, authentication, and authorization.",
+      "hint": "Validate at the seam."
+    },
+    {
+      "key": "security-architecture-f3",
+      "difficulty": "intermediate",
+      "front": "What is STRIDE?",
+      "back": "Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege. Use it to systematically brainstorm threats across a data-flow diagram and choose controls.",
+      "hint": "Six threat categories."
+    },
+    {
+      "key": "security-architecture-f4",
+      "difficulty": "intermediate",
+      "front": "How do you design secure service identity?",
+      "back": "Authenticate the workload, not just the network. Use short-lived scoped credentials, mTLS or signed tokens, explicit authorization, audience/issuer validation, rotation, and audit. Internal traffic is not automatically trusted.",
+      "hint": "Identity, scope, expiry, audit."
+    },
+    {
+      "key": "security-architecture-f5",
+      "difficulty": "advanced",
+      "front": "What is a confused-deputy attack in an AI agent?",
+      "back": "An attacker manipulates the agent into using its broader permissions on the attacker's behalf, often via prompt injection in retrieved content or tool output. Limit tools, require approvals, validate actions server-side, and audit.",
+      "hint": "The agent has authority the attacker lacks."
+    },
+    {
+      "key": "security-architecture-f6",
+      "difficulty": "advanced",
+      "front": "What belongs in a defensible audit log?",
+      "back": "Actor, action, target, timestamp, source context, outcome, and relevant before/after data. Store append-only, restrict access, protect integrity, redact secrets, define retention, and monitor for tampering or abuse.",
+      "hint": "Who did what, when, and prove it."
+    },
+    {
+      "key": "security-architecture-f7",
+      "difficulty": "advanced",
+      "front": "What makes security incident response effective?",
+      "back": "Preparation: roles, escalation, severity, containment playbooks, evidence preservation, credential rotation, legal/privacy coordination, communication templates, and rehearsals. Mitigate first, then investigate and learn.",
+      "hint": "Prepare before the adrenaline."
+    }
+  ]
+}

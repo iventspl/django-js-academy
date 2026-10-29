@@ -1,0 +1,253 @@
+{
+  "topic": {
+    "slug": "views-forms-templates",
+    "name": "Views, Forms & Templates",
+    "tagline": "Request handling, validation, class-based views, and safe rendering.",
+    "description": "The daily surface of a Django app. Learn how data moves from a request into validated forms and then into templates, plus the class-based view mechanics and escaping rules that keep the result maintainable and safe.",
+    "glyph": "vt",
+    "accent": "#C4A7F7"
+  },
+  "questions": [
+    {
+      "key": "views-forms-templates-b1",
+      "difficulty": "beginner",
+      "prompt": "What must a Django view return?",
+      "choices": [
+        "A dict of context variables.",
+        "An HttpResponse (or a subclass), or raise an exception.",
+        "A database QuerySet.",
+        "A template filename as a string."
+      ],
+      "answer": 1,
+      "explanation": "A view is a callable that takes a request and returns an HttpResponse. render() is a shortcut that renders a template and wraps it in an HttpResponse. Returning a bare string or dict is not enough."
+    },
+    {
+      "key": "views-forms-templates-b2",
+      "difficulty": "beginner",
+      "prompt": "What does render(request, \"shop/detail.html\", context) do?",
+      "choices": [
+        "It returns a Template object without rendering.",
+        "It combines the template with context and returns an HttpResponse.",
+        "It redirects to detail.html.",
+        "It saves the context to the database."
+      ],
+      "answer": 1,
+      "explanation": "render() loads the template, renders it with the context (including request-aware context processors), and returns an HttpResponse. It is equivalent to loader.get_template(...).render(...) wrapped in a response."
+    },
+    {
+      "key": "views-forms-templates-b3",
+      "difficulty": "beginner",
+      "prompt": "What is template inheritance for?",
+      "choices": [
+        "It lets child templates extend a base layout and override named blocks.",
+        "It copies Python classes into HTML.",
+        "It automatically minifies CSS.",
+        "It shares database rows between pages."
+      ],
+      "answer": 0,
+      "explanation": "A base template defines the shell and {% block %} placeholders. Child templates use {% extends %} and override only the blocks they need. This keeps navigation and layout consistent without duplication."
+    },
+    {
+      "key": "views-forms-templates-b4",
+      "difficulty": "beginner",
+      "prompt": "What happens if a POST form omits {% csrf_token %}?",
+      "choices": [
+        "The form submits but is not validated.",
+        "Django rejects the request with a 403 CSRF failure.",
+        "The form is automatically converted to GET.",
+        "Only admin users are affected."
+      ],
+      "answer": 1,
+      "explanation": "CsrfViewMiddleware protects unsafe methods such as POST. The token proves the request came from a page Django served. Include {% csrf_token %} inside every POST form and send the token with AJAX requests."
+    },
+    {
+      "key": "views-forms-templates-b5",
+      "difficulty": "beginner",
+      "prompt": "What is the context in a template response?",
+      "choices": [
+        "The browser's local storage.",
+        "A mapping of variable names to values available to the template.",
+        "The database connection settings.",
+        "A list of installed apps."
+      ],
+      "answer": 1,
+      "explanation": "The context is the data passed into the template. Values are looked up by name, with attribute and dictionary lookup. Context processors can add request-wide values such as request, user, and messages."
+    },
+    {
+      "key": "views-forms-templates-i1",
+      "difficulty": "intermediate",
+      "prompt": "When should you use a ModelForm instead of a plain Form?",
+      "choices": [
+        "When the form maps closely to a model and should create or update instances.",
+        "When you need any HTML input at all.",
+        "Only when the form contains a file upload.",
+        "When you want to skip validation."
+      ],
+      "answer": 0,
+      "explanation": "ModelForm derives fields from a model and can save a validated instance with form.save(). Use a plain Form for input that is not a direct model mapping, such as a search box, settings toggle, or multi-step calculation."
+    },
+    {
+      "key": "views-forms-templates-i2",
+      "difficulty": "intermediate",
+      "prompt": "Where should you validate that two password fields match?",
+      "choices": [
+        "In the template with an if tag.",
+        "In the form's clean() method, raising ValidationError if they differ.",
+        "In the model's __str__ method.",
+        "In urls.py."
+      ],
+      "answer": 1,
+      "explanation": "Cross-field validation belongs in Form.clean(), which receives cleaned_data after individual field validation. Field-specific rules can live in clean_<fieldname>(). The template should display errors, not enforce business rules."
+    },
+    {
+      "key": "views-forms-templates-i3",
+      "difficulty": "intermediate",
+      "prompt": "In a ListView, which method should you override to filter the objects shown?",
+      "choices": ["get_queryset()", "get_template_names()", "dispatch()", "as_view()"],
+      "answer": 0,
+      "explanation": "ListView builds its queryset in get_queryset(). Override that rather than filtering in get_context_data(). For object-level permissions, combine the filter with the current user, and never trust a client-supplied owner id."
+    },
+    {
+      "key": "views-forms-templates-i4",
+      "difficulty": "intermediate",
+      "prompt": "For path(\"posts/<slug:slug>/\", views.detail), how does the view receive the slug?",
+      "choices": [
+        "As request.GET[\"slug\"].",
+        "As a keyword argument: def detail(request, slug).",
+        "As request.POST[\"slug\"].",
+        "Through a global variable."
+      ],
+      "answer": 1,
+      "explanation": "Captured URL groups are passed to the view as keyword arguments. They are part of the path, not the query string. Use request.GET for ?slug=... query parameters and request.POST for submitted form data."
+    },
+    {
+      "key": "views-forms-templates-i5",
+      "difficulty": "intermediate",
+      "prompt": "How does Django treat {{ comment }} when autoescaping is enabled?",
+      "choices": [
+        "It inserts the raw HTML unchanged.",
+        "It HTML-escapes the value, neutralising tags and quotes.",
+        "It removes the variable entirely.",
+        "It runs the value as JavaScript."
+      ],
+      "answer": 1,
+      "explanation": "Autoescaping converts characters such as <, >, &, and quotes to entities, preventing user content from becoming markup. Do not disable it with |safe unless the content is trusted and sanitised. Use format_html for trusted HTML built in Python."
+    },
+    {
+      "key": "views-forms-templates-a1",
+      "difficulty": "advanced",
+      "prompt": "In a class-based View, what selects get() versus post()?",
+      "choices": [
+        "The template engine.",
+        "dispatch(), which looks at request.method and delegates to the matching handler.",
+        "The URL converter only.",
+        "The first method defined on the class."
+      ],
+      "answer": 1,
+      "explanation": "View.dispatch() is the entry point. It finds a handler named after the lowercased HTTP method (get, post, put) and calls it. Override dispatch for cross-cutting checks, but call super().dispatch() to preserve normal routing."
+    },
+    {
+      "key": "views-forms-templates-a2",
+      "difficulty": "advanced",
+      "prompt": "In a FormView, what should form_valid() usually return?",
+      "choices": [
+        "The cleaned_data dict.",
+        "An HttpResponse, commonly a redirect after a successful save.",
+        "None, which automatically reloads the form.",
+        "A Form class."
+      ],
+      "answer": 1,
+      "explanation": "form_valid() runs when validation succeeds and must return an HttpResponse. A common pattern is to save and return redirect(self.get_success_url()). Calling super().form_valid(form) handles the redirect configured by success_url."
+    },
+    {
+      "key": "views-forms-templates-a3",
+      "difficulty": "advanced",
+      "prompt": "Which approach safely builds HTML that includes an untrusted string?",
+      "choices": [
+        "mark_safe(f\"<b>{name}</b>\")",
+        "format_html(\"<b>{}</b>\", name)",
+        "f\"<b>{name}</b>\" passed through |safe",
+        "Marking the whole template as safe"
+      ],
+      "answer": 1,
+      "explanation": "format_html escapes each argument before interpolating it, so the surrounding markup is trusted but values are not. mark_safe and |safe tell Django to trust raw content, which creates XSS risk when the content includes user input."
+    },
+    {
+      "key": "views-forms-templates-a4",
+      "difficulty": "advanced",
+      "prompt": "What usually causes the error 'ManagementForm data is missing or has been tampered with'?",
+      "choices": [
+        "A missing CSRF token.",
+        "A formset rendered without management_form, or posted without its hidden management fields.",
+        "A template that uses {% extends %}.",
+        "A database transaction that rolled back."
+      ],
+      "answer": 1,
+      "explanation": "Formsets use hidden management fields (TOTAL_FORMS, INITIAL_FORMS, etc.) to know how many forms were submitted. Render {{ formset.management_form }} inside the form. Tampering with those counts is why Django says they may have been tampered with."
+    },
+    {
+      "key": "views-forms-templates-a5",
+      "difficulty": "advanced",
+      "prompt": "Why should a context processor avoid expensive database queries?",
+      "choices": [
+        "Context processors run only in admin.",
+        "They run for every template rendered with RequestContext, so a slow query affects every page.",
+        "They cannot access the request object.",
+        "They are evaluated in the browser."
+      ],
+      "answer": 1,
+      "explanation": "Context processors add data to every request-wide template context. A query there multiplies across the whole site and can create N+1 patterns. Keep them cheap, cache carefully, or pass page-specific data explicitly from the view."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "views-forms-templates-f1",
+      "difficulty": "beginner",
+      "front": "What is the simplest contract of a Django view?",
+      "back": "A callable that accepts an HttpRequest and returns an HttpResponse. It can be a function or a class-based view. render() is a shortcut that returns a rendered template response.",
+      "front_code": "def home(request):\n    return render(request, \"home.html\", {\"title\": \"Home\"})"
+    },
+    {
+      "key": "views-forms-templates-f2",
+      "difficulty": "beginner",
+      "front": "How does template inheritance work?",
+      "back": "A base template declares named blocks. A child starts with {% extends \"base.html\" %} and overrides those blocks. The child cannot emit content outside blocks unless the base provides a slot for it.",
+      "front_code": "{% extends \"base.html\" %}\n{% block content %}...{% endblock %}"
+    },
+    {
+      "key": "views-forms-templates-f3",
+      "difficulty": "intermediate",
+      "front": "How do Form and ModelForm validation flow?",
+      "back": "Django runs field cleaning, then form clean() for cross-field rules. Errors are attached to fields or __all__. A ModelForm additionally validates model constraints and can save an instance. Always check form.is_valid() before accessing cleaned_data.",
+      "front_code": "if form.is_valid():\n    obj = form.save()\n    return redirect(obj)"
+    },
+    {
+      "key": "views-forms-templates-f4",
+      "difficulty": "intermediate",
+      "front": "What is the role of get_queryset() in a class-based view?",
+      "back": "It supplies the objects a ListView or DetailView works with. Override it to filter by the current user, tenant, or published state. Keep authorisation in the query itself when possible, rather than filtering after fetching.",
+      "front_code": "def get_queryset(self):\n    return super().get_queryset().filter(owner=self.request.user)"
+    },
+    {
+      "key": "views-forms-templates-f5",
+      "difficulty": "advanced",
+      "front": "Walk through a class-based View request.",
+      "back": "as_view() creates a callable; setup() assigns request/args/kwargs; dispatch() chooses get(), post(), etc.; the handler returns an HttpResponse. form_valid() in FormView is called after successful validation and must return a response.",
+      "hint": "setup → dispatch → get/post → response."
+    },
+    {
+      "key": "views-forms-templates-f6",
+      "difficulty": "advanced",
+      "front": "When is HTML escaping disabled, and why is that dangerous?",
+      "back": "Autoescape is on by default. |safe, mark_safe(), and disabling autoescape mark content as trusted. If that content contains user input, an attacker can inject scripts (XSS). Prefer format_html, which escapes arguments while preserving trusted markup.",
+      "front_code": "format_html(\"<strong>{}</strong>\", user.name)"
+    },
+    {
+      "key": "views-forms-templates-f7",
+      "difficulty": "advanced",
+      "front": "What does a Django formset manage?",
+      "back": "A formset handles a collection of forms built from the same Form class: create several order lines, edit a list of addresses, and so on. It relies on management form fields and can support extra, max_num, can_delete, and inline formsets tied to a parent object.",
+      "front_code": "{{ formset.management_form }}\n{% for form in formset %}...{% endfor %}"
+    }
+  ]
+}

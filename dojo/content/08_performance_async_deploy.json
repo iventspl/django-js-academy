@@ -1,0 +1,260 @@
+{
+  "topic": {
+    "slug": "performance-async-deploy",
+    "name": "Performance, Async & Deployment",
+    "tagline": "Measure first, cache deliberately, and ship with the boring checks.",
+    "description": "The production layer: caching, query plans, async boundaries, static files, and security settings. This is where a working Django app becomes a dependable one — and where speculative optimisation usually does more harm than good.",
+    "glyph": "ops",
+    "accent": "#F6A85F"
+  },
+  "questions": [
+    {
+      "key": "performance-async-deploy-b1",
+      "difficulty": "beginner",
+      "prompt": "What is caching in a web application?",
+      "choices": [
+        "Compressing every response with gzip.",
+        "Storing a computed or fetched result somewhere faster so later requests can reuse it.",
+        "Copying the database on every request.",
+        "Running all views asynchronously."
+      ],
+      "answer": 1,
+      "explanation": "A cache trades memory or another fast store for repeated work. It can hold rendered fragments, query results, sessions, or full responses. Every cache introduces an invalidation question, so add it only where measurement shows a bottleneck."
+    },
+    {
+      "key": "performance-async-deploy-b2",
+      "difficulty": "beginner",
+      "prompt": "Why must DEBUG be False in production?",
+      "choices": [
+        "It makes templates render more slowly for attackers.",
+        "It exposes sensitive settings and stack traces, and changes error handling and static-file behaviour.",
+        "It disables the ORM.",
+        "It prevents HTTPS from working."
+      ],
+      "answer": 1,
+      "explanation": "DEBUG=True produces detailed technical error pages that can reveal source, settings, and local variables. Production should use DEBUG=False with proper logging and error monitoring. Debug pages are for developers, never public traffic."
+    },
+    {
+      "key": "performance-async-deploy-b3",
+      "difficulty": "beginner",
+      "prompt": "What does collectstatic do?",
+      "choices": [
+        "It deletes unused CSS from templates.",
+        "It copies static assets from apps and STATICFILES_DIRS into STATIC_ROOT for deployment.",
+        "It stores uploaded user files in the database.",
+        "It compiles Python into static binaries."
+      ],
+      "answer": 1,
+      "explanation": "collectstatic gathers static files into one deployable directory. A production web server or CDN then serves STATIC_ROOT. Django's runserver convenience is not the production static-file strategy."
+    },
+    {
+      "key": "performance-async-deploy-b4",
+      "difficulty": "beginner",
+      "prompt": "What does ALLOWED_HOSTS protect against?",
+      "choices": [
+        "SQL injection.",
+        "HTTP Host header attacks and requests for unintended hostnames.",
+        "Weak passwords.",
+        "Large file uploads."
+      ],
+      "answer": 1,
+      "explanation": "Django validates the Host header against ALLOWED_HOSTS. This helps prevent host-header poisoning and cache poisoning when generating absolute URLs. In production, list the real domains rather than using a wildcard."
+    },
+    {
+      "key": "performance-async-deploy-b5",
+      "difficulty": "beginner",
+      "prompt": "Why is manage.py runserver not the production server?",
+      "choices": [
+        "It cannot read the database.",
+        "It is a development server without production hardening, process management, or performance tuning.",
+        "It refuses to serve HTML.",
+        "It does not support URL routing."
+      ],
+      "answer": 1,
+      "explanation": "Use a production application server such as Gunicorn or Uvicorn behind a reverse proxy, with process supervision. runserver is convenient, auto-reloading, and unsuitable for public traffic or reliability requirements."
+    },
+    {
+      "key": "performance-async-deploy-i1",
+      "difficulty": "intermediate",
+      "prompt": "What does @cache_page(60 * 15) do?",
+      "choices": [
+        "Caches the view's database queries for 15 minutes only.",
+        "Caches the entire HTTP response for that URL for 15 minutes.",
+        "Limits the view to 15 requests per minute.",
+        "Compresses the response for 15 seconds."
+      ],
+      "answer": 1,
+      "explanation": "cache_page stores the rendered response and serves it for the timeout. Be careful with personalised pages, cookies, and authenticated content: a shared cache can leak one user's response to another. Vary by headers or avoid page caching for private pages."
+    },
+    {
+      "key": "performance-async-deploy-i2",
+      "difficulty": "intermediate",
+      "prompt": "Why is LocMemCache a poor default for a multi-process production deployment?",
+      "choices": [
+        "It stores data only in each process's memory, so workers do not share cache entries.",
+        "It writes every cache entry to the database.",
+        "It cannot store strings.",
+        "It requires Redis to be installed."
+      ],
+      "answer": 0,
+      "explanation": "LocMemCache is per-process. With several Gunicorn workers, each has its own cache and invalidation becomes inconsistent. Use a shared backend such as Redis or Memcached when multiple processes need the same cached data."
+    },
+    {
+      "key": "performance-async-deploy-i3",
+      "difficulty": "intermediate",
+      "prompt": "What makes this an async Django view?",
+      "code": "async def dashboard(request):\n    data = await fetch_metrics()\n    return JsonResponse(data)",
+      "choices": [
+        "The async keyword and the awaited coroutine.",
+        "JsonResponse automatically makes it async.",
+        "The request object is asynchronous.",
+        "Only the URL pattern decides."
+      ],
+      "answer": 0,
+      "explanation": "An async view is an async def function. I/O should be awaited so other work can proceed on the event loop. A blocking call inside an async view blocks the loop and can be worse than a plain sync view."
+    },
+    {
+      "key": "performance-async-deploy-i4",
+      "difficulty": "intermediate",
+      "prompt": "Why use sync_to_async() around a blocking third-party SDK in an async view?",
+      "choices": [
+        "It makes the SDK thread-safe automatically.",
+        "It moves the blocking call off the event loop, typically to a thread.",
+        "It converts the SDK into a database query.",
+        "It caches the SDK response."
+      ],
+      "answer": 1,
+      "explanation": "sync_to_async runs a synchronous callable in a thread pool so the event loop can keep serving other requests. Set thread_sensitive appropriately when the code must share a thread with other sync work. Better still, use a native async client when one exists."
+    },
+    {
+      "key": "performance-async-deploy-i5",
+      "difficulty": "intermediate",
+      "prompt": "What should you do before adding a cache to a slow page?",
+      "choices": [
+        "Add cache_page to every view immediately.",
+        "Measure where the time goes — queries, templates, external calls, or CPU — and fix the actual bottleneck.",
+        "Disable the database.",
+        "Switch to ASGI."
+      ],
+      "answer": 1,
+      "explanation": "Caching can hide an N+1 query or an accidental external call and make invalidation harder. Measure with query counts, timing, and profiling first. Optimise the bottleneck, then cache if repeated expensive work remains."
+    },
+    {
+      "key": "performance-async-deploy-a1",
+      "difficulty": "advanced",
+      "prompt": "What is wrong with this async view?",
+      "code": "async def report(request):\n    time.sleep(5)\n    return HttpResponse(\"done\")",
+      "choices": [
+        "time.sleep is blocking and stalls the event loop for every request on that worker.",
+        "Async views cannot return HttpResponse.",
+        "It must use JsonResponse.",
+        "Nothing is wrong; time.sleep is asynchronous."
+      ],
+      "answer": 0,
+      "explanation": "time.sleep blocks the thread running the event loop, so no other coroutine progresses. Use await asyncio.sleep(5) for delays, or move truly blocking work to sync_to_async/threads. The same rule applies to blocking HTTP clients and CPU-heavy work."
+    },
+    {
+      "key": "performance-async-deploy-a2",
+      "difficulty": "advanced",
+      "prompt": "What happens if you call a synchronous ORM method directly inside an async view?",
+      "choices": [
+        "Django silently runs it in the background.",
+        "Django raises SynchronousOnlyOperation; use async ORM methods or sync_to_async.",
+        "The ORM automatically becomes async.",
+        "It only works with SQLite."
+      ],
+      "answer": 1,
+      "explanation": "Django protects the event loop by rejecting blocking ORM calls in an async context. Use aget(), acreate(), async iteration, and other async APIs, or wrap sync code in sync_to_async. Do not sprinkle a single async view into a sync ORM design without planning the boundary."
+    },
+    {
+      "key": "performance-async-deploy-a3",
+      "difficulty": "advanced",
+      "prompt": "When is adding a database index the right performance move?",
+      "choices": [
+        "For every column, because indexes never have a cost.",
+        "When queries filter, join, or order on columns where the query plan shows a costly scan, and the read benefit outweighs write/storage overhead.",
+        "Only for primary keys.",
+        "Only after deleting the database cache."
+      ],
+      "answer": 1,
+      "explanation": "Indexes speed up reads but consume storage and slow writes because they must be maintained. Use EXPLAIN/EXPLAIN ANALYZE and real query patterns to target them. Composite index column order matters: leftmost prefix rules apply."
+    },
+    {
+      "key": "performance-async-deploy-a4",
+      "difficulty": "advanced",
+      "prompt": "Two workers check that a username is free, then both insert it. Which fix is most robust?",
+      "choices": [
+        "Add a longer sleep between the check and insert.",
+        "Add a unique database constraint and handle the IntegrityError.",
+        "Cache the username lookup.",
+        "Use a GET request instead of POST."
+      ],
+      "answer": 1,
+      "explanation": "Check-then-act is a race. A unique constraint makes the database enforce the invariant atomically, even under concurrency. Catch IntegrityError and return a validation error. Application-level checks alone cannot guarantee uniqueness."
+    },
+    {
+      "key": "performance-async-deploy-a5",
+      "difficulty": "advanced",
+      "prompt": "What is the hard part of caching?",
+      "choices": [
+        "Choosing a cache key.",
+        "Invalidating or expiring entries when the underlying data changes, without serving stale or cross-user content.",
+        "Installing Redis.",
+        "Serialising strings."
+      ],
+      "answer": 1,
+      "explanation": "A cache is easy to add and hard to keep correct. Decide what is cacheable, scope keys by user/tenant when needed, set timeouts, and invalidate on writes. For page caches, beware sessions, CSRF tokens, and personalised headers."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "performance-async-deploy-f1",
+      "difficulty": "beginner",
+      "front": "What is the first rule of performance work?",
+      "back": "Measure before optimising. Find the real bottleneck with query counts, timing, profiling, and logs. Speculative caching or async rewrites often add complexity without fixing the actual cost.",
+      "hint": "Measure, don't guess."
+    },
+    {
+      "key": "performance-async-deploy-f2",
+      "difficulty": "beginner",
+      "front": "What belongs in a Django production checklist?",
+      "back": "DEBUG=False, a real SECRET_KEY, correct ALLOWED_HOSTS, HTTPS and secure cookies, collectstatic plus static/media serving, a production WSGI/ASGI server, database backups, logging, and error monitoring. Run manage.py check --deploy.",
+      "front_code": "python manage.py check --deploy"
+    },
+    {
+      "key": "performance-async-deploy-f3",
+      "difficulty": "intermediate",
+      "front": "How do cache backends differ in production?",
+      "back": "LocMemCache is per-process and not shared across workers. Redis or Memcached provide a shared cache across processes and hosts. Database cache is persistent but slower. Choose based on sharing, eviction, and durability needs.",
+      "hint": "Per-process vs shared."
+    },
+    {
+      "key": "performance-async-deploy-f4",
+      "difficulty": "intermediate",
+      "front": "What does async actually improve in Django?",
+      "back": "It improves concurrency for I/O-bound work by letting one worker handle other requests while awaiting network or disk. It does not speed up CPU-bound work or make blocking code asynchronous. Sync views still run fine in a thread pool.",
+      "hint": "I/O concurrency, not raw speed."
+    },
+    {
+      "key": "performance-async-deploy-f5",
+      "difficulty": "advanced",
+      "front": "How do you call blocking code safely from an async view?",
+      "back": "Use sync_to_async to run it in a thread, or replace it with a native async client. Never call time.sleep, blocking HTTP, or the synchronous ORM directly on the event loop. Keep the async boundary explicit.",
+      "front_code": "from asgiref.sync import sync_to_async\nresult = await sync_to_async(blocking_call)()"
+    },
+    {
+      "key": "performance-async-deploy-f6",
+      "difficulty": "advanced",
+      "front": "When should you add a database index?",
+      "back": "When real query patterns filter, join, or order on a column and the plan shows an expensive scan. Indexes speed reads but cost storage and write time. Verify with EXPLAIN and re-measure; avoid indexing every column by reflex.",
+      "front_code": "class Meta:\n    indexes = [models.Index(fields=[\"status\", \"created_at\"])]"
+    },
+    {
+      "key": "performance-async-deploy-f7",
+      "difficulty": "advanced",
+      "front": "Why is a unique constraint better than a check in application code?",
+      "back": "A check followed by an insert is a race: another request can insert between the two steps. A unique constraint is enforced atomically by the database. Handle the resulting IntegrityError and return a clean validation message.",
+      "hint": "The database is the last line of defence."
+    }
+  ]
+}

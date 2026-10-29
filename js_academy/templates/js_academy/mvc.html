@@ -1,0 +1,337 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}MVC w JavaScript{% endblock %}
+{% block body_class %}page-js js-mvc-page{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-mvc-wrap">
+  <header class="js-mvc-hero">
+    <div>
+      <p class="eyebrow eyebrow-js">Architektura · przewodnik praktyczny</p>
+      <h1>MVC bez<br><em>frameworka.</em></h1>
+      <p class="js-lead">Model, widok i kontroler to nie trzy pliki. To trzy odpowiedzialności. Ten przewodnik pokazuje, kiedy warto je rozdzielić, jak trzymać <code>currentView</code>, <code>currentSort</code> i <code>currentQuery</code> w jednym stanie oraz dlaczego filtrowanie i sortowanie powinny być czystymi funkcjami.</p>
+      <div class="hero-actions">
+        <a class="btn btn-js" href="{% url 'js_academy:module' 'mvc-w-js' %}">Moduł MVC: 4 lekcje <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost-dark" href="{% url 'js_academy:component' 'mvc-product-browser' %}">Pełny komponent MVC <span aria-hidden="true">◧</span></a>
+      </div>
+    </div>
+    <aside class="js-mvc-verdict">
+      <p class="eyebrow eyebrow-js-dark">Zdanie, które warto zapamiętać</p>
+      <strong>Widok nie filtruje. Model nie wie o DOM. Kontroler nie liczy danych ręcznie.</strong>
+      <p>Jeśli każda funkcja dostaje <code>query</code>, <code>sort</code>, <code>page</code> i <code>direction</code> osobno, sygnatury puchną, a stan i tak żyje w pięciu miejscach.</p>
+    </aside>
+  </header>
+
+  <nav class="js-mvc-toc" aria-label="Spis treści">
+    <a href="#dlaczego">Dlaczego</a>
+    <a href="#kiedy">Kiedy</a>
+    <a href="#role">Role</a>
+    <a href="#stan">Stan widoku</a>
+    <a href="#selektory">Selektory</a>
+    <a href="#kontroler">Kontroler</a>
+    <a href="#wzorce">Wzorce</a>
+    <a href="#bledy">Błędy</a>
+  </nav>
+
+  <section class="js-mvc-section" id="dlaczego">
+    <p class="eyebrow eyebrow-js">01 · Dlaczego</p>
+    <h2>MVC kupuje przewidywalność, nie „czystość”.</h2>
+    <div class="js-mvc-prose">
+      <p>W prostym widgecie możesz filtrować dane w evencie i wstawiać HTML od razu. Problem zaczyna się, gdy dochodzi drugi filtr, sortowanie, paginacja, widok grid/list i empty state. Wtedy każdy event próbuje naprawić kawałek UI, a stan jest rozrzucony po zmiennych i atrybutach DOM.</p>
+      <p>MVC porządkuje to w jeden przepływ: <strong>zdarzenie → nowy stan → selektory → render</strong>. Dzięki temu możesz odpowiedzieć na pytania: skąd pochodzi ta wartość, kto ją zmienił i dlaczego lista wygląda właśnie tak.</p>
+    </div>
+    <div class="js-mvc-benefits">
+      <div><strong>Testowalność</strong><p>Filtrowanie i sortowanie możesz sprawdzić bez przeglądarki.</p></div>
+      <div><strong>Przewidywalność</strong><p>Jedno miejsce zmienia stan, jedno miejsce renderuje.</p></div>
+      <div><strong>Ewolucja</strong><p>Nowy filtr to pole w stanie i warunek w selektorze, nie zmiana pięciu sygnatur.</p></div>
+    </div>
+  </section>
+
+  <section class="js-mvc-section" id="kiedy">
+    <p class="eyebrow eyebrow-js">02 · Kiedy</p>
+    <h2>Kiedy MVC ma sens, a kiedy jest nadmiarem.</h2>
+    <div class="js-mvc-two-col">
+      <div class="js-mvc-check">
+        <h3>Warto rozdzielić</h3>
+        <ul>
+          <li>lista ma search, kategorię, sort, grid/list i paginację,</li>
+          <li>ten sam stan zasila kilka fragmentów UI,</li>
+          <li>chcesz testować logikę bez DOM,</li>
+          <li>kilka osób pracuje nad jednym ekranem,</li>
+          <li>stan ma trafiać do URL i wracać po odświeżeniu.</li>
+        </ul>
+      </div>
+      <div class="js-mvc-uncheck">
+        <h3>Nie komplikuj</h3>
+        <ul>
+          <li>jeden przycisk „pokaż/ukryj”,</li>
+          <li>statyczna lista bez filtrów,</li>
+          <li>prototyp, który ma sprawdzić jeden pomysł,</li>
+          <li>komponent, który nie ma współdzielonego stanu.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="js-mvc-callout">MVC to narzędzie do zarządzania złożonością. Jeśli złożoności nie ma, nie dodawaj warstw tylko po to, by „wyglądało profesjonalnie”.</p>
+  </section>
+
+  <section class="js-mvc-section" id="role">
+    <p class="eyebrow eyebrow-js">03 · Role</p>
+    <h2>Trzy odpowiedzialności, nie trzy magiczne pliki.</h2>
+    <div class="js-mvc-roles">
+      <article class="js-mvc-role">
+        <span class="tag tag-js-dark">Model</span>
+        <h3>Dane i reguły</h3>
+        <p>Produkty, koszyk, walidacja, uprawnienia. Model nie wie, czy lista jest grid czy list i nie dotyka DOM.</p>
+        <pre><code>const products = [
+  { id: 1, name: "Mysz", price: 89 },
+  { id: 2, name: "Lampa", price: 129 },
+];</code></pre>
+      </article>
+      <article class="js-mvc-role">
+        <span class="tag tag-js-dark">View</span>
+        <h3>Prezentacja</h3>
+        <p>Zamienia dane na HTML. Nie filtruje, nie sortuje i nie decyduje, co się stanie po kliknięciu.</p>
+        <pre><code>function render(state) {
+  list.className = `products ${state.currentView}`;
+  list.innerHTML = state.items.map(card).join("");
+}</code></pre>
+      </article>
+      <article class="js-mvc-role">
+        <span class="tag tag-js-dark">Controller</span>
+        <h3>Zdarzenia i stan</h3>
+        <p>Odbiera input, tworzy nowy stan, wywołuje selektory i render. Nie implementuje reguł biznesowych.</p>
+        <pre><code>input.addEventListener("input", (event) =&gt; {
+  update({ currentQuery: event.target.value });
+});</code></pre>
+      </article>
+    </div>
+  </section>
+
+  <section class="js-mvc-section" id="stan">
+    <p class="eyebrow eyebrow-js">04 · Stan widoku</p>
+    <h2><code>currentView</code>, <code>currentSort</code>, <code>currentQuery</code> — w jednym obiekcie.</h2>
+    <div class="js-mvc-prose">
+      <p>To jest <strong>view state</strong>: opis tego, jak pokazać dane. Nie mieszaj go z modelem domeny. Jeden obiekt zmniejsza liczbę parametrów i wymusza spójność.</p>
+    </div>
+    <pre class="js-mvc-code"><code>const viewState = {
+  currentView: "grid",              // "grid" | "list"
+  currentSort: { key: "name", direction: "asc" },
+  currentQuery: "",
+  currentCategory: "all",
+  currentPage: 1,
+  pageSize: 6,
+};</code></pre>
+    <div class="js-mvc-state-grid">
+      <div><strong>currentView</strong><p>Tylko prezentacja: grid/list. Nie wpływa na filtrowanie ani sortowanie.</p></div>
+      <div><strong>currentSort</strong><p>Obiekt <code>{ key, direction }</code>. Sam string nie mówi, czy sortujesz rosnąco.</p></div>
+      <div><strong>currentQuery</strong><p>Tekst wyszukiwania. Zmiana powinna resetować <code>currentPage</code> do 1.</p></div>
+      <div><strong>currentPage</strong><p>Pochodna liczby wyników. Po filtrze może wyjść poza zakres — kontroler musi ją poprawić.</p></div>
+    </div>
+
+    <h3 class="js-mvc-subhead">Zła sygnatura vs jeden stan</h3>
+    <div class="js-mvc-compare">
+      <div class="js-mvc-bad">
+        <span>Parameter explosion</span>
+        <pre><code>selectProducts(
+  products,
+  query,
+  category,
+  sortKey,
+  direction,
+  page,
+  pageSize,
+  view
+);</code></pre>
+        <p>Każdy nowy filtr zmienia sygnaturę w kilku miejscach. Łatwo pominąć argument.</p>
+      </div>
+      <div class="js-mvc-good">
+        <span>Jeden kontrakt</span>
+        <pre><code>selectProducts(products, viewState);
+render(visible, viewState);</code></pre>
+        <p>Nowe pole w stanie nie wymaga zmiany sygnatury. Funkcja selektora czyta tylko to, czego potrzebuje.</p>
+      </div>
+    </div>
+
+    <h3 class="js-mvc-subhead">Aktualizacja przez nowy obiekt</h3>
+    <pre class="js-mvc-code"><code>let viewState = { ... };
+
+function updateViewState(patch) {
+  viewState = { ...viewState, ...patch };
+
+  if (
+    "currentQuery" in patch ||
+    "currentCategory" in patch ||
+    "currentSort" in patch
+  ) {
+    viewState.currentPage = 1;
+  }
+
+  render(viewState);
+}</code></pre>
+    <p class="js-mvc-note">Dlaczego nowy obiekt? Łatwiej śledzić zmianę i uniknąć sytuacji, w której stara referencja została gdzieś zapamiętana. Nie mutuj stanu „przy okazji”.</p>
+  </section>
+
+  <section class="js-mvc-section" id="selektory">
+    <p class="eyebrow eyebrow-js">05 · Selektory</p>
+    <h2>Filtrowanie i sortowanie to funkcje, nie event handlery.</h2>
+    <p class="js-mvc-prose">Selektor dostaje dane i potrzebny fragment stanu, zwraca nową listę. Nie dotyka DOM, nie czyta globali i nie zapisuje stanu.</p>
+    <pre class="js-mvc-code"><code>function filterProducts(products, viewState) {
+  const query = viewState.currentQuery.trim().toLowerCase();
+
+  return products.filter((product) =&gt; {
+    const matchesQuery = product.name
+      .toLowerCase()
+      .includes(query);
+
+    const matchesCategory =
+      viewState.currentCategory === "all" ||
+      product.category === viewState.currentCategory;
+
+    return matchesQuery &amp;&amp; matchesCategory;
+  });
+}
+
+function sortProducts(items, currentSort) {
+  const factor = currentSort.direction === "desc" ? -1 : 1;
+
+  return [...items].sort((a, b) =&gt; {
+    if (currentSort.key === "price") {
+      return (a.price - b.price) * factor;
+    }
+
+    return String(a[currentSort.key])
+      .localeCompare(String(b[currentSort.key]), "pl") * factor;
+  });
+}
+
+function paginate(items, page, pageSize) {
+  const start = (page - 1) * pageSize;
+  return items.slice(start, start + pageSize);
+}
+
+function selectProducts(products, viewState) {
+  return paginate(
+    sortProducts(filterProducts(products, viewState), viewState.currentSort),
+    viewState.currentPage,
+    viewState.pageSize
+  );
+}</code></pre>
+    <div class="js-mvc-explain">
+      <p><strong>Dlaczego kopia przed sortem?</strong> <code>sort</code> mutuje tablicę. Bez <code>[...items]</code> zmieniasz kolejność danych modelu i możesz zepsuć inny widok.</p>
+      <p><strong>Dlaczego filtr nie zna <code>currentView</code>?</strong> Bo grid/list to prezentacja. Filtrowanie nie powinno zależeć od tego, jak wyświetlasz wynik.</p>
+      <p><strong>Dlaczego jeden selektor?</strong> Kontroler nie skleja trzech funkcji w każdym evencie. Ma jeden kontrakt: dane + stan → widoczne dane.</p>
+    </div>
+  </section>
+
+  <section class="js-mvc-section" id="kontroler">
+    <p class="eyebrow eyebrow-js">06 · Kontroler i widok</p>
+    <h2>Jedno miejsce zmienia stan. Jedno miejsce renderuje.</h2>
+    <pre class="js-mvc-code"><code>function render(viewState) {
+  const visible = selectProducts(products, viewState);
+
+  list.className = `products ${viewState.currentView}`;
+  list.innerHTML = visible.map(productCard).join("");
+
+  count.textContent = `${visible.length} produktów`;
+  stateView.textContent = JSON.stringify(viewState, null, 2);
+}
+
+function updateViewState(patch) {
+  viewState = { ...viewState, ...patch };
+  render(viewState);
+}
+
+search.addEventListener("input", (event) =&gt; {
+  updateViewState({
+    currentQuery: event.target.value,
+    currentPage: 1,
+  });
+});
+
+sortSelect.addEventListener("change", (event) =&gt; {
+  const [key, direction] = event.target.value.split(":");
+  updateViewState({
+    currentSort: { key, direction },
+    currentPage: 1,
+  });
+});
+
+viewToggle.addEventListener("click", () =&gt; {
+  updateViewState({
+    currentView: viewState.currentView === "grid" ? "list" : "grid",
+  });
+});</code></pre>
+    <div class="js-mvc-flow" aria-label="Przepływ MVC">
+      <span>zdarzenie</span><i>→</i><span>updateViewState</span><i>→</i><span>selektory</span><i>→</i><span>render</span>
+    </div>
+    <p class="js-mvc-note">Zwróć uwagę: zmiana <code>currentView</code> nie resetuje strony i nie zmienia filtra. Zmiana <code>currentQuery</code> resetuje stronę, bo zmienia się zbiór wyników.</p>
+  </section>
+
+  <section class="js-mvc-section" id="wzorce">
+    <p class="eyebrow eyebrow-js">07 · Wzorce</p>
+    <h2>Sześć sytuacji, które wracają w każdej liście.</h2>
+    <div class="js-mvc-patterns">
+      <article><h3>1. Search z debounce</h3><p>Nie filtruj przy każdym znaku, jeśli dane są drogie. Opóźnij aktualizację stanu, ale nadal miej jedno źródło prawdy.</p><pre><code>const onInput = debounce((value) =&gt; {
+  updateViewState({ currentQuery: value, currentPage: 1 });
+}, 250);</code></pre></article>
+      <article><h3>2. Sort toggle</h3><p>Kliknięcie tej samej kolumny zmienia kierunek. Nowy klucz zaczyna od <code>asc</code>.</p><pre><code>const direction =
+  nextKey === currentSort.key &amp;&amp; direction === "asc"
+    ? "desc" : "asc";</code></pre></article>
+      <article><h3>3. Grid / list</h3><p><code>currentView</code> zmienia tylko klasę kontenera i szablon karty. Nie zmienia danych.</p><pre><code>list.className = `products ${viewState.currentView}`;</code></pre></article>
+      <article><h3>4. Reset strony</h3><p>Query, kategoria i sort zmieniają zbiór wyników. Nowy zbiór = strona 1.</p><pre><code>if ("currentQuery" in patch) {
+  viewState.currentPage = 1;
+}</code></pre></article>
+      <article><h3>5. Pusty wynik</h3><p>Pusty wynik to nie błąd. Pokaż go osobno i daj akcję „wyczyść filtry”.</p><pre><code>if (!visible.length) return emptyState();</code></pre></article>
+      <article><h3>6. URL jako stan</h3><p>Parametry <code>q</code>, <code>sort</code>, <code>dir</code>, <code>view</code>, <code>page</code> pozwalają udostępnić widok i wrócić do niego po odświeżeniu.</p><pre><code>history.replaceState(null, "", `?${params}`);</code></pre></article>
+    </div>
+  </section>
+
+  <section class="js-mvc-section" id="bledy">
+    <p class="eyebrow eyebrow-js">08 · Błędy</p>
+    <h2>Najczęstsze pęknięcia MVC.</h2>
+    <ul class="js-mvc-mistakes">
+      <li><strong>Mutacja stanu.</strong> Zmieniasz <code>viewState.query</code> i oczekujesz, że „samo się odświeży”.</li>
+      <li><strong>Duplikacja stanu.</strong> <code>currentPage</code> jest i w JS, i w atrybucie DOM. Po chwili są różne.</li>
+      <li><strong>Filtrowanie w widoku.</strong> Render sam decyduje, co pokazać — nie da się tego przetestować bez DOM.</li>
+      <li><strong>Sortowanie w miejscu.</strong> Brak kopii zmienia kolejność danych modelu.</li>
+      <li><strong>Brak resetu strony.</strong> Po filtrze użytkownik widzi pustą stronę 7.</li>
+      <li><strong>Wyścig async.</strong> Starsza odpowiedź nadpisuje nowszy query. Użyj <code>AbortController</code> lub identyfikatora żądania.</li>
+    </ul>
+    <p class="js-mvc-callout"><strong>Test kontrolera:</strong> po zmianie query, kategorii i sortu stan musi być spójny, a <code>currentPage</code> musi wrócić do 1. To zachowanie można sprawdzić bez DOM, jeśli wydzielisz reducer.</p>
+  </section>
+
+  <section class="js-mvc-section">
+    <p class="eyebrow eyebrow-js">09 · Testy</p>
+    <h2>Co warto przetestować.</h2>
+    <pre class="js-mvc-code"><code>test("filtr po query", () =&gt; {
+  const result = filterProducts(products, {
+    currentQuery: "mysz",
+    currentCategory: "all",
+  });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].name, "Mysz");
+});
+
+test("sort malejąco po cenie", () =&gt; {
+  const result = sortProducts(products, {
+    key: "price",
+    direction: "desc",
+  });
+  assert.ok(result[0].price &gt; result[1].price);
+});
+
+test("query resetuje stronę", () =&gt; {
+  const next = reducer(viewState, { type: "query", value: "lampa" });
+  assert.equal(next.currentPage, 1);
+});</code></pre>
+    <p class="js-mvc-note">Selektory i reducer nie potrzebują przeglądarki. To najtańsze testy w całej aplikacji.</p>
+  </section>
+
+  <div class="js-mvc-next">
+    <div><p class="eyebrow eyebrow-js">Dalej</p><h2>Zobacz pełny komponent i moduł.</h2><p>Komponent zawiera search, kategorię, sort, grid/list, paginację i inspektor stanu. Moduł prowadzi przez cztery lekcje, quiz i fiszki.</p></div>
+    <div class="js-mvc-next-actions">
+      <a class="btn btn-js" href="{% url 'js_academy:component' 'mvc-product-browser' %}">Komponent MVC <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'js_academy:module' 'mvc-w-js' %}">Moduł MVC <span aria-hidden="true">▤</span></a>
+    </div>
+  </div>
+</div>
+{% endblock %}

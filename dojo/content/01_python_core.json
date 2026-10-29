@@ -1,0 +1,263 @@
+{
+  "topic": {
+    "slug": "python-core",
+    "name": "Python Core",
+    "tagline": "Types, truthiness, collections, and the rules underneath everything.",
+    "description": "The language layer that Django is built from. Get fluent with mutability, copying, collection operations, and the small semantics that decide whether production code behaves as expected.",
+    "glyph": "py",
+    "accent": "#F5C451"
+  },
+  "questions": [
+    {
+      "key": "python-core-b1",
+      "difficulty": "beginner",
+      "prompt": "Which group contains only immutable Python objects?",
+      "choices": [
+        "list, dict, set",
+        "tuple, str, frozenset",
+        "bytearray, list, dict",
+        "set, tuple, dict"
+      ],
+      "answer": 1,
+      "explanation": "Strings, tuples, and frozensets cannot be changed after creation. Lists, dicts, sets, and bytearrays are mutable. A tuple can still contain mutable objects, but the tuple's own slots cannot be reassigned."
+    },
+    {
+      "key": "python-core-b2",
+      "difficulty": "beginner",
+      "prompt": "What is the result of this expression?",
+      "code": "len({1, 2, 2, 3})",
+      "choices": ["2", "3", "4", "It raises TypeError"],
+      "answer": 1,
+      "explanation": "Curly braces with comma-separated values create a set, and sets discard duplicates. The set is {1, 2, 3}, so len() is 3."
+    },
+    {
+      "key": "python-core-b3",
+      "difficulty": "beginner",
+      "prompt": "What does this print?",
+      "code": "print(bool([]), bool(\"0\"), bool(0))",
+      "choices": [
+        "False False False",
+        "False True False",
+        "True True False",
+        "False True True"
+      ],
+      "answer": 1,
+      "explanation": "An empty list is falsy and the integer 0 is falsy. The non-empty string \"0\" is truthy, because only the empty string is a falsy string."
+    },
+    {
+      "key": "python-core-b4",
+      "difficulty": "beginner",
+      "prompt": "Which statement about list.append(x) is true?",
+      "choices": [
+        "It adds x as one new item at the end.",
+        "It adds each element of x as a separate item.",
+        "It returns a new list and leaves the original untouched.",
+        "It only accepts strings."
+      ],
+      "answer": 0,
+      "explanation": "append adds one object as a single element. Use extend to add each element from an iterable, or use the += operator for an in-place extend. Both append and extend return None."
+    },
+    {
+      "key": "python-core-b5",
+      "difficulty": "beginner",
+      "prompt": "You want to read a dictionary key with a fallback without inserting a new key. Which call is the best fit?",
+      "choices": [
+        "settings.setdefault(\"theme\", \"light\")",
+        "settings[\"theme\"]",
+        "settings.get(\"theme\", \"light\")",
+        "settings.pop(\"theme\", \"light\")"
+      ],
+      "answer": 2,
+      "explanation": "dict.get(key, default) returns the fallback without mutating the dictionary. setdefault() inserts the fallback when the key is missing, [] raises KeyError, and pop() removes the key."
+    },
+    {
+      "key": "python-core-i1",
+      "difficulty": "intermediate",
+      "prompt": "What does this print?",
+      "code": "a = [[1], [2]]\nb = a.copy()\nb[0].append(9)\nprint(a)",
+      "choices": [
+        "[[1], [2]]",
+        "[[1, 9], [2]]",
+        "[[9], [2]]",
+        "It raises a RuntimeError"
+      ],
+      "answer": 1,
+      "explanation": "list.copy() makes a shallow copy: the outer list is new, but both lists still reference the same inner list objects. Mutating b[0] is therefore visible through a[0] too."
+    },
+    {
+      "key": "python-core-i2",
+      "difficulty": "intermediate",
+      "prompt": "What does this print?",
+      "code": "nums = [3, 1, 2]\nresult = nums.sort()\nprint(result, nums)",
+      "choices": [
+        "[1, 2, 3] [1, 2, 3]",
+        "None [1, 2, 3]",
+        "[3, 1, 2] [1, 2, 3]",
+        "None [3, 1, 2]"
+      ],
+      "answer": 1,
+      "explanation": "list.sort() sorts in place and returns None. The sorted() built-in is the version that returns a new list. This distinction matters when you accidentally assign the return value of sort()."
+    },
+    {
+      "key": "python-core-i3",
+      "difficulty": "intermediate",
+      "prompt": "What does this print?",
+      "code": "a = {1, 2}\nb = {2, 3}\nprint(sorted(a & b), sorted(a | b))",
+      "choices": [
+        "[2] [1, 2, 3]",
+        "[1, 2] [3]",
+        "[2] [1, 2, 2, 3]",
+        "[1, 2, 3] [2]"
+      ],
+      "answer": 0,
+      "explanation": "& is set intersection, so it keeps values in both sets. | is union, so it keeps each value once. Sets remove duplicates before sorted() is applied."
+    },
+    {
+      "key": "python-core-i4",
+      "difficulty": "intermediate",
+      "prompt": "What does list(zip(\"ab\", \"123\")) evaluate to?",
+      "choices": [
+        "[('a', '1'), ('b', '2'), ('3',)]",
+        "[('a', 1), ('b', 2)]",
+        "[('a', '1'), ('b', '2')]",
+        "['a1', 'b2']"
+      ],
+      "answer": 2,
+      "explanation": "zip stops at the shortest iterable. With one string of length 2 and another of length 3, only two pairs are produced. No error is raised for the extra character."
+    },
+    {
+      "key": "python-core-i5",
+      "difficulty": "intermediate",
+      "prompt": "Why is this comparison often a bad idea?",
+      "code": "if 0.1 + 0.2 == 0.3:\n    print(\"equal\")",
+      "choices": [
+        "Python cannot add decimal literals.",
+        "Binary floating-point cannot represent these decimals exactly, so the sum may differ by a tiny amount.",
+        "The == operator is not available for floats.",
+        "The expression always raises FloatingPointError."
+      ],
+      "answer": 1,
+      "explanation": "Many decimal fractions have no exact binary representation. Use math.isclose(a, b) for tolerant comparisons, or Decimal when exact base-10 arithmetic is a business requirement."
+    },
+    {
+      "key": "python-core-a1",
+      "difficulty": "advanced",
+      "prompt": "What happens when this line runs?",
+      "code": "hash((1, [2, 3]))",
+      "choices": [
+        "It returns an integer hash.",
+        "It returns the hash of the list.",
+        "It raises TypeError because the tuple contains an unhashable list.",
+        "It converts the list to a tuple automatically."
+      ],
+      "answer": 2,
+      "explanation": "A tuple is hashable only when all of its contents are hashable. Lists are mutable and therefore unhashable, so Python raises TypeError. This is why tuples used as dictionary keys must contain only hashable values."
+    },
+    {
+      "key": "python-core-a2",
+      "difficulty": "advanced",
+      "prompt": "What does this print?",
+      "code": "d = {1: \"int\", True: \"bool\"}\nprint(d)",
+      "choices": [
+        "{1: 'int', True: 'bool'}",
+        "{1: 'bool'}",
+        "{True: 'int'}",
+        "It raises ValueError"
+      ],
+      "answer": 1,
+      "explanation": "In Python, True == 1 and hash(True) == hash(1). They are the same dictionary key, so the second assignment replaces the first value. The original key object, 1, is retained."
+    },
+    {
+      "key": "python-core-a3",
+      "difficulty": "advanced",
+      "prompt": "What does this print?",
+      "code": "grid = [[0] * 2] * 2\ngrid[0][0] = 1\nprint(grid)",
+      "choices": [
+        "[[1, 0], [1, 0]]",
+        "[[1, 0], [0, 0]]",
+        "[[1, 1], [0, 0]]",
+        "[[0, 0], [0, 0]]"
+      ],
+      "answer": 0,
+      "explanation": "Multiplying a list repeats references to the same inner list. Both rows point to one list, so changing grid[0][0] also changes grid[1][0]. Build independent rows with a comprehension: [[0] * 2 for _ in range(2)]."
+    },
+    {
+      "key": "python-core-a4",
+      "difficulty": "advanced",
+      "prompt": "What does this function return?",
+      "code": "def f():\n    try:\n        return \"try\"\n    finally:\n        return \"finally\"",
+      "choices": [
+        "\"try\"",
+        "\"finally\"",
+        "None",
+        "It raises RuntimeError"
+      ],
+      "answer": 1,
+      "explanation": "A return in a finally block overrides a pending return from try. This is usually a bug: finally is for cleanup, not for changing the outcome. Avoid return statements in finally unless the behavior is genuinely intentional."
+    },
+    {
+      "key": "python-core-a5",
+      "difficulty": "advanced",
+      "prompt": "A class defines __eq__ but not __hash__. What happens when instances are used in a set?",
+      "choices": [
+        "Python generates a hash from the attributes automatically.",
+        "Instances are hashable using id(), because __eq__ is ignored.",
+        "Instances become unhashable and raise TypeError unless __hash__ is defined.",
+        "The set falls back to comparing repr() strings."
+      ],
+      "answer": 2,
+      "explanation": "Defining __eq__ sets __hash__ to None on the class, which makes instances unhashable. If instances should be hashable, define __hash__ consistently: equal objects must have equal hashes. Only immutable state should feed that hash."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "python-core-f1",
+      "difficulty": "beginner",
+      "front": "What is the difference between a mutable and an immutable object?",
+      "back": "A mutable object can change its value in place (list, dict, set). An immutable object cannot (int, str, tuple, frozenset). Mutability affects copying, dictionary keys, and whether changes leak between shared references.",
+      "hint": "Think list versus tuple."
+    },
+    {
+      "key": "python-core-f2",
+      "difficulty": "beginner",
+      "front": "When should you use == instead of is?",
+      "back": "Use == to compare values and is to check identity — whether two names refer to the same object. is is appropriate for None, True, False, and sentinel objects, not for general value comparison.",
+      "hint": "Value versus object identity."
+    },
+    {
+      "key": "python-core-f3",
+      "difficulty": "intermediate",
+      "front": "What is the difference between copy.copy() and copy.deepcopy()?",
+      "back": "copy.copy() creates a shallow copy: the outer container is new, but nested objects are shared. copy.deepcopy() recursively copies nested objects, so mutations do not leak between the original and the copy.",
+      "front_code": "import copy\nshallow = copy.copy(nested)\ndeep = copy.deepcopy(nested)"
+    },
+    {
+      "key": "python-core-f4",
+      "difficulty": "beginner",
+      "front": "Name the falsy values you should remember in Python.",
+      "back": "False, None, numeric zero (0, 0.0, 0j), empty strings, and empty containers (\"\", [], {}, set(), ()). Custom objects are truthy unless they define __bool__ or __len__ to return zero/False.",
+      "hint": "Empty and zero."
+    },
+    {
+      "key": "python-core-f5",
+      "difficulty": "beginner",
+      "front": "When would you choose a tuple over a list?",
+      "back": "Use a tuple for a fixed-length record or a value that should not mutate; it can be hashable and used as a dict key when all contents are hashable. Use a list when you need to add, remove, or reorder items.",
+      "hint": "Fixed record versus working collection."
+    },
+    {
+      "key": "python-core-f6",
+      "difficulty": "intermediate",
+      "front": "How do dict.get() and dict.setdefault() differ?",
+      "back": "get(key, default) reads without inserting. setdefault(key, default) returns the existing value, or inserts the default if the key is missing. setdefault mutates the dictionary; get does not.",
+      "front_code": "d.get(\"x\", 0)        # no mutation\nd.setdefault(\"x\", 0)  # inserts when missing"
+    },
+    {
+      "key": "python-core-f7",
+      "difficulty": "advanced",
+      "front": "What contract must __eq__ and __hash__ satisfy?",
+      "back": "If a == b is True, then hash(a) must equal hash(b). Objects used as set members or dict keys should be immutable in the state that feeds their hash. If you define __eq__, define __hash__ too — otherwise Python makes the class unhashable.",
+      "front_code": "class Point:\n    def __eq__(self, other): ...\n    def __hash__(self): ..."
+    }
+  ]
+}

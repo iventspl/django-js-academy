@@ -1,0 +1,253 @@
+{
+  "topic": {
+    "slug": "search-postgres",
+    "name": "Search & PostgreSQL",
+    "tagline": "Filtering, ranking, indexes, and search that scales.",
+    "description": "A list page is easy until it has a million rows. Learn when icontains is fine, how PostgreSQL full-text search and trigram matching work, how to design stable pagination, and how to read a query plan before adding another index.",
+    "glyph": "qry",
+    "accent": "#A7E8BD"
+  },
+  "questions": [
+    {
+      "key": "search-postgres-b1",
+      "difficulty": "beginner",
+      "prompt": "What does filter(title__icontains=\"django\") do?",
+      "choices": [
+        "Case-insensitive substring matching, often implemented with a LIKE/ILIKE pattern.",
+        "Full-text ranked search using a GIN index.",
+        "Exact case-sensitive equality.",
+        "Searches every column automatically."
+      ],
+      "answer": 0,
+      "explanation": "icontains is a simple case-insensitive substring lookup. It is convenient for small datasets but can require scanning many rows, cannot rank relevance, and does not understand stemming or phrases."
+    },
+    {
+      "key": "search-postgres-b2",
+      "difficulty": "beginner",
+      "prompt": "When is adding a database index most justified?",
+      "choices": [
+        "For every column, because writes are free.",
+        "When real queries filter, order, or join on columns and the query plan shows costly scans; the read benefit must outweigh write/storage cost.",
+        "Only when the table has fewer than 100 rows.",
+        "When the template contains a for loop."
+      ],
+      "answer": 1,
+      "explanation": "Indexes accelerate reads but consume storage and slow inserts/updates. Use EXPLAIN/EXPLAIN ANALYZE with realistic data. Composite index column order matters, and low-selectivity columns may not benefit."
+    },
+    {
+      "key": "search-postgres-b3",
+      "difficulty": "beginner",
+      "prompt": "Why should a paginated queryset have deterministic ordering?",
+      "choices": [
+        "Otherwise rows can move between pages, causing duplicates or omissions.",
+        "Django refuses to paginate unordered querysets.",
+        "Ordering makes the database smaller.",
+        "It automatically adds a full-text index."
+      ],
+      "answer": 0,
+      "explanation": "Without a stable order, the database may return rows differently between requests. Add a tie-breaker such as -created_at, -id. Cursor pagination especially requires a total, deterministic order."
+    },
+    {
+      "key": "search-postgres-b4",
+      "difficulty": "beginner",
+      "prompt": "What is Q used for in a QuerySet?",
+      "choices": [
+        "Building boolean predicates with OR, AND, and NOT.",
+        "Creating database tables.",
+        "Sending email.",
+        "Formatting money."
+      ],
+      "answer": 0,
+      "explanation": "Q objects compose conditions: Q(a=1) | Q(b=2), Q(...) & ~Q(...). Positional filter arguments are ANDed, so Q is needed for OR/NOT combinations."
+    },
+    {
+      "key": "search-postgres-b5",
+      "difficulty": "beginner",
+      "prompt": "Which Django feature is PostgreSQL-specific full-text search built on?",
+      "choices": [
+        "django.contrib.postgres.search with SearchVector, SearchQuery, and SearchRank.",
+        "django.contrib.sites.",
+        "django.contrib.syndication.",
+        "django.contrib.flatpages."
+      ],
+      "answer": 0,
+      "explanation": "Django's contrib.postgres.search exposes PostgreSQL text search primitives. It needs PostgreSQL and django.contrib.postgres in INSTALLED_APPS. For portable basic search, icontains is the fallback."
+    },
+    {
+      "key": "search-postgres-i1",
+      "difficulty": "intermediate",
+      "prompt": "What is the role of SearchVector?",
+      "choices": [
+        "It converts document text into a PostgreSQL tsvector for indexed full-text matching.",
+        "It uploads files to S3.",
+        "It paginates results.",
+        "It creates a user session."
+      ],
+      "answer": 0,
+      "explanation": "SearchVector builds a tsvector from one or more fields, optionally with a language configuration and weights. SearchQuery parses the user's terms; SearchRank scores matches. Use a GIN index for performance."
+    },
+    {
+      "key": "search-postgres-i2",
+      "difficulty": "intermediate",
+      "prompt": "Which index type is a good fit for a tsvector full-text column?",
+      "choices": ["B-tree", "GIN", "BRIN only", "No index can help"],
+      "answer": 1,
+      "explanation": "GIN indexes are designed for composite values such as tsvector and arrays. A B-tree is poor for text-search containment. Use django.contrib.postgres.indexes.GinIndex on a stored search vector or expression index."
+    },
+    {
+      "key": "search-postgres-i3",
+      "difficulty": "intermediate",
+      "prompt": "What does TrigramSimilarity help with?",
+      "choices": [
+        "Typo-tolerant fuzzy matching based on three-character sequences.",
+        "Encrypting password hashes.",
+        "Sorting by primary key.",
+        "Streaming large files."
+      ],
+      "answer": 0,
+      "explanation": "Trigrams measure similarity and can catch misspellings like 'djangoo'. Enable the pg_trgm extension and use a trigram GIN/GiST index for performance. Fuzzy matching complements, rather than replaces, full-text relevance."
+    },
+    {
+      "key": "search-postgres-i4",
+      "difficulty": "intermediate",
+      "prompt": "How can one query return result counts per category for filter facets?",
+      "choices": [
+        "values(\"category\").annotate(count=Count(\"id\")) before applying the facet filter.",
+        "Call count() once per category in a template loop.",
+        "Use a separate database per category.",
+        "Use icontains on the whole row."
+      ],
+      "answer": 0,
+      "explanation": "values/annotate can produce facet counts in one query. Be careful about which filters apply before the grouping and which are applied to the final result set. Cache expensive facet counts if the data changes slowly."
+    },
+    {
+      "key": "search-postgres-i5",
+      "difficulty": "intermediate",
+      "prompt": "A search box receives an empty string. What is the best behaviour?",
+      "choices": [
+        "Run a full-text query with an empty SearchQuery and hope for the best.",
+        "Treat it as no search filter, show a sensible default list, and avoid unbounded expensive queries.",
+        "Return every row in the database with no pagination.",
+        "Raise a 500 error."
+      ],
+      "answer": 1,
+      "explanation": "Empty input should be explicit: no filter, a default list, or a prompt. Always paginate and cap query complexity. Avoid accidental full-table scans and unbounded result sets from empty or wildcard-like terms."
+    },
+    {
+      "key": "search-postgres-a1",
+      "difficulty": "advanced",
+      "prompt": "Why might a GeneratedField storing SearchVector be preferable to computing SearchVector in every query?",
+      "choices": [
+        "It makes the vector available for a persisted GIN index and avoids recomputing it for every search.",
+        "It removes the need for a database.",
+        "It automatically translates content.",
+        "It prevents SQL injection without parameters."
+      ],
+      "answer": 0,
+      "explanation": "A stored generated tsvector can be indexed and reused across queries. It adds write cost and schema complexity, and the expression must be deterministic enough for your database. Test upgrades and generated-column support on your target database."
+    },
+    {
+      "key": "search-postgres-a2",
+      "difficulty": "advanced",
+      "prompt": "How do weights affect full-text ranking?",
+      "choices": [
+        "They set how much a field contributes to the tsvector and therefore to SearchRank.",
+        "They encrypt the search query.",
+        "They control database connection pooling.",
+        "They replace pagination."
+      ],
+      "answer": 0,
+      "explanation": "Assign higher weights (A is highest) to titles and lower weights to body text, then order by SearchRank. Relevance is product-specific: test with real queries and consider recency, popularity, and exact-title boosts alongside text rank."
+    },
+    {
+      "key": "search-postgres-a3",
+      "difficulty": "advanced",
+      "prompt": "Which ordering is suitable for cursor pagination over search results?",
+      "choices": [
+        "A stable total order such as rank DESC, created_at DESC, id DESC.",
+        "Random ordering on each request.",
+        "Only by a nullable column with many ties.",
+        "No ordering; the database chooses."
+      ],
+      "answer": 0,
+      "explanation": "Cursors encode a position in a deterministic order. Ties need a unique tie-breaker, or rows can repeat/skip. Rank may change as data changes, so choose the product semantics carefully and cap deep traversal."
+    },
+    {
+      "key": "search-postgres-a4",
+      "difficulty": "advanced",
+      "prompt": "What should you check before adding an index for a slow search query?",
+      "choices": [
+        "The query plan, row estimates, selectivity, existing indexes, and whether the ORM is generating the query you expect.",
+        "Only the number of Python files.",
+        "Whether the template uses a table.",
+        "The admin site's CSS."
+      ],
+      "answer": 0,
+      "explanation": "Use EXPLAIN ANALYZE on realistic data. An index may be ignored due to low selectivity, type mismatches, or expressions. Fix the query shape first; measure the actual improvement and the write cost. Avoid blanket indexing."
+    },
+    {
+      "key": "search-postgres-a5",
+      "difficulty": "advanced",
+      "prompt": "When is a JSONB column a poor substitute for a relational table?",
+      "choices": [
+        "When the data has stable, queryable relationships, constraints, and reporting needs that benefit from typed columns and foreign keys.",
+        "When storing a small, flexible settings blob.",
+        "When the shape changes frequently and is rarely queried relationally.",
+        "When using PostgreSQL."
+      ],
+      "answer": 0,
+      "explanation": "JSONB is excellent for flexible, sparse, or document-like attributes. It becomes painful when you need frequent joins, referential integrity, per-field constraints, and rich reporting. Model stable domain entities as tables; use JSONB for the genuinely dynamic edges."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "search-postgres-f1",
+      "difficulty": "beginner",
+      "front": "When is icontains good enough for search?",
+      "back": "Small datasets, simple admin filters, or exact substring requirements. It does not rank relevance or understand stemming, and large tables may scan heavily. Move to full-text or a dedicated search service when quality or scale demands it.",
+      "hint": "Small and simple."
+    },
+    {
+      "key": "search-postgres-f2",
+      "difficulty": "beginner",
+      "front": "Why is deterministic ordering required for pagination?",
+      "back": "Without a unique tie-breaker, rows can shift between pages and appear twice or disappear. Always order by a stable combination such as created_at DESC, id DESC, especially for cursor pagination.",
+      "front_code": "order_by(\"-created_at\", \"-id\")"
+    },
+    {
+      "key": "search-postgres-f3",
+      "difficulty": "intermediate",
+      "front": "How does PostgreSQL full-text search work in Django?",
+      "back": "SearchVector converts text to tsvector, SearchQuery converts user terms to tsquery, and SearchRank scores matches. A GIN index on a stored vector makes it fast. Language configuration affects stemming and stop words.",
+      "front_code": "vector = SearchVector(\"title\", \"body\", config=\"english\")\nquery = SearchQuery(\"django orm\", search_type=\"websearch\")\nPost.objects.annotate(rank=SearchRank(vector, query)).filter(rank__gt=0.01).order_by(\"-rank\")"
+    },
+    {
+      "key": "search-postgres-f4",
+      "difficulty": "intermediate",
+      "front": "What is a trigram index for?",
+      "back": "Fuzzy and substring matching based on three-character sequences, useful for typo tolerance and autocomplete. Enable pg_trgm and use a GIN/GiST trigram index. It is complementary to full-text ranking, not a replacement.",
+      "hint": "Typos and partial matches."
+    },
+    {
+      "key": "search-postgres-f5",
+      "difficulty": "advanced",
+      "front": "How do you avoid N+1 queries while rendering search facets?",
+      "back": "Compute facet counts with values/annotate in one query, cache slow-changing facets, and avoid calling count() per category in the template. Keep primary-result and facet queries separate but explicit, and measure both.",
+      "hint": "Group and annotate once."
+    },
+    {
+      "key": "search-postgres-f6",
+      "difficulty": "advanced",
+      "front": "What does EXPLAIN ANALYZE tell you before adding an index?",
+      "back": "The plan, estimated versus actual rows, scan types, join strategy, and time spent. It reveals whether an index can help, whether selectivity is poor, and whether the query shape is the real problem. Measure with production-like data.",
+      "front_code": "Post.objects.filter(...).explain(analyze=True, buffers=True)"
+    },
+    {
+      "key": "search-postgres-f7",
+      "difficulty": "advanced",
+      "front": "JSONB or a relational table?",
+      "back": "Use typed tables and foreign keys for stable domain entities with constraints and reporting. Use JSONB for flexible, sparse, document-like attributes that are not heavily joined. You can combine both: typed core plus a JSONB metadata field.",
+      "hint": "Stable core, flexible edge."
+    }
+  ]
+}

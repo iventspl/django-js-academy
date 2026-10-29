@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "ai-assisted-engineering",
+    "name": "AI-Assisted Engineering",
+    "tagline": "Specs, context, verification, review, and keeping architecture human.",
+    "description": "AI changes how fast code appears, not what makes a system correct. The durable skills are framing the problem, defining acceptance criteria, supplying context, verifying behaviour, reviewing security, and deciding what should exist at all.",
+    "glyph": "cop",
+    "accent": "#79C7FF"
+  },
+  "questions": [
+    {
+      "key": "ai-assisted-engineering-b1",
+      "difficulty": "beginner",
+      "prompt": "When an AI assistant can generate code quickly, which human skill becomes more valuable?",
+      "choices": [
+        "Framing the problem, defining constraints, and writing verifiable acceptance criteria.",
+        "Typing speed.",
+        "Memorising syntax.",
+        "Copying larger snippets without review."
+      ],
+      "answer": 0,
+      "explanation": "Generation is cheap; deciding what to build and how to know it works is not. Clear requirements, domain language, edge cases, and tests are the constraints that keep generated code from becoming expensive noise."
+    },
+    {
+      "key": "ai-assisted-engineering-b2",
+      "difficulty": "beginner",
+      "prompt": "What should you do with AI-generated code before merging?",
+      "choices": [
+        "Read it, run tests, check edge cases, review security and architecture fit, and verify the API actually exists.",
+        "Merge it if it looks plausible.",
+        "Assume tests are unnecessary because a model wrote it.",
+        "Only check indentation."
+      ],
+      "answer": 0,
+      "explanation": "Generated code is a draft. It can compile, look idiomatic, and still be wrong or unsafe. Verification is the engineering work: tests, type checks, reviews, runtime checks, and production observability."
+    },
+    {
+      "key": "ai-assisted-engineering-b3",
+      "difficulty": "beginner",
+      "prompt": "What context does an AI coding assistant usually need to produce a useful change?",
+      "choices": [
+        "The goal, relevant files, conventions, constraints, existing tests, and how success will be verified.",
+        "Only a one-line instruction.",
+        "The entire repository with no filtering.",
+        "A screenshot of the terminal."
+      ],
+      "answer": 1,
+      "explanation": "Useful context is curated: relevant code, interfaces, domain rules, examples, and verification commands. Dumping everything wastes context and hides the important constraints. Precise context is an engineering skill."
+    },
+    {
+      "key": "ai-assisted-engineering-b4",
+      "difficulty": "beginner",
+      "prompt": "Why prefer small, reviewable AI-generated diffs?",
+      "choices": [
+        "They are easier to understand, test, review, revert, and reason about for security and architecture.",
+        "Small diffs always compile automatically.",
+        "Large diffs are impossible to generate.",
+        "Small diffs remove the need for version control."
+      ],
+      "answer": 0,
+      "explanation": "A large diff hides mistakes and makes review superficial. Break work into vertical slices with tests and a clear rollback. Small changes also reduce merge conflicts and make it easier to attribute behavioural regressions."
+    },
+    {
+      "key": "ai-assisted-engineering-b5",
+      "difficulty": "beginner",
+      "prompt": "Why are tests especially important in AI-assisted development?",
+      "choices": [
+        "They turn the intended behaviour into executable constraints and catch plausible but incorrect output.",
+        "They prove the model is conscious.",
+        "They replace the need to read code.",
+        "They make code run faster."
+      ],
+      "answer": 0,
+      "explanation": "Tests are the cheapest feedback loop for generated code. Good tests cover business rules, boundaries, permissions, and failure paths. They do not replace review or architecture judgment; they make regressions visible."
+    },
+    {
+      "key": "ai-assisted-engineering-i1",
+      "difficulty": "intermediate",
+      "prompt": "An AI suggests a third-party package you do not recognise. What should you do?",
+      "choices": [
+        "Check that it exists and is maintained, review its license/security history, and prefer a vetted dependency or standard-library solution.",
+        "Install it immediately because the import looks right.",
+        "Assume the model verified the package.",
+        "Disable dependency pinning."
+      ],
+      "answer": 0,
+      "explanation": "Models can hallucinate package names, and attackers exploit typo-squatting. Verify the registry, maintainer, release history, license, and vulnerabilities. Pin versions and use a lockfile. Generation should not become an uncontrolled supply-chain path."
+    },
+    {
+      "key": "ai-assisted-engineering-i2",
+      "difficulty": "intermediate",
+      "prompt": "What is spec-driven development with AI?",
+      "choices": [
+        "Write the problem, interfaces, acceptance criteria, and tests first; let implementation be generated and verified against that contract.",
+        "Ask the model to invent the product requirements.",
+        "Skip design and generate everything.",
+        "Write only a prompt with no success criteria."
+      ],
+      "answer": 0,
+      "explanation": "A spec narrows the search space and gives reviewers something objective to check. It can be lightweight: a short design note, public interfaces, example inputs/outputs, and failing tests. The spec is the source of truth, not the generated code."
+    },
+    {
+      "key": "ai-assisted-engineering-i3",
+      "difficulty": "intermediate",
+      "prompt": "Why does AI-generated code often create architecture drift?",
+      "choices": [
+        "It optimises the local request and may duplicate logic, bypass boundaries, or add dependencies that conflict with the system design.",
+        "It cannot write functions.",
+        "It always deletes tests.",
+        "It refuses to use Django."
+      ],
+      "answer": 0,
+      "explanation": "A model sees the immediate task, not the long-term system. It may add a second payment path, query the database from a template, or introduce a parallel abstraction. Architecture fitness functions and explicit boundaries catch drift."
+    },
+    {
+      "key": "ai-assisted-engineering-i4",
+      "difficulty": "intermediate",
+      "prompt": "What is a common trap when asking AI to write tests?",
+      "choices": [
+        "The tests may assert current implementation details or reproduce the same misunderstanding as the code.",
+        "Tests are always too short.",
+        "AI cannot write assertions.",
+        "Pytest is incompatible with Django."
+      ],
+      "answer": 0,
+      "explanation": "Tests should express intended behaviour, not mirror implementation. Derive cases from the spec and edge conditions, review assertions for false positives, and include negative/permission tests. Mutation testing or manual probes can reveal weak tests."
+    },
+    {
+      "key": "ai-assisted-engineering-i5",
+      "difficulty": "intermediate",
+      "prompt": "What security review should AI-generated code receive?",
+      "choices": [
+        "Check trust boundaries, authorization, input validation, secret handling, injection paths, dependency provenance, and logging of sensitive data.",
+        "Only check for syntax errors.",
+        "Assume secure defaults from the model.",
+        "Run a formatter."
+      ],
+      "answer": 0,
+      "explanation": "Generated code can copy insecure patterns: raw SQL, broad permissions, missing tenant scoping, unsafe deserialization, or secrets in logs. Review against your threat model and use SAST, dependency scanning, and tests for authorization boundaries."
+    },
+    {
+      "key": "ai-assisted-engineering-a1",
+      "difficulty": "advanced",
+      "prompt": "How should an AI coding agent with terminal and repository access be constrained?",
+      "choices": [
+        "Run it in an isolated workspace with least-privilege credentials, restricted network/secrets, reviewable diffs, and human approval for destructive actions.",
+        "Give it production database credentials so it can explore.",
+        "Disable logs to move faster.",
+        "Let it push directly to main with no review."
+      ],
+      "answer": 0,
+      "explanation": "Agentic tools are powerful attack surfaces. Use sandboxes, short-lived scoped credentials, separate environments, protected branches, and human gates for deploys, data deletion, and secret access. Review the commands and diffs, not only the final prose."
+    },
+    {
+      "key": "ai-assisted-engineering-a2",
+      "difficulty": "advanced",
+      "prompt": "Why can instructions hidden in repository content or issue text be dangerous to an AI agent?",
+      "choices": [
+        "The agent may treat untrusted content as instructions and perform unintended actions; content must be treated as data, with tool permissions enforced outside the model.",
+        "Repository files cannot contain text.",
+        "The model always ignores file content.",
+        "It only affects CSS rendering."
+      ],
+      "answer": 0,
+      "explanation": "Prompt injection can arrive through README files, comments, issue bodies, dependency docs, or web pages the agent reads. The model cannot reliably separate data from instructions. Limit tools, require approval, and validate actions in code."
+    },
+    {
+      "key": "ai-assisted-engineering-a3",
+      "difficulty": "advanced",
+      "prompt": "How should a team measure whether AI assistance is improving engineering?",
+      "choices": [
+        "Track outcomes such as lead time, change failure rate, review quality, escaped defects, and developer experience — not lines of code or number of prompts.",
+        "Count generated lines and assume productivity increased.",
+        "Measure how many meetings were skipped.",
+        "Only measure token spend."
+      ],
+      "answer": 0,
+      "explanation": "More code can mean more maintenance. Use DORA-style delivery metrics plus quality and incident data, and watch for review bottlenecks and burnout. Attribution is hard; treat AI as one intervention in a system, not a productivity scoreboard."
+    },
+    {
+      "key": "ai-assisted-engineering-a4",
+      "difficulty": "advanced",
+      "prompt": "What architectural guardrails are most useful when code generation accelerates?",
+      "choices": [
+        "Explicit module boundaries, contract tests, dependency rules, observability, and reviewable ADRs that constrain where generated changes may go.",
+        "A single giant app with no ownership.",
+        "Disabling CI to reduce friction.",
+        "Letting each feature invent its own data model."
+      ],
+      "answer": 0,
+      "explanation": "When implementation gets cheaper, coordination and integration become the bottleneck. Fitness functions, clear interfaces, and decision records keep many parallel changes coherent. Architecture is a constraint system for both humans and agents."
+    },
+    {
+      "key": "ai-assisted-engineering-a5",
+      "difficulty": "advanced",
+      "prompt": "What should a human owner retain even when an agent implements a feature end to end?",
+      "choices": [
+        "Accountability for the problem definition, risk decisions, data model, security posture, operational readiness, and user impact.",
+        "Nothing; the agent is accountable.",
+        "Only formatting.",
+        "Only the commit message."
+      ],
+      "answer": 0,
+      "explanation": "Tools do not own consequences. A named human must understand why the feature exists, what could go wrong, how it is monitored, and how to roll it back. Delegation without comprehension is how systems accumulate invisible risk."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "ai-assisted-engineering-f1",
+      "difficulty": "beginner",
+      "front": "What is the durable skill when code generation is cheap?",
+      "back": "Problem framing, domain modeling, boundary design, acceptance criteria, verification, security judgment, and communication. Syntax recall matters less than deciding what should exist and how to prove it works.",
+      "hint": "Judgment, not typing."
+    },
+    {
+      "key": "ai-assisted-engineering-f2",
+      "difficulty": "beginner",
+      "front": "What should you verify in AI-generated code?",
+      "back": "That it solves the actual problem, uses real APIs, passes tests, handles edge/permission/failure paths, respects architecture, avoids unsafe dependencies, and can be operated and rolled back.",
+      "hint": "Plausible is not correct."
+    },
+    {
+      "key": "ai-assisted-engineering-f3",
+      "difficulty": "intermediate",
+      "front": "What makes context useful to an AI coding assistant?",
+      "back": "The goal, relevant files and interfaces, domain constraints, examples, existing tests, and verification commands. Curated context beats dumping the whole repository; irrelevant tokens hide the important rules.",
+      "hint": "Small, relevant, testable."
+    },
+    {
+      "key": "ai-assisted-engineering-f4",
+      "difficulty": "intermediate",
+      "front": "Why write the spec before generating code?",
+      "back": "A spec defines the problem, interfaces, invariants, and acceptance criteria. It gives generated work a target and gives reviewers an objective basis. Without it, the model guesses the product and you review vibes.",
+      "front_code": "Goal: add invoice download for owners.\nMust: 404 for other tenants, signed URL, audit log.\nTest: owner 200, other 404, anonymous redirect."
+    },
+    {
+      "key": "ai-assisted-engineering-f5",
+      "difficulty": "advanced",
+      "front": "What are the main security risks of agentic coding?",
+      "back": "Excessive credentials, destructive commands, prompt injection from untrusted repo/issue content, malicious dependencies, data exfiltration, and unreviewed changes. Use sandboxes, least privilege, approvals, protected branches, and audit logs.",
+      "hint": "Assume the agent can be tricked."
+    },
+    {
+      "key": "ai-assisted-engineering-f6",
+      "difficulty": "advanced",
+      "front": "How do you measure AI's engineering impact?",
+      "back": "Use outcome metrics: lead time, deployment frequency, change failure rate, escaped defects, review latency, incident count, and developer experience. Do not equate lines generated or prompts used with value.",
+      "hint": "Outcomes, not output volume."
+    },
+    {
+      "key": "ai-assisted-engineering-f7",
+      "difficulty": "advanced",
+      "front": "What must a human still own in an AI-built feature?",
+      "back": "The problem definition, risk acceptance, domain model, security posture, data handling, operational readiness, user impact, and rollback. Accountability cannot be delegated to a model.",
+      "hint": "Tools do not own consequences."
+    }
+  ]
+}

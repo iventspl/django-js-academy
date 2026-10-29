@@ -1,0 +1,92 @@
+{% extends "js_academy/base_js.html" %}
+
+{% block title %}Fiszki{% if module %} · {{ module.title }}{% endif %}{% endblock %}
+{% block body_class %}page-js js-study-page{% endblock %}
+
+{% block content %}
+<div class="page-wrap js-wrap js-study-wrap">
+  <div class="js-breadcrumb">
+    <a href="{% url 'js_academy:flashcards_index' %}"><span aria-hidden="true">←</span> Wszystkie fiszki</a>
+    <span>{% if module %}{{ module.title }}{% else %}Powtórka mieszana{% endif %}</span>
+  </div>
+
+  {% if card %}
+    <header class="js-study-header">
+      <div>
+        <p class="eyebrow eyebrow-js">{% if module %}Fiszki modułu{% else %}Powtórka mieszana{% endif %} · {{ progress.percent }}% poznane</p>
+        <h1>{% if module %}{{ module.title }}{% else %}Wszystkie zaległe fiszki{% endif %}</h1>
+      </div>
+      <div class="js-study-queue"><strong>{{ remaining }}</strong><span>w kolejce</span></div>
+    </header>
+
+    <div class="study-stage" data-study-stage {% if reveal %}data-revealed="true"{% endif %}>
+      <div class="fiszka-card {% if reveal %}is-revealed{% endif %}" data-flashcard>
+        <div class="fiszka-inner">
+          <section class="fiszka-face fiszka-front" aria-labelledby="js-card-prompt" aria-hidden="{% if reveal %}true{% else %}false{% endif %}" data-card-front>
+            <div class="fiszka-face-head">
+              <span class="tag tag-dark">{{ card.module.title }}</span>
+              <span class="fiszka-side-label">Pytanie · przód</span>
+            </div>
+            <div class="fiszka-content">
+              <p class="fiszka-kicker">Odpowiedz na głos</p>
+              <h2 id="js-card-prompt">{{ card.front }}</h2>
+              {% if card.front_code %}<pre class="inline-code inline-code-dark"><code>{{ card.front_code }}</code></pre>{% endif %}
+              {% if card.hint %}
+                <details class="hint"><summary>Potrzebujesz podpowiedzi?</summary><p>{{ card.hint }}</p></details>
+              {% endif %}
+            </div>
+            <div class="fiszka-face-foot"><span class="flip-note">Powiedz odpowiedź, potem odwróć kartę.</span></div>
+          </section>
+
+          <section class="fiszka-face fiszka-back" aria-labelledby="js-card-answer" aria-hidden="{% if reveal %}false{% else %}true{% endif %}" data-card-back>
+            <div class="fiszka-face-head">
+              <span class="tag tag-coral">Odpowiedź</span>
+              <span class="fiszka-side-label">Tył karty</span>
+            </div>
+            <div class="fiszka-content">
+              <p class="fiszka-kicker">Druga strona</p>
+              <h2 id="js-card-answer">{{ card.back|linebreaksbr }}</h2>
+              {% if card.back_code %}<pre class="inline-code"><code>{{ card.back_code }}</code></pre>{% endif %}
+            </div>
+            <div class="fiszka-face-foot"><span class="flip-note">Oceń, jak poszło.</span></div>
+          </section>
+        </div>
+      </div>
+
+      <div class="reveal-controls">
+        <a class="btn btn-js btn-flip" href="?reveal=1" data-flip-button>Pokaż odpowiedź <span aria-hidden="true">↻</span></a>
+        <span class="keyboard-hint">Naciśnij <kbd>Space</kbd>, aby odwrócić</span>
+      </div>
+
+      <div class="rating-controls">
+        {% if module %}
+          <form method="post" action="{% url 'js_academy:flashcards_rate' module.slug card.pk %}" class="rating-form" data-rating-form>
+        {% else %}
+          <form method="post" action="{% url 'js_academy:flashcards_rate_all' card.pk %}" class="rating-form" data-rating-form>
+        {% endif %}
+          {% csrf_token %}
+          <p class="rating-title">Jak dobrze pamiętałeś?</p>
+          <div class="rating-buttons">
+            <button class="rating-btn rating-again" type="submit" name="rating" value="again"><kbd>1</kbd><strong>Jeszcze raz</strong><span>jutro</span></button>
+            <button class="rating-btn rating-hard" type="submit" name="rating" value="hard"><kbd>2</kbd><strong>Trudne</strong><span>krótki odstęp</span></button>
+            <button class="rating-btn rating-good" type="submit" name="rating" value="good"><kbd>3</kbd><strong>Dobre</strong><span>normalny</span></button>
+            <button class="rating-btn rating-easy" type="submit" name="rating" value="easy"><kbd>4</kbd><strong>Łatwe</strong><span>długi odstęp</span></button>
+          </div>
+          <p class="keyboard-hint">Klawisze <kbd>1</kbd>–<kbd>4</kbd> oceniają kartę.</p>
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <section class="js-empty">
+      <span class="empty-mark" aria-hidden="true">✓</span>
+      <p class="eyebrow eyebrow-js-dark">Na dziś koniec</p>
+      <h1>Wszystko powtórzone.<br><em>To dobra wiadomość.</em></h1>
+      <p class="js-lead">{% if progress.reviewed %}Poznałeś {{ progress.reviewed }} z {{ progress.total }} fiszek w tym zakresie.{% if progress.next_due %} Następna karta wróci {{ progress.next_due|date:"j E" }}.{% endif %}{% else %}Ten zestaw nie ma jeszcze fiszek.{% endif %}</p>
+      <div class="hero-actions">
+        <a class="btn btn-js" href="{% url 'js_academy:flashcards_index' %}">Wróć do zestawów <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost-dark" href="{% url 'js_academy:path' %}">Wróć do ścieżki</a>
+      </div>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

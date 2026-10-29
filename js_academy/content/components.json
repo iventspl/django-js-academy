@@ -1,0 +1,244 @@
+{
+  "components": [
+    {
+      "key": "product-cart",
+      "title": "Filtr produktów i koszyk",
+      "category": "Dane i UI",
+      "difficulty": "beginner",
+      "description": "Lista produktów z wyszukiwaniem, filtrem kategorii i koszykiem. Idealny przykład łączenia filter, map, reduce i Intl.NumberFormat.",
+      "functions": [
+        "filter",
+        "map",
+        "reduce",
+        "Intl.NumberFormat",
+        "addEventListener"
+      ],
+      "notes": "Tak wygląda typowy fragment sklepu: dane → filtr → render → akcja użytkownika → nowy stan. W React te same funkcje trafiłyby do komponentu, ale logika pozostałaby podobna.",
+      "html_code": "<div class=\"shop\">\n  <div class=\"toolbar\">\n    <input id=\"search\" type=\"search\" placeholder=\"Szukaj produktu…\" aria-label=\"Szukaj produktu\">\n    <select id=\"category\" aria-label=\"Kategoria\">\n      <option value=\"all\">Wszystkie</option>\n      <option value=\"tech\">Technologia</option>\n      <option value=\"home\">Dom</option>\n    </select>\n  </div>\n  <div id=\"products\" class=\"products\"></div>\n  <div class=\"cart\">\n    <strong>Koszyk <span id=\"cart-count\">0</span></strong>\n    <ul id=\"cart-list\"></ul>\n    <p id=\"cart-total\">0,00 zł</p>\n  </div>\n</div>",
+      "css_code": "\n.shop { display: grid; gap: 12px; }\n.toolbar { display: flex; gap: 8px; }\n.toolbar input, .toolbar select { flex: 1; padding: 8px; border: 1px solid #d8ccb5; border-radius: 6px; background: #fff; }\n.products { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }\n.product { padding: 10px; border: 1px solid #e3d9c6; border-radius: 7px; background: #fff; }\n.product h3 { margin: 0 0 3px; font-size: 12px; }\n.product p { margin: 0 0 7px; color: #71817a; font-size: 10px; }\n.product button { width: 100%; padding: 5px; border: 1px solid #1b2a31; border-radius: 5px; background: #f7df1e; font-size: 10px; font-weight: 700; }\n.cart { padding: 10px; border: 1px solid #d8ccb5; border-radius: 7px; background: #fff; }\n.cart ul { margin: 5px 0; padding-left: 15px; font-size: 11px; }\n.cart p { margin: 0; font-weight: 700; }\n@media (max-width: 450px) { .products { grid-template-columns: 1fr 1fr; } }\n",
+      "js_code": "\nconst products = [\n  { id: 1, name: \"Klawiatura\", price: 249, category: \"tech\" },\n  { id: 2, name: \"Lampa\", price: 129, category: \"home\" },\n  { id: 3, name: \"Mysz\", price: 89, category: \"tech\" },\n  { id: 4, name: \"Kubek\", price: 39, category: \"home\" },\n  { id: 5, name: \"Monitor\", price: 899, category: \"tech\" },\n  { id: 6, name: \"Poduszka\", price: 59, category: \"home\" },\n];\nconst money = new Intl.NumberFormat(\"pl-PL\", { style: \"currency\", currency: \"PLN\" });\nconst cart = new Map();\nconst productsEl = document.getElementById(\"products\");\nconst searchEl = document.getElementById(\"search\");\nconst categoryEl = document.getElementById(\"category\");\n\nfunction visibleProducts() {\n  const query = searchEl.value.trim().toLowerCase();\n  return products.filter((product) => {\n    const matchesQuery = product.name.toLowerCase().includes(query);\n    const matchesCategory = categoryEl.value === \"all\" || product.category === categoryEl.value;\n    return matchesQuery && matchesCategory;\n  });\n}\n\nfunction renderProducts() {\n  productsEl.innerHTML = visibleProducts().map((product) => `\n    <article class=\"product\">\n      <h3>${product.name}</h3>\n      <p>${money.format(product.price)}</p>\n      <button data-add=\"${product.id}\">Dodaj</button>\n    </article>`).join(\"\");\n}\n\nfunction renderCart() {\n  const entries = [...cart.entries()];\n  document.getElementById(\"cart-count\").textContent = [...cart.values()].reduce((a, b) => a + b, 0);\n  document.getElementById(\"cart-list\").innerHTML = entries.map(([id, qty]) => {\n    const product = products.find((item) => item.id === id);\n    return `<li>${product.name} × ${qty}</li>`;\n  }).join(\"\");\n  const total = entries.reduce((sum, [id, qty]) => {\n    const product = products.find((item) => item.id === id);\n    return sum + product.price * qty;\n  }, 0);\n  document.getElementById(\"cart-total\").textContent = money.format(total);\n}\n\nproductsEl.addEventListener(\"click\", (event) => {\n  const button = event.target.closest(\"[data-add]\");\n  if (!button) return;\n  const id = Number(button.dataset.add);\n  cart.set(id, (cart.get(id) ?? 0) + 1);\n  renderCart();\n});\nsearchEl.addEventListener(\"input\", renderProducts);\ncategoryEl.addEventListener(\"change\", renderProducts);\nrenderProducts();\nrenderCart();\n"
+    },
+    {
+      "key": "form-validation",
+      "title": "Formularz z walidacją",
+      "category": "Formularze",
+      "difficulty": "beginner",
+      "description": "Formularz rejestracji korzystający z Constraint Validation API, FormData i komunikatów przy polach. Pokazuje, jak połączyć HTML z własną walidacją.",
+      "functions": [
+        "checkValidity",
+        "setCustomValidity",
+        "FormData",
+        "preventDefault",
+        "addEventListener"
+      ],
+      "notes": "Walidacja po stronie klienta poprawia UX, ale nie zastępuje walidacji na serwerze. Ten sam schemat działa w React z kontrolowanymi polami.",
+      "html_code": "<form id=\"signup\" novalidate>\n  <h2>Załóż konto</h2>\n  <label for=\"name\">Imię</label>\n  <input id=\"name\" name=\"name\" required minlength=\"3\" placeholder=\"min. 3 znaki\">\n  <label for=\"email\">E-mail</label>\n  <input id=\"email\" name=\"email\" type=\"email\" required placeholder=\"ala@example.com\">\n  <label for=\"password\">Hasło</label>\n  <input id=\"password\" name=\"password\" type=\"password\" required minlength=\"8\" placeholder=\"min. 8 znaków\">\n  <p id=\"form-error\" class=\"error\" role=\"alert\"></p>\n  <p id=\"form-success\" class=\"success\" role=\"status\"></p>\n  <button type=\"submit\">Utwórz konto</button>\n</form>",
+      "css_code": "\nform { display: grid; gap: 5px; max-width: 340px; }\nh2 { margin: 0 0 7px; font-size: 1.1rem; }\nlabel { color: #5c6d66; font-size: 10px; font-weight: 700; }\ninput { padding: 7px; border: 1px solid #d8ccb5; border-radius: 5px; background: #fff; }\ninput:invalid:not(:placeholder-shown) { border-color: #c85a43; }\nbutton { margin-top: 7px; padding: 8px; border: 1px solid #1b2a31; border-radius: 5px; background: #f7df1e; font-weight: 700; }\n.error { min-height: 15px; margin: 3px 0 0; color: #b2432e; font-size: 10px; }\n.success { margin: 3px 0 0; color: #257355; font-size: 10px; }\n",
+      "js_code": "\nconst form = document.getElementById(\"signup\");\nconst password = document.getElementById(\"password\");\nconst errorEl = document.getElementById(\"form-error\");\nconst successEl = document.getElementById(\"form-success\");\n\npassword.addEventListener(\"input\", () => {\n  password.setCustomValidity(\n    password.value.length > 0 && !/[0-9]/.test(password.value)\n      ? \"Hasło musi zawierać co najmniej jedną cyfrę.\"\n      : \"\"\n  );\n});\n\nform.addEventListener(\"submit\", (event) => {\n  event.preventDefault();\n  errorEl.textContent = \"\";\n  successEl.textContent = \"\";\n  if (!form.checkValidity()) {\n    errorEl.textContent = \"Popraw pola oznaczone na czerwono.\";\n    const invalid = form.querySelector(\":invalid\");\n    if (invalid) invalid.focus();\n    return;\n  }\n  const data = new FormData(form);\n  successEl.textContent = `Konto dla ${data.get(\"email\")} gotowe (demo).`;\n  form.reset();\n  password.setCustomValidity(\"\");\n});\n"
+    },
+    {
+      "key": "debounced-search",
+      "title": "Wyszukiwarka z debounce",
+      "category": "Asynchroniczność",
+      "difficulty": "intermediate",
+      "description": "Wyszukiwarka z opóźnieniem, anulowaniem poprzedniego zapytania i obsługą błędów. Symuluje API bez wysyłania prawdziwych żądań.",
+      "functions": [
+        "debounce",
+        "setTimeout",
+        "clearTimeout",
+        "AbortController",
+        "async/await",
+        "try/catch"
+      ],
+      "notes": "W produkcji zamiast fakeSearch byłby fetch z AbortController. Wzorzec anulowania jest ten sam — liczy się uniknięcie wyścigu odpowiedzi.",
+      "html_code": "<div class=\"search\">\n  <h2>Szukaj w dokumentacji</h2>\n  <input id=\"query\" type=\"search\" placeholder=\"np. promise, react, dom…\" aria-label=\"Szukaj\">\n  <p id=\"status\" class=\"muted\">Wpisz frazę.</p>\n  <ul id=\"results\"></ul>\n</div>",
+      "css_code": "\n.search { max-width: 420px; }\nh2 { margin: 0 0 8px; font-size: 1.05rem; }\ninput { width: 100%; padding: 8px; border: 1px solid #d8ccb5; border-radius: 6px; background: #fff; }\n.muted { margin: 6px 0; color: #75857f; font-size: 10px; }\nul { margin: 0; padding: 0; list-style: none; }\nli { margin: 4px 0; padding: 7px 9px; border-left: 3px solid #f7df1e; background: #fff; font-size: 11px; }\nli span { display: block; color: #75857f; font-size: 10px; }\n",
+      "js_code": "\nconst docs = [\n  { title: \"Promise\", text: \"Reprezentuje przyszły wynik operacji asynchronicznej.\" },\n  { title: \"AbortController\", text: \"Pozwala anulować fetch i inne operacje.\" },\n  { title: \"React useState\", text: \"Przechowuje stan i planuje render.\" },\n  { title: \"DOM\", text: \"Drzewo dokumentu HTML dostępne z JavaScriptu.\" },\n  { title: \"Event loop\", text: \"Kolejka zadań i mikrozadań w środowisku JS.\" },\n];\n\nfunction fakeSearch(query, signal) {\n  return new Promise((resolve, reject) => {\n    const timer = setTimeout(() => {\n      resolve(docs.filter((item) => item.title.toLowerCase().includes(query)));\n    }, 450);\n    signal.addEventListener(\"abort\", () => {\n      clearTimeout(timer);\n      reject(new DOMException(\"Anulowano\", \"AbortError\"));\n    });\n  });\n}\n\nconst input = document.getElementById(\"query\");\nconst statusEl = document.getElementById(\"status\");\nconst resultsEl = document.getElementById(\"results\");\nlet timeout;\nlet controller;\n\nasync function runSearch(value) {\n  if (controller) controller.abort();\n  controller = new AbortController();\n  if (!value.trim()) { statusEl.textContent = \"Wpisz frazę.\"; resultsEl.innerHTML = \"\"; return; }\n  statusEl.textContent = \"Szukam…\";\n  try {\n    const results = await fakeSearch(value.toLowerCase(), controller.signal);\n    statusEl.textContent = `${results.length} wyników`;\n    resultsEl.innerHTML = results.map((item) => `<li>${item.title}<span>${item.text}</span></li>`).join(\"\");\n  } catch (error) {\n    if (error.name !== \"AbortError\") statusEl.textContent = \"Błąd wyszukiwania.\";\n  }\n}\n\ninput.addEventListener(\"input\", () => {\n  clearTimeout(timeout);\n  const value = input.value;\n  timeout = setTimeout(() => runSearch(value), 300);\n});\n"
+    },
+    {
+      "key": "accessible-tabs",
+      "title": "Dostępne zakładki",
+      "category": "Dostępność",
+      "difficulty": "intermediate",
+      "description": "Zakładki z ARIA, obsługą klawiatury i stanem active. Przykład tego, jak dostępność zmienia realny kod komponentu.",
+      "functions": [
+        "querySelectorAll",
+        "setAttribute",
+        "classList",
+        "keydown",
+        "event.preventDefault"
+      ],
+      "notes": "Dostępność nie jest dodatkiem na końcu. Rola, aria-selected i obsługa strzałek to część kontraktu komponentu. W React użyłbyś tych samych atrybutów.",
+      "html_code": "<div class=\"tabs\">\n  <div role=\"tablist\" aria-label=\"Ustawienia konta\">\n    <button role=\"tab\" aria-selected=\"true\" aria-controls=\"panel-profile\" id=\"tab-profile\">Profil</button>\n    <button role=\"tab\" aria-selected=\"false\" aria-controls=\"panel-security\" id=\"tab-security\" tabindex=\"-1\">Bezpieczeństwo</button>\n    <button role=\"tab\" aria-selected=\"false\" aria-controls=\"panel-notifications\" id=\"tab-notifications\" tabindex=\"-1\">Powiadomienia</button>\n  </div>\n  <section role=\"tabpanel\" id=\"panel-profile\" aria-labelledby=\"tab-profile\"><strong>Profil</strong><p>Imię, zdjęcie i dane kontaktowe.</p></section>\n  <section role=\"tabpanel\" id=\"panel-security\" aria-labelledby=\"tab-security\" hidden><strong>Bezpieczeństwo</strong><p>Hasło, MFA i aktywne sesje.</p></section>\n  <section role=\"tabpanel\" id=\"panel-notifications\" aria-labelledby=\"tab-notifications\" hidden><strong>Powiadomienia</strong><p>E-mail, push i digest tygodniowy.</p></section>\n</div>",
+      "css_code": "\n.tabs { max-width: 440px; }\n[role=\"tablist\"] { display: flex; gap: 4px; border-bottom: 1px solid #d8ccb5; }\n[role=\"tab\"] { padding: 7px 9px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: #5c6d66; font-size: 11px; }\n[role=\"tab\"][aria-selected=\"true\"] { border-color: #f7df1e; color: #1b2a31; font-weight: 700; }\n[role=\"tabpanel\"] { padding: 12px; background: #fff; border: 1px solid #e3d9c6; border-top: 0; font-size: 11px; }\n[role=\"tabpanel\"] p { margin: 4px 0 0; color: #71817a; }\n",
+      "js_code": "\nconst tabs = [...document.querySelectorAll('[role=\"tab\"]')];\nconst panels = [...document.querySelectorAll('[role=\"tabpanel\"]')];\n\nfunction select(tab) {\n  tabs.forEach((item) => {\n    const selected = item === tab;\n    item.setAttribute(\"aria-selected\", String(selected));\n    item.tabIndex = selected ? 0 : -1;\n  });\n  panels.forEach((panel) => {\n    panel.hidden = panel.id !== tab.getAttribute(\"aria-controls\");\n  });\n  tab.focus();\n}\n\ntabs.forEach((tab, index) => {\n  tab.addEventListener(\"click\", () => select(tab));\n  tab.addEventListener(\"keydown\", (event) => {\n    if (![\"ArrowLeft\", \"ArrowRight\", \"Home\", \"End\"].includes(event.key)) return;\n    event.preventDefault();\n    let next = index;\n    if (event.key === \"ArrowRight\") next = (index + 1) % tabs.length;\n    if (event.key === \"ArrowLeft\") next = (index - 1 + tabs.length) % tabs.length;\n    if (event.key === \"Home\") next = 0;\n    if (event.key === \"End\") next = tabs.length - 1;\n    select(tabs[next]);\n  });\n});\n"
+    },
+    {
+      "key": "dialog-modal",
+      "title": "Modal z natywnym dialog",
+      "category": "Dialogi",
+      "difficulty": "beginner",
+      "description": "Modal oparty na elemencie <dialog>, z zamknięciem, pułapką focusu i obsługą Escape. Mniej kodu niż ręczna implementacja overlayu.",
+      "functions": [
+        "showModal",
+        "close",
+        "addEventListener",
+        "returnValue",
+        "focus"
+      ],
+      "notes": "Natywny dialog zapewnia focus trap i Escape. Nadal trzeba zadbać o czytelny przycisk zamknięcia i sensowną treść.",
+      "html_code": "<button id=\"open\" class=\"primary\">Usuń konto</button>\n<dialog id=\"confirm\">\n  <form method=\"dialog\">\n    <h2>Usunąć konto?</h2>\n    <p>Tej operacji nie można cofnąć. Dane zostaną usunięte po 30 dniach.</p>\n    <div class=\"actions\">\n      <button value=\"cancel\">Anuluj</button>\n      <button value=\"delete\" class=\"danger\">Usuń</button>\n    </div>\n  </form>\n</dialog>\n<p id=\"result\" class=\"muted\"></p>",
+      "css_code": "\n.primary, dialog button { padding: 7px 10px; border: 1px solid #1b2a31; border-radius: 5px; background: #f7df1e; font-weight: 700; }\ndialog { width: min(340px, calc(100vw - 32px)); padding: 16px; border: 1px solid #1b2a31; border-radius: 9px; }\ndialog::backdrop { background: rgba(16, 19, 26, .55); }\nh2 { margin: 0 0 6px; font-size: 1.1rem; }\np { color: #5c6d66; font-size: 11px; line-height: 1.5; }\n.actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; }\n.danger { background: #f3c4b8 !important; }\n.muted { color: #75857f; font-size: 10px; }\n",
+      "js_code": "\nconst dialog = document.getElementById(\"confirm\");\nconst open = document.getElementById(\"open\");\nconst result = document.getElementById(\"result\");\n\nopen.addEventListener(\"click\", () => dialog.showModal());\ndialog.addEventListener(\"close\", () => {\n  result.textContent = dialog.returnValue === \"delete\"\n    ? \"Konto oznaczone do usunięcia (demo).\"\n    : \"Anulowano.\";\n});\n"
+    },
+    {
+      "key": "toast-queue",
+      "title": "Kolejka powiadomień toast",
+      "category": "Dane i UI",
+      "difficulty": "intermediate",
+      "description": "Powiadomienia pojawiające się jedna po drugiej, z automatycznym usuwaniem i regionem aria-live. Pokazuje kolejkę i setTimeout w praktyce.",
+      "functions": [
+        "setTimeout",
+        "push",
+        "shift",
+        "createElement",
+        "classList",
+        "aria-live"
+      ],
+      "notes": "Kolejka chroni przed zalaniem użytkownika dziesiątkami toastów. W React zwykle przenosi się ją do kontekstu lub zewnętrznego store'u.",
+      "html_code": "<div class=\"demo\">\n  <button data-toast=\"Zapisano zmiany\">Zapisz</button>\n  <button data-toast=\"Błąd połączenia\" data-type=\"error\">Błąd</button>\n  <button data-toast=\"Nowa wiadomość\" data-type=\"info\">Info</button>\n</div>\n<div id=\"toasts\" class=\"toasts\" aria-live=\"polite\" aria-atomic=\"false\"></div>",
+      "css_code": "\n.demo { display: flex; gap: 6px; }\n.demo button { padding: 6px 9px; border: 1px solid #1b2a31; border-radius: 5px; background: #f7df1e; font-size: 10px; font-weight: 700; }\n.toasts { display: grid; gap: 6px; margin-top: 12px; }\n.toast { padding: 9px 10px; border-left: 3px solid #2f7d5c; border-radius: 5px; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.08); font-size: 11px; animation: in .2s ease-out; }\n.toast.error { border-color: #b2432e; }\n.toast.info { border-color: #3b82a0; }\n@keyframes in { from { opacity: 0; transform: translateY(4px); } }\n",
+      "js_code": "\nconst queue = [];\nlet busy = false;\nconst region = document.getElementById(\"toasts\");\n\nfunction showNext() {\n  if (busy || !queue.length) return;\n  busy = true;\n  const item = queue.shift();\n  const toast = document.createElement(\"div\");\n  toast.className = \"toast \" + (item.type || \"\");\n  toast.textContent = item.message;\n  region.appendChild(toast);\n  setTimeout(() => {\n    toast.remove();\n    busy = false;\n    showNext();\n  }, 1800);\n}\n\ndocument.querySelector(\".demo\").addEventListener(\"click\", (event) => {\n  const button = event.target.closest(\"[data-toast]\");\n  if (!button) return;\n  queue.push({ message: button.dataset.toast, type: button.dataset.type || \"\" });\n  showNext();\n});\n"
+    },
+    {
+      "key": "sortable-table",
+      "title": "Tabela z sortowaniem",
+      "category": "Dane i UI",
+      "difficulty": "intermediate",
+      "description": "Tabela zamówień z sortowaniem po kolumnie, formatowaniem waluty i statusem. Przykład sort comparatora i localeCompare w realnym widoku.",
+      "functions": [
+        "sort",
+        "localeCompare",
+        "map",
+        "Intl.NumberFormat",
+        "dataset"
+      ],
+      "notes": "Sortowanie kopiuje tablicę przed sortem, bo sort mutuje. W prawdziwej tabeli dodaj paginację i dostępne przyciski sortowania.",
+      "html_code": "<table>\n  <thead><tr>\n    <th><button data-sort=\"id\">#</button></th>\n    <th><button data-sort=\"customer\">Klient</button></th>\n    <th><button data-sort=\"amount\">Kwota</button></th>\n    <th><button data-sort=\"status\">Status</button></th>\n  </tr></thead>\n  <tbody id=\"rows\"></tbody>\n</table>",
+      "css_code": "\ntable { width: 100%; border-collapse: collapse; font-size: 11px; }\nth, td { padding: 7px 8px; border-bottom: 1px solid #e3d9c6; text-align: left; }\nth button { padding: 0; border: 0; background: transparent; color: #5c6d66; font-weight: 700; font-size: 10px; }\nth button:hover { color: #1b2a31; }\ntd.num { text-align: right; font-variant-numeric: tabular-nums; }\n.badge { padding: 2px 5px; border-radius: 99px; background: #edf4e8; color: #34704d; font-size: 9px; }\n.badge.pending { background: #fff4c9; color: #6f5b00; }\n",
+      "js_code": "\nconst orders = [\n  { id: 104, customer: \"Ala\", amount: 249, status: \"opłacone\" },\n  { id: 102, customer: \"Tomek\", amount: 89, status: \"oczekuje\" },\n  { id: 107, customer: \"Ola\", amount: 899, status: \"opłacone\" },\n  { id: 101, customer: \"Marek\", amount: 39, status: \"oczekuje\" },\n];\nconst money = new Intl.NumberFormat(\"pl-PL\", { style: \"currency\", currency: \"PLN\" });\nlet sortKey = \"id\";\nlet direction = 1;\nconst rows = document.getElementById(\"rows\");\n\nfunction render() {\n  const sorted = [...orders].sort((a, b) => {\n    const left = a[sortKey];\n    const right = b[sortKey];\n    if (typeof left === \"number\") return (left - right) * direction;\n    return String(left).localeCompare(String(right), \"pl\") * direction;\n  });\n  rows.innerHTML = sorted.map((order) => `\n    <tr>\n      <td>${order.id}</td>\n      <td>${order.customer}</td>\n      <td class=\"num\">${money.format(order.amount)}</td>\n      <td><span class=\"badge ${order.status === \"oczekuje\" ? \"pending\" : \"\"}\">${order.status}</span></td>\n    </tr>`).join(\"\");\n}\n\ndocument.querySelector(\"thead\").addEventListener(\"click\", (event) => {\n  const button = event.target.closest(\"[data-sort]\");\n  if (!button) return;\n  const next = button.dataset.sort;\n  direction = next === sortKey ? direction * -1 : 1;\n  sortKey = next;\n  render();\n});\nrender();\n"
+    },
+    {
+      "key": "image-preview",
+      "title": "Podgląd wybranego zdjęcia",
+      "category": "Pliki i media",
+      "difficulty": "beginner",
+      "description": "Wybór pliku graficznego, walidacja typu i rozmiaru oraz podgląd przez URL.createObjectURL. Realny fragment formularza uploadu avatara.",
+      "functions": [
+        "FileReader",
+        "URL.createObjectURL",
+        "URL.revokeObjectURL",
+        "file.type",
+        "file.size"
+      ],
+      "notes": "Zawsze zwalniaj object URL. Walidacja typu po stronie klienta to UX, nie zabezpieczenie — serwer musi sprawdzić plik ponownie.",
+      "html_code": "<label class=\"upload\">\n  <input id=\"file\" type=\"file\" accept=\"image/png,image/jpeg,image/webp\">\n  <span>Wybierz avatar</span>\n</label>\n<p id=\"meta\" class=\"muted\">PNG, JPG lub WebP, maks. 1 MB.</p>\n<div class=\"preview\"><img id=\"preview\" alt=\"Podgląd avatara\" hidden><span id=\"placeholder\">Brak zdjęcia</span></div>",
+      "css_code": "\n.upload { display: inline-flex; padding: 7px 10px; border: 1px dashed #b9ac94; border-radius: 6px; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer; }\n.upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }\n.muted { margin: 6px 0; color: #75857f; font-size: 10px; }\n.preview { display: grid; place-items: center; width: 160px; height: 160px; border: 1px solid #d8ccb5; border-radius: 50%; background: #f1e8d6; overflow: hidden; }\n.preview img { width: 100%; height: 100%; object-fit: cover; }\n#placeholder { color: #8c7c60; font-size: 10px; }\n",
+      "js_code": "\nconst input = document.getElementById(\"file\");\nconst preview = document.getElementById(\"preview\");\nconst placeholder = document.getElementById(\"placeholder\");\nconst meta = document.getElementById(\"meta\");\nlet objectUrl = null;\n\ninput.addEventListener(\"change\", () => {\n  const file = input.files[0];\n  if (!file) return;\n  const allowed = [\"image/png\", \"image/jpeg\", \"image/webp\"];\n  if (!allowed.includes(file.type)) { meta.textContent = \"Nieobsługiwany typ pliku.\"; return; }\n  if (file.size > 1024 * 1024) { meta.textContent = \"Plik jest większy niż 1 MB.\"; return; }\n  if (objectUrl) URL.revokeObjectURL(objectUrl);\n  objectUrl = URL.createObjectURL(file);\n  preview.src = objectUrl;\n  preview.hidden = false;\n  placeholder.hidden = true;\n  meta.textContent = `${file.name} · ${Math.round(file.size / 1024)} KB`;\n});\n"
+    },
+    {
+      "key": "countdown-timer",
+      "title": "Countdown z czyszczeniem interwału",
+      "category": "Czas",
+      "difficulty": "beginner",
+      "description": "Licznik odliczający czas z przyciskami start/stop/reset. Pokazuje setInterval, Date.now, padStart i obowiązkowe clearInterval.",
+      "functions": [
+        "setInterval",
+        "clearInterval",
+        "Date.now",
+        "padStart",
+        "Math.max"
+      ],
+      "notes": "Zawsze przechowuj identyfikator interwału i czyść go przy stopie oraz odmontowaniu. W React trafiłby do cleanup w useEffect.",
+      "html_code": "<div class=\"timer\">\n  <p id=\"display\">05:00</p>\n  <div class=\"row\">\n    <button id=\"start\">Start</button>\n    <button id=\"stop\">Stop</button>\n    <button id=\"reset\">Reset</button>\n  </div>\n  <p id=\"info\" class=\"muted\">5 minut na jedno zadanie.</p>\n</div>",
+      "css_code": "\n.timer { max-width: 280px; text-align: center; }\n#display { margin: 0 0 10px; font: 700 2.4rem/1 \"SFMono-Regular\", Consolas, monospace; letter-spacing: -.05em; }\n.row { display: flex; justify-content: center; gap: 6px; }\n.row button { padding: 6px 9px; border: 1px solid #1b2a31; border-radius: 5px; background: #f7df1e; font-size: 10px; font-weight: 700; }\n.muted { color: #75857f; font-size: 10px; }\n",
+      "js_code": "\nconst display = document.getElementById(\"display\");\nconst info = document.getElementById(\"info\");\nlet remaining = 300;\nlet deadline = null;\nlet interval = null;\n\nfunction format(seconds) {\n  const min = Math.floor(seconds / 60);\n  const sec = seconds % 60;\n  return `${String(min).padStart(2, \"0\")}:${String(sec).padStart(2, \"0\")}`;\n}\nfunction render() {\n  display.textContent = format(remaining);\n}\nfunction stop() {\n  if (interval) clearInterval(interval);\n  interval = null;\n}\nfunction tick() {\n  remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));\n  render();\n  if (remaining === 0) { stop(); info.textContent = \"Czas minął.\"; }\n}\ndocument.getElementById(\"start\").addEventListener(\"click\", () => {\n  if (interval) return;\n  deadline = Date.now() + remaining * 1000;\n  info.textContent = \"Odliczanie…\";\n  interval = setInterval(tick, 250);\n});\ndocument.getElementById(\"stop\").addEventListener(\"click\", () => {\n  stop();\n  info.textContent = \"Zatrzymano.\";\n});\ndocument.getElementById(\"reset\").addEventListener(\"click\", () => {\n  stop();\n  remaining = 300;\n  render();\n  info.textContent = \"5 minut na jedno zadanie.\";\n});\nrender();\n"
+    },
+    {
+      "key": "star-rating",
+      "title": "Ocena gwiazdkowa",
+      "category": "Dostępność",
+      "difficulty": "intermediate",
+      "description": "Ocena 1–5 z obsługą myszy i klawiatury, stanem ARIA i komunikatem. Przykład event delegation i nawigacji strzałkami.",
+      "functions": [
+        "event delegation",
+        "dataset",
+        "keydown",
+        "setAttribute",
+        "focus"
+      ],
+      "notes": "Gwiazdki to radiogroup, nie pięć niezależnych przycisków. Użytkownik klawiatury musi móc wybrać ocenę strzałkami.",
+      "html_code": "<div class=\"rating\" role=\"radiogroup\" aria-label=\"Oceń artykuł\">\n  <button role=\"radio\" aria-checked=\"false\" data-value=\"1\" aria-label=\"1 gwiazdka\">★</button>\n  <button role=\"radio\" aria-checked=\"false\" data-value=\"2\" aria-label=\"2 gwiazdki\">★</button>\n  <button role=\"radio\" aria-checked=\"false\" data-value=\"3\" aria-label=\"3 gwiazdki\">★</button>\n  <button role=\"radio\" aria-checked=\"false\" data-value=\"4\" aria-label=\"4 gwiazdki\">★</button>\n  <button role=\"radio\" aria-checked=\"false\" data-value=\"5\" aria-label=\"5 gwiazdek\">★</button>\n</div>\n<p id=\"rating-text\" class=\"muted\" aria-live=\"polite\">Nie oceniono.</p>",
+      "css_code": "\n.rating { display: flex; gap: 2px; }\n.rating button { padding: 0; border: 0; background: transparent; color: #cfc3ad; font-size: 2.1rem; line-height: 1; }\n.rating button.is-on { color: #d9a400; }\n.rating button:focus-visible { outline: 2px solid #1b2a31; border-radius: 3px; }\n.muted { color: #75857f; font-size: 10px; }\n",
+      "js_code": "\nconst group = document.querySelector(\".rating\");\nconst buttons = [...group.querySelectorAll(\"[role=radio]\")];\nconst text = document.getElementById(\"rating-text\");\nlet value = 0;\n\nfunction paint(next) {\n  buttons.forEach((button) => {\n    const on = Number(button.dataset.value) <= next;\n    button.classList.toggle(\"is-on\", on);\n    button.setAttribute(\"aria-checked\", String(Number(button.dataset.value) === value));\n  });\n}\nfunction choose(next) {\n  value = next;\n  paint(next);\n  text.textContent = `Ocena: ${value} / 5`;\n}\n\ngroup.addEventListener(\"click\", (event) => {\n  const button = event.target.closest(\"[role=radio]\");\n  if (button) choose(Number(button.dataset.value));\n});\ngroup.addEventListener(\"keydown\", (event) => {\n  if (![\"ArrowLeft\", \"ArrowRight\", \"Home\", \"End\"].includes(event.key)) return;\n  event.preventDefault();\n  let next = value || 1;\n  if (event.key === \"ArrowRight\") next = Math.min(5, next + 1);\n  if (event.key === \"ArrowLeft\") next = Math.max(1, next - 1);\n  if (event.key === \"Home\") next = 1;\n  if (event.key === \"End\") next = 5;\n  buttons[next - 1].focus();\n  choose(next);\n});\npaint(0);\n"
+    },
+    {
+      "key": "canvas-chart",
+      "title": "Wykres słupkowy na canvasie",
+      "category": "Grafika",
+      "difficulty": "advanced",
+      "description": "Mini wykres sprzedaży rysowany w canvasie, z obsługą devicePixelRatio i etykietami. Przykład map, Math.max i pracy z API canvas.",
+      "functions": [
+        "canvas.getContext",
+        "map",
+        "Math.max",
+        "devicePixelRatio",
+        "requestAnimationFrame"
+      ],
+      "notes": "Canvas nie jest dostępny dla czytników ekranu — dodaj tekstową tabelę lub aria-label. W prawdziwym projekcie użyj biblioteki wykresów, jeśli potrzebujesz interakcji.",
+      "html_code": "<div class=\"chart\">\n  <h2>Sprzedaż tygodnia</h2>\n  <canvas id=\"chart\" role=\"img\" aria-label=\"Wykres sprzedaży: pon 12, wt 19, śr 8, czw 24, pt 30, sob 15, niedz 9\"></canvas>\n  <p class=\"muted\">Wartości w tysiącach złotych.</p>\n</div>",
+      "css_code": "\n.chart { max-width: 460px; }\nh2 { margin: 0 0 6px; font-size: 1rem; }\ncanvas { display: block; width: 100%; height: 210px; }\n.muted { margin: 5px 0 0; color: #75857f; font-size: 10px; }\n",
+      "js_code": "\nconst data = [\n  { label: \"pon\", value: 12 }, { label: \"wt\", value: 19 }, { label: \"śr\", value: 8 },\n  { label: \"czw\", value: 24 }, { label: \"pt\", value: 30 }, { label: \"sob\", value: 15 }, { label: \"niedz\", value: 9 },\n];\nconst canvas = document.getElementById(\"chart\");\nconst ctx = canvas.getContext(\"2d\");\nconst max = Math.max(...data.map((item) => item.value));\n\nfunction draw() {\n  const ratio = window.devicePixelRatio || 1;\n  const width = canvas.clientWidth;\n  const height = canvas.clientHeight;\n  canvas.width = width * ratio;\n  canvas.height = height * ratio;\n  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);\n  ctx.clearRect(0, 0, width, height);\n  const padding = 24;\n  const gap = 8;\n  const barWidth = (width - padding * 2 - gap * (data.length - 1)) / data.length;\n  const usable = height - 34;\n  ctx.font = \"10px system-ui\";\n  data.forEach((item, index) => {\n    const barHeight = (item.value / max) * (usable - 16);\n    const x = padding + index * (barWidth + gap);\n    const y = usable - barHeight;\n    ctx.fillStyle = \"#f7df1e\";\n    ctx.fillRect(x, y, barWidth, barHeight);\n    ctx.fillStyle = \"#1b2a31\";\n    ctx.textAlign = \"center\";\n    ctx.fillText(String(item.value), x + barWidth / 2, y - 3);\n    ctx.fillText(item.label, x + barWidth / 2, height - 10);\n  });\n}\ndraw();\nwindow.addEventListener(\"resize\", () => requestAnimationFrame(draw));\n"
+    },
+    {
+      "key": "drag-drop-list",
+      "title": "Lista drag & drop",
+      "category": "Interakcje",
+      "difficulty": "advanced",
+      "description": "Zmiana kolejności zadań metodą drag & drop z komunikatem dla czytników ekranu. Pokazuje dragstart, dragover, drop i aktualizację DOM.",
+      "functions": [
+        "draggable",
+        "dragstart",
+        "dragover",
+        "drop",
+        "insertBefore",
+        "announce"
+      ],
+      "notes": "Drag & drop nie wystarczy jako jedyna metoda — dodaj przyciski „w górę/w dół” dla klawiatury. Tutaj skupiamy się na mechanice.",
+      "html_code": "<ul id=\"tasks\" class=\"tasks\">\n  <li draggable=\"true\"><span>☰</span> Przygotować ofertę</li>\n  <li draggable=\"true\"><span>☰</span> Wysłać fakturę</li>\n  <li draggable=\"true\"><span>☰</span> Zadzwonić do klienta</li>\n  <li draggable=\"true\"><span>☰</span> Zaktualizować backlog</li>\n</ul>\n<p id=\"announce\" class=\"muted\" aria-live=\"polite\">Przeciągnij zadanie, aby zmienić kolejność.</p>",
+      "css_code": "\n.tasks { margin: 0; padding: 0; list-style: none; max-width: 360px; }\n.tasks li { margin: 5px 0; padding: 9px 10px; border: 1px solid #d8ccb5; border-radius: 6px; background: #fff; cursor: grab; font-size: 11px; }\n.tasks li.dragging { opacity: .45; }\n.tasks li span { margin-right: 6px; color: #8c7c60; }\n.muted { color: #75857f; font-size: 10px; }\n",
+      "js_code": "\nconst list = document.getElementById(\"tasks\");\nconst announce = document.getElementById(\"announce\");\nlet dragged = null;\n\nlist.addEventListener(\"dragstart\", (event) => {\n  dragged = event.target.closest(\"li\");\n  dragged.classList.add(\"dragging\");\n  event.dataTransfer.effectAllowed = \"move\";\n});\nlist.addEventListener(\"dragend\", () => {\n  if (dragged) dragged.classList.remove(\"dragging\");\n  dragged = null;\n});\nlist.addEventListener(\"dragover\", (event) => {\n  event.preventDefault();\n  const target = event.target.closest(\"li\");\n  if (!target || target === dragged) return;\n  const rect = target.getBoundingClientRect();\n  const after = event.clientY > rect.top + rect.height / 2;\n  list.insertBefore(dragged, after ? target.nextSibling : target);\n});\nlist.addEventListener(\"drop\", (event) => {\n  event.preventDefault();\n  announce.textContent = \"Kolejność: \" + [...list.children].map((item) => item.textContent.trim()).join(\" → \");\n});\n"
+    },
+    {
+      "key": "mvc-product-browser",
+      "title": "Lista produktów MVC",
+      "category": "Architektura",
+      "difficulty": "advanced",
+      "description": "Kompletny przykład MVC: search, kategoria, sort, grid/list i paginacja. Cały stan widoku jest w jednym obiekcie, a filtrowanie i sortowanie to czyste selektory.",
+      "functions": [
+        "currentView",
+        "currentSort",
+        "currentQuery",
+        "filter",
+        "sort",
+        "reduce",
+        "Intl.NumberFormat",
+        "event delegation"
+      ],
+      "notes": "To najważniejszy wzorzec w tym module: kontroler zmienia stan, selektory przeliczają dane, widok renderuje. Gdy dodasz nowy filtr, nie zmieniasz sygnatur wszystkich funkcji — dodajesz pole do stanu i warunek w selektorze.",
+      "html_code": "<div class=\"catalog\">\n  <div class=\"toolbar\">\n    <input id=\"query\" type=\"search\" placeholder=\"Szukaj produktu…\" aria-label=\"Szukaj\">\n    <select id=\"category\" aria-label=\"Kategoria\">\n      <option value=\"all\">Wszystkie</option><option value=\"tech\">Technologia</option><option value=\"home\">Dom</option>\n    </select>\n    <select id=\"sort\" aria-label=\"Sortowanie\">\n      <option value=\"name:asc\">Nazwa A–Z</option><option value=\"price:asc\">Cena rosnąco</option><option value=\"price:desc\">Cena malejąco</option>\n    </select>\n    <button data-view=\"grid\" aria-pressed=\"true\">Grid</button>\n    <button data-view=\"list\" aria-pressed=\"false\">Lista</button>\n  </div>\n  <div id=\"products\" class=\"products grid\"></div>\n  <div class=\"pager\">\n    <span id=\"count\">0 produktów</span>\n    <button id=\"prev\">←</button><span id=\"page\">1 / 1</span><button id=\"next\">→</button>\n  </div>\n  <details><summary>Stan widoku</summary><pre id=\"state\"></pre></details>\n</div>",
+      "css_code": "\n.catalog { max-width: 620px; }\n.toolbar { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }\n.toolbar input, .toolbar select, .toolbar button { padding: 6px 7px; border: 1px solid #d8ccb5; border-radius: 5px; background: #fff; font-size: 10px; }\n.toolbar input { flex: 1 1 130px; }\n.toolbar button[aria-pressed=\"true\"] { background: #f7df1e; border-color: #1b2a31; font-weight: 700; }\n.products { display: grid; gap: 6px; }\n.products.grid { grid-template-columns: 1fr 1fr; }\n.products.list { grid-template-columns: 1fr; }\n.product { display: flex; justify-content: space-between; gap: 8px; padding: 9px; border: 1px solid #e3d9c6; border-radius: 6px; background: #fff; }\n.product strong { display: block; font-size: 11px; }\n.product span { color: #71817a; font-size: 10px; }\n.pager { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 8px; font-size: 10px; }\n.pager button { padding: 4px 7px; border: 1px solid #d8ccb5; border-radius: 4px; background: #fff; }\n.pager button:disabled { opacity: .35; }\n.empty { grid-column: 1 / -1; padding: 14px; border: 1px dashed #d8ccb5; border-radius: 6px; color: #71817a; font-size: 11px; }\ndetails { margin-top: 9px; font-size: 10px; }\nsummary { color: #5c6d66; cursor: pointer; }\npre { margin: 5px 0 0; padding: 8px; border-radius: 5px; background: #15232b; color: #e9f2ec; font: 9px/1.5 monospace; overflow: auto; }\n",
+      "js_code": "\nconst products = [\n  { id: 1, name: \"Klawiatura\", price: 249, category: \"tech\" },\n  { id: 2, name: \"Lampa\", price: 129, category: \"home\" },\n  { id: 3, name: \"Mysz\", price: 89, category: \"tech\" },\n  { id: 4, name: \"Kubek\", price: 39, category: \"home\" },\n  { id: 5, name: \"Monitor\", price: 899, category: \"tech\" },\n  { id: 6, name: \"Poduszka\", price: 59, category: \"home\" },\n];\nconst money = new Intl.NumberFormat(\"pl-PL\", { style: \"currency\", currency: \"PLN\" });\nlet state = {\n  currentView: \"grid\",\n  currentSort: { key: \"name\", direction: \"asc\" },\n  currentQuery: \"\",\n  currentCategory: \"all\",\n  currentPage: 1,\n  pageSize: 4,\n};\n\nfunction filterProducts(items, currentState) {\n  const query = currentState.currentQuery.trim().toLowerCase();\n  return items.filter((product) => {\n    const matchesQuery = product.name.toLowerCase().includes(query);\n    const matchesCategory = currentState.currentCategory === \"all\"\n      || product.category === currentState.currentCategory;\n    return matchesQuery && matchesCategory;\n  });\n}\n\nfunction sortProducts(items, currentSort) {\n  const factor = currentSort.direction === \"desc\" ? -1 : 1;\n  return [...items].sort((a, b) => {\n    if (currentSort.key === \"price\") return (a.price - b.price) * factor;\n    return String(a[currentSort.key]).localeCompare(String(b[currentSort.key]), \"pl\") * factor;\n  });\n}\n\nfunction paginate(items, page, pageSize) {\n  const start = (page - 1) * pageSize;\n  return items.slice(start, start + pageSize);\n}\n\nfunction selectProducts(items, currentState) {\n  return paginate(\n    sortProducts(filterProducts(items, currentState), currentState.currentSort),\n    currentState.currentPage,\n    currentState.pageSize\n  );\n}\n\nfunction render() {\n  const filtered = filterProducts(products, state);\n  const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));\n  if (state.currentPage > totalPages) state.currentPage = totalPages;\n  const visible = selectProducts(products, state);\n  const list = document.getElementById(\"products\");\n  list.className = \"products \" + state.currentView;\n  list.innerHTML = visible.length\n    ? visible.map((product) => `<article class=\"product\"><strong>${product.name}</strong><span>${money.format(product.price)}</span></article>`).join(\"\")\n    : '<p class=\"empty\">Brak wyników dla tych filtrów.</p>';\n  document.getElementById(\"count\").textContent = `${filtered.length} produktów`;\n  document.getElementById(\"page\").textContent = `${state.currentPage} / ${totalPages}`;\n  document.getElementById(\"prev\").disabled = state.currentPage <= 1;\n  document.getElementById(\"next\").disabled = state.currentPage >= totalPages;\n  document.querySelectorAll(\"[data-view]\").forEach((button) => {\n    button.setAttribute(\"aria-pressed\", String(button.dataset.view === state.currentView));\n  });\n  document.getElementById(\"state\").textContent = JSON.stringify(state, null, 2);\n}\n\nfunction update(patch) {\n  state = { ...state, ...patch };\n  if (\"currentQuery\" in patch || \"currentCategory\" in patch || \"currentSort\" in patch) {\n    state.currentPage = 1;\n  }\n  render();\n}\n\ndocument.getElementById(\"query\").addEventListener(\"input\", (event) => update({ currentQuery: event.target.value }));\ndocument.getElementById(\"category\").addEventListener(\"change\", (event) => update({ currentCategory: event.target.value }));\ndocument.getElementById(\"sort\").addEventListener(\"change\", (event) => {\n  const [key, direction] = event.target.value.split(\":\");\n  update({ currentSort: { key, direction } });\n});\ndocument.querySelectorAll(\"[data-view]\").forEach((button) => {\n  button.addEventListener(\"click\", () => update({ currentView: button.dataset.view }));\n});\ndocument.getElementById(\"prev\").addEventListener(\"click\", () => update({ currentPage: state.currentPage - 1 }));\ndocument.getElementById(\"next\").addEventListener(\"click\", () => update({ currentPage: state.currentPage + 1 }));\nrender();\n"
+    }
+  ]
+}

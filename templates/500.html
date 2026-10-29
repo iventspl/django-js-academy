@@ -1,0 +1,15 @@
+{% extends "dojo/base.html" %}
+{% block title %}Something went wrong{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <section class="empty-state" style="margin-top: 10vh;">
+    <span class="empty-mark" aria-hidden="true">!</span>
+    <p class="eyebrow eyebrow-dark">A rough edge</p>
+    <h1>The server dropped<br><em>a card.</em></h1>
+    <p class="page-lead">Something unexpected happened. Your local progress is still in the database; return to base camp and try again.</p>
+    <div class="empty-actions">
+      <a class="btn btn-primary" href="/">Back to base camp <span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+</div>
+{% endblock %}

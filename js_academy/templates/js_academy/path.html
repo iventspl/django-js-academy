@@ -1,0 +1,70 @@
+{% extends "js_academy/base_js.html" %}
+
+{% block title %}Ścieżka nauki{% endblock %}
+{% block body_class %}page-js js-path-page{% endblock %}
+
+{% block content %}
+<div class="page-wrap js-wrap">
+  <header class="js-page-header">
+    <p class="eyebrow eyebrow-js"><span class="pulse-dot" aria-hidden="true"></span> Ścieżka · {{ stats.module_total }} modułów</p>
+    <h1>Najpierw język.<br><em>Potem framework.</em></h1>
+    <p class="js-lead">Ta kolejność nie jest przypadkowa. JavaScript daje fundament, TypeScript porządkuje kontrakty, React uczy myślenia o UI, a React Native przenosi to na urządzenia. Każdy moduł kończy się quizem i projektem.</p>
+    <div class="js-path-summary">
+      <div><strong>{{ stats.completed_lessons }}/{{ stats.lesson_total }}</strong><span>lekcji ukończonych</span></div>
+      <div><strong>{{ stats.quiz_attempts }}</strong><span>ukończonych quizów</span></div>
+      <div><strong>{{ stats.due_cards }}</strong><span>fiszek do powtórki</span></div>
+    </div>
+  </header>
+
+  <div class="js-roadmap">
+    {% for row in modules %}
+      <article class="js-roadmap-item {% if row.lesson_percent == 100 %}is-complete{% endif %}" style="--js-accent: {{ row.module.accent }};">
+        <div class="js-roadmap-marker">
+          <span>{{ row.module.glyph }}</span>
+          {% if not forloop.last %}<i aria-hidden="true"></i>{% endif %}
+        </div>
+        <div class="js-roadmap-card">
+          <div class="js-roadmap-top">
+            <span class="js-level js-level-{{ row.module.level }}">{{ row.module.get_level_display }}</span>
+            <span class="js-roadmap-time">{{ row.module.duration_minutes }} min · {{ row.lesson_total }} lekcji</span>
+          </div>
+          <h2><a href="{{ row.module.get_absolute_url }}">{{ row.module.title }}</a></h2>
+          <p>{{ row.module.description }}</p>
+          <div class="progress-label"><span>Postęp</span><strong>{{ row.lesson_percent }}%</strong></div>
+          <div class="progress-track progress-track-dark"><span style="--bar: {{ row.lesson_percent }}%;"></span></div>
+          <ol class="js-roadmap-lessons">
+            {% for lesson in row.lessons %}
+              <li class="{% if lesson.id in row.completed_ids %}is-done{% endif %}">
+                <a href="{{ lesson.get_absolute_url }}">
+                  <span class="js-lesson-check" aria-hidden="true">{% if lesson.id in row.completed_ids %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+                  <span>{{ lesson.title }}</span>
+                  <span class="js-lesson-minutes">{{ lesson.minutes }} min</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ol>
+          <div class="js-roadmap-actions">
+            {% if row.next_lesson %}
+              <a class="btn btn-js btn-small" href="{{ row.next_lesson.get_absolute_url }}">{% if row.lesson_percent %}Kontynuuj{% else %}Zacznij moduł{% endif %} <span aria-hidden="true">→</span></a>
+            {% else %}
+              <a class="btn btn-js btn-small" href="{{ row.module.get_absolute_url }}">Powtórz moduł <span aria-hidden="true">↻</span></a>
+            {% endif %}
+            <a class="js-roadmap-link" href="{{ row.module.get_absolute_url }}">Szczegóły modułu</a>
+            {% if row.due_cards %}<a class="js-roadmap-link" href="{% url 'js_academy:flashcards' row.module.slug %}">{{ row.due_cards }} fiszek do powtórki</a>{% endif %}
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+
+  <section class="js-route-end">
+    <p class="eyebrow eyebrow-js">Po ośmiu modułach</p>
+    <h2>Masz fundament do pierwszej aplikacji mobilnej.</h2>
+    <p>Nie oznacza to, że wiesz wszystko. Oznacza, że potrafisz czytać dokumentację, rozumiesz model Reacta i umiesz zbudować oraz wydać mały produkt.</p>
+    <div class="hero-actions">
+      <a class="btn btn-js" href="{% url 'js_academy:flashcards_index' %}">Powtórz fiszki <span aria-hidden="true">▣</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'js_academy:progress' %}">Sprawdź postępy <span aria-hidden="true">↗</span></a>
+    </div>
+  </section>
+</div>
+{% endblock %}

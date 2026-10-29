@@ -1,0 +1,167 @@
+{
+  "module": {
+    "slug": "react-native-produkcja",
+    "title": "React Native w produkcji",
+    "subtitle": "Offline, bezpieczne dane, uprawnienia, powiadomienia i wydanie aplikacji.",
+    "description": "Aplikacja mobilna działa w gorszych warunkach niż strona: brak sieci, odebrane uprawnienia, uśpiony proces i długi cykl publikacji. Ten moduł uczy projektować na te warunki.",
+    "level": "advanced",
+    "glyph": "13",
+    "accent": "#38BDF8",
+    "duration_minutes": 70,
+    "outcomes": [
+      "Projektujesz kolejkę offline i wiesz, gdzie trzymać dane wrażliwe.",
+      "Obsługujesz uprawnienia i powiadomienia push z szacunkiem dla użytkownika.",
+      "Rozumiesz wersjonowanie buildów i ograniczenia OTA.",
+      "Przygotowujesz monitoring i strategię stopniowego wdrażania."
+    ],
+    "project_title": "Mobilny notes offline-first",
+    "project_brief": "Zbuduj aplikację React Native, która pozwala dodawać notatki offline, synchronizuje je po powrocie sieci i pokazuje konflikt zamiast go ukrywać.",
+    "project_steps": [
+      "Zaprojektuj lokalny model notatki i status synchronizacji.",
+      "Dodaj kolejkę operacji offline.",
+      "Po powrocie sieci wyślij operacje idempotentnie.",
+      "Dodaj ekran błędu, retry i monitoring crashy."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "offline-storage",
+      "title": "Offline i bezpieczne przechowywanie",
+      "summary": "AsyncStorage, SecureStore, kolejka operacji i rozwiązywanie konfliktów.",
+      "minutes": 16,
+      "body_html": "<p>W mobile sieć znika. Jeśli aplikacja zakłada stałe połączenie, użytkownik traci dane albo widzi wieczny spinner. Projektuj lokalny stan jako pierwszy obywatel.</p>\n<h2>Storage</h2>\n<ul>\n<li><code>AsyncStorage</code> — proste dane, cache, preferencje; nie jest szyfrowany.</li>\n<li><code>SecureStore</code> / Keychain / Keystore — tokeny i sekrety.</li>\n<li>SQLite — relacyjne dane offline, zapytania i transakcje.</li>\n</ul>\n<h2>Kolejka offline</h2>\n<pre><code>type PendingAction = {\n  id: string;\n  type: \"create\" | \"update\" | \"delete\";\n  payload: unknown;\n  createdAt: string;\n};\n\n// UI zapisuje lokalnie i dodaje akcję do kolejki.\n// Worker wysyła akcje po powrocie sieci, oznaczając je jako wykonane.\n</code></pre>\n<p>Każda akcja potrzebuje idempotency key. Po konflikcie pokaż użytkownikowi dwie wersje lub zastosuj jawną politykę „serwer wygrywa / lokalna wygrywa”.</p>\n<div class=\"lesson-callout\"><strong>Bezpieczeństwo:</strong> nie wkładaj tokenów do AsyncStorage. Urządzenie może zostać zgubione; sekrety trzymaj w SecureStore i dodaj biometryczną blokadę, jeśli ryzyko tego wymaga.</div>"
+    },
+    {
+      "slug": "uprawnienia-powiadomienia",
+      "title": "Uprawnienia, powiadomienia i deep linki",
+      "summary": "Proś o dostęp w kontekście, obsłuż odmowę i szanuj uwagę użytkownika.",
+      "minutes": 15,
+      "body_html": "<p>Uprawnienia w mobile są przyznawane w runtime. Manifest deklaruje możliwości, ale użytkownik może odmówić lub odebrać dostęp później.</p>\n<pre><code>const permission = await Notifications.requestPermissionsAsync();\nif (permission.status !== \"granted\") {\n  showSettingsHint(\"Powiadomienia możesz włączyć w ustawieniach\");\n}</code></pre>\n<h2>Kiedy prosić?</h2>\n<p>Nie przy pierwszym uruchomieniu „bo tak”. Poproś, gdy użytkownik rozumie korzyść: po dodaniu zadania, włączeniu przypomnień lub zapisaniu filtra.</p>\n<h2>Deep linki</h2>\n<p>Link <code>myapp://task/42</code> lub uniwersalny link prowadzi do konkretnego ekranu. Zweryfikuj parametry, sprawdź uprawnienia i obsłuż sytuację, gdy obiekt już nie istnieje.</p>\n<div class=\"lesson-callout\"><strong>Push:</strong> token urządzenia może się zmienić. Wysyłaj powiadomienia przez backend, usuwaj nieaktywne tokeny i nigdy nie umieszczaj w payloadzie sekretów.</div>"
+    },
+    {
+      "slug": "build-release",
+      "title": "Build, OTA i monitoring",
+      "summary": "Wersje, EAS, aktualizacje OTA, staged rollout i crash reporting.",
+      "minutes": 16,
+      "body_html": "<p>Wydanie mobilne to nie jeden deploy. To build natywny, podpis, publikacja w sklepie, rollout i monitorowanie. Aktualizacja OTA może podmienić JavaScript, ale nie zmieni kodu natywnego ani uprawnień.</p>\n<pre><code>// app.json / eas.json — przykład koncepcyjny\n{\n  \"expo\": {\n    \"version\": \"1.4.0\",\n    \"ios\": { \"buildNumber\": \"42\" },\n    \"android\": { \"versionCode\": 42 }\n  }\n}</code></pre>\n<h2>Przed premierą</h2>\n<ul>\n<li>Testuj na prawdziwym urządzeniu, nie tylko symulatorze.</li>\n<li>Sprawdź uprawnienia, politykę prywatności i wiek treści.</li>\n<li>Dodaj crash reporting i metryki startu bez wrażliwych danych.</li>\n<li>Przygotuj plan rollbacku i staged rollout.</li>\n<li>Nie loguj tokenów, haseł ani pełnych danych osobowych.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>OTA:</strong> nawigacja, teksty i logika JS mogą być aktualizowane, ale nowa biblioteka natywna wymaga nowego builda. Wersjonowanie musi być spójne z tym, co jest w sklepie.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-rnprod-b1",
+      "difficulty": "beginner",
+      "prompt": "Gdzie przechowywać token sesji w React Native?",
+      "code": "",
+      "choices": [
+        "W SecureStore/Keychain/Keystore",
+        "W AsyncStorage bez szyfrowania",
+        "W stanie globalnym w pamięci po zamknięciu",
+        "W pliku tekstowym w projekcie"
+      ],
+      "answer": 0,
+      "explanation": "Tokeny to sekrety. SecureStore korzysta z bezpiecznego magazynu platformy. AsyncStorage nie jest szyfrowany."
+    },
+    {
+      "key": "js-rnprod-b2",
+      "difficulty": "beginner",
+      "prompt": "Kiedy prosić o uprawnienie do powiadomień?",
+      "code": "",
+      "choices": [
+        "W kontekście, gdy użytkownik rozumie korzyść",
+        "Przy pierwszym uruchomieniu zawsze",
+        "Po każdym kliknięciu",
+        "Nigdy"
+      ],
+      "answer": 0,
+      "explanation": "Prośba bez kontekstu częściej kończy się odmową. Wyjaśnij korzyść i zaproponuj włączenie w odpowiednim momencie."
+    },
+    {
+      "key": "js-rnprod-i1",
+      "difficulty": "intermediate",
+      "prompt": "Po co kolejka offline?",
+      "code": "",
+      "choices": [
+        "Aby zapisać intencję użytkownika i wysłać ją po powrocie sieci",
+        "Aby przyspieszyć renderowanie listy",
+        "Aby zastąpić backend",
+        "Aby usunąć konflikty"
+      ],
+      "answer": 0,
+      "explanation": "Kolejka pozwala działać bez sieci, ale wymaga idempotencji, retry i jawnej polityki konfliktów."
+    },
+    {
+      "key": "js-rnprod-i2",
+      "difficulty": "intermediate",
+      "prompt": "Co robić z nieaktualnym tokenem push?",
+      "code": "",
+      "choices": [
+        "Usunąć go z backendu przy błędzie dostarczenia",
+        "Wysyłać dalej",
+        "Zapisać w logach",
+        "Zmienić na token innego użytkownika"
+      ],
+      "answer": 0,
+      "explanation": "Tokeny wygasają i się zmieniają. Backend powinien usuwać nieaktywne tokeny na podstawie odpowiedzi providera."
+    },
+    {
+      "key": "js-rnprod-a1",
+      "difficulty": "advanced",
+      "prompt": "Czego nie można zmienić przez OTA?",
+      "code": "",
+      "choices": [
+        "Kodu natywnego i uprawnień wymagających nowego builda",
+        "Tekstów w JS",
+        "Styli komponentów",
+        "Logiki walidacji w JS"
+      ],
+      "answer": 0,
+      "explanation": "OTA podmienia bundle JS. Natywne biblioteki, uprawnienia i konfiguracja wymagają nowej wersji w sklepie."
+    },
+    {
+      "key": "js-rnprod-a2",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego deep link wymaga walidacji?",
+      "code": "",
+      "choices": [
+        "Parametry mogą być zmanipulowane, a obiekt może nie istnieć",
+        "Deep linki nie działają w iOS",
+        "Zawsze omijają auth",
+        "Nie można ich testować"
+      ],
+      "answer": 0,
+      "explanation": "Link jest danymi z zewnątrz. Sprawdź format, uprawnienia i istnienie zasobu; nie ufaj identyfikatorom z URL."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-rnprod-f1",
+      "front": "AsyncStorage czy SecureStore?",
+      "back": "AsyncStorage jest do niesekretnych danych i cache. SecureStore/Keychain/Keystore do tokenów i sekretów. Wybór zależy od wrażliwości danych.",
+      "hint": ""
+    },
+    {
+      "key": "js-rnprod-f2",
+      "front": "Jak działa kolejka offline?",
+      "back": "Zapisujesz lokalnie intencję i dodajesz ją do kolejki. Po powrocie sieci worker wysyła akcje z idempotency key, a błędy trafiają do retry lub konfliktu.",
+      "hint": ""
+    },
+    {
+      "key": "js-rnprod-f3",
+      "front": "Jak obsłużyć odmowę uprawnienia?",
+      "back": "Pokaż jasny komunikat, ogranicz funkcję i zaproponuj ustawienia systemowe. Nie blokuj całej aplikacji bez wyjaśnienia.",
+      "hint": ""
+    },
+    {
+      "key": "js-rnprod-f4",
+      "front": "Czym jest OTA?",
+      "back": "Aktualizacja bundle'a JavaScript bez publikowania nowego builda. Nie zmienia kodu natywnego ani uprawnień. Wymaga wersjonowania i monitoringu.",
+      "hint": ""
+    },
+    {
+      "key": "js-rnprod-f5",
+      "front": "Po co deep linki?",
+      "back": "Prowadzą użytkownika z linku lub powiadomienia do konkretnego ekranu. Zawsze waliduj parametry i sprawdzaj dostęp.",
+      "hint": ""
+    }
+  ]
+}

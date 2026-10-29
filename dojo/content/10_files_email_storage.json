@@ -1,0 +1,253 @@
+{
+  "topic": {
+    "slug": "files-email-storage",
+    "name": "Files, Email & Storage",
+    "tagline": "Uploads, object storage, attachments, and deliverability.",
+    "description": "Real apps move bytes and send messages. Learn media versus static files, safe upload validation, private object storage, transactional email, deliverability, and the limits that keep an upload endpoint from becoming an outage.",
+    "glyph": "up",
+    "accent": "#8ED1FC"
+  },
+  "questions": [
+    {
+      "key": "files-email-storage-b1",
+      "difficulty": "beginner",
+      "prompt": "What is the difference between MEDIA_ROOT and STATIC_ROOT?",
+      "choices": [
+        "MEDIA_ROOT stores user-uploaded files; STATIC_ROOT collects project/app static assets for deployment.",
+        "MEDIA_ROOT stores CSS; STATIC_ROOT stores videos.",
+        "They are two names for the same folder.",
+        "STATIC_ROOT stores database backups."
+      ],
+      "answer": 0,
+      "explanation": "Static files are part of the deployed code and are collected by collectstatic. Media files are runtime user data and need their own storage, permissions, backups, and serving strategy. Never mix them or serve media as trusted static content."
+    },
+    {
+      "key": "files-email-storage-b2",
+      "difficulty": "beginner",
+      "prompt": "What does upload_to do on a FileField?",
+      "choices": [
+        "It validates the file's MIME type.",
+        "It sets a path prefix or callable that determines where the stored file is placed.",
+        "It limits the file size to 10 MB.",
+        "It scans the file for malware."
+      ],
+      "answer": 1,
+      "explanation": "upload_to controls the storage path, often using a date-based or UUID-based callable. It does not validate type, size, or safety. Use form/model validators, content inspection, and size limits separately."
+    },
+    {
+      "key": "files-email-storage-b3",
+      "difficulty": "beginner",
+      "prompt": "A FileField accepts a .pdf upload. What security conclusion is safe?",
+      "choices": [
+        "The content is definitely a safe PDF.",
+        "Only the filename or declared metadata may look like a PDF; the content still needs validation and handling policy.",
+        "Django scans the file with antivirus automatically.",
+        "The file is automatically private."
+      ],
+      "answer": 1,
+      "explanation": "Filenames and client-supplied content types are untrusted. Validate the actual bytes, enforce size limits, store outside the web root or in private object storage, scan risky uploads, and set Content-Disposition/Content-Type when serving."
+    },
+    {
+      "key": "files-email-storage-b4",
+      "difficulty": "beginner",
+      "prompt": "Which email backend is appropriate for local development?",
+      "choices": [
+        "The console backend, which prints messages instead of sending them.",
+        "A production SMTP account with real customer addresses.",
+        "The locmem backend in production.",
+        "No backend; Django sends by default."
+      ],
+      "answer": 0,
+      "explanation": "Use console or file-based email in development, and locmem/console in tests. Configure real SMTP or an API provider with verified domains for production. Django 6.1 is moving toward the MAILERS setting for named backends."
+    },
+    {
+      "key": "files-email-storage-b5",
+      "difficulty": "beginner",
+      "prompt": "Why use Django's storage API instead of hardcoding open() and local paths?",
+      "choices": [
+        "It makes every file public.",
+        "It lets the same code work with local files, S3, or another backend and centralizes file naming and URLs.",
+        "It guarantees files are virus-free.",
+        "It bypasses permissions."
+      ],
+      "answer": 1,
+      "explanation": "The storage API abstracts save/open/delete/url operations. You can switch between FileSystemStorage and cloud storage without rewriting models. Storage configuration still needs correct privacy, backups, and lifecycle rules."
+    },
+    {
+      "key": "files-email-storage-i1",
+      "difficulty": "intermediate",
+      "prompt": "What is required for a Django form to receive an uploaded file?",
+      "choices": [
+        "method=\"post\" and enctype=\"multipart/form-data\".",
+        "method=\"get\" and a JSON body.",
+        "Only a CSRF token.",
+        "A FileField in the model, with no form changes."
+      ],
+      "answer": 0,
+      "explanation": "Browsers send file inputs as multipart/form-data using POST. The form must include the enctype and CSRF token, and the view must access request.FILES. Without the enctype, the file input is not transmitted correctly."
+    },
+    {
+      "key": "files-email-storage-i2",
+      "difficulty": "intermediate",
+      "prompt": "What does ImageField add over FileField?",
+      "choices": [
+        "It automatically resizes images.",
+        "It uses Pillow to verify that the uploaded file is a valid image and provides width/height metadata.",
+        "It blocks all malicious files.",
+        "It uploads images to S3."
+      ],
+      "answer": 1,
+      "explanation": "ImageField validates the image with Pillow and exposes dimensions. It does not resize, strip EXIF, scan malware, or choose storage. Large or malformed images can still consume CPU/memory; enforce limits and consider async processing."
+    },
+    {
+      "key": "files-email-storage-i3",
+      "difficulty": "intermediate",
+      "prompt": "You need users to download private invoices stored in S3. What is the best access pattern?",
+      "choices": [
+        "Make the bucket public and rely on unpredictable keys.",
+        "Keep objects private and issue short-lived presigned URLs after an authorization check.",
+        "Serve the files through a local static directory.",
+        "Put the S3 secret key in the browser."
+      ],
+      "answer": 1,
+      "explanation": "Public buckets and obscure keys are not authorization. Verify that the requester may access the invoice, then generate a presigned URL with a short expiry. Log access where required and use consistent object key scoping per tenant/user."
+    },
+    {
+      "key": "files-email-storage-i4",
+      "difficulty": "intermediate",
+      "prompt": "When should you use EmailMultiAlternatives?",
+      "choices": [
+        "To send both a plain-text and an HTML version of the same email.",
+        "To send multiple unrelated campaigns at once.",
+        "To attach a database file automatically.",
+        "To bypass spam filters."
+      ],
+      "answer": 0,
+      "explanation": "EmailMultiAlternatives sends a text body plus HTML alternatives. Always include a readable plain-text fallback. Use attach()/attach_file() for files, and keep attachments within provider limits."
+    },
+    {
+      "key": "files-email-storage-i5",
+      "difficulty": "intermediate",
+      "prompt": "Which trio of DNS records most directly supports legitimate email delivery?",
+      "choices": ["A, AAAA, CNAME", "SPF, DKIM, DMARC", "MX, TXT, NS", "CAA, SRV, PTR"],
+      "answer": 1,
+      "explanation": "SPF authorizes sending servers, DKIM cryptographically signs messages, and DMARC tells receivers how to handle failures and where to send reports. Use the provider's documented values, align domains carefully, and monitor DMARC reports."
+    },
+    {
+      "key": "files-email-storage-a1",
+      "difficulty": "advanced",
+      "prompt": "Which upload naming strategy is safest?",
+      "choices": [
+        "Use the client's original filename directly as the storage path.",
+        "Generate a server-side UUID/path and never trust client path separators or extensions.",
+        "Allow ../ in names as long as the extension is .pdf.",
+        "Base the path on the request Host header."
+      ],
+      "answer": 1,
+      "explanation": "Client filenames can contain traversal sequences, misleading extensions, Unicode tricks, or collisions. Generate names server-side, keep the original display name as metadata (sanitized/escaped), and store files in a location that cannot execute code."
+    },
+    {
+      "key": "files-email-storage-a2",
+      "difficulty": "advanced",
+      "prompt": "What is a sound architecture for user-uploaded files that may contain malware?",
+      "choices": [
+        "Scan in the request after saving, then immediately serve every file.",
+        "Quarantine uploads in private storage, scan asynchronously, promote only clean files, and never execute/serve untrusted content from the app origin.",
+        "Rely on the file extension alone.",
+        "Ask the browser to scan the file."
+      ],
+      "answer": 1,
+      "explanation": "The request should not block on an expensive scan, and a saved file should not be immediately trusted. Mark it pending, scan in a worker, promote or delete, and serve with safe headers from a separate domain/bucket if possible. Keep audit records for the decision."
+    },
+    {
+      "key": "files-email-storage-a3",
+      "difficulty": "advanced",
+      "prompt": "Why should an email or background job be scheduled with transaction.on_commit()?",
+      "choices": [
+        "It makes the email send faster.",
+        "It prevents sending a notification for a database change that later rolls back.",
+        "It encrypts the email body.",
+        "It guarantees the email provider accepts the message."
+      ],
+      "answer": 1,
+      "explanation": "Side effects must follow a successful commit. on_commit defers the callback until the surrounding transaction succeeds. For durable delivery, pair it with an outbox row and a retrying worker so a crash between commit and callback does not silently lose the message."
+    },
+    {
+      "key": "files-email-storage-a4",
+      "difficulty": "advanced",
+      "prompt": "What is the best way to enforce a hard maximum upload size?",
+      "choices": [
+        "Set FILE_UPLOAD_MAX_MEMORY_SIZE to the cap; it rejects larger uploads.",
+        "Set DATA_UPLOAD_MAX_MEMORY_SIZE; it caps all file bytes.",
+        "Enforce a body-size limit at the reverse proxy and validate size in the application; Django's memory settings are thresholds, not universal upload caps.",
+        "Add maxlength to the HTML file input."
+      ],
+      "answer": 2,
+      "explanation": "FILE_UPLOAD_MAX_MEMORY_SIZE controls when files spill to disk, not the maximum accepted size. DATA_UPLOAD_MAX_MEMORY_SIZE excludes file data. Use proxy/server body limits, streaming and a size validator, plus storage quotas. Client-side maxlength is only a convenience."
+    },
+    {
+      "key": "files-email-storage-a5",
+      "difficulty": "advanced",
+      "prompt": "A model deletes a row but its stored file remains. What is the robust fix?",
+      "choices": [
+        "Delete the file inside the model's delete() and assume every path calls delete().",
+        "Use a transactional outbox/cleanup job that records pending deletions and retries them, plus a periodic orphan sweep against storage.",
+        "Ignore it; storage is infinite.",
+        "Serve the file from STATIC_ROOT."
+      ],
+      "answer": 1,
+      "explanation": "File deletion is not transactional with the database and can fail after commit. Record deletion intents, process them with retries, and reconcile storage against database references. For user data, also respect retention/legal-hold rules."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "files-email-storage-f1",
+      "difficulty": "beginner",
+      "front": "What is the difference between static and media files?",
+      "back": "Static files are developer-controlled assets shipped with the app (CSS, JS, images) and collected with collectstatic. Media files are user-uploaded runtime data. Serve them differently, back them up separately, and never treat uploads as executable app assets.",
+      "hint": "Code-controlled vs user-controlled."
+    },
+    {
+      "key": "files-email-storage-f2",
+      "difficulty": "beginner",
+      "front": "What does a FileField validate by itself?",
+      "back": "Very little beyond basic field/form mechanics. It does not guarantee safe content, a true MIME type, malware-free bytes, or a size cap. Add validators, content inspection, size limits, private storage, and safe serving headers.",
+      "hint": "The filename is not the file."
+    },
+    {
+      "key": "files-email-storage-f3",
+      "difficulty": "intermediate",
+      "front": "How do you serve private object-storage files?",
+      "back": "Keep the bucket private. Authorize the request in the app, then generate a short-lived presigned URL scoped to that object. Avoid permanent public URLs and never expose storage credentials to the browser.",
+      "front_code": "url = storage.url(key, expire=300)"
+    },
+    {
+      "key": "files-email-storage-f4",
+      "difficulty": "intermediate",
+      "front": "What belongs in a transactional email setup?",
+      "back": "A plain-text fallback, an HTML alternative, a verified sending domain, SPF/DKIM/DMARC, bounce/complaint handling, retries, and an outbox or on_commit boundary. Never send customer email during development with production credentials.",
+      "hint": "Text, auth, deliverability, retries."
+    },
+    {
+      "key": "files-email-storage-f5",
+      "difficulty": "advanced",
+      "front": "How do you prevent malicious uploads from becoming an incident?",
+      "back": "Generate server-side filenames, restrict size and type by inspecting bytes, quarantine in private storage, scan asynchronously, promote only clean files, serve from a separate origin/bucket with safe headers, and never execute uploads.",
+      "hint": "Quarantine, scan, promote."
+    },
+    {
+      "key": "files-email-storage-f6",
+      "difficulty": "advanced",
+      "front": "Why is deleting a file not simply a model delete hook?",
+      "back": "Database transactions and object storage do not share an atomic commit. The file operation can fail or the process can crash. Record deletion intents, retry them, and reconcile orphaned objects on a schedule.",
+      "front_code": "transaction.on_commit(lambda: delete_stored_file(key))"
+    },
+    {
+      "key": "files-email-storage-f7",
+      "difficulty": "advanced",
+      "front": "Which settings are often confused with upload size limits?",
+      "back": "FILE_UPLOAD_MAX_MEMORY_SIZE is the in-memory threshold before spilling to disk, not a cap. DATA_UPLOAD_MAX_MEMORY_SIZE limits non-file request data. Enforce the real cap at the proxy/server and with application validation and quotas.",
+      "hint": "Thresholds, not universal caps."
+    }
+  ]
+}

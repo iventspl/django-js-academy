@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "models-orm",
+    "name": "Models & the ORM",
+    "tagline": "Relations, QuerySets, migrations, and transactional thinking.",
+    "description": "The ORM is where Django apps usually win or lose on correctness and performance. Learn lazy evaluation, join strategies, expressions, transactions, and the sharp edges of update(), save(), and validation.",
+    "glyph": "db",
+    "accent": "#F29E8E"
+  },
+  "questions": [
+    {
+      "key": "models-orm-b1",
+      "difficulty": "beginner",
+      "prompt": "What does a Django model class usually map to?",
+      "choices": [
+        "A single database table, with fields mapping to columns.",
+        "One row in every table.",
+        "A JavaScript component.",
+        "A URL pattern."
+      ],
+      "answer": 0,
+      "explanation": "A model class describes a table, and each field becomes a column. An instance represents a row. Django's migration system turns model changes into schema changes."
+    },
+    {
+      "key": "models-orm-b2",
+      "difficulty": "beginner",
+      "prompt": "What is the correct order for applying a model change?",
+      "choices": [
+        "migrate, then makemigrations",
+        "makemigrations, then migrate",
+        "collectstatic, then migrate",
+        "runserver, then makemigrations"
+      ],
+      "answer": 1,
+      "explanation": "makemigrations compares models with migration history and writes migration files. migrate applies those files to the database. Review generated migrations before applying them, especially for data loss."
+    },
+    {
+      "key": "models-orm-b3",
+      "difficulty": "beginner",
+      "prompt": "Why define __str__ on a model?",
+      "choices": [
+        "It controls the database column type.",
+        "It gives the object a readable label in the admin, shell, and logs.",
+        "It makes the model hashable.",
+        "It is required for every ForeignKey."
+      ],
+      "answer": 1,
+      "explanation": "__str__ improves the human-readable representation of an instance. Without it, the admin and shell show something like <Post: Post object (1)>. It does not affect database columns or validation."
+    },
+    {
+      "key": "models-orm-b4",
+      "difficulty": "beginner",
+      "prompt": "What is the key difference between filter() and get()?",
+      "choices": [
+        "filter() returns a QuerySet; get() returns one object or raises DoesNotExist/MultipleObjectsReturned.",
+        "get() returns a list; filter() returns a dict.",
+        "filter() modifies rows; get() only reads.",
+        "There is no difference."
+      ],
+      "answer": 0,
+      "explanation": "filter() is chainable and lazy and can return zero, one, or many rows. get() expects exactly one match and raises DoesNotExist or MultipleObjectsReturned otherwise. Use get_object_or_404() in views for a clean 404."
+    },
+    {
+      "key": "models-orm-b5",
+      "difficulty": "beginner",
+      "prompt": "Why does ForeignKey require on_delete?",
+      "choices": [
+        "It tells Django how to handle the child row when the referenced parent is deleted.",
+        "It defines the database engine.",
+        "It prevents the parent from ever being deleted.",
+        "It makes the field optional."
+      ],
+      "answer": 0,
+      "explanation": "on_delete is a required, explicit policy: CASCADE deletes children, PROTECT blocks deletion, SET_NULL clears the reference, and so on. Django refuses to guess because the consequences are permanent."
+    },
+    {
+      "key": "models-orm-i1",
+      "difficulty": "intermediate",
+      "prompt": "When should you use select_related() rather than prefetch_related()?",
+      "choices": [
+        "For many-to-many relationships only.",
+        "For forward ForeignKey or OneToOne relationships where a SQL JOIN makes sense.",
+        "Whenever you need Python-level filtering.",
+        "Only for fields with a db_index."
+      ],
+      "answer": 1,
+      "explanation": "select_related performs a SQL join and works for forward single-valued relations. prefetch_related issues separate queries and stitches results in Python, which suits many-to-many and reverse relations. Both reduce N+1 query storms."
+    },
+    {
+      "key": "models-orm-i2",
+      "difficulty": "intermediate",
+      "prompt": "Why is F(\"views\") + 1 safer than reading a value into Python and saving it back?",
+      "choices": [
+        "F expressions run in the database, avoiding a lost update between concurrent requests.",
+        "F expressions bypass database transactions.",
+        "F expressions automatically validate the model.",
+        "F expressions are the only way to update a column."
+      ],
+      "answer": 0,
+      "explanation": "counter = counter + 1 in Python is read-modify-write and can lose increments. F(\"views\") + 1 becomes an atomic SQL UPDATE. For heavier invariants, lock rows or use database constraints inside a transaction."
+    },
+    {
+      "key": "models-orm-i3",
+      "difficulty": "intermediate",
+      "prompt": "How do you express (status = 'draft') OR (featured = True) in a QuerySet?",
+      "choices": [
+        "Post.objects.filter(status=\"draft\", featured=True)",
+        "Post.objects.filter(Q(status=\"draft\") | Q(featured=True))",
+        "Post.objects.filter(status=\"draft\").filter(featured=True)",
+        "Post.objects.get(status=\"draft\", featured=True)"
+      ],
+      "answer": 1,
+      "explanation": "Positional arguments to filter() are ANDed. Q objects support | (OR), & (AND), and ~ (NOT). Chained filter() calls are also AND. Q objects can be combined and reused."
+    },
+    {
+      "key": "models-orm-i4",
+      "difficulty": "intermediate",
+      "prompt": "What is the difference between annotate() and aggregate()?",
+      "choices": [
+        "annotate() adds a value per row; aggregate() collapses the queryset to one summary value.",
+        "aggregate() adds a value per row; annotate() returns a single dict.",
+        "They are exact aliases.",
+        "Only aggregate() can use Count()."
+      ],
+      "answer": 0,
+      "explanation": "annotate() attaches an aggregate or expression to each row in the QuerySet. aggregate() produces one dict for the whole query, such as total=Sum(\"amount\"). Both can use the same aggregate functions."
+    },
+    {
+      "key": "models-orm-i5",
+      "difficulty": "intermediate",
+      "prompt": "What does related_name=\"posts\" on a ForeignKey enable?",
+      "choices": [
+        "A reverse accessor: author.posts.all().",
+        "A database index on the foreign key.",
+        "Automatic prefetching of all posts.",
+        "A URL named posts."
+      ],
+      "answer": 0,
+      "explanation": "related_name sets the attribute used to traverse the relation backwards, from the target to the source. It also avoids clashes between multiple ForeignKeys to the same model. Without it, the default is modelname_set."
+    },
+    {
+      "key": "models-orm-a1",
+      "difficulty": "advanced",
+      "prompt": "Which statement about transaction.atomic() is correct?",
+      "choices": [
+        "Any exception inside the block rolls back, even if it is caught inside the block.",
+        "The transaction rolls back when an exception propagates out of the atomic block; catching it inside does not automatically roll back.",
+        "atomic() prevents all database writes until the process exits.",
+        "atomic() only works with PostgreSQL."
+      ],
+      "answer": 1,
+      "explanation": "atomic() marks a savepoint/transaction and rolls back if an exception escapes the block. If you catch the exception inside, the transaction may still be usable but not automatically rolled back. Use transaction.set_rollback(True) or restructure the block when needed."
+    },
+    {
+      "key": "models-orm-a2",
+      "difficulty": "advanced",
+      "prompt": "What is select_for_update() for, and what must accompany it?",
+      "choices": [
+        "It locks selected rows until the transaction ends and must run inside a transaction.",
+        "It caches rows permanently in memory.",
+        "It updates every row without a WHERE clause.",
+        "It makes QuerySets read-only outside the admin."
+      ],
+      "answer": 0,
+      "explanation": "select_for_update() emits SELECT ... FOR UPDATE, locking matching rows so concurrent transactions cannot modify them until commit or rollback. It must be inside transaction.atomic(), and database support/behavior varies. Avoid holding locks while doing slow external work."
+    },
+    {
+      "key": "models-orm-a3",
+      "difficulty": "advanced",
+      "prompt": "What does Post.objects.filter(published=False).update(published=True) bypass?",
+      "choices": [
+        "The database WHERE clause.",
+        "Model save() methods, pre_save/post_save signals, and full_clean() validation.",
+        "The transaction system.",
+        "Django's permission checks only."
+      ],
+      "answer": 1,
+      "explanation": "QuerySet.update() executes a direct SQL UPDATE. It does not call save(), auto_now fields (unless explicitly included), signals, or full_clean(). If those behaviours matter, update per instance or move the invariant into the database or a shared service."
+    },
+    {
+      "key": "models-orm-a4",
+      "difficulty": "advanced",
+      "prompt": "A page loops over 50 posts and calls post.author.name for each. What problem is likely?",
+      "choices": [
+        "A migration conflict.",
+        "An N+1 query pattern: one query for posts and then one per author.",
+        "A CSRF failure.",
+        "SQL injection through the template."
+      ],
+      "answer": 1,
+      "explanation": "Each lazy foreign-key access can trigger another query. Use Post.objects.select_related(\"author\") to fetch authors in the same query. Confirm with Django Debug Toolbar, CaptureQueriesContext, or query logging rather than guessing."
+    },
+    {
+      "key": "models-orm-a5",
+      "difficulty": "advanced",
+      "prompt": "Which statement about model validation and save() is correct?",
+      "choices": [
+        "save() always runs full_clean() before writing.",
+        "save() does not run full_clean(); forms and explicit calls to full_clean() provide model validation.",
+        "Database constraints are unnecessary because save() validates everything.",
+        "full_clean() cannot validate uniqueness."
+      ],
+      "answer": 1,
+      "explanation": "Model.save() does not call full_clean(). ModelForms run validation, and you can call full_clean() explicitly, but data created via the ORM, fixtures, or bulk operations may bypass it. Add database constraints for invariants that must always hold."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "models-orm-f1",
+      "difficulty": "beginner",
+      "front": "What does it mean that a Django QuerySet is lazy?",
+      "back": "Creating a QuerySet does not hit the database. It is evaluated when iterated, sliced with a step, converted to a list, or when methods like count(), exists(), or first() need a result. Chaining filters builds SQL before execution.",
+      "hint": "Build now, query later."
+    },
+    {
+      "key": "models-orm-f2",
+      "difficulty": "beginner",
+      "front": "What is the difference between makemigrations and migrate?",
+      "back": "makemigrations writes migration files by diffing models against migration history. migrate applies those files to the database. Review generated migrations, especially for drops, renames, and data migrations.",
+      "front_code": "python manage.py makemigrations\npython manage.py migrate"
+    },
+    {
+      "key": "models-orm-f3",
+      "difficulty": "intermediate",
+      "front": "Explain select_related vs prefetch_related.",
+      "back": "select_related uses a SQL JOIN for forward ForeignKey/OneToOne relations and returns one query. prefetch_related runs separate queries and joins in Python, suitable for many-to-many and reverse relations. Both solve N+1 access patterns.",
+      "front_code": "Post.objects.select_related(\"author\")\nPost.objects.prefetch_related(\"tags\")"
+    },
+    {
+      "key": "models-orm-f4",
+      "difficulty": "intermediate",
+      "front": "What are F expressions and Q objects for?",
+      "back": "F refers to a database column inside an expression, enabling atomic updates and comparisons without reading into Python. Q builds complex boolean predicates and supports OR, AND, and NOT.",
+      "front_code": "Post.objects.filter(views__gte=F(\"likes\"))\nPost.objects.filter(Q(draft=True) | Q(featured=True))"
+    },
+    {
+      "key": "models-orm-f5",
+      "difficulty": "advanced",
+      "front": "When is transaction.atomic() the right tool?",
+      "back": "Use it when several writes must succeed or fail as a unit: transferring balances, creating an order plus lines, or claiming a job. Keep the block short, avoid external network calls inside it, and remember that an exception must escape (or be explicitly marked) to roll back.",
+      "front_code": "with transaction.atomic():\n    order = Order.objects.create(...)\n    Line.objects.bulk_create(lines)"
+    },
+    {
+      "key": "models-orm-f6",
+      "difficulty": "advanced",
+      "front": "How do you diagnose and fix an N+1 query problem?",
+      "back": "Measure query count first. For forward single-valued relations use select_related; for many-to-many or reverse relations use prefetch_related and Prefetch for custom querysets. Only fetch what the page needs, and re-measure after the change.",
+      "hint": "Measure, join or prefetch, measure again."
+    },
+    {
+      "key": "models-orm-f7",
+      "difficulty": "advanced",
+      "front": "What do QuerySet.update() and bulk_create() skip?",
+      "back": "They generate set-based SQL and skip model save(), pre_save/post_save signals, and full_clean() validation. bulk_create also bypasses per-row insert logic. Use them for performance, but move invariants into database constraints or explicit service code.",
+      "hint": "Fast paths skip the model layer."
+    }
+  ]
+}

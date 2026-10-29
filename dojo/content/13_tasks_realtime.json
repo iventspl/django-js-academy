@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "tasks-realtime",
+    "name": "Tasks, Queues & Realtime",
+    "tagline": "Background work, retries, outboxes, WebSockets, and async boundaries.",
+    "description": "Some work should not happen inside a request. Learn Django's new Tasks framework, Celery-style queues, idempotency and retries, transactional outboxes, and how to add WebSockets without blocking the event loop.",
+    "glyph": "job",
+    "accent": "#FFD166"
+  },
+  "questions": [
+    {
+      "key": "tasks-realtime-b1",
+      "difficulty": "beginner",
+      "prompt": "Why move work such as sending a large email batch or processing an image into a background task?",
+      "choices": [
+        "To keep the HTTP request fast and avoid timeouts while isolating retries and resource-heavy work.",
+        "Because Python cannot send email inside a view.",
+        "To bypass database transactions.",
+        "To make the database smaller."
+      ],
+      "answer": 0,
+      "explanation": "Requests should return quickly and predictably. Background workers can retry, pace external APIs, and handle CPU-heavy work without tying up web workers. The trade-off is eventual consistency and operational complexity."
+    },
+    {
+      "key": "tasks-realtime-b2",
+      "difficulty": "beginner",
+      "prompt": "What does Django 6's built-in Tasks framework provide?",
+      "choices": [
+        "Task definition, validation, queuing, and result handling through configurable backends; a separate worker still runs the tasks.",
+        "A complete replacement for Celery workers and Redis.",
+        "A frontend JavaScript framework.",
+        "Database migrations for task tables only."
+      ],
+      "answer": 0,
+      "explanation": "Django 6 added django.tasks with configuration via TASKS. The built-in backends are mainly for development and testing; production still needs external execution infrastructure. The framework standardises the task contract, not the worker fleet."
+    },
+    {
+      "key": "tasks-realtime-b3",
+      "difficulty": "beginner",
+      "prompt": "In a typical Celery setup, what is the broker's job?",
+      "choices": [
+        "It stores queued messages until a worker consumes them.",
+        "It renders HTML templates.",
+        "It stores user passwords.",
+        "It replaces the database."
+      ],
+      "answer": 0,
+      "explanation": "The broker (Redis, RabbitMQ, SQS, etc.) holds task messages. Celery workers consume and execute them. The result backend is separate and optional. Broker durability and visibility timeouts matter for reliability."
+    },
+    {
+      "key": "tasks-realtime-b4",
+      "difficulty": "beginner",
+      "prompt": "What does idempotent mean for a background task?",
+      "choices": [
+        "Running it multiple times produces the same intended effect as running it once.",
+        "It can never fail.",
+        "It must run synchronously.",
+        "It always deletes data."
+      ],
+      "answer": 0,
+      "explanation": "Queues commonly deliver at least once, so retries and duplicate deliveries happen. Make the task safe to repeat using unique constraints, idempotency keys, or state checks. 'Exactly once' is usually a design goal, not a guarantee."
+    },
+    {
+      "key": "tasks-realtime-b5",
+      "difficulty": "beginner",
+      "prompt": "Why use exponential backoff with jitter for retries?",
+      "choices": [
+        "To reduce hammering a failing dependency and spread retries instead of synchronising a thundering herd.",
+        "To make every task run forever.",
+        "To bypass authentication.",
+        "To disable monitoring."
+      ],
+      "answer": 0,
+      "explanation": "Immediate tight retries can amplify an outage. Exponential backoff increases delays; jitter desynchronises clients. Cap attempts and route exhausted tasks to a dead-letter/alert path."
+    },
+    {
+      "key": "tasks-realtime-i1",
+      "difficulty": "intermediate",
+      "prompt": "Why enqueue a task with transaction.on_commit() after creating an order?",
+      "choices": [
+        "So the worker cannot see or act on an order that later rolls back, and the side effect only starts after a successful commit.",
+        "So the task runs inside the same transaction and can roll it back.",
+        "To make the task execute before the order is saved.",
+        "To avoid needing a broker."
+      ],
+      "answer": 0,
+      "explanation": "on_commit defers the enqueue until commit. Without it, a fast worker could process a row that the transaction later rolls back. For durable delivery, combine on_commit with an outbox row so a crash after commit does not lose the task."
+    },
+    {
+      "key": "tasks-realtime-i2",
+      "difficulty": "intermediate",
+      "prompt": "What is the best payload for a queued task?",
+      "choices": [
+        "A serialized model instance with all relations.",
+        "A stable identifier such as the object's primary key, plus minimal scalar parameters; the worker re-fetches current state.",
+        "An open database connection.",
+        "A Django request object."
+      ],
+      "answer": 1,
+      "explanation": "Queues need serializable payloads and model state changes. Sending IDs keeps messages small and forces the worker to load current data. Pass tenant and idempotency context explicitly; never send request objects or connections."
+    },
+    {
+      "key": "tasks-realtime-i3",
+      "difficulty": "intermediate",
+      "prompt": "What does Celery's acks_late=True change?",
+      "choices": [
+        "The worker acknowledges the message after the task finishes, so a crash can cause redelivery.",
+        "The task is never retried.",
+        "The broker stores no messages.",
+        "The task runs in the web request."
+      ],
+      "answer": 0,
+      "explanation": "With late acknowledgement, a worker crash before ack can redeliver the task. That improves resilience but makes idempotency mandatory. Visibility timeouts and long tasks interact; keep tasks bounded and monitor duplicates."
+    },
+    {
+      "key": "tasks-realtime-i4",
+      "difficulty": "intermediate",
+      "prompt": "What is a periodic task, and what usually schedules it?",
+      "choices": [
+        "A task that runs on a schedule; Celery Beat, a cron job, or a scheduler service triggers it.",
+        "A task that runs only on user login.",
+        "A task that blocks the request.",
+        "A task that runs exactly once per year."
+      ],
+      "answer": 0,
+      "explanation": "Periodic tasks handle cleanup, reports, and syncs. Celery Beat schedules them; many deployments use cron or a managed scheduler. Run only one scheduler instance, make jobs idempotent, and monitor missed runs."
+    },
+    {
+      "key": "tasks-realtime-i5",
+      "difficulty": "intermediate",
+      "prompt": "When is a WebSocket/Channels approach better than polling?",
+      "choices": [
+        "When clients need low-latency, frequent server push updates and you can operate a persistent-connection stack.",
+        "When you need a simple one-off form submission.",
+        "When every page is static.",
+        "When you want to eliminate the database."
+      ],
+      "answer": 0,
+      "explanation": "WebSockets reduce overhead for chat, presence, collaborative updates, or live dashboards. They add connection management, auth, scaling, and broadcast infrastructure. Polling is simpler and often good enough for infrequent updates."
+    },
+    {
+      "key": "tasks-realtime-a1",
+      "difficulty": "advanced",
+      "prompt": "Which statement about exactly-once delivery is most accurate?",
+      "choices": [
+        "A broker can guarantee exactly-once execution in all failure modes.",
+        "End-to-end exactly-once is generally not guaranteed; design for at-least-once delivery plus idempotent effects.",
+        "Exactly-once means the task never crashes.",
+        "It only applies to email."
+      ],
+      "answer": 1,
+      "explanation": "A crash can occur after the work but before acknowledgement, or after enqueue but before commit. Durable idempotency (unique keys, state transitions, outbox deduplication) makes repeated delivery harmless. This is more reliable than claiming exactly-once execution."
+    },
+    {
+      "key": "tasks-realtime-a2",
+      "difficulty": "advanced",
+      "prompt": "What problem does the transactional outbox pattern solve?",
+      "choices": [
+        "It atomically records the intent to publish a message alongside the database write, and a relay delivers it later.",
+        "It encrypts all database columns.",
+        "It eliminates the need for workers.",
+        "It makes HTTP requests asynchronous."
+      ],
+      "answer": 0,
+      "explanation": "Writing the business row and an outbox row in one transaction avoids the dual-write gap. A relay publishes pending rows and marks them sent; retries and ordering are explicit. It trades immediate publication for durability and consistency."
+    },
+    {
+      "key": "tasks-realtime-a3",
+      "difficulty": "advanced",
+      "prompt": "Two identical webhook deliveries arrive concurrently. What is the most reliable first line of defence?",
+      "choices": [
+        "Sleep for one second before processing.",
+        "A unique database constraint on the provider event ID and an atomic insert/claim.",
+        "Log the event and hope.",
+        "Disable retries at the provider."
+      ],
+      "answer": 1,
+      "explanation": "A unique constraint makes the deduplication decision atomic even across workers. Insert the event ID; if it conflicts, treat it as already processed. For multi-step effects, combine with a state machine and idempotency keys."
+    },
+    {
+      "key": "tasks-realtime-a4",
+      "difficulty": "advanced",
+      "prompt": "What is a retry storm, and how do you contain it?",
+      "choices": [
+        "A burst of retries overwhelming a failing dependency; use backoff, jitter, concurrency limits, circuit breakers, and dead-letter queues.",
+        "A UI animation.",
+        "A database migration conflict.",
+        "A type of CSRF attack."
+      ],
+      "answer": 0,
+      "explanation": "Retries are helpful until they amplify failure. Limit concurrency, cap attempts, back off with jitter, and stop calling an unhealthy dependency temporarily. Route exhausted tasks to a dead-letter path and alert on the pattern."
+    },
+    {
+      "key": "tasks-realtime-a5",
+      "difficulty": "advanced",
+      "prompt": "What is wrong with calling a synchronous ORM query directly inside an async Channels consumer?",
+      "choices": [
+        "It can block the event loop and stall other consumers; use database_sync_to_async or an async-aware data layer.",
+        "It always raises a 404.",
+        "It deletes the channel layer.",
+        "It disables WebSocket compression."
+      ],
+      "answer": 0,
+      "explanation": "Async consumers run on an event loop. Blocking I/O prevents other coroutines from progressing. Use Channels' database_sync_to_async, sync_to_async, or async ORM methods, and keep long work in a worker rather than the socket handler."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "tasks-realtime-f1",
+      "difficulty": "beginner",
+      "front": "Why use a background task instead of doing work in the request?",
+      "back": "Requests should be fast and predictable. Background work can retry, handle heavy CPU, pace external APIs, and survive client disconnects. The cost is eventual consistency and more infrastructure to monitor.",
+      "hint": "Fast request, durable work."
+    },
+    {
+      "key": "tasks-realtime-f2",
+      "difficulty": "beginner",
+      "front": "What are the three moving parts of a Celery-style queue?",
+      "back": "A producer enqueues a message to a broker; a worker consumes and executes it; an optional result backend stores outcomes. The database is separate. Monitor queue depth, failures, latency, and dead letters.",
+      "hint": "Producer, broker, worker."
+    },
+    {
+      "key": "tasks-realtime-f3",
+      "difficulty": "intermediate",
+      "front": "Why call transaction.on_commit() before enqueueing a task?",
+      "back": "It prevents a worker from processing a row that the current transaction may roll back. For durability against a crash after commit, also write an outbox row and have a relay enqueue it.",
+      "front_code": "transaction.on_commit(lambda: send_invoice.delay(order.pk))"
+    },
+    {
+      "key": "tasks-realtime-f4",
+      "difficulty": "intermediate",
+      "front": "How do you make a task idempotent?",
+      "back": "Use a unique idempotency key, a state transition guard, or a deduplication table. Check whether the effect already happened before repeating it. Make external calls with idempotency keys where supported, and keep task payloads minimal.",
+      "hint": "Repeating must be harmless."
+    },
+    {
+      "key": "tasks-realtime-f5",
+      "difficulty": "advanced",
+      "front": "What is the transactional outbox pattern?",
+      "back": "Write the business change and an outbox event in the same transaction. A separate relay publishes unsent events with retries and marks them delivered. This avoids losing a message between commit and enqueue, at the cost of eventual delivery.",
+      "front_code": "with transaction.atomic():\n    order = Order.objects.create(...)\n    Outbox.objects.create(topic=\"order.created\", payload={\"id\": order.pk})"
+    },
+    {
+      "key": "tasks-realtime-f6",
+      "difficulty": "advanced",
+      "front": "How do you handle a duplicate webhook safely?",
+      "back": "Persist the provider event ID under a unique constraint, claim it atomically, and process the effect once. Return success for duplicates if the provider expects it. Make secondary effects idempotent too, because the first attempt may have partially completed.",
+      "hint": "Unique event ID, atomic claim."
+    },
+    {
+      "key": "tasks-realtime-f7",
+      "difficulty": "advanced",
+      "front": "When do you need WebSockets instead of polling?",
+      "back": "When clients need low-latency, high-frequency server push: chat, presence, live dashboards, collaboration. You then own connection auth, fan-out, channel layers, reconnects, and horizontal scaling. Polling is simpler for occasional updates.",
+      "hint": "Push frequency and latency."
+    }
+  ]
+}

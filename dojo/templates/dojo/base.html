@@ -1,0 +1,148 @@
+{% load static %}
+<!doctype html>
+<html lang="{% block html_lang %}en{% endblock %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="{% if request.resolver_match.namespace == 'js_academy' %}#10131a{% else %}#0d1b24{% endif %}">
+  <meta name="description" content="{% block meta_description %}A local-first Django quiz and flashcard dojo for learning Python and Django from beginner to advanced.{% endblock %}">
+  <title>{% block title %}Django Quest{% endblock %} · {% block product_name %}Django Quest{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22{% if request.resolver_match.namespace == 'js_academy' %}%23f7df1e{% else %}%23f6c451{% endif %}%22/><text x=%2232%22 y=%2244%22 text-anchor=%22middle%22 font-size=%2234%22 font-family=%22monospace%22 font-weight=%22bold%22 fill=%22%230d1b24%22>{% if request.resolver_match.namespace == 'js_academy' %}JS{% else %}DQ{% endif %}</text></svg>">
+  <link rel="stylesheet" href="{% static 'dojo/app.css' %}?v=20261029f">
+  {% block extra_css %}{% endblock %}
+  <script defer src="{% static 'dojo/app.js' %}?v=20261029f"></script>
+</head>
+<body class="{% block body_class %}{% endblock %} {% if request.resolver_match.namespace == 'js_academy' %}platform-js{% endif %}">
+  <a class="skip-link" href="#main-content">{% if request.resolver_match.namespace == 'js_academy' %}Przejdź do treści{% else %}Skip to content{% endif %}</a>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="{% url 'dojo:home' %}" aria-label="Django Quest home">
+        <span class="brand-mark">{% if request.resolver_match.namespace == 'js_academy' %}JS{% else %}DQ{% endif %}</span>
+        <span class="brand-copy">
+          <strong>Django Quest</strong>
+          <span>{% if request.resolver_match.namespace == 'js_academy' %}JS Akademia · PL{% else %}learn by doing{% endif %}</span>
+        </span>
+      </a>
+
+      <div class="track-switch" role="group" aria-label="Wybierz platformę">
+        <a class="{% if request.resolver_match.namespace != 'js_academy' %}is-active{% endif %}" href="{% url 'dojo:home' %}">
+          <span class="track-dot track-dot-django" aria-hidden="true"></span> Django
+        </a>
+        <a class="{% if request.resolver_match.namespace == 'js_academy' %}is-active{% endif %}" href="{% url 'js_academy:home' %}">
+          <span class="track-dot track-dot-js" aria-hidden="true"></span> JavaScript
+        </a>
+      </div>
+
+      {% if request.resolver_match.namespace == 'js_academy' %}
+        <nav class="main-nav" aria-label="Nawigacja JS Akademii">
+          <a class="nav-link {% if active_nav == 'js_start' %}is-active{% endif %}" href="{% url 'js_academy:home' %}">
+            <span class="nav-glyph" aria-hidden="true">⌂</span>
+            <span>Start</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'js_path' %}is-active{% endif %}" href="{% url 'js_academy:path' %}">
+            <span class="nav-glyph" aria-hidden="true">▤</span>
+            <span>Ścieżka</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'js_challenges' %}is-active{% endif %}" href="{% url 'js_academy:challenges' %}">
+            <span class="nav-glyph" aria-hidden="true">⌘</span>
+            <span>Wyzwania</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'js_components' %}is-active{% endif %}" href="{% url 'js_academy:components' %}">
+            <span class="nav-glyph" aria-hidden="true">◧</span>
+            <span>Komponenty</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'js_mvc' %}is-active{% endif %}" href="{% url 'js_academy:mvc_guide' %}">
+            <span class="nav-glyph" aria-hidden="true">M</span>
+            <span>MVC</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'js_cards' %}is-active{% endif %}" href="{% url 'js_academy:flashcards_index' %}">
+            <span class="nav-glyph" aria-hidden="true">▣</span>
+            <span>Fiszki</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'js_knowledge' %}is-active{% endif %}" href="{% url 'js_academy:knowledge' %}">
+            <span class="nav-glyph" aria-hidden="true">✦</span>
+            <span>Wiedza</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'js_progress' %}is-active{% endif %}" href="{% url 'js_academy:progress' %}">
+            <span class="nav-glyph" aria-hidden="true">↗</span>
+            <span>Postępy</span>
+          </a>
+        </nav>
+      {% else %}
+        <nav class="main-nav" aria-label="Main navigation">
+          <a class="nav-link {% if active_nav == 'home' %}is-active{% endif %}" href="{% url 'dojo:home' %}">
+            <span class="nav-glyph" aria-hidden="true">⌂</span>
+            <span>Base camp</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'quiz' %}is-active{% endif %}" href="{% url 'dojo:quiz_setup' %}">
+            <span class="nav-glyph" aria-hidden="true">?</span>
+            <span>Quiz run</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'flashcards' %}is-active{% endif %}" href="{% url 'dojo:flashcards' %}">
+            <span class="nav-glyph" aria-hidden="true">▣</span>
+            <span>Fiszki</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'guide' %}is-active{% endif %}" href="{% url 'dojo:field_guide' %}">
+            <span class="nav-glyph" aria-hidden="true">✎</span>
+            <span>Field guide</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'architecture' %}is-active{% endif %}" href="{% url 'dojo:architecture_studio' %}">
+            <span class="nav-glyph" aria-hidden="true">◫</span>
+            <span>Architecture</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'progress' %}is-active{% endif %}" href="{% url 'dojo:progress' %}">
+            <span class="nav-glyph" aria-hidden="true">↗</span>
+            <span>Progress</span>
+          </a>
+        </nav>
+      {% endif %}
+
+      <div class="sidebar-rule" aria-hidden="true"></div>
+
+      {% if request.resolver_match.namespace == 'js_academy' %}
+        <div class="sidebar-note">
+          <span class="tag tag-js">100% lokalnie</span>
+          <p>Postęp zapisuje się w SQLite na tym komputerze. Bez konta i bez chmury.</p>
+        </div>
+        <div class="sidebar-foot">
+          <span>JavaScript → React</span>
+          <span class="sidebar-foot-dot" aria-hidden="true"></span>
+          <span>React Native</span>
+        </div>
+      {% else %}
+        <div class="sidebar-note">
+          <span class="tag tag-mint">100% local</span>
+          <p>Your progress lives in a SQLite file on this machine. No account, no cloud.</p>
+        </div>
+        <div class="sidebar-foot">
+          <span>Python + Django</span>
+          <span class="sidebar-foot-dot" aria-hidden="true"></span>
+          <span>macOS / Windows</span>
+        </div>
+      {% endif %}
+    </aside>
+
+    <main id="main-content" class="main">
+      {% if messages %}
+        <div class="toast-stack" role="status" aria-live="polite">
+          {% for message in messages %}
+            <div class="toast toast-{{ message.tags|default:'info' }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+      <footer class="page-footer">
+        {% if request.resolver_match.namespace == 'js_academy' %}
+          <span>JS Akademia</span>
+          <span>JavaScript · TypeScript · React · React Native</span>
+          <a href="{% url 'js_academy:progress' %}">Twoje postępy ↗</a>
+        {% else %}
+          <span>Django Quest</span>
+          <span>Built for curious humans. No streaks were harmed.</span>
+          <a href="{% url 'dojo:progress' %}">Your notebook ↗</a>
+        {% endif %}
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

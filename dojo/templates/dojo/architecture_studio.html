@@ -1,0 +1,137 @@
+{% extends "dojo/base.html" %}
+
+{% block title %}Architecture Studio · design for the AI era{% endblock %}
+{% block body_class %}page-architecture{% endblock %}
+
+{% block content %}
+<div class="page-wrap arch-wrap">
+  <header class="arch-hero">
+    <div class="arch-hero-copy">
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Architecture Studio · {{ case_total }} system-design labs</p>
+      <h1>AI writes code.<br><em>You own the system.</em></h1>
+      <p class="page-lead">Generation is getting cheap. Judgment is not. The durable advantage is framing the problem, modeling the domain, choosing boundaries, designing for failure, verifying behaviour, and explaining the trade-offs to other humans.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#case-labs">Open a design lab <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost-dark" href="{% url 'dojo:cheatsheets' %}">Architecture recipes <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+    <aside class="arch-manifesto">
+      <span class="tag tag-dark">What compounds</span>
+      <ol>
+        <li><span>01</span><strong>Problem framing</strong><p>Deciding what to build and what to refuse.</p></li>
+        <li><span>02</span><strong>Domain modeling</strong><p>Making invariants and language explicit.</p></li>
+        <li><span>03</span><strong>Boundaries</strong><p>Choosing what changes together and what must not.</p></li>
+        <li><span>04</span><strong>Data & contracts</strong><p>Owning truth, history, and compatibility.</p></li>
+        <li><span>05</span><strong>Failure & security</strong><p>Designing the system you can operate.</p></li>
+        <li><span>06</span><strong>Verification</strong><p>Proving behaviour instead of trusting plausibility.</p></li>
+      </ol>
+    </aside>
+  </header>
+
+  <div class="arch-stat-strip">
+    <div><strong>{{ case_total }}</strong><span>system-design labs</span></div>
+    <div><strong>{{ topic_total }}</strong><span>quiz paths</span></div>
+    <div><strong>{{ recipe_total }}</strong><span>field-guide recipes</span></div>
+    <div><strong>0</strong><span>silver bullets</span></div>
+  </div>
+
+  <section class="section" id="case-labs" aria-labelledby="cases-title">
+    <div class="section-head section-head-tight">
+      <div>
+        <p class="eyebrow eyebrow-dark">Design labs</p>
+        <h2 id="cases-title">Start with constraints. Leave with a defensible shape.</h2>
+      </div>
+      <p class="section-aside">Each lab is a decision exercise, not a copy-paste architecture. Read the scenario, sketch your answer, then compare the reference.</p>
+    </div>
+
+    <nav class="category-chips" aria-label="Filter architecture cases">
+      <a class="category-chip {% if not active_complexity %}is-active{% endif %}" href="{% url 'dojo:architecture_studio' %}">All labs</a>
+      {% for value, label in complexity_choices %}
+        <a class="category-chip {% if active_complexity == value %}is-active{% endif %}" href="{% url 'dojo:architecture_studio' %}?complexity={{ value }}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+
+    <div class="arch-case-grid">
+      {% for case in cases %}
+        <article class="arch-case-card">
+          <a class="arch-case-link" href="{{ case.get_absolute_url }}">
+            <div class="arch-case-top">
+              <span class="arch-case-index">{{ forloop.counter|stringformat:"02d" }}</span>
+              <span class="tag tag-cream">{{ case.get_complexity_display }}</span>
+            </div>
+            <h3>{{ case.name }}</h3>
+            <p class="arch-case-tagline">{{ case.tagline }}</p>
+            <p class="arch-case-scenario">{{ case.scenario }}</p>
+            <div class="arch-case-meta">
+              <span>{{ case.scale }}</span>
+              {% if case.topic %}<span>{{ case.topic.name }}</span>{% endif %}
+            </div>
+            <span class="arch-case-open">Open design lab <span aria-hidden="true">↗</span></span>
+          </a>
+        </article>
+      {% empty %}
+        <div class="guide-empty"><h2>No labs at that complexity.</h2><a class="btn btn-primary" href="{% url 'dojo:architecture_studio' %}">Show all</a></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="durable-title">
+    <div class="section-head section-head-tight">
+      <div>
+        <p class="eyebrow eyebrow-dark">Why this matters now</p>
+        <h2 id="durable-title">The work AI makes more valuable.</h2>
+      </div>
+      <p class="section-aside">When implementation accelerates, the bottleneck moves to decisions, integration, verification, and trust.</p>
+    </div>
+    <div class="arch-skill-grid">
+      <div class="arch-skill"><span>01</span><h3>Problem framing</h3><p>Translate a vague business pain into constraints, non-goals, and testable outcomes. Generated code cannot save a badly framed problem.</p></div>
+      <div class="arch-skill"><span>02</span><h3>Domain modeling</h3><p>Discover the nouns, invariants, and state transitions that the business actually runs on. This is where most hidden complexity lives.</p></div>
+      <div class="arch-skill"><span>03</span><h3>Boundaries</h3><p>Decide what belongs together, what must stay independent, and what should be a service, module, event, or simple function.</p></div>
+      <div class="arch-skill"><span>04</span><h3>Data and contracts</h3><p>Own the source of truth, schema evolution, API compatibility, and the semantics of failure. Data outlives code.</p></div>
+      <div class="arch-skill"><span>05</span><h3>Reliability and security</h3><p>Design for retries, partial failure, abuse, least privilege, and incident response. These are not post-launch chores.</p></div>
+      <div class="arch-skill"><span>06</span><h3>Verification and communication</h3><p>Prove behaviour with tests, evals, fitness functions, and observability — then explain the trade-off in language others can challenge.</p></div>
+    </div>
+  </section>
+
+  <section class="arch-change-panel" aria-labelledby="change-title">
+    <div class="arch-change-col">
+      <p class="eyebrow eyebrow-light">What AI changes</p>
+      <h2 id="change-title">The cost of producing a first draft.</h2>
+      <ul>
+        <li>Boilerplate, CRUD, tests, and migrations appear faster.</li>
+        <li>Exploration gets cheaper; more alternatives can be sketched.</li>
+        <li>Knowledge becomes easier to retrieve at the point of need.</li>
+        <li>Review, integration, and verification become the constraint.</li>
+      </ul>
+    </div>
+    <div class="arch-change-col arch-change-col-paper">
+      <p class="eyebrow eyebrow-dark">What it does not change</p>
+      <h2>Accountability for the system.</h2>
+      <ul>
+        <li>Who decides what data is true and who may see it.</li>
+        <li>Which trade-offs are acceptable for the business.</li>
+        <li>How the system fails, recovers, and explains itself.</li>
+        <li>Who owns the consequences when a generated change is wrong.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="arch-how" aria-labelledby="how-labs-title">
+    <div>
+      <p class="eyebrow eyebrow-dark">How to use a lab</p>
+      <h2 id="how-labs-title">Do the thinking before reading the answer.</h2>
+    </div>
+    <div class="arch-how-steps">
+      <div><span>01</span><strong>Read the brief</strong><p>Requirements, scale, constraints. Note what is deliberately missing.</p></div>
+      <div><span>02</span><strong>Sketch the shape</strong><p>Components, data ownership, sync/async boundaries, failure modes.</p></div>
+      <div><span>03</span><strong>Compare decisions</strong><p>Where does the reference disagree with you? Why?</p></div>
+      <div><span>04</span><strong>Write an ADR</strong><p>Record one decision, its alternatives, and what would make you revisit it.</p></div>
+    </div>
+  </section>
+
+  <div class="guide-bottom-cta">
+    <div><p class="eyebrow eyebrow-light">Test the vocabulary</p><h2>Every architecture concept is also a quiz path.</h2></div>
+    <a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}?topic=architecture-boundaries">Quiz architecture <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+{% endblock %}

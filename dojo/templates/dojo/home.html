@@ -1,0 +1,222 @@
+{% extends "dojo/base.html" %}
+
+{% block title %}Learn Python & Django by playing{% endblock %}
+{% block body_class %}page-home{% endblock %}
+
+{% block content %}
+<div class="page-wrap home-wrap">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> A local-first Django dojo</p>
+      <h1>From first <em>print()</em><br>to <em>production</em>.</h1>
+      <p class="hero-lead">A learning game for the whole Python + Django stack. {{ stats.total_questions }} questions, {{ stats.total_cards }} open flashcards, and a schedule that brings back exactly what you are about to forget.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}">Start a quiz run <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost-dark" href="{% url 'dojo:flashcards' %}">Open fiszki <span aria-hidden="true">▣</span></a>
+      </div>
+      <ul class="hero-facts" aria-label="Content overview">
+        <li><strong>{{ stats.total_questions }}</strong><span>questions</span></li>
+        <li><strong>{{ stats.total_cards }}</strong><span>flashcards</span></li>
+        <li><strong>{{ stats.topics|length }}</strong><span>topic paths</span></li>
+        <li><strong>3</strong><span>levels</span></li>
+      </ul>
+    </div>
+
+    <aside class="hero-card" aria-label="Today's study plan">
+      <div class="hero-card-head">
+        <div>
+          <p class="eyebrow eyebrow-dark">Today's field notes</p>
+          <h2>{% now "l" as weekday %}{{ weekday }}, {% now "j F" %}</h2>
+        </div>
+        <span class="tag tag-dark">{{ stats.streak }}-day streak</span>
+      </div>
+
+      <div class="today-body">
+        <div class="progress-orbit" style="--value: {{ stats.daily_percent }}%;">
+          <div class="progress-orbit-inner">
+            <strong>{{ stats.daily_percent }}%</strong>
+            <span>daily XP</span>
+          </div>
+        </div>
+        <div class="today-copy">
+          <p class="today-number"><strong>{{ stats.today_xp }}</strong> / {{ stats.daily_goal }} XP</p>
+          <p>{% if stats.daily_remaining %}A short run closes the gap. Every correct answer is +10 XP.{% else %}Daily goal cleared. Anything else is bonus terrain.{% endif %}</p>
+          {% if stats.continue_attempt %}
+            <a class="text-link" href="{% url 'dojo:quiz_question' stats.continue_attempt.pk %}">Resume {{ stats.continue_attempt.scope_label }} →</a>
+          {% elif next_card %}
+            <a class="text-link" href="{% if next_card.card.topic %}{% url 'dojo:flashcards_study' next_card.card.topic.slug %}{% else %}{% url 'dojo:flashcards_review_all' %}{% endif %}">Review next card →</a>
+          {% else %}
+            <a class="text-link" href="{% url 'dojo:quiz_setup' %}">Choose a fresh run →</a>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="today-checks">
+        <div class="today-check {% if stats.continue_attempt %}is-open{% endif %}">
+          <span class="check-mark" aria-hidden="true">{% if stats.continue_attempt %}·{% else %}✓{% endif %}</span>
+          <div><strong>Quiz run</strong><span>{% if stats.continue_attempt %}{{ stats.continue_attempt.length }} questions in progress{% else %}Pick a topic or go mixed{% endif %}</span></div>
+        </div>
+        <div class="today-check {% if stats.due_cards %}is-open{% endif %}">
+          <span class="check-mark" aria-hidden="true">{% if stats.due_cards %}·{% else %}✓{% endif %}</span>
+          <div><strong>Fiszki</strong><span>{% if stats.due_cards %}{{ stats.due_cards }} cards ready for recall{% else %}Schedule is clear{% endif %}</span></div>
+        </div>
+      </div>
+
+      <a class="hero-card-link" href="{% url 'dojo:progress' %}">
+        <span>Open the progress notebook</span>
+        <span aria-hidden="true">↗</span>
+      </a>
+    </aside>
+  </section>
+
+  <section class="section study-map" aria-labelledby="study-map-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow eyebrow-dark">The study map</p>
+        <h2 id="study-map-title">{{ stats.topics|length }} paths. One very employable brain.</h2>
+      </div>
+      <p class="section-aside">Each path mixes beginner, intermediate, and advanced questions. Mastery counts questions you have answered correctly at least once.</p>
+    </div>
+
+    <div class="topic-grid">
+      {% for row in stats.topics %}
+        <article class="topic-card" style="--accent: {{ row.topic.accent }};">
+          <div class="topic-card-head">
+            <span class="topic-glyph">{{ row.topic.glyph }}</span>
+            <span class="topic-index">{{ forloop.counter|stringformat:"02d" }}</span>
+          </div>
+          <div class="topic-copy">
+            <h3>{{ row.topic.name }}</h3>
+            <p>{{ row.topic.tagline }}</p>
+          </div>
+          <div class="topic-meta">
+            <span>{{ row.question_total }} questions</span>
+            <span>{{ row.flashcard_total }} cards</span>
+            {% if row.due_cards %}<span class="meta-due">{{ row.due_cards }} due</span>{% endif %}
+          </div>
+          <div class="topic-progress">
+            <div class="progress-label"><span>Mastery</span><strong>{{ row.mastery }}%</strong></div>
+            <div class="progress-track"><span style="--bar: {{ row.mastery }}%;"></span></div>
+          </div>
+          <div class="topic-actions">
+            <a href="{% url 'dojo:quiz_setup' %}?topic={{ row.topic.slug }}">Practice <span aria-hidden="true">→</span></a>
+            <a href="{% url 'dojo:flashcards_study' row.topic.slug %}">Fiszki <span aria-hidden="true">▣</span></a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="how-band" aria-labelledby="how-title">
+    <div class="how-intro">
+      <p class="eyebrow eyebrow-dark">The method</p>
+      <h2 id="how-title">Play. Flip. Repeat.</h2>
+      <p>Recognition and recall are different skills. The quiz builds recognition; open flashcards force your brain to produce the answer.</p>
+      <a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}">Build your first run</a>
+    </div>
+    <div class="how-steps">
+      <div class="how-step">
+        <span class="step-number">01</span>
+        <h3>Take a run</h3>
+        <p>Five to twenty questions. Pick one path or mix all eight. Every answer comes with a why.</p>
+      </div>
+      <div class="how-step">
+        <span class="step-number">02</span>
+        <h3>Flip a card</h3>
+        <p>Read the open question, answer out loud, then turn it over. Rate how it felt.</p>
+      </div>
+      <div class="how-step">
+        <span class="step-number">03</span>
+        <h3>Trust the return</h3>
+        <p>Hard cards come back sooner. Easy ones wait. You never manage a spreadsheet.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="guide-teaser" aria-labelledby="guide-teaser-title">
+    <div class="guide-teaser-head">
+      <div>
+        <p class="eyebrow eyebrow-dark">New · the field guide</p>
+        <h2 id="guide-teaser-title">When the tutorial ends, the real work starts.</h2>
+      </div>
+      <a class="text-link" href="{% url 'dojo:field_guide' %}">Open the field guide →</a>
+    </div>
+    <div class="guide-teaser-grid">
+      <a class="guide-mini-card guide-mini-recipes" href="{% url 'dojo:cheatsheets' %}">
+        <span class="guide-mini-number">{{ recipe_total }}</span>
+        <h3>Recipes for real situations</h3>
+        <p>Uploads, permissions, webhooks, N+1, migrations, email, object storage, and more.</p>
+        <span class="guide-mini-link">Browse cheatsheets <span aria-hidden="true">↗</span></span>
+      </a>
+      <a class="guide-mini-card guide-mini-blueprints" href="{% url 'dojo:blueprints' %}">
+        <span class="guide-mini-number">{{ blueprint_total }}</span>
+        <h3>Real-world app blueprints</h3>
+        <p>SaaS, marketplace, booking, CMS, support desk, and mobile API architecture.</p>
+        <span class="guide-mini-link">Study the blueprints <span aria-hidden="true">↗</span></span>
+      </a>
+      <a class="guide-mini-card guide-mini-release" href="{% url 'dojo:release_radar' %}">
+        <span class="guide-mini-number">{{ latest_stable.series|default:"6.x" }}</span>
+        <h3>Release & patch radar</h3>
+        <p>Current patches, security fixes, LTS windows, and why upgrading matters.{% if latest_stable %} Latest stable: {{ latest_stable.latest_version }}.{% endif %}</p>
+        <span class="guide-mini-link">Read the radar <span aria-hidden="true">↗</span></span>
+      </a>
+    </div>
+  </section>
+
+  <a class="arch-home-band" href="{% url 'dojo:architecture_studio' %}">
+    <div class="arch-home-copy">
+      <p class="eyebrow eyebrow-light">New · Architecture Studio</p>
+      <h2>AI writes code.<br><em>You own the system.</em></h2>
+      <p>Eight system-design labs, durable architecture paths, and the judgment to decide what should exist. Built for the part of engineering that does not get generated.</p>
+      <span class="arch-home-link">Enter the studio <span aria-hidden="true">→</span></span>
+    </div>
+    <div class="arch-home-side">
+      <span class="arch-home-number">{{ architecture_case_total }}</span>
+      <span class="arch-home-label">design labs</span>
+      <ul>
+        <li>AI document assistant</li>
+        <li>Tool-using operations agent</li>
+        <li>Multi-tenant SaaS</li>
+        <li>Webhook platform</li>
+        <li>Marketplace ledger</li>
+        <li>Real-time fan-out</li>
+      </ul>
+    </div>
+  </a>
+
+  <a class="platform-bridge" href="{% url 'js_academy:home' %}">
+    <span class="platform-bridge-mark">JS</span>
+    <div>
+      <p class="eyebrow eyebrow-light">Nowa platforma · po polsku</p>
+      <strong>JS Akademia</strong>
+      <p>JavaScript → TypeScript → React → React Native. 24 lekcje, quizy, fiszki i projekty.</p>
+    </div>
+    <span class="platform-bridge-link">Przejdź do JS <span aria-hidden="true">→</span></span>
+  </a>
+
+  {% if recent_attempts %}
+    <section class="recent-section" aria-labelledby="recent-title">
+      <div class="section-head section-head-tight">
+        <div>
+          <p class="eyebrow eyebrow-dark">Recent runs</p>
+          <h2 id="recent-title">Pick up a thread.</h2>
+        </div>
+        <a class="text-link" href="{% url 'dojo:progress' %}">Full history →</a>
+      </div>
+      <div class="recent-grid">
+        {% for attempt in recent_attempts %}
+          <a class="recent-card" href="{% url 'dojo:quiz_results' attempt.pk %}">
+            <div class="recent-card-top">
+              <span class="tag tag-cream">{{ attempt.difficulty_label }}</span>
+              <span class="recent-score">{{ attempt.score_percent }}%</span>
+            </div>
+            <h3>{{ attempt.scope_label }}</h3>
+            <p>{{ attempt.correct_count }} of {{ attempt.length }} correct · {{ attempt.completed_at|timesince }} ago</p>
+            <span class="recent-link">Review answers <span aria-hidden="true">↗</span></span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

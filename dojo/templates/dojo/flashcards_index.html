@@ -1,0 +1,90 @@
+{% extends "dojo/base.html" %}
+
+{% block title %}Fiszki · open questions, real recall{% endblock %}
+{% block body_class %}page-flashcards{% endblock %}
+
+{% block content %}
+<div class="page-wrap flashcards-wrap">
+  <header class="flashcards-hero">
+    <div class="flashcards-hero-copy">
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Fiszki · active recall</p>
+      <h1>Open question.<br><em>Answer on the other side.</em></h1>
+      <p class="page-lead">No options to hide behind. Read the prompt, say the answer out loud, then flip the card. Rate your recall and the schedule decides when it returns.</p>
+      <div class="hero-actions">
+        {% if stats.due_cards %}
+          <a class="btn btn-primary" href="{% url 'dojo:flashcards_review_all' %}">Review {{ stats.due_cards }} due cards <span aria-hidden="true">→</span></a>
+        {% else %}
+          <span class="btn btn-disabled">Schedule clear <span aria-hidden="true">✓</span></span>
+        {% endif %}
+        <a class="btn btn-ghost-dark" href="{% url 'dojo:quiz_setup' %}">Take a quiz <span aria-hidden="true">?</span></a>
+      </div>
+    </div>
+
+    <div class="flashcard-stats-card">
+      <div class="flash-stats-head">
+        <span class="tag tag-dark">Your deck</span>
+        <span class="flash-today">{{ reviewed_today }} reviewed today</span>
+      </div>
+      <div class="flash-big-number">{{ stats.due_cards }}<span>due now</span></div>
+      <div class="flash-stats-divider"></div>
+      <div class="flash-stat-pair">
+        <div><strong>{{ stats.reviewed_cards }}</strong><span>cards met</span></div>
+        <div><strong>{{ stats.card_progress }}%</strong><span>deck covered</span></div>
+      </div>
+      <div class="progress-track progress-track-cream"><span style="--bar: {{ stats.card_progress }}%;"></span></div>
+      <p class="flash-stats-note">Cards return sooner after “Again”, later after “Easy”.</p>
+    </div>
+  </header>
+
+  <section class="section" aria-labelledby="decks-title">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow eyebrow-dark">The decks</p>
+        <h2 id="decks-title">Pick a subject. Flip the first card.</h2>
+      </div>
+      <p class="section-aside">Each deck has seven open questions — a mix of fundamentals, trade-offs, and advanced sharp edges.</p>
+    </div>
+
+    <div class="deck-grid">
+      {% for deck in decks %}
+        <article class="deck-card" style="--accent: {{ deck.topic.accent }};">
+          <div class="deck-top">
+            <span class="topic-glyph">{{ deck.topic.glyph }}</span>
+            {% if deck.due %}
+              <span class="due-badge">{{ deck.due }} due</span>
+            {% else %}
+              <span class="due-badge due-badge-clear">clear</span>
+            {% endif %}
+          </div>
+          <h3>{{ deck.topic.name }}</h3>
+          <p>{{ deck.topic.tagline }}</p>
+          <div class="deck-progress">
+            <div class="progress-label"><span>{{ deck.reviewed }} of {{ deck.total }} cards met</span><strong>{{ deck.percent }}%</strong></div>
+            <div class="progress-track"><span style="--bar: {{ deck.percent }}%;"></span></div>
+          </div>
+          <div class="deck-foot">
+            <a href="{% url 'dojo:flashcards_study' deck.topic.slug %}">
+              {% if deck.due %}Study {{ deck.due }} due{% else %}View deck{% endif %} <span aria-hidden="true">→</span>
+            </a>
+            <a class="deck-quiz-link" href="{% url 'dojo:quiz_setup' %}?topic={{ deck.topic.slug }}">Quiz</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="schedule-band" aria-labelledby="schedule-title">
+    <div class="schedule-head">
+      <p class="eyebrow eyebrow-dark">The return schedule</p>
+      <h2 id="schedule-title">Four buttons. No spreadsheet.</h2>
+      <p>Your rating changes the next due date. There is no penalty for saying “Again” — that is the system doing its job.</p>
+    </div>
+    <div class="rating-guide">
+      <div class="rating-guide-item rating-again"><strong>Again</strong><span>Reset the interval, come back tomorrow.</span><small>1 day</small></div>
+      <div class="rating-guide-item rating-hard"><strong>Hard</strong><span>Stretch a little and ease off.</span><small>2+ days</small></div>
+      <div class="rating-guide-item rating-good"><strong>Good</strong><span>Solid recall; grow the gap.</span><small>3+ days</small></div>
+      <div class="rating-guide-item rating-easy"><strong>Easy</strong><span>Instant answer; give it room.</span><small>7+ days</small></div>
+    </div>
+  </section>
+</div>
+{% endblock %}

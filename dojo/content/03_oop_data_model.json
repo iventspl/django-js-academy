@@ -1,0 +1,256 @@
+{
+  "topic": {
+    "slug": "oop-data-model",
+    "name": "OOP & the Data Model",
+    "tagline": "Classes, inheritance, dunder methods, descriptors, and metaclasses.",
+    "description": "Django is full of objects that cooperate through Python's data model: forms, fields, querysets, middleware. Learn how attribute lookup, MRO, special methods, and descriptors actually work instead of memorising syntax.",
+    "glyph": "ob",
+    "accent": "#95B8F6"
+  },
+  "questions": [
+    {
+      "key": "oop-data-model-b1",
+      "difficulty": "beginner",
+      "prompt": "What does this print?",
+      "code": "class Dog:\n    sound = \"woof\"\n\nrex = Dog()\nrex.sound = \"bark\"\nprint(Dog.sound, rex.sound)",
+      "choices": ["bark bark", "woof bark", "woof woof", "It raises AttributeError"],
+      "answer": 1,
+      "explanation": "sound is a class attribute, but assigning rex.sound creates an instance attribute that shadows it. Dog.sound is unchanged. Mutable class attributes are shared by every instance until an instance shadows them, which is why mutable defaults belong on instances."
+    },
+    {
+      "key": "oop-data-model-b2",
+      "difficulty": "beginner",
+      "prompt": "What is self in an instance method?",
+      "choices": [
+        "A reserved keyword that must be declared globally.",
+        "The class object.",
+        "The particular instance the method was called on, passed automatically.",
+        "A copy of the instance's dictionary."
+      ],
+      "answer": 2,
+      "explanation": "self is an ordinary parameter name by convention. When obj.method() runs, Python passes obj as the first argument. You could name it anything, but self is the near-universal convention and what other Python developers expect."
+    },
+    {
+      "key": "oop-data-model-b3",
+      "difficulty": "beginner",
+      "prompt": "What is the purpose of __init__?",
+      "choices": [
+        "It allocates a new instance and must return it.",
+        "It initialises a newly created instance.",
+        "It destroys an object when it is garbage collected.",
+        "It converts an instance to a string."
+      ],
+      "answer": 1,
+      "explanation": "__new__ creates the instance; __init__ initialises it and must return None. It is not a constructor in the C++ sense. Creating an object calls __new__, then __init__."
+    },
+    {
+      "key": "oop-data-model-b4",
+      "difficulty": "beginner",
+      "prompt": "Why call super().__init__() in a subclass __init__?",
+      "choices": [
+        "To create a second instance of the subclass.",
+        "To run the parent's initialisation so inherited state is set up.",
+        "To make all attributes private.",
+        "To register the class with Python's garbage collector."
+      ],
+      "answer": 1,
+      "explanation": "The parent __init__ establishes inherited attributes. Skipping it leaves the object partially initialised. In cooperative multiple inheritance, super() follows the MRO rather than simply calling one fixed parent."
+    },
+    {
+      "key": "oop-data-model-b5",
+      "difficulty": "beginner",
+      "prompt": "What does len(obj) use if obj is an instance of a custom class?",
+      "choices": [
+        "obj.size",
+        "obj.__len__()",
+        "obj.__sizeof__()",
+        "the number of instance attributes"
+      ],
+      "answer": 1,
+      "explanation": "len() calls the __len__ special method. The result must be a non-negative integer. Special methods are looked up on the type, not on the instance, which is why len(obj) works even for classes that do not inherit from a collection type."
+    },
+    {
+      "key": "oop-data-model-i1",
+      "difficulty": "intermediate",
+      "prompt": "What happens when this code runs?",
+      "code": "class Box:\n    @property\n    def size(self):\n        return 10\n\nbox = Box()\nbox.size = 20",
+      "choices": [
+        "size becomes 20.",
+        "It raises AttributeError because the property has no setter.",
+        "It silently ignores the assignment.",
+        "It calls the size method again."
+      ],
+      "answer": 1,
+      "explanation": "A property without a setter is read-only. Assigning raises AttributeError. Add an @size.setter method to validate and store the value. This is a common way to protect invariants while keeping attribute syntax."
+    },
+    {
+      "key": "oop-data-model-i2",
+      "difficulty": "intermediate",
+      "prompt": "What is the key difference between classmethod and staticmethod?",
+      "choices": [
+        "classmethod receives the class; staticmethod receives no automatic first argument.",
+        "staticmethod receives the instance; classmethod receives nothing.",
+        "classmethod can only be called on the class, never on an instance.",
+        "staticmethod cannot access module-level names."
+      ],
+      "answer": 0,
+      "explanation": "A classmethod receives cls and is commonly used for alternative constructors. A staticmethod is a plain function namespaced on the class; it receives neither self nor cls. Both can be called on the class or an instance."
+    },
+    {
+      "key": "oop-data-model-i3",
+      "difficulty": "intermediate",
+      "prompt": "What is true about a standard @dataclass?",
+      "choices": [
+        "It generates __init__, __repr__, and __eq__ by default.",
+        "It makes every field immutable automatically.",
+        "It prohibits inheritance.",
+        "It stores only class attributes, never instance attributes."
+      ],
+      "answer": 0,
+      "explanation": "A normal dataclass generates __init__, __repr__, and value-based __eq__. Add frozen=True for immutability, order=True for comparison methods, or slots=True for lighter instances. Fields still live on each instance."
+    },
+    {
+      "key": "oop-data-model-i4",
+      "difficulty": "intermediate",
+      "prompt": "What is the main difference between __str__ and __repr__?",
+      "choices": [
+        "__str__ is for developers, __repr__ is for end users.",
+        "__str__ is a readable display; __repr__ is an unambiguous representation, ideally valid Python.",
+        "Only __repr__ is called by print().",
+        "They must always return identical strings."
+      ],
+      "answer": 1,
+      "explanation": "print() uses __str__, falling back to __repr__. The repr should identify the object clearly and is useful in logs and the debugger. A good rule: repr for developers, str for people using the app."
+    },
+    {
+      "key": "oop-data-model-i5",
+      "difficulty": "intermediate",
+      "prompt": "Why does this dataclass definition fail?",
+      "code": "@dataclass\nclass Cart:\n    items: list = []",
+      "choices": [
+        "Every field must be a string.",
+        "A mutable default is shared; dataclasses require field(default_factory=list).",
+        "Dataclasses do not support lists.",
+        "It fails because Cart has no methods."
+      ],
+      "answer": 1,
+      "explanation": "A mutable default would be created once and shared across every Cart. Dataclasses reject it. Use items: list = field(default_factory=list) so each instance receives a fresh list."
+    },
+    {
+      "key": "oop-data-model-a1",
+      "difficulty": "advanced",
+      "prompt": "Given class D(B, C), class B(A), class C(A), what is the MRO of D?",
+      "choices": [
+        "D, B, C, A, object",
+        "D, B, A, C, object",
+        "D, C, B, A, object",
+        "D, A, B, C, object"
+      ],
+      "answer": 0,
+      "explanation": "Python uses C3 linearisation. D precedes its parents, B precedes C because it is listed first, and A comes after both branches. The shared base A appears once, before object. super() follows this order."
+    },
+    {
+      "key": "oop-data-model-a2",
+      "difficulty": "advanced",
+      "prompt": "What makes a descriptor a data descriptor?",
+      "choices": [
+        "It defines __get__.",
+        "It defines __get__ and __set__ (or __delete__).",
+        "It inherits from property.",
+        "It is stored in __slots__."
+      ],
+      "answer": 1,
+      "explanation": "A data descriptor defines __set__ or __delete__ as well as __get__, which gives it priority over the instance __dict__ during attribute lookup. A non-data descriptor only defines __get__, so an instance attribute can shadow it. property is a data descriptor."
+    },
+    {
+      "key": "oop-data-model-a3",
+      "difficulty": "advanced",
+      "prompt": "What is the main effect of __slots__ = (\"x\", \"y\") on a class?",
+      "choices": [
+        "Instances store those attributes in fixed slots instead of a __dict__, reducing memory and blocking arbitrary new attributes.",
+        "It makes the attributes private.",
+        "It makes instances immutable.",
+        "It automatically adds x and y to every instance."
+      ],
+      "answer": 0,
+      "explanation": "__slots__ prevents a per-instance __dict__ and reserves descriptors for the named attributes. This saves memory in very large object populations. It does not make values immutable, and subclasses need care if they add attributes."
+    },
+    {
+      "key": "oop-data-model-a4",
+      "difficulty": "advanced",
+      "prompt": "What is a metaclass?",
+      "choices": [
+        "A class whose instances are classes.",
+        "A class that can only have one instance.",
+        "A function that creates methods at runtime.",
+        "A mixin used only for multiple inheritance."
+      ],
+      "answer": 0,
+      "explanation": "Classes are instances of metaclasses. type is the default metaclass; a custom metaclass can customise class creation, validate class attributes, or register subclasses. Django's Model and Form use metaclasses to build fields and options declaratively."
+    },
+    {
+      "key": "oop-data-model-a5",
+      "difficulty": "advanced",
+      "prompt": "In cooperative multiple inheritance, why should every class call super() rather than a named parent?",
+      "choices": [
+        "It is faster than a named call.",
+        "It lets the MRO route the call through every cooperating class exactly once.",
+        "Named parent calls are syntax errors inside classes that use super().",
+        "It automatically creates abstract methods."
+      ],
+      "answer": 1,
+      "explanation": "super() means 'the next class in this instance's MRO', not 'my parent'. In a diamond, B and C can both cooperative-call super() and A is reached once. Naming A directly would run it twice and break the cooperative chain."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "oop-data-model-f1",
+      "difficulty": "beginner",
+      "front": "What is the difference between a class attribute and an instance attribute?",
+      "back": "A class attribute is defined on the class and shared through lookup until an instance shadows it. An instance attribute lives in that object's __dict__. Mutable class attributes are shared state and are usually a bug.",
+      "front_code": "class Job:\n    retries = 3        # class attribute\n    def __init__(self):\n        self.state = \"new\"  # instance attribute"
+    },
+    {
+      "key": "oop-data-model-f2",
+      "difficulty": "beginner",
+      "front": "What does the self parameter mean?",
+      "back": "self is the instance on which an instance method was called, passed automatically. It is not a keyword. Use it to read and write instance attributes and to call other instance methods.",
+      "hint": "obj.method() passes obj as the first argument."
+    },
+    {
+      "key": "oop-data-model-f3",
+      "difficulty": "beginner",
+      "front": "What are dunder methods and why do they matter?",
+      "back": "Dunder (double underscore) methods let your objects integrate with Python syntax and built-ins: __init__ for construction, __len__ for len(), __iter__ for for-loops, __eq__ for ==, __enter__/__exit__ for with. Python looks them up on the type.",
+      "front_code": "len(obj)      -> obj.__len__()\nobj == other -> obj.__eq__(other)\nfor x in obj -> obj.__iter__()"
+    },
+    {
+      "key": "oop-data-model-f4",
+      "difficulty": "intermediate",
+      "front": "What is the MRO and how is it computed?",
+      "back": "The Method Resolution Order is the order Python searches classes for attributes and super() calls. Python 3 uses C3 linearisation: each class appears before its parents, and shared bases appear once. Inspect it with Cls.__mro__ or Cls.mro().",
+      "front_code": "class D(B, C): ...\nprint(D.__mro__)"
+    },
+    {
+      "key": "oop-data-model-f5",
+      "difficulty": "intermediate",
+      "front": "When would you use a dataclass?",
+      "back": "Use a dataclass for classes that mainly hold data. It generates __init__, __repr__, and __eq__ from annotations. Options add frozen immutability, ordering, slots, and keyword-only fields. Use field(default_factory=...) for mutable defaults.",
+      "front_code": "@dataclass(frozen=True)\nclass Point:\n    x: int\n    y: int"
+    },
+    {
+      "key": "oop-data-model-f6",
+      "difficulty": "advanced",
+      "front": "How do data descriptors and non-data descriptors differ?",
+      "back": "A data descriptor defines __set__ or __delete__ and takes priority over the instance __dict__. A non-data descriptor defines only __get__, so an instance attribute can shadow it. Functions are non-data descriptors; property is a data descriptor.",
+      "hint": "Data descriptors beat instance attributes."
+    },
+    {
+      "key": "oop-data-model-f7",
+      "difficulty": "advanced",
+      "front": "What does __slots__ do — and not do?",
+      "back": "__slots__ replaces the per-instance __dict__ with fixed attribute slots, reducing memory and rejecting arbitrary new attributes. It does not make values immutable or private, and it complicates multiple inheritance and subclassing.",
+      "front_code": "class Point:\n    __slots__ = (\"x\", \"y\")"
+    }
+  ]
+}

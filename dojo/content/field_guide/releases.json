@@ -1,0 +1,95 @@
+{
+  "reviewed_on": "2026-10-29",
+  "series": [
+    {
+      "series": "6.1",
+      "latest_version": "6.1.2",
+      "status": "stable",
+      "mainstream_ends": "2027-04-01",
+      "extended_ends": "2027-12-01"
+    },
+    {
+      "series": "6.0",
+      "latest_version": "6.0.9",
+      "status": "extended",
+      "mainstream_ends": "2026-08-04",
+      "extended_ends": "2027-04-01"
+    },
+    {
+      "series": "5.2",
+      "latest_version": "5.2.18",
+      "status": "lts",
+      "mainstream_ends": "2025-12-03",
+      "extended_ends": "2028-04-01"
+    },
+    {
+      "series": "4.2",
+      "latest_version": "4.2.30",
+      "status": "unsupported",
+      "mainstream_ends": "2023-12-04",
+      "extended_ends": "2026-04-07"
+    }
+  ],
+  "notes": [
+    {
+      "version": "6.1.2 / 6.0.9 / 5.2.18",
+      "kind": "security",
+      "released_on": "2026-10-06",
+      "headline": "October 2026 security patch set",
+      "summary": "This coordinated set addresses four CVEs: a low-severity denial of service in language-code handling (CVE-2026-77050), a moderate denial of service in HTTP header parsing (CVE-2026-84429), a moderate GeoDjango request-forgery/SSRF issue in spatial lookups (CVE-2026-87890), and a moderate privilege-abuse issue in model formsets with editable primary keys (CVE-2026-87975). It also includes a GeoDjango data-loss fix and other bug fixes.",
+      "why_it_matters": "The header-parsing DoS can be reached by unauthenticated requests through content negotiation, and the formset issue can let forged POST data escape the limiting queryset or create objects through edit-only formsets when the primary key is editable. Patch releases are intended to be drop-in compatible; delaying leaves known attack paths open.",
+      "action": "Upgrade to Django 6.1.2 (latest stable) or 5.2.18 (LTS). If you must remain on 6.0, use 6.0.9. Review formsets that expose UUID/natural/OneToOne primary keys, and verify GeoDjango callers do not pass raw untrusted bytes to spatial lookups.",
+      "source_url": "https://docs.djangoproject.com/en/6.1/releases/6.1.2/"
+    },
+    {
+      "version": "6.1.1",
+      "kind": "patch",
+      "released_on": "2026-09-02",
+      "headline": "Bugfix release for 6.1 and a 5.2 crash",
+      "summary": "Fixes a Django 5.2 crash combining distinct() with ordering and values(), plus regressions in 6.1 around template literals, admin multi-relation list_display, Prefetch database routing, form media, and several ORM edge cases.",
+      "why_it_matters": "Patch releases contain real fixes, not just cosmetics. Some affect admin correctness, form media rendering, and query behavior that may only show up under specific data shapes. Staying on 6.1.0 after 6.1.1 is unnecessary exposure.",
+      "action": "Use 6.1.2 rather than 6.1.1 today, because 6.1.2 includes the later security fixes. If you are on 5.2, use 5.2.18.",
+      "source_url": "https://docs.djangoproject.com/en/6.1/releases/6.1.1/"
+    },
+    {
+      "version": "6.1",
+      "kind": "feature",
+      "released_on": "2026-08-05",
+      "headline": "Fetch modes, database-level deletes, and mailers",
+      "summary": "Django 6.1 adds configurable model field fetch modes (FETCH_ONE, FETCH_PEERS, FETCH_RAISE), database-level ForeignKey.on_delete options (DB_CASCADE, DB_SET_NULL, DB_SET_DEFAULT), the MAILERS configuration, CSP nonce template support, admin accessibility improvements, and a higher PBKDF2 iteration count.",
+      "why_it_matters": "FETCH_PEERS can reduce N+1 access for dynamic loops, while FETCH_RAISE surfaces accidental queries in critical sections. DB_CASCADE moves deletes into the database for efficiency but bypasses Django delete signals. MAILERS begins the migration away from EMAIL_* settings. Calendar versioning changes the long-term upgrade roadmap.",
+      "action": "Read the backwards-incompatible notes before upgrading. In particular, review custom email backends, select_related() calls without fields, admin list_select_related=True, and code relying on delete signals. Upgrade to 6.1.2, not the original 6.1.",
+      "source_url": "https://docs.djangoproject.com/en/6.1/releases/6.1/"
+    },
+    {
+      "version": "6.0",
+      "kind": "feature",
+      "released_on": "2025-12-03",
+      "headline": "CSP, template partials, built-in tasks, and modern email",
+      "summary": "Django 6.0 introduced built-in Content Security Policy support, template partials, the django.tasks framework, and Python's modern email API. It also made BigAutoField the default auto field and changed custom ORM expression parameters to tuples.",
+      "why_it_matters": "CSP is a major defence-in-depth control against XSS, partials reduce template duplication, and django.tasks standardises background task definitions. The email changes affect custom subclasses and attachment code. BigAutoField changes the default schema contract for new models.",
+      "action": "Upgrade to 6.1.2 if your Python version allows it. If you are still on 6.0, at minimum use 6.0.9. Audit custom email subclasses, CSP policy, and any code relying on the old DEFAULT_AUTO_FIELD default.",
+      "source_url": "https://docs.djangoproject.com/en/6.0/releases/6.0/"
+    },
+    {
+      "version": "5.2.18",
+      "kind": "security",
+      "released_on": "2026-10-06",
+      "headline": "LTS security patch with the same October CVEs",
+      "summary": "Django 5.2.18 carries the same four October CVEs and GeoDjango data-loss fix as 6.1.2/6.0.9, applied to the 5.2 LTS line. 5.2 remains supported through April 2028.",
+      "why_it_matters": "LTS does not mean frozen or automatically secure. It means the series receives security and data-loss fixes for longer. An LTS deployment that stays on an old 5.2 patch has the same exposed code as any other outdated series.",
+      "action": "Upgrade to 5.2.18 or later. Track the 5.2 release notes and the Django security archive. Plan the eventual move to 6.2 LTS, currently scheduled for April 2027.",
+      "source_url": "https://docs.djangoproject.com/en/5.2/releases/5.2.18/"
+    },
+    {
+      "version": "5.2",
+      "kind": "lts",
+      "released_on": "2025-04-02",
+      "headline": "The 5.2 LTS baseline",
+      "summary": "Django 5.2 added composite primary keys, async authentication methods, automatic model imports in the shell, simplified BoundField customization, and accessibility improvements. It supports Python 3.10–3.14 and receives extended support through April 2028.",
+      "why_it_matters": "5.2 is the safe landing zone for projects that need Python 3.10/3.11 or a longer support window. It is also the bridge release for teams preparing for 6.x. Composite primary keys make some legacy schemas easier to model correctly.",
+      "action": "Use the latest 5.2.x patch, not the original 5.2. If you are starting a new project with Python 3.12+, prefer 6.1.2; if you need LTS with older Python, use 5.2.18.",
+      "source_url": "https://docs.djangoproject.com/en/5.2/releases/5.2/"
+    }
+  ]
+}

@@ -1,0 +1,163 @@
+{
+  "module": {
+    "slug": "fundamenty-js",
+    "title": "Fundamenty JavaScript",
+    "subtitle": "Zmienne, typy, funkcje i praca z danymi — bez magicznych skrótów.",
+    "description": "Pierwszy moduł buduje fundament, na którym opiera się cały React. Zrozumiesz wartości, zakresy, funkcje wyższego rzędu i operacje na tablicach, zamiast zapamiętywać składnię.",
+    "level": "start",
+    "glyph": "01",
+    "accent": "#F7DF1E",
+    "duration_minutes": 55,
+    "outcomes": [
+      "Rozróżniasz typy prymitywne i referencyjne oraz wiesz, kiedy używać let, a kiedy const.",
+      "Piszesz funkcje, rozumiesz zakres i potrafisz wyjaśnić domknięcie (closure).",
+      "Używasz map, filter i reduce do przetwarzania danych bez mutowania wejścia.",
+      "Świadomie wybierasz === zamiast == i unikasz cichych konwersji."
+    ],
+    "project_title": "Kalkulator budżetu w konsoli",
+    "project_brief": "Zbuduj mały moduł, który przyjmuje listę transakcji, liczy sumę przychodów i wydatków, zwraca saldo i największy wydatek. Całość bez mutowania oryginalnej tablicy.",
+    "project_steps": [
+      "Zdefiniuj transakcje jako tablicę obiektów z polami type, amount i title.",
+      "Napisz funkcje filtrujące i sumujące z użyciem filter oraz reduce.",
+      "Dodaj funkcję formatującą wynik w czytelny tekst.",
+      "Przetestuj przypadki: brak transakcji, tylko wydatki, ujemne saldo."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "zmienne-i-typy",
+      "title": "Zmienne, typy i porównania",
+      "summary": "Czym naprawdę są let i const, jak JavaScript traktuje typy i dlaczego === ratuje przed niespodziankami.",
+      "minutes": 12,
+      "body_html": "<p><strong>JavaScript</strong> ma typy dynamiczne: zmienna nie jest związana z jednym typem na zawsze. Wartości dzielimy jednak na dwie ważne grupy: <strong>prymitywy</strong> (string, number, boolean, null, undefined, symbol, bigint) oraz <strong>obiekty</strong> (obiekty, tablice, funkcje).</p>\n<h2>let, const i mutacja</h2>\n<p><code>const</code> blokuje ponowne przypisanie zmiennej, ale nie zamraża obiektu. To częsty błąd początkujących.</p>\n<pre><code>const user = { name: \"Ala\" };\nuser.name = \"Ola\"; // OK — zmieniamy właściwość obiektu\n// user = { name: \"Jan\" }; // Błąd — nie można przypisać nowej wartości\n\nlet score = 10;\nscore = 20; // OK</code></pre>\n<h2>=== zamiast ==</h2>\n<p>Operator <code>===</code> porównuje wartość i typ. <code>==</code> wykonuje niejawne konwersje, przez co łatwo o błąd.</p>\n<pre><code>0 == \"0\"   // true\n0 === \"0\"  // false\nnull == undefined  // true\nnull === undefined // false</code></pre>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> domyślnie używaj <code>===</code> i <code>!==</code>. Wyjątki od tej zasady powinny być świadome i uzasadnione.</div>\n<h2>typeof i pułapka null</h2>\n<p><code>typeof null</code> zwraca historyczne <code>\"object\"</code>. Do sprawdzania null używaj bezpośredniego porównania.</p>\n<pre><code>typeof \"Ala\" // \"string\"\ntypeof 42    // \"number\"\ntypeof null  // \"object\" (błąd historyczny)\nvalue === null // poprawny test</code></pre>"
+    },
+    {
+      "slug": "funkcje-i-zakres",
+      "title": "Funkcje, zakres i domknięcia",
+      "summary": "Deklaracje, funkcje strzałkowe, scope, hoisting i closure — bez mitów.",
+      "minutes": 13,
+      "body_html": "<p>Funkcja to nie tylko blok kodu. To również <strong>zakres</strong>, w którym widzi zmienne, oraz kontekst wywołania. React i hooks w dużym stopniu opierają się właśnie na domknięciach.</p>\n<h2>Deklaracja i funkcja strzałkowa</h2>\n<pre><code>function add(a, b) {\n  return a + b;\n}\n\nconst multiply = (a, b) =&gt; a * b;\n\nconst user = {\n  name: \"Ala\",\n  greet() {\n    return `Cześć, ${this.name}`;\n  },\n};</code></pre>\n<p>Funkcja strzałkowa nie ma własnego <code>this</code>. To wygodne w callbackach, ale oznacza, że nie nadaje się na metodę obiektu, która ma używać <code>this</code>.</p>\n<h2>Closure — funkcja pamięta otoczenie</h2>\n<pre><code>function makeCounter() {\n  let count = 0;\n  return function increment() {\n    count += 1;\n    return count;\n  };\n}\n\nconst next = makeCounter();\nnext(); // 1\nnext(); // 2</code></pre>\n<p>Zmienna <code>count</code> nie znika po zakończeniu <code>makeCounter</code>, bo zwrócona funkcja nadal się do niej odwołuje. To domknięcie.</p>\n<h2>Zakres blokowy</h2>\n<p><code>let</code> i <code>const</code> są ograniczone do bloku. <code>var</code> działa inaczej i historycznie przecieka poza blok. W nowym kodzie praktycznie zawsze używaj <code>let</code>/<code>const</code>.</p>\n<div class=\"lesson-callout\"><strong>W React:</strong> hook <code>useEffect</code> może „widzieć” zmienne z poprzedniego renderu właśnie dzięki domknięciom. To źródło wielu błędów z nieaktualnym stanem.</div>"
+    },
+    {
+      "slug": "tablice-obiekty",
+      "title": "Tablice, obiekty i niemutowalność",
+      "summary": "map, filter, reduce, spread i destrukturyzacja — codzienne narzędzia pracy z danymi.",
+      "minutes": 14,
+      "body_html": "<p>W praktyce większość kodu aplikacji to transformowanie danych. Zamiast pisać ręczne pętle, używaj metod, które jasno wyrażają intencję.</p>\n<h2>map, filter, reduce</h2>\n<pre><code>const products = [\n  { name: \"Kawa\", price: 20, available: true },\n  { name: \"Herbata\", price: 12, available: false },\n];\n\nconst names = products.map((p) =&gt; p.name);\nconst available = products.filter((p) =&gt; p.available);\nconst total = products.reduce((sum, p) =&gt; sum + p.price, 0);</code></pre>\n<p><code>map</code> zwraca nową tablicę tej samej długości, <code>filter</code> — nową tablicę pasujących elementów, a <code>reduce</code> sprowadza całość do jednej wartości.</p>\n<h2>Niemutowalna aktualizacja</h2>\n<p>React wykrywa zmiany przez porównanie referencji. Jeśli zmutujesz tablicę w miejscu, możesz nie wywołać renderu. Twórz nowe struktury.</p>\n<pre><code>// źle\nitems.push(newItem);\n\n// dobrze\nconst nextItems = [...items, newItem];\n\n// aktualizacja obiektu\nconst nextUser = { ...user, name: \"Ola\" };</code></pre>\n<h2>Destrukturyzacja</h2>\n<pre><code>const { name, price } = product;\nconst [first, second] = products;\nconst { city = \"Warszawa\" } = address ?? {};</code></pre>\n<div class=\"lesson-callout\"><strong>Pamiętaj:</strong> spread tworzy płytką kopię. Zagnieżdżone obiekty nadal są współdzielone. Głęboką aktualizację buduj świadomie, poziom po poziomie.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-fund-b1",
+      "difficulty": "beginner",
+      "prompt": "Co zwraca typeof null?",
+      "choices": [
+        "\"null\"",
+        "\"object\"",
+        "\"undefined\"",
+        "\"boolean\""
+      ],
+      "answer": 1,
+      "explanation": "typeof null zwraca \"object\" z powodów historycznych. To znana pułapka. Do sprawdzenia null używaj value === null."
+    },
+    {
+      "key": "js-fund-b2",
+      "difficulty": "beginner",
+      "prompt": "Co stanie się po wykonaniu tego kodu?",
+      "code": "const user = { name: \"Ala\" };\nuser.name = \"Ola\";",
+      "choices": [
+        "Błąd, bo obiekt jest const.",
+        "Imię zmieni się na Ola.",
+        "Powstanie nowy obiekt w pamięci.",
+        "JavaScript zignoruje przypisanie."
+      ],
+      "answer": 1,
+      "explanation": "const blokuje przypisanie nowej wartości do zmiennej user, ale nie zamraża obiektu. Zmiana właściwości jest dozwolona. Do pełnej niemutowalności potrzebny byłby Object.freeze."
+    },
+    {
+      "key": "js-fund-i1",
+      "difficulty": "intermediate",
+      "prompt": "Które porównanie jest prawdziwe?",
+      "code": "0 == \"0\"\n0 === \"0\"",
+      "choices": [
+        "Oba są true.",
+        "Pierwsze jest true, drugie false.",
+        "Pierwsze jest false, drugie true.",
+        "Oba są false."
+      ],
+      "answer": 1,
+      "explanation": "== wykonuje konwersję typu, więc 0 i \"0\" są równe. === porównuje także typ, więc number i string nie są równe."
+    },
+    {
+      "key": "js-fund-i2",
+      "difficulty": "intermediate",
+      "prompt": "Co zwróci [1, 2, 3].map((x) => x * 2)?",
+      "choices": [
+        "[1, 2, 3]",
+        "[2, 4, 6]",
+        "6",
+        "undefined"
+      ],
+      "answer": 1,
+      "explanation": "map tworzy nową tablicę z wynikami wywołania funkcji dla każdego elementu. Oryginalna tablica pozostaje bez zmian."
+    },
+    {
+      "key": "js-fund-a1",
+      "difficulty": "advanced",
+      "prompt": "Ile wyniesie wynik drugiego wywołania next()?",
+      "code": "function makeCounter() {\n  let count = 0;\n  return () => ++count;\n}\nconst next = makeCounter();\nnext();\nnext();",
+      "choices": [
+        "1",
+        "2",
+        "0",
+        "undefined"
+      ],
+      "answer": 1,
+      "explanation": "Zwrócona funkcja jest domknięciem i pamięta count z wywołania makeCounter. Każde wywołanie next zwiększa tę samą zmienną, więc drugi wynik to 2."
+    },
+    {
+      "key": "js-fund-a2",
+      "difficulty": "advanced",
+      "prompt": "Co jest bezpiecznym sposobem dodania elementu bez mutowania tablicy items?",
+      "choices": [
+        "items.push(newItem)",
+        "items.concat([newItem])",
+        "items[items.length] = newItem",
+        "items.splice(items.length, 0, newItem)"
+      ],
+      "answer": 1,
+      "explanation": "concat zwraca nową tablicę. push, przypisanie po indeksie i splice mutują istniejącą tablicę. W React często używa się też spreadu: [...items, newItem]."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-fund-f1",
+      "difficulty": "beginner",
+      "front": "Czym różnią się let, const i var?",
+      "back": "let i const mają zakres blokowy. const blokuje ponowne przypisanie, ale nie mutację obiektu. var ma zakres funkcji i historyczne zachowania, dlatego w nowym kodzie używamy let/const."
+    },
+    {
+      "key": "js-fund-f2",
+      "difficulty": "beginner",
+      "front": "Dlaczego === jest zwykle lepsze od ==?",
+      "back": "=== porównuje wartość i typ bez niejawnych konwersji. == może konwertować operandy, przez co 0 == \"0\" jest true. Domyślnie wybieraj === i !==."
+    },
+    {
+      "key": "js-fund-f3",
+      "difficulty": "intermediate",
+      "front": "Kiedy użyć map, filter, a kiedy reduce?",
+      "back": "map — przekształcenie każdego elementu w nową tablicę. filter — wybór podzbioru. reduce — sprowadzenie tablicy do jednej wartości, np. sumy lub obiektu. Żadna z tych metod nie musi mutować wejścia.",
+      "front_code": "items.map(fn)\nitems.filter(fn)\nitems.reduce(fn, initial)"
+    },
+    {
+      "key": "js-fund-f4",
+      "front": "Czym różni się null od undefined?",
+      "back": "undefined oznacza brak przypisanej wartości lub brak wyniku; null jest świadomą wartością „brak”. typeof null to historyczne \"object\". Do porównania używaj === null."
+    },
+    {
+      "key": "js-fund-f5",
+      "front": "Co robi spread w obiekcie?",
+      "back": "Tworzy płytką kopię właściwości: const next = { ...user, name: \"Ola\" }. Zagnieżdżone obiekty nadal są współdzielone, więc głęboką zmianę buduj poziom po poziomie."
+    }
+  ]
+}

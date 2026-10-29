@@ -1,0 +1,253 @@
+{
+  "topic": {
+    "slug": "apis-drf",
+    "name": "APIs & Django REST Framework",
+    "tagline": "Serializers, viewsets, permissions, pagination, and API contracts.",
+    "description": "Most Django products eventually need an API. Learn the DRF layer properly: validation and representation, viewset routing, object-level permissions, pagination, versioning, idempotency, and the query patterns that keep response times sane.",
+    "glyph": "api",
+    "accent": "#FF9F68"
+  },
+  "questions": [
+    {
+      "key": "apis-drf-b1",
+      "difficulty": "beginner",
+      "prompt": "What is the main job of a DRF serializer?",
+      "choices": [
+        "It replaces Django models and stores data directly.",
+        "It converts complex objects to native types for output and validates input into model-ready data.",
+        "It routes URLs to views automatically.",
+        "It manages database migrations."
+      ],
+      "answer": 1,
+      "explanation": "A serializer is the boundary between Python objects and API data. On output it represents instances as dicts/JSON; on input it validates fields and produces validated_data for create() or update()."
+    },
+    {
+      "key": "apis-drf-b2",
+      "difficulty": "beginner",
+      "prompt": "Which status code is correct after successfully creating a resource through a REST API?",
+      "choices": ["200 OK", "201 Created", "204 No Content", "302 Found"],
+      "answer": 1,
+      "explanation": "201 Created signals that a new resource exists; include a Location header or the created representation when useful. 204 is for success with no body, commonly after DELETE. 302 is a browser redirect, not an API creation result."
+    },
+    {
+      "key": "apis-drf-b3",
+      "difficulty": "beginner",
+      "prompt": "What does a DRF router do for a ViewSet?",
+      "choices": [
+        "It generates standard list, detail, and action URL patterns from the viewset.",
+        "It encrypts API responses.",
+        "It replaces authentication.",
+        "It creates database indexes."
+      ],
+      "answer": 0,
+      "explanation": "A router maps a ViewSet's list, create, retrieve, update, and destroy methods to URL patterns, and can expose extra @action methods. You still need to include the router's URLs in urls.py."
+    },
+    {
+      "key": "apis-drf-b4",
+      "difficulty": "beginner",
+      "prompt": "How do authentication and permission classes differ in DRF?",
+      "choices": [
+        "Authentication identifies the caller; permissions decide whether that caller may perform the action.",
+        "Permissions identify the caller; authentication decides what they may do.",
+        "They are the same mechanism with different names.",
+        "Authentication only applies to the admin site."
+      ],
+      "answer": 0,
+      "explanation": "Authentication populates request.user and request.auth. Permission classes then return True/False for the request. A user can be authenticated and still forbidden from an object or action."
+    },
+    {
+      "key": "apis-drf-b5",
+      "difficulty": "beginner",
+      "prompt": "What does DRF's APIView add over a plain Django View?",
+      "choices": [
+        "Database migrations and model validation.",
+        "A DRF Request/Response layer, content negotiation, authentication, permissions, and throttling hooks.",
+        "Automatic frontend rendering.",
+        "A production web server."
+      ],
+      "answer": 1,
+      "explanation": "APIView is the class-based foundation for DRF. It wraps the request, runs authentication/permission/throttle checks, and returns a DRF Response that handles renderers and content negotiation."
+    },
+    {
+      "key": "apis-drf-i1",
+      "difficulty": "intermediate",
+      "prompt": "A ModelSerializer must expose an internal field in responses but never accept it from clients. What is the cleanest choice?",
+      "choices": [
+        "Remove the field from the serializer entirely.",
+        "Mark it read_only=True or add it to read_only_fields.",
+        "Trust the frontend not to submit it.",
+        "Disable authentication for the endpoint."
+      ],
+      "answer": 1,
+      "explanation": "read_only=True keeps the field in output but drops it from validated input, preventing overposting. Hiding a field in the frontend is not a security control; clients can send any JSON keys they like."
+    },
+    {
+      "key": "apis-drf-i2",
+      "difficulty": "intermediate",
+      "prompt": "What shape does DRF's default PageNumberPagination return?",
+      "choices": [
+        "A bare JSON array of objects.",
+        "count, next, previous, and results.",
+        "A single object with a cursor field.",
+        "An HTML table."
+      ],
+      "answer": 1,
+      "explanation": "PageNumberPagination returns count, next, previous, and results. CursorPagination uses next/previous cursors instead of counts. Choose the shape deliberately because clients depend on it as part of the API contract."
+    },
+    {
+      "key": "apis-drf-i3",
+      "difficulty": "intermediate",
+      "prompt": "Why is permission_classes alone not enough to secure a list endpoint?",
+      "choices": [
+        "Permissions cannot be applied to lists.",
+        "Permissions check the request, but the queryset may still expose every tenant's or user's rows unless it is scoped.",
+        "List endpoints never use authentication.",
+        "Permission classes only work in the admin."
+      ],
+      "answer": 1,
+      "explanation": "A permission like IsAuthenticated only proves someone is logged in. If the queryset is Invoice.objects.all(), every authenticated user may see every invoice. Scope get_queryset() by request.user or tenant and add object-level checks for detail actions."
+    },
+    {
+      "key": "apis-drf-i4",
+      "difficulty": "intermediate",
+      "prompt": "What must you do to support writable nested serializers?",
+      "choices": [
+        "Nothing; ModelSerializer writes nested models automatically.",
+        "Implement create() and/or update() to allocate the nested objects explicitly.",
+        "Set many=True on the parent serializer.",
+        "Disable validation for nested fields."
+      ],
+      "answer": 1,
+      "explanation": "DRF validates nested data but does not automatically infer how to create or update related rows. Override create()/update(), preferably inside a transaction, and define uniqueness and ownership rules explicitly."
+    },
+    {
+      "key": "apis-drf-i5",
+      "difficulty": "intermediate",
+      "prompt": "What is the purpose of perform_create() in a CreateAPIView or ModelViewSet?",
+      "choices": [
+        "It serializes the response body.",
+        "It is a hook after validation where you can inject fields such as request.user before saving.",
+        "It rolls back the transaction.",
+        "It generates the URL route."
+      ],
+      "answer": 1,
+      "explanation": "The default perform_create() calls serializer.save(). Override it to pass trusted server-side values such as owner=request.user, so clients cannot choose ownership themselves. Keep validation in the serializer and permissions in the permission layer."
+    },
+    {
+      "key": "apis-drf-a1",
+      "difficulty": "advanced",
+      "prompt": "A list serializer includes a SerializerMethodField that calls obj.items.count() for every row. What problem should you expect?",
+      "choices": [
+        "A migration conflict.",
+        "An N+1 query pattern; annotate a count or prefetch related objects.",
+        "DRF will automatically cache the count forever.",
+        "A CSRF failure."
+      ],
+      "answer": 1,
+      "explanation": "Each method call can issue a query. Use queryset.annotate(item_count=Count(\"items\")) and read the annotation, or prefetch a related queryset and count in Python. Inspect with assertNumQueries or Django Debug Toolbar, not intuition."
+    },
+    {
+      "key": "apis-drf-a2",
+      "difficulty": "advanced",
+      "prompt": "Which statement about DRF throttling is most accurate?",
+      "choices": [
+        "It is a complete replacement for authentication.",
+        "It limits request rates using the cache and is useful for fair use, but it is not a hard security boundary against distributed abuse.",
+        "It automatically blocks SQL injection.",
+        "It only works on the admin site."
+      ],
+      "answer": 1,
+      "explanation": "Throttles depend on the configured cache and are usually per user/IP. Distributed clients, multiple workers, or cache failures can weaken them. Pair application throttles with edge/CDN rate limits, WAF rules, and monitoring for serious abuse."
+    },
+    {
+      "key": "apis-drf-a3",
+      "difficulty": "advanced",
+      "prompt": "What is an idempotency key for a create endpoint?",
+      "choices": [
+        "A random password for the API client.",
+        "A client-supplied unique key stored by the server so retrying the same request returns the original result instead of creating duplicates.",
+        "A database index on the primary key.",
+        "A DRF pagination cursor."
+      ],
+      "answer": 1,
+      "explanation": "Network retries can submit a payment or order twice. The client sends an Idempotency-Key; the server stores it under a unique constraint with the original response/status. Retries with the same key replay the result; a different payload with the same key is rejected. Scope keys per account and expire them carefully."
+    },
+    {
+      "key": "apis-drf-a4",
+      "difficulty": "advanced",
+      "prompt": "When is cursor pagination a better fit than page-number pagination?",
+      "choices": [
+        "When users need to jump directly to page 47.",
+        "For large, frequently changing datasets where stable next/previous traversal matters more than random page access.",
+        "When the response has no ordering.",
+        "When you want to expose the total number of rows on every request."
+      ],
+      "answer": 1,
+      "explanation": "Page-number pagination shifts when rows are inserted or deleted and requires an expensive count. Cursor pagination encodes a position against a stable ordering, avoiding offset drift and deep OFFSET costs. It does not support arbitrary page jumps and needs a deterministic order."
+    },
+    {
+      "key": "apis-drf-a5",
+      "difficulty": "advanced",
+      "prompt": "You must remove a field from an API used by mobile apps. What is the safest rollout?",
+      "choices": [
+        "Delete the field immediately and let clients fail.",
+        "Introduce a versioned contract or deprecation window, keep the old field working while clients migrate, and monitor usage before removal.",
+        "Rename the field without telling anyone.",
+        "Return both old and new fields forever with no deprecation plan."
+      ],
+      "answer": 1,
+      "explanation": "Public and mobile clients upgrade on their own schedule. Version the API or publish a deprecation period, instrument usage, and only remove after the supported client window. API contracts are product commitments, not internal refactors."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "apis-drf-f1",
+      "difficulty": "beginner",
+      "front": "What does a DRF serializer do on input and output?",
+      "back": "On output it turns instances and querysets into native Python structures for rendering. On input it validates fields, enforces serializer-level rules, and produces validated_data for create()/update(). It is both a representation layer and an input boundary.",
+      "front_code": "class BookSerializer(serializers.ModelSerializer):\n    class Meta:\n        model = Book\n        fields = [\"id\", \"title\"]\n        read_only_fields = [\"id\"]"
+    },
+    {
+      "key": "apis-drf-f2",
+      "difficulty": "beginner",
+      "front": "How do ViewSets and routers work together?",
+      "back": "A ViewSet groups list/create/retrieve/update/destroy handlers. A router generates the matching URL patterns and can expose @action methods. Include router.urls in the URLconf, optionally under a namespace.",
+      "front_code": "router = DefaultRouter()\nrouter.register(\"books\", BookViewSet)\nurlpatterns = [path(\"api/\", include(router.urls))]"
+    },
+    {
+      "key": "apis-drf-f3",
+      "difficulty": "intermediate",
+      "front": "How do authentication, permissions, and throttles differ?",
+      "back": "Authentication identifies the caller. Permissions authorise an action and can be object-level. Throttles limit request rates and are not a substitute for authorisation. All three run in the DRF request pipeline.",
+      "hint": "Who, may they, how often."
+    },
+    {
+      "key": "apis-drf-f4",
+      "difficulty": "intermediate",
+      "front": "What is the difference between page-number and cursor pagination?",
+      "back": "Page-number pagination supports page jumps and total counts but drifts when rows change and gets slower with deep offsets. Cursor pagination is stable and efficient for ordered feeds, but only supports next/previous traversal and needs a deterministic ordering.",
+      "front_code": "REST_FRAMEWORK = {\n    \"DEFAULT_PAGINATION_CLASS\": \"rest_framework.pagination.CursorPagination\",\n    \"PAGE_SIZE\": 25,\n}"
+    },
+    {
+      "key": "apis-drf-f5",
+      "difficulty": "advanced",
+      "front": "How do you find and fix N+1 queries in a DRF serializer?",
+      "back": "Measure query count for one list request. Prefetch or select_related every relation the serializer touches, or annotate aggregates in the queryset. Avoid SerializerMethodField queries per row. Re-measure and add an assertNumQueries regression test.",
+      "hint": "One list request, many queries."
+    },
+    {
+      "key": "apis-drf-f6",
+      "difficulty": "advanced",
+      "front": "Design an idempotent create endpoint for payments.",
+      "back": "Accept an Idempotency-Key scoped to the account. Store a unique record of the key, request fingerprint, status, and response inside the same transaction as the business write. A replay returns the stored response; a different payload under the same key returns 409. Expire old keys deliberately.",
+      "front_code": "unique (account_id, idempotency_key)"
+    },
+    {
+      "key": "apis-drf-f7",
+      "difficulty": "advanced",
+      "front": "How do you evolve a public API without breaking clients?",
+      "back": "Treat the response as a contract. Add fields compatibly, deprecate with dates and docs, version only for breaking changes, instrument old-client usage, and keep a migration window. Never silently rename or remove fields that deployed clients rely on.",
+      "hint": "Add, deprecate, measure, then remove."
+    }
+  ]
+}

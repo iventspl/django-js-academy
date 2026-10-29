@@ -1,0 +1,159 @@
+{% extends "dojo/base.html" %}
+{% load dojo_extras %}
+
+{% block title %}{{ case.name }} · architecture lab{% endblock %}
+{% block body_class %}page-architecture-detail{% endblock %}
+{% block meta_description %}{{ case.tagline }}{% endblock %}
+
+{% block content %}
+<div class="page-wrap arch-wrap">
+  <div class="study-topline">
+    <a class="back-link" href="{% url 'dojo:architecture_studio' %}"><span aria-hidden="true">←</span> Architecture Studio</a>
+    <span class="study-top-meta">{{ case.get_complexity_display }} · system-design lab</span>
+  </div>
+
+  <header class="arch-detail-hero">
+    <div>
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Design lab · {{ case.get_complexity_display }}</p>
+      <h1>{{ case.name }}</h1>
+      <p class="blueprint-detail-tagline">{{ case.tagline }}</p>
+      <p class="blueprint-detail-problem">{{ case.scenario }}</p>
+      <div class="blueprint-detail-actions">
+        {% if case.topic %}<a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}?topic={{ case.topic.slug }}">Quiz this topic <span aria-hidden="true">→</span></a>{% endif %}
+        <a class="btn btn-ghost-dark" href="{% url 'dojo:cheatsheets' %}">Architecture recipes <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+    <aside class="arch-detail-summary">
+      <div><span>Scale</span><strong>{{ case.scale }}</strong></div>
+      {% if case.topic %}
+        <div><span>Related path</span><strong>{{ case.topic.name }}</strong></div>
+      {% endif %}
+      <div><span>Reference components</span><strong>{{ case.components|lines|length }}</strong></div>
+      <div><span>Failure modes</span><strong>{{ case.failure_modes|lines|length }}</strong></div>
+    </aside>
+  </header>
+
+  <div class="arch-brief-grid">
+    <section class="arch-brief-card">
+      <p class="eyebrow eyebrow-dark">Requirements</p>
+      <h2>What must be true.</h2>
+      <ul class="numbered-list">
+        {% for item in case.requirements|lines %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ item }}</li>{% endfor %}
+      </ul>
+    </section>
+    <section class="arch-brief-card arch-constraints">
+      <p class="eyebrow eyebrow-dark">Constraints</p>
+      <h2>What limits the answer.</h2>
+      <ul class="numbered-list">
+        {% for item in case.constraints|lines %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ item }}</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <section class="arch-reference" aria-labelledby="reference-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-dark">Reference architecture</p><h2 id="reference-title">The shape of the system.</h2></div>
+      <p class="section-aside">There is no single correct diagram. Use this as a starting point, then defend every box and arrow.</p>
+    </div>
+    <div class="arch-reference-grid">
+      <div class="arch-component-card">
+        <p class="eyebrow eyebrow-dark">Components</p>
+        <ol class="arch-component-list">
+          {% for item in case.components|lines %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ item }}</li>{% endfor %}
+        </ol>
+      </div>
+      <div class="arch-component-card">
+        <p class="eyebrow eyebrow-dark">Stack & ownership</p>
+        <ul class="arch-stack-list">
+          {% for item in case.stack|lines %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="arch-flow-section" aria-labelledby="flow-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-dark">Data flow</p><h2 id="flow-title">Follow one request through the system.</h2></div>
+    </div>
+    <ol class="arch-flow">
+      {% for step in case.data_flow|lines %}
+        <li><span class="arch-flow-number">{{ forloop.counter|stringformat:"02d" }}</span><p>{{ step }}</p></li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="arch-code-section" aria-labelledby="model-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-dark">Data shape</p><h2 id="model-title">What the system remembers.</h2></div>
+      <p class="section-aside">A teaching sketch. Constraints, tenancy, and retention belong in the real design.</p>
+    </div>
+    <div class="code-block blueprint-code">
+      <div class="code-bar"><span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>python · model sketch</span><button class="copy-code" type="button" data-copy-code>Copy</button></div>
+      <pre><code>{{ case.data_model_code }}</code></pre>
+    </div>
+  </section>
+
+  <section class="arch-decisions" aria-labelledby="decisions-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-dark">Decision log</p><h2 id="decisions-title">The choices that shape everything else.</h2></div>
+      <a class="text-link" href="{% url 'dojo:cheatsheets' %}#recipe-adr-template">ADR template →</a>
+    </div>
+    <ol class="arch-decision-list">
+      {% for decision in case.decisions|lines %}<li><span aria-hidden="true">→</span><p>{{ decision }}</p></li>{% endfor %}
+    </ol>
+  </section>
+
+  <section class="arch-code-section" aria-labelledby="starter-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-dark">Critical path</p><h2 id="starter-title">One implementation sketch.</h2></div>
+      <p class="section-aside">Notice what is enforced in code versus what is merely requested in a prompt.</p>
+    </div>
+    <div class="code-block blueprint-code">
+      <div class="code-bar"><span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>python · starter</span><button class="copy-code" type="button" data-copy-code>Copy</button></div>
+      <pre><code>{{ case.starter_code }}</code></pre>
+    </div>
+  </section>
+
+  <section class="arch-risk-grid" aria-label="Failure modes, trade-offs, and evolution">
+    <div class="arch-risk-card arch-risk-failure">
+      <p class="eyebrow eyebrow-dark">Failure modes</p>
+      <h2>What breaks first.</h2>
+      <ul>{% for item in case.failure_modes|lines %}<li><span aria-hidden="true">×</span>{{ item }}</li>{% endfor %}</ul>
+    </div>
+    <div class="arch-risk-card arch-risk-tradeoff">
+      <p class="eyebrow eyebrow-dark">Trade-offs</p>
+      <h2>What you are buying.</h2>
+      <ul>{% for item in case.tradeoffs|lines %}<li><span aria-hidden="true">↔</span>{{ item }}</li>{% endfor %}</ul>
+    </div>
+    <div class="arch-risk-card arch-risk-evolution">
+      <p class="eyebrow eyebrow-dark">Evolution</p>
+      <h2>How it grows up.</h2>
+      <ul>{% for item in case.evolution|lines %}<li><span aria-hidden="true">↑</span>{{ item }}</li>{% endfor %}</ul>
+    </div>
+  </section>
+
+  {% if related_recipes %}
+    <section class="section" aria-labelledby="related-title">
+      <div class="section-head section-head-tight">
+        <div><p class="eyebrow eyebrow-dark">Build the blocks</p><h2 id="related-title">Recipes connected to this lab.</h2></div>
+        <a class="text-link" href="{% url 'dojo:cheatsheets' %}">All recipes →</a>
+      </div>
+      <div class="recipe-preview-grid">
+        {% for recipe in related_recipes %}
+          <a class="recipe-preview" href="{{ recipe.get_absolute_url }}">
+            <span class="recipe-category">{{ recipe.category }}</span>
+            <h3>{{ recipe.title }}</h3>
+            <p>{{ recipe.summary }}</p>
+            <span class="recipe-open">Open recipe <span aria-hidden="true">→</span></span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  <div class="arch-review-cta">
+    <div><p class="eyebrow eyebrow-light">Before you ship</p><h2>Write the decision record.</h2><p>State the context, the decision, the alternatives, and what would make you revisit it.</p></div>
+    <a class="btn btn-primary" href="{% url 'dojo:cheatsheets' %}#recipe-adr-template">Open the ADR template <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+{% endblock %}

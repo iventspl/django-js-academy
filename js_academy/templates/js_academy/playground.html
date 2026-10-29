@@ -1,0 +1,166 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Piaskownica JavaScript{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-playground-wrap">
+  <nav class="js-breadcrumb">
+    <a href="{% url 'js_academy:challenges' %}">Wyzwania</a><span>/</span><span>Piaskownica</span>
+  </nav>
+
+  <header class="js-page-header js-playground-header">
+    <p class="eyebrow eyebrow-js">Swobodne eksperymenty · iframe sandbox</p>
+    <h1>Piaskownica.<br><em>Uruchom i zobacz.</em></h1>
+    <p class="js-lead">Napisz dowolny JavaScript i uruchom go w izolowanej ramce. Konsola pokaże wynik, błąd i <code>console.log</code>. To miejsce na eksperymenty — testy i ocena są w zakładce Wyzwania.</p>
+  </header>
+
+  <div class="js-playground-layout">
+    <section class="js-playground-editor" aria-labelledby="editor-title">
+      <div class="js-playground-head">
+        <div><p class="eyebrow eyebrow-js-dark">Edytor</p><h2 id="editor-title">Twój kod</h2></div>
+        <div class="js-playground-actions">
+          <button class="btn btn-js btn-small" id="run" type="button">Uruchom <span aria-hidden="true">▶</span></button>
+          <button class="btn btn-ghost-dark btn-small" id="clear" type="button">Wyczyść konsolę</button>
+        </div>
+      </div>
+      <label class="sr-only" for="code">Kod JavaScript</label>
+      <textarea id="code" spellcheck="false" autocomplete="off">const products = [
+  { name: "Kawa", price: 25 },
+  { name: "Herbata", price: 18 },
+  { name: "Ciastko", price: 12 },
+];
+
+const total = products.reduce((sum, product) => sum + product.price, 0);
+console.log("Produkty:", products.length);
+console.log("Razem:", total, "zł");
+console.log(products.map((product) => product.name).join(" · "));</textarea>
+      <div class="js-playground-examples" aria-label="Przykłady">
+        <span>Przykłady:</span>
+        <button type="button" data-example="array">Tablice</button>
+        <button type="button" data-example="async">async/await</button>
+        <button type="button" data-example="closure">Domknięcie</button>
+        <button type="button" data-example="loop">Event loop</button>
+        <button type="button" data-example="url">URLSearchParams</button>
+      </div>
+      <p class="js-demo-note">Ctrl/Cmd + Enter uruchamia kod. Ramka nie ma dostępu do sesji, cookies ani DOM aplikacji.</p>
+    </section>
+
+    <section class="js-playground-output" aria-labelledby="output-title">
+      <div class="js-playground-head">
+        <div><p class="eyebrow eyebrow-js-dark">Wynik</p><h2 id="output-title">Konsola</h2></div>
+        <span class="tag tag-js-demo">sandbox iframe</span>
+      </div>
+      <iframe id="playground-frame" title="Wynik kodu JavaScript" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
+    </section>
+  </div>
+
+  <div class="js-playground-bottom">
+    <p><strong>Chcesz ocenę?</strong> Przejdź do Wyzwań — tam są automatyczne testy, podpowiedzi i XP.</p>
+    <a class="btn btn-js" href="{% url 'js_academy:challenges' %}">Otwórz 31 wyzwań <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const code = document.getElementById("code");
+    const frame = document.getElementById("playground-frame");
+    const run = document.getElementById("run");
+    const clear = document.getElementById("clear");
+    const examples = {
+      array: `const people = [
+  { name: "Ala", age: 28 },
+  { name: "Tomek", age: 34 },
+  { name: "Ola", age: 22 },
+];
+
+const adults = people.filter((person) => person.age >= 25);
+const names = adults.map((person) => person.name);
+const average = adults.reduce((sum, person) => sum + person.age, 0) / adults.length;
+console.log("Dorośli:", names);
+console.log("Średnia:", average.toFixed(1));`,
+      async: `function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function load() {
+  console.log("Ładowanie...");
+  await wait(300);
+  console.log("Dane gotowe:", { user: "Ala", tasks: 3 });
+}
+
+load();`,
+      closure: `function createCounter(start) {
+  let count = start;
+  return {
+    inc: () => ++count,
+    value: () => count,
+  };
+}
+
+const counter = createCounter(10);
+console.log(counter.inc());
+console.log(counter.inc());
+console.log("Stan:", counter.value());`,
+      loop: `console.log("1 sync");
+setTimeout(() => console.log("3 timeout"), 0);
+Promise.resolve().then(() => console.log("2 promise"));
+console.log("4 sync");`,
+      url: `const params = new URLSearchParams("?q=javascript&page=2&tag=react");
+console.log("q =", params.get("q"));
+console.log("page =", params.get("page"));
+console.log("Wszystkie:", Object.fromEntries(params));`,
+    };
+
+    function makeDocument(userCode) {
+      const safeCode = userCode.replace(/<\/script/gi, "<\\/script");
+      return `<!doctype html><html lang="pl"><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:#fffdf7;color:#1b2a31;font:13px/1.55 "Avenir Next","Segoe UI",system-ui,sans-serif}
+h1{font-size:1rem;margin:0 0 8px} .hint{color:#71827b;font-size:11px;margin:0 0 12px}
+pre{margin:0;padding:12px;border-radius:7px;background:#15232b;color:#e9f2ec;font:11px/1.6 monospace;white-space:pre-wrap;min-height:80px}
+</style></head><body>
+<h1>Wynik</h1><p class="hint">console.log i błędy pojawią się poniżej.</p><pre id="out"></pre>
+<script>
+(() => {
+  const out = document.getElementById("out");
+  const write = (...args) => {
+    const line = args.map((arg) => {
+      if (typeof arg === "string") return arg;
+      try { return JSON.stringify(arg, null, 2); } catch (_) { return String(arg); }
+    }).join(" ");
+    out.textContent += line + "\\n";
+  };
+  console.log = console.info = console.warn = console.error = write;
+  window.addEventListener("error", (event) => write("Błąd:", event.message));
+  window.addEventListener("unhandledrejection", (event) => write("Odrzucony Promise:", event.reason));
+  try {
+    ${safeCode}
+  } catch (error) {
+    write("Błąd:", error.message);
+  }
+})();
+<\/script></body></html>`;
+    }
+
+    function execute() {
+      frame.srcdoc = makeDocument(code.value);
+    }
+
+    run.addEventListener("click", execute);
+    clear.addEventListener("click", () => { frame.srcdoc = makeDocument(""); });
+    document.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        execute();
+      }
+    });
+    document.querySelectorAll("[data-example]").forEach((button) => {
+      button.addEventListener("click", () => {
+        code.value = examples[button.dataset.example];
+        execute();
+      });
+    });
+    execute();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,374 @@
+{
+  "module": {
+    "slug": "mistrzostwo-js",
+    "title": "Mistrzostwo JS: powtórka i rozmowa",
+    "subtitle": "Mapa pojęć, pułapki językowe i pytania, które padają na rozmowach.",
+    "description": "Moduł spinający całą ścieżkę. Powtarza najważniejsze mechanizmy JavaScriptu, pokazuje pułapki, które wracają w prawdziwym kodzie, i przygotowuje do technicznej rozmowy bez wyuczonych formułek.",
+    "level": "advanced",
+    "glyph": "16",
+    "accent": "#E879F9",
+    "duration_minutes": 80,
+    "outcomes": [
+      "Łączysz pojęcia z całej ścieżki w spójny model JavaScriptu.",
+      "Rozpoznajesz typowe pułapki: this, domknięcia, event loop i współbieżność.",
+      "Tłumaczysz decyzje techniczne językiem korzyści i kompromisów.",
+      "Umiesz przeprowadzić rozmowę o kodzie bez zgadywania."
+    ],
+    "project_title": "Tech talk: obrona decyzji projektowej",
+    "project_brief": "Wybierz jedną decyzję ze swojej aplikacji (stan, fetch, storage, stylowanie) i przygotuj pięciominutowe wyjaśnienie: problem, alternatywy, wybór, koszty i plan na przyszłość.",
+    "project_steps": [
+      "Opisz problem i ograniczenia bez żargonu.",
+      "Podaj dwie alternatywy i ich koszty.",
+      "Uzasadnij wybór konkretnym przypadkiem użycia.",
+      "Wskaż, co zmieniłbyś przy większej skali."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "mapa-pojec",
+      "title": "Mapa pojęć: od wartości do Reacta",
+      "summary": "Jeden model łączący typy, funkcje, asynchroniczność i renderowanie.",
+      "minutes": 16,
+      "body_html": "<p>JavaScript nie jest zbiorem niezależnych sztuczek. To kilka warstw, które się przenikają: wartości i referencje, funkcje i domknięcia, asynchroniczność oraz modele UI zbudowane na tych fundamentach.</p>\n<h2>Warstwy</h2>\n<ul>\n<li><strong>Dane</strong> — typy, mutowalność, referencje, kopiowanie.</li>\n<li><strong>Zachowanie</strong> — funkcje, zakresy, domknięcia, this, prototypy.</li>\n<li><strong>Czas</strong> — event loop, Promise, async/await, anulowanie.</li>\n<li><strong>UI</strong> — stan, render, efekty, kompozycja, wydajność.</li>\n</ul>\n<p>React nie zastępuje pierwszej warstwy. Jeśli nie rozumiesz referencji i domknięć, trudno zrozumieć, dlaczego stan się nie aktualizuje albo dlaczego useEffect widzi starą wartość.</p>\n<h2>Pytanie łączące</h2>\n<p>Dlaczego tablica w stanie Reacta musi być nową referencją? Bo React porównuje referencje, a nie zawartość. To prowadzi do mutowalności, spreadu i aktualizacji funkcyjnych.</p>\n<div class=\"lesson-callout\"><strong>Metoda nauki:</strong> po każdym pojęciu odpowiedz na trzy pytania: czym to jest, kiedy się psuje i jak to rozpoznać w kodzie?</div>"
+    },
+    {
+      "slug": "pulapki-jezykowe",
+      "title": "Pułapki, które lubią wracać",
+      "summary": "this, domknięcia, coercja, event loop i stan, który wygląda aktualny, ale nie jest.",
+      "minutes": 16,
+      "body_html": "<p>Większość błędów nie wynika z braku wiedzy o składni, ale z ukrytych założeń. Oto pułapki, które najczęściej wracają w kodzie produkcyjnym.</p>\n<h2>1. this zależy od wywołania</h2>\n<pre><code>const user = {\n  name: \"Ala\",\n  greet() { return this.name; },\n};\nconst fn = user.greet;\nfn(); // undefined (w strict mode)</code></pre>\n<p>Funkcja strzałkowa nie ma własnego this. Metoda przekazana jako callback traci kontekst, jeśli nie użyjesz bind lub strzałki.</p>\n<h2>2. Domknięcie widzi starą wartość</h2>\n<pre><code>useEffect(() =&gt; {\n  const id = setInterval(() =&gt; console.log(count), 1000);\n  return () =&gt; clearInterval(id);\n}, []);</code></pre>\n<p>Efekt z pustymi zależnościami widzi count z pierwszego renderu. Dodaj count do zależności lub użyj aktualizacji funkcyjnej, jeśli to właściwe.</p>\n<h2>3. fetch nie rzuca błędu dla 404</h2>\n<p>Sprawdź <code>response.ok</code>. Inaczej UI pokaże sukces z pustymi danymi.</p>\n<h2>4. Mikrozadania przed timerami</h2>\n<p>Promise.then zwykle wykona się przed setTimeout(0). Kolejność nie jest „równoległa”.</p>\n<div class=\"lesson-callout\"><strong>Nawyk:</strong> przy każdym błędzie zapisz założenie, które okazało się fałszywe. To buduje prawdziwą intuicję szybciej niż kolejny tutorial.</div>"
+    },
+    {
+      "slug": "rozmowa-techniczna",
+      "title": "Jak myśleć na rozmowie technicznej",
+      "summary": "Doprecyzuj problem, pokaż alternatywy, uzasadnij koszty i przyznaj się do niepewności.",
+      "minutes": 15,
+      "body_html": "<p>Rozmowa techniczna nie sprawdza, czy pamiętasz każdą metodę tablicy. Sprawdza, jak myślisz, komunikujesz się i reagujesz na ograniczenia.</p>\n<h2>Schemat odpowiedzi</h2>\n<ol>\n<li>Doprecyzuj: „Jaki jest ruch, skala i wymagania dotyczące świeżości danych?”</li>\n<li>Podaj model: stan, dane, przepływ, odpowiedzialności.</li>\n<li>Wskaż alternatywy i koszty.</li>\n<li>Powiedz, jak to przetestujesz i zmierzysz.</li>\n<li>Wskaż, co zmieniłbyś przy większej skali.</li>\n</ol>\n<h2>Przykład: wybór stanu</h2>\n<p>„Na tym etapie użyłbym lokalnego useState, bo formularz ma jednego właściciela. Gdy te same dane zaczną być potrzebne w dwóch drzewach, przeniósłbym je do wspólnego rodzica lub contextu. Redux rozważyłbym dopiero przy złożonych, współdzielonych przepływach i potrzebie narzędzi developerskich.”</p>\n<p>To odpowiedź pokazująca decyzję, nie walkę o bibliotekę.</p>\n<div class=\"lesson-callout\"><strong>Niepewność:</strong> „Nie znam dokładnej semantyki tej funkcji w tej wersji, ale sprawdziłbym dokumentację i napisał test” jest lepsze niż pewna, błędna odpowiedź.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-master-b1",
+      "difficulty": "beginner",
+      "prompt": "Co zwraca metoda map?",
+      "choices": [
+        "Nową tablicę",
+        "Ten sam obiekt",
+        "undefined",
+        "Promise"
+      ],
+      "answer": 0,
+      "explanation": "map tworzy nową tablicę wyników. Oryginalna tablica pozostaje bez zmian."
+    },
+    {
+      "key": "js-master-b2",
+      "difficulty": "beginner",
+      "prompt": "Dlaczego === jest domyślnym wyborem?",
+      "choices": [
+        "Porównuje wartość i typ bez niejawnych konwersji",
+        "Jest szybsze od ==",
+        "Działa tylko dla liczb",
+        "Zastępuje typeof"
+      ],
+      "answer": 0,
+      "explanation": "=== nie wykonuje konwersji, więc wynik jest bardziej przewidywalny."
+    },
+    {
+      "key": "js-master-b3",
+      "difficulty": "beginner",
+      "prompt": "Co robi useState?",
+      "choices": [
+        "Dodaje stan do komponentu i pozwala go aktualizować",
+        "Tworzy globalny store",
+        "Wysyła fetch",
+        "Zmienia CSS"
+      ],
+      "answer": 0,
+      "explanation": "useState zwraca bieżącą wartość i setter. Setter powoduje zaplanowanie renderu."
+    },
+    {
+      "key": "js-master-b4",
+      "difficulty": "beginner",
+      "prompt": "Po co listom w React key?",
+      "choices": [
+        "Aby dopasować elementy między renderami",
+        "Aby ustawić kolor",
+        "Aby posortować dane",
+        "Aby dodać event listener"
+      ],
+      "answer": 0,
+      "explanation": "Key pomaga reconciliation. Stabilne id jest lepsze niż indeks, gdy lista się zmienia."
+    },
+    {
+      "key": "js-master-i1",
+      "difficulty": "intermediate",
+      "prompt": "Dlaczego funkcja w useEffect może widzieć starą wartość stanu?",
+      "choices": [
+        "Bo domknięcie zapamiętało stan z renderu, w którym efekt powstał",
+        "Bo React usuwa stan",
+        "Bo setTimeout nie działa",
+        "Bo useState jest synchroniczny"
+      ],
+      "answer": 0,
+      "explanation": "Efekt jest domknięciem. Jeśli nie ma zależności, używa wartości z renderu, w którym został utworzony."
+    },
+    {
+      "key": "js-master-i2",
+      "difficulty": "intermediate",
+      "prompt": "Co wykona się pierwsze?",
+      "code": "setTimeout(() => console.log(\"timer\"), 0);\nPromise.resolve().then(() => console.log(\"promise\"));",
+      "choices": [
+        "promise",
+        "timer",
+        "oba naraz",
+        "zależy od przeglądarki"
+      ],
+      "answer": 0,
+      "explanation": "Mikrozadania Promise mają priorytet przed timerami w typowym event loop."
+    },
+    {
+      "key": "js-master-i3",
+      "difficulty": "intermediate",
+      "prompt": "Co robi funkcja czyszcząca w useEffect?",
+      "choices": [
+        "Sprząta przed kolejnym efektem lub odmontowaniem",
+        "Usuwa stan",
+        "Anuluje render",
+        "Czyści localStorage"
+      ],
+      "answer": 0,
+      "explanation": "Cleanup anuluje subskrypcje, timery lub żądania. Jest kluczowy dla uniknięcia wycieków."
+    },
+    {
+      "key": "js-master-i4",
+      "difficulty": "intermediate",
+      "prompt": "Kiedy Promise.all jest złym wyborem?",
+      "choices": [
+        "Gdy chcesz otrzymać wyniki także dla nieudanych operacji",
+        "Gdy masz więcej niż dwa żądania",
+        "Gdy używasz async",
+        "Zawsze"
+      ],
+      "answer": 0,
+      "explanation": "Promise.all odrzuca przy pierwszym błędzie. Do częściowych wyników użyj Promise.allSettled."
+    },
+    {
+      "key": "js-master-i5",
+      "difficulty": "intermediate",
+      "prompt": "Czym jest derived state?",
+      "choices": [
+        "Wartością obliczaną z istniejącego stanu",
+        "Stanem w URL",
+        "Stanem serwera",
+        "Kopią w localStorage"
+      ],
+      "answer": 0,
+      "explanation": "Jeśli wartość można policzyć z props/stanu, nie duplikuj jej. Mniej źródeł prawdy to mniej błędów."
+    },
+    {
+      "key": "js-master-a1",
+      "difficulty": "advanced",
+      "prompt": "Jak naprawić efekt, który zawsze widzi początkowe count?",
+      "choices": [
+        "Dodać count do zależności lub użyć aktualizacji funkcyjnej",
+        "Usunąć cleanup",
+        "Zmienić useState na useRef",
+        "Dodać setTimeout"
+      ],
+      "answer": 0,
+      "explanation": "Efekt musi zależeć od count albo aktualizować stan funkcyjnie. Pusta tablica zależności celowo izoluje efekt."
+    },
+    {
+      "key": "js-master-a2",
+      "difficulty": "advanced",
+      "prompt": "Jak uniknąć wyścigu dwóch fetchy?",
+      "choices": [
+        "Anulować poprzedni przez AbortController",
+        "Zwiększyć timeout",
+        "Użyć dwóch useState",
+        "Wyłączyć cache"
+      ],
+      "answer": 0,
+      "explanation": "Anulowanie lub identyfikator zapytania zapobiega nadpisaniu nowych danych przez starą odpowiedź."
+    },
+    {
+      "key": "js-master-a3",
+      "difficulty": "advanced",
+      "prompt": "Kiedy React.memo może zaszkodzić?",
+      "choices": [
+        "Gdy porównanie propsów i utrzymanie referencji kosztuje więcej niż render",
+        "Gdy komponent ma dzieci",
+        "Gdy używa hooków",
+        "Nigdy"
+      ],
+      "answer": 0,
+      "explanation": "Memoizacja ma koszt. Dla tanich komponentów lub niestabilnych propsów może nie przynieść korzyści."
+    },
+    {
+      "key": "js-master-a4",
+      "difficulty": "advanced",
+      "prompt": "Co jest prawdą o prototypach?",
+      "choices": [
+        "Klasy w JS są oparte na prototypach",
+        "Prototypy nie istnieją w nowoczesnym JS",
+        "Każda funkcja ma prototyp instancji",
+        "Prototypy dotyczą tylko stringów"
+      ],
+      "answer": 0,
+      "explanation": "class to głównie cukier składniowy nad prototypami. Metody są współdzielone przez łańcuch prototypów."
+    },
+    {
+      "key": "js-master-a5",
+      "difficulty": "advanced",
+      "prompt": "Który kod jest najbezpieczniejszy dla tekstu użytkownika?",
+      "choices": [
+        "element.textContent = value",
+        "element.innerHTML = value",
+        "element.outerHTML = value",
+        "document.write(value)"
+      ],
+      "answer": 0,
+      "explanation": "textContent nie interpretuje HTML. innerHTML może prowadzić do XSS."
+    },
+    {
+      "key": "js-master-b5",
+      "difficulty": "beginner",
+      "prompt": "Co oznacza, że obiekt jest mutowalny?",
+      "choices": [
+        "Można zmieniać jego właściwości po utworzeniu",
+        "Nie można go odczytać",
+        "Jest zawsze kopiowany głęboko",
+        "Działa tylko w React"
+      ],
+      "answer": 0,
+      "explanation": "Mutowalny obiekt można zmieniać w miejscu. W React częściej tworzymy nowe obiekty, aby zmiana referencji była widoczna."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-master-f1",
+      "front": "Czym jest hoisting?",
+      "back": "Deklaracje funkcji i var są dostępne przed wykonaniem linii. let/const są hoisted, ale w TDZ — dostęp przed deklaracją rzuca ReferenceError."
+    },
+    {
+      "key": "js-master-f2",
+      "front": "Co to jest Temporal Dead Zone?",
+      "back": "Okres od wejścia w zakres do inicjalizacji let/const, w którym odwołanie do zmiennej rzuca ReferenceError."
+    },
+    {
+      "key": "js-master-f3",
+      "front": "Czym jest domknięcie?",
+      "back": "Funkcja pamięta zmienne z otaczającego zakresu nawet po zakończeniu funkcji zewnętrznej. To podstawa hooków i modułów."
+    },
+    {
+      "key": "js-master-f4",
+      "front": "Od czego zależy this?",
+      "back": "Od sposobu wywołania funkcji. Metoda ma this obiektu, zwykłe wywołanie w strict mode undefined, a strzałka dziedziczy this z otoczenia."
+    },
+    {
+      "key": "js-master-f5",
+      "front": "Czym jest łańcuch prototypów?",
+      "back": "Mechanizm dziedziczenia: obiekt szuka właściwości w sobie, potem w prototypie i dalej, aż do Object.prototype."
+    },
+    {
+      "key": "js-master-f6",
+      "front": "Czym jest event loop?",
+      "back": "Mechanizm uruchamiający kod z kolejki po opróżnieniu stosu. Mikrozadania (Promise) mają priorytet przed timerami."
+    },
+    {
+      "key": "js-master-f7",
+      "front": "Czym są mikrozadania?",
+      "back": "Zadania o wysokim priorytecie, np. callbacki Promise i queueMicrotask. Są wykonywane przed kolejną fazą event loop."
+    },
+    {
+      "key": "js-master-f8",
+      "front": "Czym jest Promise?",
+      "back": "Obiekt reprezentujący przyszły wynik. Ma stany pending, fulfilled i rejected. Then/catch/finally tworzą łańcuch."
+    },
+    {
+      "key": "js-master-f9",
+      "front": "Co robi async/await?",
+      "back": "async zwraca Promise, await wstrzymuje funkcję do czasu rozwiązania. Nie blokuje wątku, ale wymaga obsługi błędów."
+    },
+    {
+      "key": "js-master-f10",
+      "front": "Do czego służy ?.",
+      "back": "Opcjonalne wywołanie zatrzymuje się na null/undefined zamiast rzucać TypeError. Nie zastępuje walidacji biznesowej."
+    },
+    {
+      "key": "js-master-f11",
+      "front": "Czym różni się ?? od ||?",
+      "back": "?? zwraca prawą stronę tylko dla null/undefined. || także dla 0, \"\" i false, co często jest błędem."
+    },
+    {
+      "key": "js-master-f12",
+      "front": "Shallow copy czy deep copy?",
+      "back": "Spread/Object.assign kopiują tylko pierwszy poziom. Zagnieżdżone obiekty pozostają współdzielone; deep copy wymaga osobnej strategii."
+    },
+    {
+      "key": "js-master-f13",
+      "front": "Map czy Set?",
+      "back": "Map to słownik klucz-wartość z kluczami dowolnego typu. Set przechowuje unikalne wartości i świetnie deduplikuje."
+    },
+    {
+      "key": "js-master-f14",
+      "front": "Jak aktualizować stan bez mutacji?",
+      "back": "Twórz nowe tablice/obiekty: [...items, item], { ...user, name }, map/filter. React wykrywa zmiany po referencji."
+    },
+    {
+      "key": "js-master-f15",
+      "front": "Debounce czy throttle?",
+      "back": "Debounce czeka na koniec serii zdarzeń. Throttle wykonuje maksymalnie raz na przedział czasu."
+    },
+    {
+      "key": "js-master-f16",
+      "front": "Czym jest delegacja zdarzeń?",
+      "back": "Jeden listener na rodzicu obsługuje zdarzenia dzieci przez event.target.closest. Działa też dla elementów dodanych później."
+    },
+    {
+      "key": "js-master-f17",
+      "front": "Czym jest virtual DOM?",
+      "back": "Lekka reprezentacja UI w pamięci. React porównuje ją z poprzednią i aktualizuje rzeczywisty DOM minimalnie."
+    },
+    {
+      "key": "js-master-f18",
+      "front": "Czym jest reconciliation?",
+      "back": "Proces porównania drzew Reacta i ustalenia, które elementy dodać, usunąć lub zaktualizować. key pomaga dopasować elementy listy."
+    },
+    {
+      "key": "js-master-f19",
+      "front": "Jak działa useState?",
+      "back": "Zwraca wartość i setter. Setter planuje render; aktualizacja funkcyjna otrzymuje poprzedni stan i jest bezpieczna przy wielu zdarzeniach."
+    },
+    {
+      "key": "js-master-f20",
+      "front": "Kiedy useEffect jest potrzebny?",
+      "back": "Do synchronizacji z systemem zewnętrznym: fetch, subskrypcje, timery, DOM API. Nie do obliczania wartości z props/stanu."
+    },
+    {
+      "key": "js-master-f21",
+      "front": "Po co własne hooki?",
+      "back": "Do współdzielenia logiki stanowej i efektowej. Hook powinien mieć konkretne API, a nie być workiem na wszystko."
+    },
+    {
+      "key": "js-master-f22",
+      "front": "Kiedy context?",
+      "back": "Gdy te same dane są potrzebne w wielu miejscach poddrzewa, np. motyw, sesja, koszyk. Dziel contexty, aby ograniczyć rendery."
+    },
+    {
+      "key": "js-master-f23",
+      "front": "Reducer czy useState?",
+      "back": "Reducer dla złożonych przejść zależnych od poprzedniego stanu; useState dla prostego, lokalnego stanu."
+    },
+    {
+      "key": "js-master-f24",
+      "front": "Kiedy memo/useMemo/useCallback?",
+      "back": "Po pomiarze. Najpierw zmniejsz zakres renderów i uprość komponenty. Memoizacja bez pomiaru często dodaje złożoność."
+    },
+    {
+      "key": "js-master-f25",
+      "front": "Czym jest XSS?",
+      "back": "Wstrzyknięciem kodu do strony przez nieescapowane dane. Broń się przez textContent, sanitizację i CSP; nie ufaj innerHTML."
+    }
+  ]
+}

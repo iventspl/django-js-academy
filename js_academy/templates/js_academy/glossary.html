@@ -1,0 +1,39 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Słownik JS{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-glossary-wrap">
+  <nav class="js-breadcrumb"><a href="{% url 'js_academy:knowledge' %}">Wiedza</a><span>/</span><span>Słownik</span></nav>
+  <header class="js-page-header">
+    <p class="eyebrow eyebrow-js">50 pojęć · definicja i przykład</p>
+    <h1>Słownik,<br><em>który tłumaczy.</em></h1>
+    <p class="js-lead">Nie chodzi o wyuczenie definicji. Chodzi o rozpoznanie pojęcia w kodzie i wiedzę, kiedy naprawdę się przydaje.</p>
+  </header>
+
+  <form class="js-knowledge-search" method="get" action="{% url 'js_academy:glossary' %}">
+    <label class="sr-only" for="glossary-q">Szukaj pojęcia</label>
+    <input id="glossary-q" name="q" type="search" value="{{ query }}" placeholder="Szukaj: domknięcie, hoisting, event loop...">
+    {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+    <button class="btn btn-js" type="submit">Szukaj</button>
+  </form>
+
+  <nav class="js-filter-row" aria-label="Kategorie słownika">
+    <a class="js-filter {% if not category %}is-active{% endif %}" href="{% url 'js_academy:glossary' %}{% if query %}?q={{ query|urlencode }}{% endif %}">Wszystkie</a>
+    {% for item in categories %}
+      <a class="js-filter {% if category == item %}is-active{% endif %}" href="?category={{ item|urlencode }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}">{{ item }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="js-term-list">
+    {% for term in terms %}
+      <article class="js-term-card">
+        <div class="js-term-head"><h2>{{ term.term }}</h2><span class="tag tag-js-dark">{{ term.category }}</span></div>
+        <p>{{ term.definition }}</p>
+        {% if term.example %}<pre><code>{{ term.example }}</code></pre>{% endif %}
+      </article>
+    {% empty %}
+      <p class="js-empty-inline"><span>Brak pojęć dla „{{ query }}”.</span><a href="{% url 'js_academy:glossary' %}">Wyczyść filtr</a></p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

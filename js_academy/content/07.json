@@ -1,0 +1,161 @@
+{
+  "module": {
+    "slug": "react-native",
+    "title": "React Native",
+    "subtitle": "Od React DOM do natywnych aplikacji iOS i Android.",
+    "description": "React Native przenosi model komponentów na urządzenia mobilne. Zobaczysz różnice względem webu, podstawowe komponenty, listy, stylowanie, nawigację i uprawnienia.",
+    "level": "advanced",
+    "glyph": "07",
+    "accent": "#58C4DC",
+    "duration_minutes": 85,
+    "outcomes": [
+      "Rozumiesz, czym React Native różni się od React DOM.",
+      "Budujesz ekrany z View, Text, Pressable i FlatList.",
+      "Stylujesz przez StyleSheet i obsługujesz safe area.",
+      "Podłączasz API, nawigację, uprawnienia i różnice platform."
+    ],
+    "project_title": "Mobilna lista zadań",
+    "project_brief": "Zbuduj aplikację React Native z listą zadań, zapisem lokalnym i ekranem szczegółów. Użyj FlatList, StyleSheet i bezpiecznej nawigacji.",
+    "project_steps": [
+      "Skonfiguruj projekt Expo i uruchom na symulatorze lub telefonie.",
+      "Zbuduj ekran listy z FlatList, Pressable i pustym stanem.",
+      "Dodaj formularz i zapis danych w AsyncStorage.",
+      "Dodaj nawigację do szczegółów i przetestuj na iOS i Androidzie."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "rn-vs-dom",
+      "title": "React Native vs React DOM",
+      "summary": "Wspólny model komponentów, inne elementy i inne ograniczenia.",
+      "minutes": 16,
+      "body_html": "<p><strong>React Native</strong> używa Reacta do opisywania UI, ale zamiast elementów DOM tworzy natywne widoki. Nie ma <code>div</code>, <code>span</code> ani CSS. Są komponenty <code>View</code>, <code>Text</code>, <code>Pressable</code> i API platformy.</p>\n<pre><code>import { View, Text, Pressable, StyleSheet } from \"react-native\";\n\nexport function Task({ title, onDone }: { title: string; onDone: () => void }) {\n  return (\n    &lt;View style={styles.row}&gt;\n      &lt;Text style={styles.title}&gt;{title}&lt;/Text&gt;\n      &lt;Pressable onPress={onDone} style={styles.button}&gt;\n        &lt;Text&gt;Gotowe&lt;/Text&gt;\n      &lt;/Pressable&gt;\n    &lt;/View&gt;\n  );\n}\n\nconst styles = StyleSheet.create({\n  row: { flexDirection: \"row\", alignItems: \"center\", gap: 12 },\n  title: { flex: 1, fontSize: 16 },\n  button: { padding: 10, backgroundColor: \"#F7DF1E\", borderRadius: 8 },\n});</code></pre>\n<h2>Co jest inne?</h2>\n<ul>\n<li>Każdy tekst musi być w <code>Text</code> (na webie tekst może być bezpośrednio w elemencie).</li>\n<li>Stylowanie to obiekty JS, nie CSS. Brak kaskady i większości selektorów.</li>\n<li>Układ opiera się na flexboxie, ale domyślny <code>flexDirection</code> to <code>column</code>.</li>\n<li>Nawigacja, storage, uprawnienia i dostęp do natywnych API są inne.</li>\n<li>Wydajność list i animacji wymaga innych nawyków.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Nie pisz „webowego Reacta” w RN.</strong> Zamiast <code>div</code> użyj <code>View</code>, zamiast <code>onClick</code> — <code>onPress</code>, a tekst zawsze umieść w <code>Text</code>.</div>"
+    },
+    {
+      "slug": "komponenty-listy",
+      "title": "View, Text, Pressable i FlatList",
+      "summary": "Podstawowe klocki mobilnego UI i lista, która nie zabija wydajności.",
+      "minutes": 17,
+      "body_html": "<p>Najważniejsze komponenty React Native:</p>\n<ul>\n<li><code>View</code> — kontener układu, odpowiednik div.</li>\n<li><code>Text</code> — każdy tekst; może być zagnieżdżony.</li>\n<li><code>Pressable</code> — obsługa dotyku z dostępnością i stanem wciśnięcia.</li>\n<li><code>ScrollView</code> — przewijanie małej zawartości.</li>\n<li><code>FlatList</code> — wydajna lista dużej liczby elementów.</li>\n<li><code>TextInput</code> — pole tekstowe.</li>\n</ul>\n<h2>FlatList</h2>\n<pre><code>&lt;FlatList\n  data={tasks}\n  keyExtractor={(item) =&gt; item.id}\n  renderItem={({ item }) =&gt; (\n    &lt;Task title={item.title} onDone={() =&gt; toggle(item.id)} /&gt;\n  )}\n  ListEmptyComponent={&lt;Text&gt;Brak zadań&lt;/Text&gt;}\n  contentContainerStyle={{ padding: 16 }}\n/&gt;</code></pre>\n<p><code>keyExtractor</code> musi zwracać stabilny identyfikator. Nie używaj indeksu, jeśli lista się zmienia. <code>FlatList</code> wirtualizuje elementy, ale złożone komponenty nadal mogą być kosztowne.</p>\n<div class=\"lesson-callout\"><strong>ScrollView vs FlatList:</strong> ScrollView renderuje całą zawartość od razu. Do długich, dynamicznych list używaj FlatList (lub FlashList) i pilnuj stabilnych kluczy.</div>"
+    },
+    {
+      "slug": "nawigacja-api-platformy",
+      "title": "Nawigacja, API i różnice platform",
+      "summary": "Safe area, uprawnienia, fetch, AsyncStorage i kod specyficzny dla iOS/Android.",
+      "minutes": 17,
+      "body_html": "<p>W aplikacji mobilnej nawigacja to stos ekranów, a nie adresy URL. Popularnym rozwiązaniem jest React Navigation, ale niezależnie od biblioteki ważne jest, gdzie trzymasz stan i jak przekazujesz identyfikatory.</p>\n<pre><code>navigation.navigate(\"TaskDetails\", { taskId: task.id });</code></pre>\n<p>Ekran szczegółów powinien pobrać dane po <code>taskId</code>, a nie polegać na całym obiekcie przekazanym w parametrach.</p>\n<h2>Safe area i platformy</h2>\n<pre><code>import { SafeAreaView } from \"react-native-safe-area-context\";\nimport { Platform } from \"react-native\";\n\nconst topPadding = Platform.select({ ios: 12, android: 8, default: 0 });</code></pre>\n<h2>Dane i uprawnienia</h2>\n<ul>\n<li>Do prostego klucz-wartość używaj AsyncStorage; do wrażliwych tokenów — SecureStore/Keychain.</li>\n<li>Uprawnienia (kamera, lokalizacja, powiadomienia) są przyznawane w runtime i mogą zostać odebrane.</li>\n<li>Zawsze obsługuj odmowę uprawnienia i stan „brak dostępu”.</li>\n<li>Nie zakładaj, że API sieciowe działa identycznie na obu platformach.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Testuj na obu platformach.</strong> Różnice w safe area, klawiaturze, back button, powiadomieniach i uprawnieniach są realne. Symulator to za mało przed premierą.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-rn-b1",
+      "difficulty": "beginner",
+      "prompt": "Który komponent React Native pełni rolę kontenera układu podobną do div?",
+      "choices": [
+        "Text",
+        "View",
+        "Pressable",
+        "FlatList"
+      ],
+      "answer": 1,
+      "explanation": "View to podstawowy kontener układu. Text służy do tekstu, Pressable do interakcji, a FlatList do list."
+    },
+    {
+      "key": "js-rn-b2",
+      "difficulty": "beginner",
+      "prompt": "Dlaczego tekst w React Native musi znajdować się w komponencie Text?",
+      "choices": [
+        "Bo React Native nie renderuje tekstu poza Text.",
+        "Bo Text jest szybszy od View.",
+        "Bo wymaga tego TypeScript.",
+        "Bo inaczej nie działa stylowanie."
+      ],
+      "answer": 0,
+      "explanation": "React Native wymaga, aby tekst był dzieckiem Text. View nie renderuje surowego tekstu tak jak div w HTML."
+    },
+    {
+      "key": "js-rn-i1",
+      "difficulty": "intermediate",
+      "prompt": "Do czego służy keyExtractor w FlatList?",
+      "choices": [
+        "Do zwracania stabilnego klucza dla każdego elementu listy.",
+        "Do pobierania danych z API.",
+        "Do ustawiania koloru listy.",
+        "Do nawigacji między ekranami."
+      ],
+      "answer": 0,
+      "explanation": "keyExtractor zwraca unikalny identyfikator elementu. Stabilne klucze pozwalają Reactowi poprawnie aktualizować listę."
+    },
+    {
+      "key": "js-rn-i2",
+      "difficulty": "intermediate",
+      "prompt": "Po co używać StyleSheet.create?",
+      "choices": [
+        "Aby definiować styl jako obiekty i korzystać z walidacji oraz optymalizacji.",
+        "Aby pisać CSS w pliku .css.",
+        "Aby zastąpić komponenty View.",
+        "Aby automatycznie pobierać dane."
+      ],
+      "answer": 0,
+      "explanation": "StyleSheet.create grupuje style w obiekty i pomaga React Native je przetwarzać. To nie CSS — nie ma kaskady ani selektorów."
+    },
+    {
+      "key": "js-rn-a1",
+      "difficulty": "advanced",
+      "prompt": "Po co używać SafeAreaView lub useSafeAreaInsets?",
+      "choices": [
+        "Aby uniknąć nakładania treści na notcha, pasek statusu i gesty systemowe.",
+        "Aby przyspieszyć sieć.",
+        "Aby automatycznie logować użytkownika.",
+        "Aby zmienić język aplikacji."
+      ],
+      "answer": 0,
+      "explanation": "Safe area uwzględnia fizyczne i systemowe obszary ekranu. Bez tego przyciski mogą znaleźć się pod notchem lub paskiem gestów."
+    },
+    {
+      "key": "js-rn-a2",
+      "difficulty": "advanced",
+      "prompt": "Co jest prawdą o uprawnieniach w React Native?",
+      "choices": [
+        "Wystarczy wpis w manifeście, aby użytkownik zawsze je miał.",
+        "Są przyznawane w runtime, mogą zostać odmówione lub odebrane, więc trzeba obsłużyć każdy stan.",
+        "Działają tylko na iOS.",
+        "Nie dotyczą kamery."
+      ],
+      "answer": 1,
+      "explanation": "Uprawnienia runtime wymagają prośby i obsługi odmowy. Użytkownik może je później odebrać w ustawieniach, więc aplikacja musi działać w ograniczonym trybie."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-rn-f1",
+      "difficulty": "beginner",
+      "front": "Czym React Native różni się od React DOM?",
+      "back": "React Native nie tworzy DOM. Renderuje natywne widoki przez View, Text, Pressable itd. Stylowanie to obiekty JS, tekst musi być w Text, a nawigacja, storage i uprawnienia są mobilne."
+    },
+    {
+      "key": "js-rn-f2",
+      "difficulty": "intermediate",
+      "front": "Kiedy FlatList zamiast ScrollView?",
+      "back": "FlatList dla długich, dynamicznych list — wirtualizuje elementy i potrzebuje keyExtractor. ScrollView renderuje całą zawartość od razu; nadaje się do krótkich ekranów.",
+      "front_code": "<FlatList\n  data={items}\n  keyExtractor={(item) => item.id}\n  renderItem={renderItem}\n/>"
+    },
+    {
+      "key": "js-rn-f3",
+      "difficulty": "advanced",
+      "front": "Jak obsłużyć różnice iOS/Android?",
+      "back": "Używaj Platform.select dla drobnych różnic, testuj safe area, klawiaturę, back button i uprawnienia na obu platformach. Nie zakładaj, że jeden symulator wystarczy.",
+      "front_code": "const padding = Platform.select({ ios: 12, android: 8, default: 0 });"
+    },
+    {
+      "key": "js-rn-f4",
+      "front": "ScrollView czy FlatList?",
+      "back": "ScrollView renderuje całą zawartość od razu — dobre dla krótkich ekranów. FlatList wirtualizuje listę i wymaga keyExtractor; wybierz ją dla długich, dynamicznych list."
+    },
+    {
+      "key": "js-rn-f5",
+      "front": "Po co SafeAreaView?",
+      "back": "Uwzględnia notch, pasek statusu i gesty systemowe, aby treść nie była zasłonięta. Używaj go lub useSafeAreaInsets na poziomie ekranu."
+    }
+  ]
+}

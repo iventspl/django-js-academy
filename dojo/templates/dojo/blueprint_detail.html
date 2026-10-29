@@ -1,0 +1,109 @@
+{% extends "dojo/base.html" %}
+{% load dojo_extras %}
+
+{% block title %}{{ blueprint.name }} · blueprint{% endblock %}
+{% block body_class %}page-blueprint-detail{% endblock %}
+
+{% block meta_description %}{{ blueprint.tagline }}{% endblock %}
+
+{% block content %}
+<div class="page-wrap guide-wrap">
+  <div class="study-topline">
+    <a class="back-link" href="{% url 'dojo:blueprints' %}"><span aria-hidden="true">←</span> All blueprints</a>
+    <span class="study-top-meta">{{ blueprint.get_complexity_display }} · application blueprint</span>
+  </div>
+
+  <header class="blueprint-detail-hero">
+    <div class="blueprint-detail-copy">
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Blueprint · {{ blueprint.get_complexity_display }}</p>
+      <h1>{{ blueprint.name }}</h1>
+      <p class="blueprint-detail-tagline">{{ blueprint.tagline }}</p>
+      <p class="blueprint-detail-problem">{{ blueprint.problem }}</p>
+      <div class="blueprint-detail-actions">
+        {% if blueprint.topic %}<a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}?topic={{ blueprint.topic.slug }}">Quiz this topic <span aria-hidden="true">→</span></a>{% endif %}
+        <a class="btn btn-ghost-dark" href="{% url 'dojo:cheatsheets' %}">Related recipes <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+    <div class="blueprint-detail-stack">
+      <span class="tag tag-dark">Stack notes</span>
+      <p>{{ blueprint.stack_notes }}</p>
+      {% if blueprint.topic %}
+        <div class="blueprint-topic-chip"><span class="topic-glyph topic-glyph-small" style="--accent: {{ blueprint.topic.accent }};">{{ blueprint.topic.glyph }}</span><span>{{ blueprint.topic.name }}</span></div>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="blueprint-overview-grid">
+    <section class="blueprint-overview-card">
+      <p class="eyebrow eyebrow-dark">Screens & flows</p>
+      <ul class="numbered-list">
+        {% for screen in blueprint.screens|lines %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ screen }}</li>{% endfor %}
+      </ul>
+    </section>
+    <section class="blueprint-overview-card">
+      <p class="eyebrow eyebrow-dark">Suggested app boundaries</p>
+      <ul class="module-list">
+        {% for module in blueprint.structure|lines %}<li>{{ module }}</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <section class="blueprint-code-section" aria-labelledby="models-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-dark">The data shape</p><h2 id="models-title">Start with models and invariants.</h2></div>
+      <p class="section-aside">This is a teaching sketch, not a migration. Adapt names, constraints, and ownership rules to the real domain.</p>
+    </div>
+    <div class="code-block blueprint-code">
+      <div class="code-bar"><span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>python · models</span><button class="copy-code" type="button" data-copy-code>Copy</button></div>
+      <pre><code>{{ blueprint.models_code }}</code></pre>
+    </div>
+  </section>
+
+  <section class="blueprint-code-section" aria-labelledby="starter-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-dark">The first cut</p><h2 id="starter-title">Starter code for the critical path.</h2></div>
+      <p class="section-aside">Notice the transaction boundary, the scoped lookup, and the side effect queued after commit.</p>
+    </div>
+    <div class="code-block blueprint-code">
+      <div class="code-bar"><span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>python · starter</span><button class="copy-code" type="button" data-copy-code>Copy</button></div>
+      <pre><code>{{ blueprint.starter_code }}</code></pre>
+    </div>
+  </section>
+
+  <div class="blueprint-work-grid">
+    <section class="blueprint-list-card blueprint-checklist">
+      <p class="eyebrow eyebrow-dark">Build order</p>
+      <h2>What to implement, in order.</h2>
+      <ul>
+        {% for item in blueprint.checklist|lines %}<li><span aria-hidden="true">✓</span>{{ item }}</li>{% endfor %}
+      </ul>
+    </section>
+    <section class="blueprint-list-card blueprint-pitfalls">
+      <p class="eyebrow eyebrow-dark">Production traps</p>
+      <h2>What usually goes wrong.</h2>
+      <ul>
+        {% for item in blueprint.pitfalls|lines %}<li><span aria-hidden="true">×</span>{{ item }}</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  {% if related_recipes %}
+    <section class="section" aria-labelledby="related-title">
+      <div class="section-head section-head-tight">
+        <div><p class="eyebrow eyebrow-dark">Go deeper</p><h2 id="related-title">Recipes for this blueprint.</h2></div>
+        <a class="text-link" href="{% url 'dojo:cheatsheets' %}">All recipes →</a>
+      </div>
+      <div class="recipe-preview-grid">
+        {% for recipe in related_recipes %}
+          <a class="recipe-preview" href="{{ recipe.get_absolute_url }}">
+            <span class="recipe-category">{{ recipe.category }}</span>
+            <h3>{{ recipe.title }}</h3>
+            <p>{{ recipe.summary }}</p>
+            <span class="recipe-open">Open recipe <span aria-hidden="true">→</span></span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

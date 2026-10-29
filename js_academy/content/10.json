@@ -1,0 +1,167 @@
+{
+  "module": {
+    "slug": "struktury-danych",
+    "title": "Struktury danych i algorytmy",
+    "subtitle": "Map, Set, rekurencja, sortowanie i myślenie o złożoności.",
+    "description": "Dobra aplikacja to nie tylko ładny UI. To również wybór właściwej struktury danych, rozumienie kosztu operacji i umiejętność przetwarzania danych bez mutacji.",
+    "level": "advanced",
+    "glyph": "10",
+    "accent": "#34D399",
+    "duration_minutes": 70,
+    "outcomes": [
+      "Wybierasz Map i Set świadomie, znając ich różnice względem obiektów i tablic.",
+      "Piszesz rekurencję z poprawnym warunkiem bazowym.",
+      "Grupujesz i sortujesz dane bez mutowania wejścia.",
+      "Oceniasz podstawową złożoność operacji i unikasz niepotrzebnych pętli."
+    ],
+    "project_title": "Analizator wydatków",
+    "project_brief": "Zbuduj moduł, który przyjmuje listę wydatków, grupuje je według kategorii, liczy sumy i zwraca największą kategorię. Wszystko bez mutowania źródła.",
+    "project_steps": [
+      "Zdefiniuj model wydatku i dane testowe.",
+      "Użyj reduce lub Map do grupowania.",
+      "Posortuj kategorie po sumie malejąco.",
+      "Dodaj obsługę pustej listy i nieznanej kategorii."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "map-set",
+      "title": "Map i Set",
+      "summary": "Kiedy obiekt to zły słownik, a tablica to zły zbiór.",
+      "minutes": 14,
+      "body_html": "<p><strong>Map</strong> przechowuje pary klucz-wartość i pozwala używać kluczy innych niż stringi, np. obiektów. <strong>Set</strong> przechowuje unikalne wartości. Oba zachowują kolejność wstawiania i mają wygodne metody.</p>\n<pre><code>const visits = new Map();\nvisits.set(\"/home\", 10);\nvisits.set(\"/pricing\", 4);\nvisits.get(\"/home\"); // 10\n\nconst tags = new Set([\"react\", \"js\", \"react\"]);\n[...tags]; // [\"react\", \"js\"]</code></pre>\n<h2>Obiekt czy Map?</h2>\n<ul>\n<li>Obiekt jest wygodny dla stałego, znanego kształtu rekordu.</li>\n<li>Map jest lepszy dla dynamicznego słownika, często zmienianych kluczy i kluczy obiektowych.</li>\n<li>Map nie ma kolizji z prototypem ani magicznych właściwości typu <code>constructor</code>.</li>\n<li>Set świetnie nadaje się do deduplikacji i szybkiego sprawdzania przynależności.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Złożoność:</strong> typowy dostęp do Map/Set jest średnio O(1), a skanowanie tablicy O(n). Nie oznacza to, że Map zawsze wygrywa — dla małych danych stała narzutu może być większa.</div>"
+    },
+    {
+      "slug": "rekurencja",
+      "title": "Rekurencja i drzewa",
+      "summary": "Warunek bazowy, stos wywołań i przechodzenie po strukturze drzewiastej.",
+      "minutes": 14,
+      "body_html": "<p>Rekurencja to funkcja, która wywołuje samą siebie na mniejszym problemie. Musi mieć <strong>warunek bazowy</strong>, inaczej skończy się przepełnieniem stosu.</p>\n<pre><code>function sumTree(node) {\n  if (!node) return 0;\n  return node.value\n    + sumTree(node.left)\n    + sumTree(node.right);\n}</code></pre>\n<p>Drzewo komponentów, kategorie, komentarze i struktury folderów są naturalnie rekurencyjne. W praktyce często wystarczy iteracja z jawnym stosem, ale rekurencja bywa czytelniejsza.</p>\n<h2>Głębokość ma znaczenie</h2>\n<p>JavaScript nie optymalizuje ogonowej rekurencji w standardzie. Dla bardzo głębokich struktur użyj iteracji lub podziel problem. Zawsze zadbaj o limit i obsługę cykli, jeśli dane mogą być współdzielone.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> napisz funkcję <code>flattenTree</code>, która zwraca płaską listę wartości. Sprawdź puste drzewo, jeden węzeł i kilka poziomów.</div>"
+    },
+    {
+      "slug": "sortowanie-grupowanie",
+      "title": "Sortowanie i grupowanie",
+      "summary": "reduce, Map, stabilne sortowanie i niemutowalne przetwarzanie danych.",
+      "minutes": 15,
+      "body_html": "<p>Grupowanie to klasyczne zadanie: z listy obiektów zrób obiekt lub Mapę sum według kategorii. <code>reduce</code> pozwala zrobić to w jednym przejściu.</p>\n<pre><code>const totals = expenses.reduce((acc, expense) =&gt; {\n  const current = acc.get(expense.category) ?? 0;\n  acc.set(expense.category, current + expense.amount);\n  return acc;\n}, new Map());\n\nconst ranking = [...totals.entries()]\n  .sort((a, b) =&gt; b[1] - a[1]);</code></pre>\n<h2>Sortowanie</h2>\n<p>Domyślne sortowanie zamienia elementy na stringi, więc liczby mogą wyjść dziwnie: <code>[10, 2, 1].sort()</code> da <code>[1, 10, 2]</code>. Zawsze podawaj comparator dla liczb i złożonych obiektów.</p>\n<p>Sortowanie w nowoczesnym JS jest stabilne, ale nie zakładaj tego w każdym środowisku bez sprawdzenia. Jeśli kolejność równych elementów ma znaczenie, dodaj tie-breaker.</p>\n<div class=\"lesson-callout\"><strong>Niemutowalność:</strong> <code>sort()</code> mutuje tablicę. Zrób kopię: <code>[...items].sort(...)</code>, jeśli oryginał ma pozostać bez zmian.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-dane-b1",
+      "difficulty": "beginner",
+      "prompt": "Kiedy Map jest lepszy od zwykłego obiektu?",
+      "code": "",
+      "choices": [
+        "Dla dynamicznych słowników i kluczy innych niż stringi",
+        "Tylko gdy dane są stałe",
+        "Zawsze, bez wyjątków",
+        "Gdy potrzebujesz HTML"
+      ],
+      "answer": 0,
+      "explanation": "Map obsługuje klucze obiektowe, dynamiczne rozmiary i nie ma pułapek prototypu. Obiekt jest dobry dla stałego, znanego kształtu."
+    },
+    {
+      "key": "js-dane-b2",
+      "difficulty": "beginner",
+      "prompt": "Jak usunąć duplikaty z tablicy?",
+      "code": "",
+      "choices": [
+        "new Set(array)",
+        "array.map()",
+        "array.sort()",
+        "array.push()"
+      ],
+      "answer": 0,
+      "explanation": "Set przechowuje unikalne wartości. Zamiana z powrotem przez [...new Set(array)] daje tablicę bez duplikatów."
+    },
+    {
+      "key": "js-dane-i1",
+      "difficulty": "intermediate",
+      "prompt": "Co musi mieć każda poprawna rekurencja?",
+      "code": "",
+      "choices": [
+        "Warunek bazowy zatrzymujący wywołania",
+        "Tylko pętlę for",
+        "Globalny stan",
+        "Promise"
+      ],
+      "answer": 0,
+      "explanation": "Bez warunku bazowego funkcja wywołuje się w nieskończoność, aż zabraknie stosu."
+    },
+    {
+      "key": "js-dane-i2",
+      "difficulty": "intermediate",
+      "prompt": "Co robi reduce z akumulatorem Map?",
+      "code": "",
+      "choices": [
+        "Grupuje wartości w jednej strukturze w jednym przejściu",
+        "Mutuje wszystkie elementy",
+        "Sortuje tablicę",
+        "Tworzy Promise"
+      ],
+      "answer": 0,
+      "explanation": "reduce przechodzi przez elementy i buduje wynik. Map pozwala grupować po kluczu bez tworzenia wielu pośrednich tablic."
+    },
+    {
+      "key": "js-dane-a1",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego [10, 2, 1].sort() daje [1, 10, 2]?",
+      "code": "",
+      "choices": [
+        "Domyślnie sortowanie porównuje stringi",
+        "JavaScript nie sortuje liczb",
+        "To błąd tylko w Node",
+        "Sortowanie jest zawsze losowe"
+      ],
+      "answer": 0,
+      "explanation": "Bez comparatora elementy są konwertowane na stringi, więc \"10\" jest przed \"2\". Użyj (a, b) => a - b."
+    },
+    {
+      "key": "js-dane-a2",
+      "difficulty": "advanced",
+      "prompt": "Co oznacza złożoność O(n) przy skanowaniu tablicy?",
+      "code": "",
+      "choices": [
+        "Czas rośnie w przybliżeniu liniowo z liczbą elementów",
+        "Operacja jest zawsze natychmiastowa",
+        "Złożoność zależy tylko od pamięci",
+        "Tablica musi być posortowana"
+      ],
+      "answer": 0,
+      "explanation": "Podwojenie liczby elementów w przybliżeniu podwaja pracę. O(1) to dostęp po indeksie, O(n²) np. zagnieżdżona pętla po całej tablicy."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-dane-f1",
+      "front": "Kiedy używać Map zamiast obiektu?",
+      "back": "Dla dynamicznych kluczy, kluczy obiektowych, częstego dodawania/usuwania i sytuacji, w których prototyp obiektu mógłby przeszkadzać. Obiekt zostaw dla stałego rekordu.",
+      "hint": ""
+    },
+    {
+      "key": "js-dane-f2",
+      "front": "Do czego służy Set?",
+      "back": "Do przechowywania unikalnych wartości, deduplikacji i szybkiego sprawdzania przynależności. Set nie ma indeksów, ale ma has() i iterację.",
+      "hint": ""
+    },
+    {
+      "key": "js-dane-f3",
+      "front": "Jak zbudować rekurencję?",
+      "back": "Zdefiniuj warunek bazowy, zmniejszaj problem przy każdym wywołaniu i pamiętaj o głębokości stosu. Dla cykli dodaj odwiedzone węzły.",
+      "hint": ""
+    },
+    {
+      "key": "js-dane-f4",
+      "front": "Jaki jest koszt typowych operacji?",
+      "back": "Dostęp do Map/Set średnio O(1), skan tablicy O(n), sortowanie O(n log n), zagnieżdżone pętle po tej samej tablicy O(n²).",
+      "hint": ""
+    },
+    {
+      "key": "js-dane-f5",
+      "front": "Jak sortować obiekty po liczbie?",
+      "back": "Podaj comparator: items.sort((a, b) => a.price - b.price). Pamiętaj, że sort mutuje tablicę — skopiuj ją, jeśli potrzebujesz oryginału.",
+      "hint": ""
+    }
+  ]
+}

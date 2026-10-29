@@ -1,0 +1,814 @@
+{
+  "facts": [
+    {
+      "key": "js-fact-01",
+      "category": "Język",
+      "title": "JavaScript powstał w 10 dni",
+      "body": "Brendan Eich stworzył pierwszy prototyp języka w 1995 roku w Netscape. Nazwa „JavaScript” była zabiegiem marketingowym — język nie jest Related to Java."
+    },
+    {
+      "key": "js-fact-02",
+      "category": "Język",
+      "title": "typeof null to \"object\"",
+      "body": "To błąd z pierwszej wersji języka, którego nie da się już poprawić bez psucia stron. Dlatego do sprawdzania null używaj value === null."
+    },
+    {
+      "key": "js-fact-03",
+      "category": "Język",
+      "title": "NaN nie jest równe sobie",
+      "body": "NaN === NaN daje false. Do sprawdzenia użyj Number.isNaN(value). NaN jest typu number i powstaje np. z 0 / 0."
+    },
+    {
+      "key": "js-fact-04",
+      "category": "Język",
+      "title": "0.1 + 0.2 nie daje 0.3",
+      "body": "Liczby są zapisane w formacie IEEE 754. Wynik to 0.30000000000000004. Do pieniędzy używaj groszy w liczbach całkowitych lub biblioteki dziesiętnej."
+    },
+    {
+      "key": "js-fact-05",
+      "category": "Język",
+      "title": "const nie oznacza głębokiej niezmienności",
+      "body": "const blokuje ponowne przypisanie zmiennej, ale obiekt nadal można mutować: const user = {}; user.name = \"Ala\" działa. Object.freeze też jest płytkie."
+    },
+    {
+      "key": "js-fact-06",
+      "category": "Język",
+      "title": "sort bez comparatora porównuje stringi",
+      "body": "[10, 2, 1].sort() daje [1, 10, 2]. Dla liczb podaj (a, b) => a - b. Sortowanie jest stabilne od ES2019."
+    },
+    {
+      "key": "js-fact-07",
+      "category": "Język",
+      "title": "delete na tablicy zostawia dziurę",
+      "body": "delete arr[1] usuwa element, ale nie przesuwa reszty i nie zmienia length. Do usuwania użyj splice lub filter."
+    },
+    {
+      "key": "js-fact-08",
+      "category": "Język",
+      "title": "for...in przechodzi też po prototypie",
+      "body": "Pętla for...in iteruje enumerowalne właściwości, w tym odziedziczone. Do własnych kluczy użyj Object.keys lub Object.entries."
+    },
+    {
+      "key": "js-fact-09",
+      "category": "Język",
+      "title": "JSON.stringify(undefined) zwraca undefined",
+      "body": "Nie string \"undefined\". W tablicy undefined staje się null, a w obiekcie właściwość jest pomijana."
+    },
+    {
+      "key": "js-fact-10",
+      "category": "Język",
+      "title": "BigInt nie miesza się z Number",
+      "body": "1n + 1 rzuca TypeError. Konwertuj jawnie: 1n + BigInt(1). BigInt nie ma części ułamkowej."
+    },
+    {
+      "key": "js-fact-11",
+      "category": "Język",
+      "title": "Array.at(-1) to ostatni element",
+      "body": "Metoda at akceptuje indeksy ujemne. To czytelniejsze niż arr[arr.length - 1], ale nie działa w bardzo starych środowiskach."
+    },
+    {
+      "key": "js-fact-12",
+      "category": "Język",
+      "title": "replaceAll istnieje od ES2021",
+      "body": "Wcześniej trzeba było użyć replace z flagą g lub split/join. replaceAll nie przyjmuje flag regex — użyj regex z g."
+    },
+    {
+      "key": "js-fact-13",
+      "category": "Przeglądarka",
+      "title": "fetch nie odrzuca się dla 404",
+      "body": "Promise rozwiązuje się dla każdej odpowiedzi HTTP. Sprawdź response.ok, zanim wywołasz response.json()."
+    },
+    {
+      "key": "js-fact-14",
+      "category": "Przeglądarka",
+      "title": "localStorage przechowuje stringi",
+      "body": "Zapis obiektu bez JSON.stringify da \"[object Object]\". Przy odczycie parsuj JSON i obsłuż błąd."
+    },
+    {
+      "key": "js-fact-15",
+      "category": "Przeglądarka",
+      "title": "localStorage jest synchroniczny",
+      "body": "Duży zapis może blokować główny wątek. Do większych danych użyj IndexedDB, a do cache — Cache Storage."
+    },
+    {
+      "key": "js-fact-16",
+      "category": "Przeglądarka",
+      "title": "querySelectorAll daje statyczną listę",
+      "body": "NodeList z querySelectorAll nie aktualizuje się po zmianach DOM. getElementsByClassName zwraca żywą kolekcję — to częste źródło niespodzianek."
+    },
+    {
+      "key": "js-fact-17",
+      "category": "Przeglądarka",
+      "title": "requestAnimationFrame synchronizuje z odświeżaniem",
+      "body": "Do animacji używaj rAF zamiast setInterval. Otrzymujesz znacznik czasu i możesz zatrzymać pętlę, gdy karta jest ukryta."
+    },
+    {
+      "key": "js-fact-18",
+      "category": "Przeglądarka",
+      "title": "CORS egzekwuje przeglądarka",
+      "body": "To nie jest zabezpieczenie serwera. Serwer musi zwrócić odpowiednie nagłówki, a przeglądarka blokuje odczyt odpowiedzi, jeśli polityka nie pozwala."
+    },
+    {
+      "key": "js-fact-19",
+      "category": "Przeglądarka",
+      "title": "AbortController działa też z event listenerami",
+      "body": "Możesz przekazać signal do addEventListener i jednym abort() usunąć wiele listenerów. To wygodne w komponentach."
+    },
+    {
+      "key": "js-fact-20",
+      "category": "Przeglądarka",
+      "title": "structuredClone nie kopiuje funkcji",
+      "body": "Kopiuje zagnieżdżone dane, Map, Set, Date i ArrayBuffer, ale funkcje powodują DataCloneError. Nie zastępuje serializacji do JSON."
+    },
+    {
+      "key": "js-fact-21",
+      "category": "React",
+      "title": "StrictMode podwaja efekty tylko w dev",
+      "body": "W development React celowo montuje, odmontowuje i montuje ponownie, aby wykryć brak cleanupu. W produkcji efekt nie jest podwajany."
+    },
+    {
+      "key": "js-fact-22",
+      "category": "React",
+      "title": "setState nie zmienia stanu natychmiast",
+      "body": "Aktualizacja jest planowana. Jeśli nowy stan zależy od poprzedniego, użyj setCount(c => c + 1), a nie setCount(count + 1) w pętli zdarzeń."
+    },
+    {
+      "key": "js-fact-23",
+      "category": "React",
+      "title": "Key nie jest propsem",
+      "body": "React używa key do dopasowania elementów, ale komponent nie otrzymuje go w props. Jeśli potrzebujesz id, przekaż je osobnym atrybutem."
+    },
+    {
+      "key": "js-fact-24",
+      "category": "React",
+      "title": "Indeks jako key psuje stan listy",
+      "body": "Po dodaniu elementu na początku indeksy się przesuwają, a React może przypisać stan do niewłaściwego wiersza. Używaj stabilnego id."
+    },
+    {
+      "key": "js-fact-25",
+      "category": "React",
+      "title": "useEffect nie jest do obliczeń",
+      "body": "Wartości, które da się policzyć z props/stanu, obliczaj podczas renderu. Efekt jest do synchronizacji z systemem zewnętrznym."
+    },
+    {
+      "key": "js-fact-26",
+      "category": "React",
+      "title": "Context nie jest magazynem stanu",
+      "body": "Context przekazuje wartość w dół drzewa. Zmiana wartości nadal powoduje render konsumentów; do złożonej logiki użyj reducera lub zewnętrznego store."
+    },
+    {
+      "key": "js-fact-27",
+      "category": "React",
+      "title": "Memoizacja bez pomiaru szkodzi",
+      "body": "React.memo, useMemo i useCallback mają koszt. Najpierw uprość komponenty i zmniejsz zakres renderów, potem mierz."
+    },
+    {
+      "key": "js-fact-28",
+      "category": "React Native",
+      "title": "React Native nie renderuje HTML",
+      "body": "Komponenty mapują się na natywne widoki iOS/Android. To dlatego <div> nie istnieje, a stylowanie odbywa się przez obiekty."
+    },
+    {
+      "key": "js-fact-29",
+      "category": "React Native",
+      "title": "Hermes to silnik JS",
+      "body": "Hermes kompiluje JavaScript do bytecode i jest domyślny w wielu konfiguracjach Expo/RN. Wpływa na start i pamięć, ale nie zastępuje optymalizacji list."
+    },
+    {
+      "key": "js-fact-30",
+      "category": "React Native",
+      "title": "FlatList wirtualizuje listy",
+      "body": "Renderuje tylko widoczne elementy. Musi mieć keyExtractor i stabilne dane; zagnieżdżone ScrollView psuje wirtualizację."
+    },
+    {
+      "key": "js-fact-31",
+      "category": "Bezpieczeństwo",
+      "title": "JWT nie jest szyfrowany",
+      "body": "JWT jest podpisany, ale payload można odczytać. Nie wkładaj tam sekretów; traktuj go jak dane publiczne z podpisem."
+    },
+    {
+      "key": "js-fact-32",
+      "category": "Bezpieczeństwo",
+      "title": "CSP to warstwa, nie zamiennik escapowania",
+      "body": "Content-Security-Policy ogranicza źródła skryptów, ale błąd innerHTML nadal jest błędem. Używaj obu zabezpieczeń."
+    },
+    {
+      "key": "js-fact-33",
+      "category": "Bezpieczeństwo",
+      "title": "HttpOnly chroni przed odczytem, nie przed CSRF",
+      "body": "Cookie HttpOnly nie jest dostępne dla JS, ale przeglądarka nadal dołącza je do żądań. Dla operacji zmieniających stan potrzebna jest ochrona CSRF."
+    },
+    {
+      "key": "js-fact-34",
+      "category": "Narzędzia",
+      "title": "npm ci nie aktualizuje lockfile",
+      "body": "Instaluje dokładnie to, co jest zapisane. W CI to zwykle właściwy wybór; npm install może zmienić zależności."
+    },
+    {
+      "key": "js-fact-35",
+      "category": "Narzędzia",
+      "title": "Tree shaking wymaga modułów ESM",
+      "body": "Bundler usuwa nieużywany kod, jeśli importy są statyczne i moduły mają efekty uboczne oznaczone poprawnie. CommonJS utrudnia analizę."
+    },
+    {
+      "key": "js-fact-36",
+      "category": "AI",
+      "title": "Model nie pamięta Twojej aplikacji",
+      "body": "Każde wywołanie dostaje kontekst, który mu wyślesz. RAG dostarcza źródła, ale nie zastępuje uprawnień ani walidacji odpowiedzi."
+    }
+  ],
+  "terms": [
+    {
+      "key": "hoisting",
+      "category": "Język",
+      "term": "Hoisting",
+      "definition": "Wynoszenie deklaracji na początek zakresu. var jest inicjalizowane undefined; let/const są w TDZ do momentu deklaracji.",
+      "example": "console.log(x); var x = 1; // undefined"
+    },
+    {
+      "key": "tdz",
+      "category": "Język",
+      "term": "TDZ",
+      "definition": "Temporal Dead Zone — okres, w którym let/const istnieje, ale nie można go odczytać przed inicjalizacją.",
+      "example": "console.log(x); let x = 1; // ReferenceError"
+    },
+    {
+      "key": "closure",
+      "category": "Funkcje",
+      "term": "Domknięcie",
+      "definition": "Funkcja pamiętająca zmienne z otaczającego zakresu po zakończeniu funkcji zewnętrznej.",
+      "example": "const add = (a) => (b) => a + b;"
+    },
+    {
+      "key": "this",
+      "category": "Funkcje",
+      "term": "this",
+      "definition": "Kontekst wywołania. Zależy od sposobu wywołania, nie od miejsca definicji. Strzałki dziedziczą this.",
+      "example": "user.greet(); // this = user"
+    },
+    {
+      "key": "prototype",
+      "category": "Język",
+      "term": "Prototyp",
+      "definition": "Obiekt, z którego inny obiekt dziedziczy właściwości. Klasy są oparte na prototypach.",
+      "example": "Object.getPrototypeOf([]) === Array.prototype"
+    },
+    {
+      "key": "pure-function",
+      "category": "Funkcje",
+      "term": "Funkcja czysta",
+      "definition": "Dla tych samych argumentów zwraca ten sam wynik i nie ma efektów ubocznych.",
+      "example": "const double = (n) => n * 2;"
+    },
+    {
+      "key": "side-effect",
+      "category": "Funkcje",
+      "term": "Efekt uboczny",
+      "definition": "Zmiana stanu poza funkcją: zapis do DOM, sieci, storage lub mutacja argumentu.",
+      "example": "localStorage.setItem(...)"
+    },
+    {
+      "key": "mutation",
+      "category": "Język",
+      "term": "Mutacja",
+      "definition": "Zmiana istniejącego obiektu lub tablicy w miejscu. W React utrudnia wykrycie zmian.",
+      "example": "items.push(x)"
+    },
+    {
+      "key": "shallow-copy",
+      "category": "Język",
+      "term": "Płytka kopia",
+      "definition": "Kopia tylko pierwszego poziomu; zagnieżdżone obiekty są współdzielone.",
+      "example": "{ ...user }"
+    },
+    {
+      "key": "deep-copy",
+      "category": "Język",
+      "term": "Głęboka kopia",
+      "definition": "Kopia całego drzewa danych. structuredClone nie kopiuje funkcji.",
+      "example": "structuredClone(data)"
+    },
+    {
+      "key": "spread",
+      "category": "Język",
+      "term": "Spread",
+      "definition": "Rozpakowanie tablicy lub obiektu do nowej struktury. Dla obiektów tworzy płytką kopię.",
+      "example": "[...a, ...b]"
+    },
+    {
+      "key": "destructuring",
+      "category": "Język",
+      "term": "Destrukturyzacja",
+      "definition": "Wyciąganie wartości z tablicy lub obiektu do zmiennych.",
+      "example": "const { name } = user;"
+    },
+    {
+      "key": "optional-chaining",
+      "category": "Język",
+      "term": "Opcjonalne wywołanie",
+      "definition": "Zatrzymuje się na null/undefined zamiast rzucać TypeError.",
+      "example": "user?.address?.city"
+    },
+    {
+      "key": "nullish",
+      "category": "Język",
+      "term": "Nullish coalescing",
+      "definition": "?? zwraca prawą stronę tylko dla null/undefined, w przeciwieństwie do ||.",
+      "example": "count ?? 0"
+    },
+    {
+      "key": "truthy",
+      "category": "Język",
+      "term": "Truthy / falsy",
+      "definition": "Wartości konwertowane na boolean w warunkach. Falsy to false, 0, -0, 0n, \"\", null, undefined, NaN.",
+      "example": "if (value) { ... }"
+    },
+    {
+      "key": "coercion",
+      "category": "Język",
+      "term": "Koercja",
+      "definition": "Niejawna konwersja typu, np. \"5\" + 1 daje \"51\", a \"5\" - 1 daje 4.",
+      "example": "Number(\"5\")"
+    },
+    {
+      "key": "equality",
+      "category": "Język",
+      "term": "Równość",
+      "definition": "=== porównuje wartość i typ; == wykonuje konwersje. Domyślnie używaj ===.",
+      "example": "0 === \"0\" // false"
+    },
+    {
+      "key": "event-loop",
+      "category": "Asynchroniczność",
+      "term": "Event loop",
+      "definition": "Mechanizm przetwarzania kolejki zadań po opróżnieniu stosu wywołań.",
+      "example": "setTimeout(() => {}, 0)"
+    },
+    {
+      "key": "microtask",
+      "category": "Asynchroniczność",
+      "term": "Mikrozadanie",
+      "definition": "Zadanie o wysokim priorytecie, np. callback Promise. Wykonywane przed timerami.",
+      "example": "Promise.resolve().then(...)"
+    },
+    {
+      "key": "macrotask",
+      "category": "Asynchroniczność",
+      "term": "Makrozadanie",
+      "definition": "Zadanie z kolejnej fazy event loop, np. setTimeout, setInterval, I/O.",
+      "example": "setTimeout(fn, 0)"
+    },
+    {
+      "key": "promise",
+      "category": "Asynchroniczność",
+      "term": "Promise",
+      "definition": "Obiekt przyszłego wyniku ze stanami pending/fulfilled/rejected.",
+      "example": "fetch(url).then(r => r.json())"
+    },
+    {
+      "key": "async-await",
+      "category": "Asynchroniczność",
+      "term": "async/await",
+      "definition": "Składnia oparta na Promise, która pozwala pisać kod asynchroniczny liniowo.",
+      "example": "const data = await response.json();"
+    },
+    {
+      "key": "abortcontroller",
+      "category": "Asynchroniczność",
+      "term": "AbortController",
+      "definition": "Mechanizm anulowania fetch, strumieni i listenerów przez signal.",
+      "example": "controller.abort()"
+    },
+    {
+      "key": "map",
+      "category": "Dane",
+      "term": "Map",
+      "definition": "Słownik klucz-wartość z kluczami dowolnego typu, zachowujący kolejność wstawiania.",
+      "example": "new Map([[key, value]])"
+    },
+    {
+      "key": "set",
+      "category": "Dane",
+      "term": "Set",
+      "definition": "Kolekcja unikalnych wartości z szybkim sprawdzaniem przynależności.",
+      "example": "new Set([1, 2, 2])"
+    },
+    {
+      "key": "weakmap",
+      "category": "Dane",
+      "term": "WeakMap",
+      "definition": "Mapa z kluczami obiektowymi, które mogą zostać zebrane przez GC. Nie jest iterowalna.",
+      "example": "new WeakMap()"
+    },
+    {
+      "key": "iterator",
+      "category": "Dane",
+      "term": "Iterator",
+      "definition": "Protokół next() zwracający { value, done }. Umożliwia for...of i spread.",
+      "example": "array[Symbol.iterator]()"
+    },
+    {
+      "key": "generator",
+      "category": "Funkcje",
+      "term": "Generator",
+      "definition": "Funkcja function* mogąca wstrzymywać wykonanie przez yield.",
+      "example": "function* ids() { yield 1; }"
+    },
+    {
+      "key": "higher-order",
+      "category": "Funkcje",
+      "term": "Funkcja wyższego rzędu",
+      "definition": "Funkcja przyjmująca inną funkcję lub zwracająca funkcję.",
+      "example": "items.map(fn)"
+    },
+    {
+      "key": "memoization",
+      "category": "Funkcje",
+      "term": "Memoizacja",
+      "definition": "Cache wyników funkcji dla tych samych argumentów. Wymaga stabilnego klucza i strategii unieważniania.",
+      "example": "const memo = new Map();"
+    },
+    {
+      "key": "currying",
+      "category": "Funkcje",
+      "term": "Currying",
+      "definition": "Zamiana funkcji wielu argumentów w łańcuch funkcji jednoargumentowych.",
+      "example": "add(1)(2)"
+    },
+    {
+      "key": "debounce",
+      "category": "Wydajność",
+      "term": "Debounce",
+      "definition": "Opóźnia wykonanie do końca serii zdarzeń. Dobry do wyszukiwania podczas pisania.",
+      "example": "debounce(search, 300)"
+    },
+    {
+      "key": "throttle",
+      "category": "Wydajność",
+      "term": "Throttle",
+      "definition": "Ogranicza wykonanie do maksymalnie raz na przedział czasu. Dobry do scrolla.",
+      "example": "throttle(onScroll, 100)"
+    },
+    {
+      "key": "event-delegation",
+      "category": "DOM",
+      "term": "Delegacja zdarzeń",
+      "definition": "Jeden listener na rodzicu obsługuje zdarzenia dzieci przez event.target.",
+      "example": "list.addEventListener(\"click\", ...)"
+    },
+    {
+      "key": "dom",
+      "category": "DOM",
+      "term": "DOM",
+      "definition": "Drzewo obiektów reprezentujące dokument HTML, dostępne przez document.",
+      "example": "document.querySelector(\"h1\")"
+    },
+    {
+      "key": "virtual-dom",
+      "category": "React",
+      "term": "Virtual DOM",
+      "definition": "W pamięciowa reprezentacja UI, którą React porównuje z poprzednią wersją.",
+      "example": "React.createElement(...)"
+    },
+    {
+      "key": "reconciliation",
+      "category": "React",
+      "term": "Reconciliation",
+      "definition": "Algorytm porównywania drzew i aktualizacji DOM. Key wspiera dopasowanie list.",
+      "example": "key={item.id}"
+    },
+    {
+      "key": "hook",
+      "category": "React",
+      "term": "Hook",
+      "definition": "Funkcja Reacta zaczynająca się od use, pozwalająca używać stanu i efektów w komponencie funkcyjnym.",
+      "example": "useState()"
+    },
+    {
+      "key": "state",
+      "category": "React",
+      "term": "Stan",
+      "definition": "Dane, których zmiana powoduje ponowny render komponentu.",
+      "example": "const [open, setOpen] = useState(false)"
+    },
+    {
+      "key": "props",
+      "category": "React",
+      "term": "Props",
+      "definition": "Dane przekazywane do komponentu z zewnątrz. Są tylko do odczytu z perspektywy dziecka.",
+      "example": "<Card title=\"Hello\" />"
+    },
+    {
+      "key": "context",
+      "category": "React",
+      "term": "Context",
+      "definition": "Mechanizm przekazywania wartości w dół drzewa bez przekazywania propsów przez każdy poziom.",
+      "example": "useContext(ThemeContext)"
+    },
+    {
+      "key": "reducer",
+      "category": "React",
+      "term": "Reducer",
+      "definition": "Czysta funkcja (state, action) => newState. Dobra dla złożonych przejść stanu.",
+      "example": "dispatch({ type: \"add\" })"
+    },
+    {
+      "key": "effect",
+      "category": "React",
+      "term": "Efekt",
+      "definition": "Synchronizacja z systemem zewnętrznym po renderze; może zwracać funkcję cleanup.",
+      "example": "useEffect(() => {...}, [])"
+    },
+    {
+      "key": "error-boundary",
+      "category": "React",
+      "term": "Error boundary",
+      "definition": "Komponent klasy łapiący błędy renderowania dzieci. Nie łapie event handlerów ani async.",
+      "example": "getDerivedStateFromError"
+    },
+    {
+      "key": "ssr",
+      "category": "Architektura",
+      "term": "SSR",
+      "definition": "Server-Side Rendering — HTML generowany na serwerze, potem hydratowany w przeglądarce.",
+      "example": "Next.js render"
+    },
+    {
+      "key": "hydration",
+      "category": "Architektura",
+      "term": "Hydratacja",
+      "definition": "Proces dołączania Reacta do HTML wygenerowanego na serwerze.",
+      "example": "hydrateRoot"
+    },
+    {
+      "key": "xss",
+      "category": "Bezpieczeństwo",
+      "term": "XSS",
+      "definition": "Wstrzyknięcie kodu do strony przez niezaufane dane. Broń się escapowaniem, sanitizacją i CSP.",
+      "example": "textContent zamiast innerHTML"
+    },
+    {
+      "key": "csp",
+      "category": "Bezpieczeństwo",
+      "term": "CSP",
+      "definition": "Content-Security-Policy — nagłówek ograniczający źródła skryptów, stylów i innych zasobów.",
+      "example": "script-src 'self'"
+    },
+    {
+      "key": "csrf",
+      "category": "Bezpieczeństwo",
+      "term": "CSRF",
+      "definition": "Atak wykorzystujący cookies ofiary do wykonania akcji w imieniu użytkownika. Broń się tokenem i SameSite.",
+      "example": "csrf token"
+    },
+    {
+      "key": "jwt",
+      "category": "Bezpieczeństwo",
+      "term": "JWT",
+      "definition": "Podpisany token z claims. Nie jest szyfrowany; payload jest czytelny.",
+      "example": "header.payload.signature"
+    }
+  ],
+  "interview": [
+    {
+      "key": "js-int-01",
+      "category": "JavaScript",
+      "difficulty": "beginner",
+      "question": "Czym różni się let od var?",
+      "answer": "var ma zakres funkcji i jest hoisted z undefined. let ma zakres bloku i TDZ; nie można go odczytać przed deklaracją. W nowym kodzie używaj let/const.",
+      "follow_up": "Kiedy const nadal pozwala zmieniać obiekt?"
+    },
+    {
+      "key": "js-int-02",
+      "category": "JavaScript",
+      "difficulty": "beginner",
+      "question": "Czym jest domknięcie i gdzie je wykorzystujesz?",
+      "answer": "To funkcja pamiętająca zmienne z otaczającego zakresu. Używam w hookach, fabrykach funkcji, memoizacji i handlerach, które muszą zachować kontekst.",
+      "follow_up": "Jak domknięcie może spowodować wyciek pamięci?"
+    },
+    {
+      "key": "js-int-03",
+      "category": "JavaScript",
+      "difficulty": "beginner",
+      "question": "Wyjaśnij różnicę między == i ===.",
+      "answer": "=== porównuje typ i wartość bez konwersji. == wykonuje koercję, przez co wyniki bywają zaskakujące. Domyślnie wybieram ===, a == tylko świadomie.",
+      "follow_up": "Kiedy == może być przydatne?"
+    },
+    {
+      "key": "js-int-04",
+      "category": "JavaScript",
+      "difficulty": "intermediate",
+      "question": "Dlaczego [1,2,3].map zwraca nową tablicę, a forEach nie?",
+      "answer": "map zbiera wyniki callbacku w nowej tablicy. forEach służy do efektów ubocznych i zwraca undefined. Do transformacji wybieram map.",
+      "follow_up": "Kiedy forEach jest właściwym wyborem?"
+    },
+    {
+      "key": "js-int-05",
+      "category": "JavaScript",
+      "difficulty": "intermediate",
+      "question": "Jak działa event loop?",
+      "answer": "Kod synchroniczny trafia na stos. Po jego opróżnieniu wykonywane są mikrozadania (Promise), potem kolejne fazy, w tym timery. Długi blok synchroniczny zatrzymuje wszystko.",
+      "follow_up": "Dlaczego setTimeout(0) nie gwarantuje natychmiastowego wykonania?"
+    },
+    {
+      "key": "js-int-06",
+      "category": "JavaScript",
+      "difficulty": "intermediate",
+      "question": "Czym różni się Promise.all od allSettled?",
+      "answer": "all odrzuca przy pierwszym błędzie i traci pozostałe wyniki. allSettled czeka na wszystkie i zwraca statusy, co jest lepsze do raportów częściowych.",
+      "follow_up": "Kiedy użyłbyś Promise.race?"
+    },
+    {
+      "key": "js-int-07",
+      "category": "JavaScript",
+      "difficulty": "intermediate",
+      "question": "Jak uniknąć mutacji stanu w React?",
+      "answer": "Tworzę nowe tablice i obiekty: spread, map, filter, slice. Aktualizuję tylko potrzebne poziomy. Dla złożonych struktur używam reducera i niemutowalnych helperów.",
+      "follow_up": "Dlaczego React nie widzi mutacji?"
+    },
+    {
+      "key": "js-int-08",
+      "category": "JavaScript",
+      "difficulty": "intermediate",
+      "question": "Po co jest key w listach Reacta?",
+      "answer": "Pozwala dopasować elementy między renderami. Stabilne id zapobiega przypisaniu stanu do niewłaściwego wiersza. Indeks jest ryzykowny, gdy lista się zmienia.",
+      "follow_up": "Kiedy indeks jest akceptowalny?"
+    },
+    {
+      "key": "js-int-09",
+      "category": "JavaScript",
+      "difficulty": "intermediate",
+      "question": "Kiedy useEffect jest złym narzędziem?",
+      "answer": "Gdy próbujesz nim obliczyć wartość z props/stanu albo zsynchronizować stan z props. Wtedy użyj derived state lub zmiany klucza komponentu.",
+      "follow_up": "Jak wykryć efekt, który powoduje pętlę?"
+    },
+    {
+      "key": "js-int-10",
+      "category": "JavaScript",
+      "difficulty": "advanced",
+      "question": "Dlaczego efekt widzi stary stan i jak to naprawić?",
+      "answer": "Efekt jest domknięciem z renderu, w którym powstał. Dodaję zależność, używam aktualizacji funkcyjnej lub ref, jeśli potrzebuję najnowszej wartości bez re-subskrypcji.",
+      "follow_up": "Kiedy ref jest lepszy od zależności?"
+    },
+    {
+      "key": "js-int-11",
+      "category": "JavaScript",
+      "difficulty": "advanced",
+      "question": "Jak rozwiązać wyścig żądań w React?",
+      "answer": "Anuluję poprzednie żądanie przez AbortController i ignoruję AbortError. Alternatywnie porównuję identyfikator zapytania. Nie pozwalam starej odpowiedzi nadpisać nowej.",
+      "follow_up": "Co jeśli backend nie obsługuje anulowania?"
+    },
+    {
+      "key": "js-int-12",
+      "category": "JavaScript",
+      "difficulty": "advanced",
+      "question": "Kiedy użyć useReducer zamiast useState?",
+      "answer": "Gdy przejścia stanu są złożone, zależą od poprzedniego stanu i chcę testować logikę bez UI. useState wystarcza dla prostego, lokalnego stanu.",
+      "follow_up": "Jak przetestować reducer?"
+    },
+    {
+      "key": "js-int-13",
+      "category": "JavaScript",
+      "difficulty": "advanced",
+      "question": "Jak działa dziedziczenie prototypowe?",
+      "answer": "Obiekt ma wewnętrzne wskazanie na prototyp. Przy odczycie właściwości JS przeszukuje obiekt, potem łańcuch prototypów. class to cukier składniowy nad tym mechanizmem.",
+      "follow_up": "Czym różni się metoda od właściwości instancji?"
+    },
+    {
+      "key": "js-int-14",
+      "category": "React",
+      "difficulty": "intermediate",
+      "question": "Kiedy context jest dobrym wyborem?",
+      "answer": "Dla danych potrzebnych w wielu miejscach poddrzewa, np. motyw, sesja, preferencje. Dzielę konteksty, aby zmiana jednej wartości nie renderowała wszystkiego.",
+      "follow_up": "Czym context różni się od store?"
+    },
+    {
+      "key": "js-int-15",
+      "category": "React",
+      "difficulty": "intermediate",
+      "question": "Jak działają kontrolowane formularze?",
+      "answer": "Wartość inputa pochodzi ze stanu, a onChange aktualizuje stan. Daje to walidację i przewidywalność. Niekontrolowane formularze są prostsze dla dużych formularzy.",
+      "follow_up": "Kiedy użyć react-hook-form?"
+    },
+    {
+      "key": "js-int-16",
+      "category": "React",
+      "difficulty": "advanced",
+      "question": "Jak zapobiec niepotrzebnym renderom?",
+      "answer": "Najpierw mierzę. Potem dzielę komponenty, stabilizuję propsy, używam memo/useMemo/useCallback tylko tam, gdzie to pomaga. Nie optymalizuję wszystkiego na ślepo.",
+      "follow_up": "Dlaczego useCallback bez memo może nie pomóc?"
+    },
+    {
+      "key": "js-int-17",
+      "category": "React",
+      "difficulty": "advanced",
+      "question": "Co łapie error boundary?",
+      "answer": "Błędy renderowania, lifecycle i konstruktorów dzieci. Nie łapie event handlerów, setTimeout ani odrzuconych Promise bez dodatkowej obsługi.",
+      "follow_up": "Jak obsłużyć błąd asynchroniczny?"
+    },
+    {
+      "key": "js-int-18",
+      "category": "React Native",
+      "difficulty": "intermediate",
+      "question": "Czym różni się React Native od aplikacji webowej w WebView?",
+      "answer": "RN renderuje natywne widoki przez bridge/JSI, a nie HTML. Stylowanie to obiekty, nawigacja i storage są inne. WebView to osadzona przeglądarka.",
+      "follow_up": "Kiedy WebView ma sens?"
+    },
+    {
+      "key": "js-int-19",
+      "category": "React Native",
+      "difficulty": "intermediate",
+      "question": "FlatList czy ScrollView?",
+      "answer": "FlatList wirtualizuje długie listy i renderuje widoczne elementy. ScrollView renderuje wszystko, więc nadaje się do krótkich ekranów.",
+      "follow_up": "Co robi keyExtractor?"
+    },
+    {
+      "key": "js-int-20",
+      "category": "React Native",
+      "difficulty": "advanced",
+      "question": "Jak zrobić bezpieczną kolejkę offline?",
+      "answer": "Zapisuję operacje lokalnie z idempotency key, wysyłam po powrocie sieci, obsługuję retry i konflikty. Tokeny trzymam w SecureStore, nie w AsyncStorage.",
+      "follow_up": "Jak rozwiązać konflikt wersji?"
+    },
+    {
+      "key": "js-int-21",
+      "category": "Architektura",
+      "difficulty": "intermediate",
+      "question": "Jak organizujesz kod frontendu?",
+      "answer": "Feature-first: komponenty, API, stan i testy jednej funkcji obok siebie. Shared tylko dla naprawdę wspólnych elementów. Granice powinny pozwalać usunąć funkcję bez zmian w całym repo.",
+      "follow_up": "Jak wymuszasz granice?"
+    },
+    {
+      "key": "js-int-22",
+      "category": "Architektura",
+      "difficulty": "advanced",
+      "question": "Jak modelujesz stany ładowania i błędu?",
+      "answer": "Jedna unia statusów: loading, empty, success, error. Dzięki temu nie renderuję sprzecznych komunikatów. Każdy stan ma własną akcję i komunikat.",
+      "follow_up": "Gdzie trzymać błąd walidacji pola?"
+    },
+    {
+      "key": "js-int-23",
+      "category": "Architektura",
+      "difficulty": "advanced",
+      "question": "Kiedy wprowadzić TypeScript do projektu JS?",
+      "answer": "Od początku nowego projektu lub stopniowo w istniejącym: najpierw granice modułów i API, potem wnętrza. TypeScript ma największą wartość tam, gdzie dane przekraczają granice.",
+      "follow_up": "Jak uniknąć any?"
+    },
+    {
+      "key": "js-int-24",
+      "category": "Bezpieczeństwo",
+      "difficulty": "intermediate",
+      "question": "Jak chronić się przed XSS?",
+      "answer": "Nie wstawiam danych użytkownika przez innerHTML. Używam textContent, frameworkowego escapowania i sanitizera, gdy HTML jest naprawdę potrzebny. Dodaję CSP jako warstwę.",
+      "follow_up": "Czy React automatycznie chroni przed XSS?"
+    },
+    {
+      "key": "js-int-25",
+      "category": "Bezpieczeństwo",
+      "difficulty": "advanced",
+      "question": "Gdzie przechowywać token sesji?",
+      "answer": "Najbezpieczniej w HttpOnly cookie z Secure i SameSite, bo JS go nie odczyta. Token w localStorage jest wygodny, ale XSS może go ukraść. Wybór zależy od architektury i ochrony CSRF.",
+      "follow_up": "Jak ograniczyć skutki kradzieży tokenu?"
+    },
+    {
+      "key": "js-int-26",
+      "category": "Bezpieczeństwo",
+      "difficulty": "advanced",
+      "question": "Co daje CSP i czego nie zastępuje?",
+      "answer": "Ogranicza źródła skryptów i innych zasobów, utrudniając XSS. Nie zastępuje escapowania, walidacji ani ochrony backendu. Źle skonfigurowany CSP daje fałszywe poczucie bezpieczeństwa.",
+      "follow_up": "Co to jest nonce?"
+    },
+    {
+      "key": "js-int-27",
+      "category": "Wydajność",
+      "difficulty": "intermediate",
+      "question": "Jak mierzysz wydajność frontendu?",
+      "answer": "Używam Lighthouse do laboratorium i RUM do realnych użytkowników. Patrzę na LCP, INP i CLS, a nie tylko rozmiar bundle'a. Optymalizuję po pomiarze.",
+      "follow_up": "Co to jest INP?"
+    },
+    {
+      "key": "js-int-28",
+      "category": "Wydajność",
+      "difficulty": "advanced",
+      "question": "Jak zmniejszyć początkowy bundle?",
+      "answer": "Dzielę trasy i ciężkie komponenty, usuwam nieużywane zależności, sprawdzam tree shaking i ładuję zasoby poza pierwszym ekranem lazy. Mierzę efekt.",
+      "follow_up": "Kiedy prefetch ma sens?"
+    },
+    {
+      "key": "js-int-29",
+      "category": "AI",
+      "difficulty": "intermediate",
+      "question": "Jak podłączyć LLM do aplikacji JS?",
+      "answer": "Nigdy bezpośrednio z kluczem w frontendzie. Frontend woła mój backend, backend uwierzytelnia, ogranicza koszt i proxuje model. Odpowiedź waliduję i pokazuję źródła.",
+      "follow_up": "Jak obsłużyć streaming?"
+    },
+    {
+      "key": "js-int-30",
+      "category": "AI",
+      "difficulty": "advanced",
+      "question": "Jak chronić aplikację przed prompt injection?",
+      "answer": "Traktuję treść dokumentów jako niezaufaną, ograniczam narzędzia i uprawnienia, waliduję argumenty i wymagam zatwierdzenia ryzykownych akcji. Sam prompt nie wystarcza.",
+      "follow_up": "Jak testować podatność na injection?"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{% extends "js_academy/base_js.html" %}
+
+{% block title %}Postępy{% endblock %}
+{% block body_class %}page-js js-progress-page{% endblock %}
+
+{% block content %}
+<div class="page-wrap js-wrap">
+  <header class="js-page-header">
+    <p class="eyebrow eyebrow-js"><span class="pulse-dot" aria-hidden="true"></span> Notatnik postępów</p>
+    <h1>Nie ścigaj się.<br><em>Buduj kompetencję.</em></h1>
+    <p class="js-lead">Procent lekcji to tylko wskaźnik. Prawdziwym dowodem jest projekt, quiz i umiejętność wytłumaczenia kodu komuś innemu.</p>
+  </header>
+
+  <div class="js-progress-stat-grid">
+    <div><strong>{{ stats.completed_lessons }}<small>/{{ stats.lesson_total }}</small></strong><span>ukończonych lekcji</span></div>
+    <div><strong>{{ stats.completed_modules }}<small>/{{ stats.module_total }}</small></strong><span>modułów z lekcjami</span></div>
+    <div><strong>{{ stats.reviewed_cards }}<small>/{{ stats.card_total }}</small></strong><span>poznanych fiszek</span></div>
+    <div><strong>{{ stats.best_score }}%</strong><span>najlepszy quiz</span></div>
+  </div>
+
+  <section class="js-game-panel" aria-labelledby="game-title">
+    <div class="js-game-copy">
+      <p class="eyebrow eyebrow-js">Poziom i seria</p>
+      <h2 id="game-title">{{ stats.level_name }} <span>{{ stats.xp }} XP</span></h2>
+      <p>{% if stats.next_level_xp %}Do kolejnego poziomu: {{ stats.next_level_xp }} XP.{% else %}Osiągnięto najwyższy poziom. Teraz liczy się projekt i rozmowa.{% endif %}</p>
+    </div>
+    <div class="js-game-meter">
+      <div class="progress-label"><span>Postęp poziomu</span><strong>{{ stats.level_percent }}%</strong></div>
+      <div class="progress-track progress-track-dark"><span style="--bar: {{ stats.level_percent }}%;"></span></div>
+      <div class="js-game-facts">
+        <div><strong>{{ stats.streak }}</strong><span>dni serii</span></div>
+        <div><strong>{{ stats.active_days }}</strong><span>aktywnych dni</span></div>
+        <div><strong>{{ stats.challenge_count }}</strong><span>ukończonych wyzwań</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="module-progress-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-js">Mapa modułów</p><h2 id="module-progress-title">Gdzie jesteś.</h2></div>
+      <a class="text-link" href="{% url 'js_academy:path' %}">Wróć do ścieżki →</a>
+    </div>
+    <div class="js-progress-modules">
+      {% for row in modules %}
+        <div class="js-progress-row" style="--js-accent: {{ row.module.accent }};">
+          <span class="js-module-glyph">{{ row.module.glyph }}</span>
+          <div class="js-progress-row-main">
+            <div><strong>{{ row.module.title }}</strong><span>{{ row.completed_lessons }}/{{ row.lesson_total }} lekcji</span></div>
+            <div class="progress-track"><span style="--bar: {{ row.lesson_percent }}%;"></span></div>
+          </div>
+          <div class="js-progress-row-score"><strong>{% if row.best_score %}{{ row.best_score }}%{% else %}—{% endif %}</strong><span>quiz</span></div>
+          <a href="{{ row.module.get_absolute_url }}">{% if row.next_lesson %}Kontynuuj{% else %}Otwórz{% endif %} →</a>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="attempts-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-js">Historia</p><h2 id="attempts-title">Ostatnie quizy.</h2></div>
+      <a class="text-link" href="{% url 'js_academy:flashcards_index' %}">Fiszki do powtórki →</a>
+    </div>
+    {% if attempts %}
+      <div class="js-attempt-table-wrap">
+        <table class="js-attempt-table">
+          <thead><tr><th>Moduł</th><th>Wynik</th><th>Dobre odpowiedzi</th><th>Data</th><th></th></tr></thead>
+          <tbody>
+            {% for attempt in attempts %}
+              <tr>
+                <td><strong>{{ attempt.module.title }}</strong></td>
+                <td>{{ attempt.score_percent }}%</td>
+                <td>{{ attempt.correct_count }}/{{ attempt.length }}</td>
+                <td>{{ attempt.started_at|date:"j M Y, H:i" }}</td>
+                <td><a href="{% url 'js_academy:quiz_results' attempt.pk %}">Przegląd →</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="js-empty-inline"><p>Nie masz jeszcze ukończonego quizu. Zacznij od pierwszego modułu — wynik nie musi być idealny.</p><a class="btn btn-js btn-small" href="{% url 'js_academy:module' 'fundamenty-js' %}">Zacznij moduł 1 →</a></div>
+    {% endif %}
+  </section>
+
+  <div class="js-bottom-cta">
+    <div><p class="eyebrow eyebrow-js-dark">Kolejny krok</p><h2>Jedna lekcja dziennie jest lepsza niż siedem w niedzielę.</h2><p>Wróć do ścieżki i zrób następną rzecz. Postęp buduje się z małych, powtarzalnych sesji.</p></div>
+    <a class="btn btn-js" href="{% url 'js_academy:path' %}">Przejdź do ścieżki <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+{% endblock %}

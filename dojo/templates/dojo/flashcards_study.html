@@ -1,0 +1,138 @@
+{% extends "dojo/base.html" %}
+
+{% block title %}{% if topic %}{{ topic.name }} fiszki{% else %}Due fiszki{% endif %}{% endblock %}
+{% block body_class %}page-study{% endblock %}
+
+{% block content %}
+<div class="page-wrap study-wrap">
+  <div class="study-topline">
+    <a class="back-link" href="{% url 'dojo:flashcards' %}"><span aria-hidden="true">←</span> All decks</a>
+    <div class="study-top-meta">
+      <span>{{ reviewed_today }} reviewed today</span>
+      <span class="topline-sep" aria-hidden="true">·</span>
+      <span>{{ progress.total }} cards in scope</span>
+    </div>
+  </div>
+
+  {% if card %}
+    <header class="study-header">
+      <div class="study-title-wrap">
+        <span class="topic-glyph" style="--accent: {{ card.topic.accent }};">{{ card.topic.glyph }}</span>
+        <div>
+          <p class="eyebrow eyebrow-dark">{% if topic %}Deck{% else %}Mixed review{% endif %} · {{ card.get_difficulty_display }}</p>
+          <h1>{% if topic %}{{ topic.name }}{% else %}All due cards{% endif %}</h1>
+        </div>
+      </div>
+      <div class="study-queue">
+        <strong>{{ queue_remaining }}</strong>
+        <span>in queue</span>
+      </div>
+    </header>
+
+    <div class="study-progress">
+      <div class="progress-label"><span>Deck coverage</span><span>{{ progress.reviewed }} / {{ progress.total }} met</span></div>
+      <div class="progress-track progress-track-dark"><span style="--bar: {{ progress.percent }}%;"></span></div>
+    </div>
+
+    <div class="study-stage" data-study-stage {% if reveal %}data-revealed="true"{% endif %}>
+      <div class="fiszka-card {% if reveal %}is-revealed{% endif %}" data-flashcard>
+        <div class="fiszka-inner">
+          <section class="fiszka-face fiszka-front" aria-labelledby="card-prompt" aria-hidden="{% if reveal %}true{% else %}false{% endif %}" data-card-front>
+            <div class="fiszka-face-head">
+              <span class="tag tag-dark">{{ card.topic.name }}</span>
+              <span class="fiszka-side-label">Prompt · front</span>
+            </div>
+            <div class="fiszka-content">
+              <p class="fiszka-kicker">Answer this out loud</p>
+              <h2 id="card-prompt">{{ card.front }}</h2>
+              {% if card.front_code %}
+                <pre class="inline-code inline-code-dark"><code>{{ card.front_code }}</code></pre>
+              {% endif %}
+              {% if card.hint %}
+                <details class="hint">
+                  <summary>Need a nudge?</summary>
+                  <p>{{ card.hint }}</p>
+                </details>
+              {% endif %}
+            </div>
+            <div class="fiszka-face-foot">
+              <span class="flip-note">Say it, then turn the card over.</span>
+            </div>
+          </section>
+
+          <section class="fiszka-face fiszka-back" aria-labelledby="card-answer" aria-hidden="{% if reveal %}false{% else %}true{% endif %}" data-card-back>
+            <div class="fiszka-face-head">
+              <span class="tag tag-coral">Answer</span>
+              <span class="fiszka-side-label">Back · no peeking</span>
+            </div>
+            <div class="fiszka-content">
+              <p class="fiszka-kicker">The other side</p>
+              <h2 id="card-answer">{{ card.back|linebreaksbr }}</h2>
+              {% if card.back_code %}
+                <pre class="inline-code"><code>{{ card.back_code }}</code></pre>
+              {% endif %}
+            </div>
+            <div class="fiszka-face-foot">
+              <span class="flip-note">Now rate how that felt.</span>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="reveal-controls">
+        <a class="btn btn-primary btn-flip" href="?reveal=1" data-flip-button>Show the answer <span aria-hidden="true">↻</span></a>
+        <span class="keyboard-hint">Press <kbd>Space</kbd> to flip</span>
+      </div>
+
+      <div class="rating-controls">
+        {% if topic %}
+          <form method="post" action="{% url 'dojo:flashcards_rate' topic.slug card.pk %}" class="rating-form" data-rating-form>
+        {% else %}
+          <form method="post" action="{% url 'dojo:flashcards_rate_all' card.pk %}" class="rating-form" data-rating-form>
+        {% endif %}
+          {% csrf_token %}
+          <p class="rating-title">How well did you recall it?</p>
+          <div class="rating-buttons">
+            <button class="rating-btn rating-again" type="submit" name="rating" value="again">
+              <kbd>1</kbd><strong>Again</strong><span>tomorrow</span>
+            </button>
+            <button class="rating-btn rating-hard" type="submit" name="rating" value="hard">
+              <kbd>2</kbd><strong>Hard</strong><span>stretch</span>
+            </button>
+            <button class="rating-btn rating-good" type="submit" name="rating" value="good">
+              <kbd>3</kbd><strong>Good</strong><span>grow</span>
+            </button>
+            <button class="rating-btn rating-easy" type="submit" name="rating" value="easy">
+              <kbd>4</kbd><strong>Easy</strong><span>give room</span>
+            </button>
+          </div>
+          <p class="keyboard-hint">Keys <kbd>1</kbd>–<kbd>4</kbd> rate the card. The next one appears instantly.</p>
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <section class="empty-state">
+      <span class="empty-mark" aria-hidden="true">✓</span>
+      <p class="eyebrow eyebrow-dark">{% if topic %}Deck complete{% else %}All caught up{% endif %}</p>
+      <h1>Nothing is due.<br><em>That is a good thing.</em></h1>
+      <p class="page-lead">
+        {% if progress.reviewed %}
+          You have met {{ progress.reviewed }} of {{ progress.total }} cards in this scope.
+          {% if progress.next_due %}The next one returns on {{ progress.next_due|date:"D, j M" }}.{% else %}Take a quiz while the schedule thinks.{% endif %}
+        {% else %}
+          No cards are ready in this scope yet. Pick a deck and start the first pass.
+        {% endif %}
+      </p>
+      <div class="empty-actions">
+        <a class="btn btn-primary" href="{% url 'dojo:flashcards' %}">Back to decks <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost-dark" href="{% url 'dojo:quiz_setup' %}">Take a quiz <span aria-hidden="true">?</span></a>
+      </div>
+      <div class="empty-stats">
+        <div><strong>{{ progress.reviewed }}</strong><span>cards met</span></div>
+        <div><strong>{{ progress.learned }}</strong><span>in rotation</span></div>
+        <div><strong>{{ reviewed_today }}</strong><span>reviewed today</span></div>
+      </div>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

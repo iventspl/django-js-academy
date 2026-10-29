@@ -1,0 +1,83 @@
+{% extends "js_academy/base_js.html" %}
+
+{% block title %}Quiz · {{ attempt.module.title }}{% endblock %}
+{% block body_class %}page-js js-quiz-page{% endblock %}
+
+{% block content %}
+<div class="page-wrap js-wrap js-quiz-wrap">
+  <div class="js-quiz-topline">
+    <a class="back-link" href="{{ attempt.module.get_absolute_url }}"><span aria-hidden="true">←</span> {{ attempt.module.title }}</a>
+    <span>Pytanie {{ number }} / {{ attempt.length }}</span>
+  </div>
+  <div class="run-progress"><span style="--progress: {{ progress }}%;"></span></div>
+
+  <article class="question-card js-question-card">
+    <div class="question-meta">
+      <span class="topic-chip" style="--accent: {{ attempt.module.accent }};">{{ attempt.module.title }}</span>
+      <span class="difficulty-chip difficulty-{{ question.difficulty }}">{{ question.get_difficulty_display }}</span>
+    </div>
+    <h1 class="question-prompt">{{ question.prompt }}</h1>
+
+    {% if question.code %}
+      <div class="code-block">
+        <div class="code-bar"><span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>javascript</span></div>
+        <pre><code>{{ question.code }}</code></pre>
+      </div>
+    {% endif %}
+
+    {% if answered %}
+      <div class="answer-list answer-list-locked">
+        {% for choice in choices %}
+          <div class="answer-option {% if choice.is_correct %}is-correct{% elif selected == choice %}is-wrong{% else %}is-muted{% endif %}">
+            <span class="answer-key">{{ forloop.counter }}</span>
+            <span class="answer-text">{{ choice.text }}</span>
+            <span class="answer-status">{% if choice.is_correct %}Poprawna{% elif selected == choice %}Twoja odpowiedź{% endif %}</span>
+          </div>
+        {% endfor %}
+      </div>
+      <section class="feedback {% if is_correct %}feedback-correct{% else %}feedback-wrong{% endif %}" aria-live="polite">
+        <div class="feedback-head">
+          <span class="feedback-mark" aria-hidden="true">{% if is_correct %}✓{% else %}×{% endif %}</span>
+          <div>
+            <h2>{% if is_correct %}Dobrze!{% else %}Jeszcze nie.{% endif %}</h2>
+            <p>{% if is_correct %}Wybrałeś: {{ selected.text }}{% else %}Wybrałeś „{{ selected.text }}”. Poprawna odpowiedź to „{{ correct.text }}”.{% endif %}</p>
+          </div>
+        </div>
+        <div class="feedback-why">
+          <p class="eyebrow eyebrow-dark">Dlaczego</p>
+          <p>{{ question.explanation|linebreaks }}</p>
+          {% if question.explanation_code %}<pre class="inline-code"><code>{{ question.explanation_code }}</code></pre>{% endif %}
+        </div>
+        <form method="post" class="feedback-next">
+          {% csrf_token %}
+          <button class="btn btn-dark" type="submit" name="action" value="next" data-next-button>{% if number == attempt.length %}Zobacz wynik{% else %}Następne pytanie{% endif %} <span aria-hidden="true">→</span></button>
+          <span class="keyboard-hint">albo naciśnij <kbd>Enter</kbd></span>
+        </form>
+      </section>
+    {% else %}
+      <form method="post" class="answer-form" data-quiz-form>
+        {% csrf_token %}
+        <fieldset class="answer-fieldset">
+          <legend class="sr-only">Wybierz jedną odpowiedź</legend>
+          <div class="answer-list">
+            {% for choice in choices %}
+              <label class="answer-option answer-option-input">
+                <input type="radio" name="choice" value="{{ choice.pk }}" data-answer-input>
+                <span class="answer-key">{{ forloop.counter }}</span>
+                <span class="answer-text">{{ choice.text }}</span>
+                <span class="answer-check" aria-hidden="true"></span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+        <div class="answer-submit-row">
+          <button class="btn btn-js" type="submit" name="action" value="answer">Sprawdź odpowiedź <span aria-hidden="true">→</span></button>
+          <span class="keyboard-hint">Klawisze <kbd>1</kbd>–<kbd>4</kbd>, potem <kbd>Enter</kbd></span>
+        </div>
+      </form>
+    {% endif %}
+  </article>
+
+  <div class="js-quiz-note">Bez punktów karnych. Celem jest zrozumienie, nie zaliczenie za pierwszym razem.</div>
+</div>
+{% endblock %}

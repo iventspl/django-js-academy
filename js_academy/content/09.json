@@ -1,0 +1,167 @@
+{
+  "module": {
+    "slug": "wzorce-frontendu",
+    "title": "Wzorce i architektura frontendu",
+    "subtitle": "Granice, maszyny stanów, derived state i praca z API bez chaosu.",
+    "description": "Gdy aplikacja rośnie, sam React nie wystarcza. Ten moduł uczy porządkować kod według funkcji, modelować stany jako maszyny i projektować przepływy API, które nie zostawiają użytkownika w połowie ładowania.",
+    "level": "advanced",
+    "glyph": "09",
+    "accent": "#F59E0B",
+    "duration_minutes": 65,
+    "outcomes": [
+      "Organizujesz kod według funkcji, a nie według przypadkowych typów plików.",
+      "Modelujesz stany tak, aby niemożliwe kombinacje były naprawdę niemożliwe.",
+      "Oddzielasz stan źródłowy od wartości obliczanych podczas renderu.",
+      "Obsługujesz wyścigi żądań i optymistyczne aktualizacje z rollbackiem."
+    ],
+    "project_title": "Kreator zamówienia z maszyną stanów",
+    "project_brief": "Zbuduj wieloetapowy formularz (dane → dostawa → płatność → sukces) z jawnymi przejściami, walidacją i obsługą błędu. Stan musi być jedną maszyną, nie pięcioma booleanami.",
+    "project_steps": [
+      "Zdefiniuj stany i dozwolone przejścia.",
+      "Zbuduj czyste funkcje walidacji i przejść.",
+      "Dodaj widok stanu oraz akcje użytkownika.",
+      "Dodaj testy przejść i scenariusz błędu płatności."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "warstwy-i-granice",
+      "title": "Warstwy, moduły i granice",
+      "summary": "Jak dzielić frontend według funkcji i utrzymać czytelne zależności.",
+      "minutes": 14,
+      "body_html": "<p>Frontend zaczyna się od jednego pliku, a kończy na dziesiątkach ekranów. Najczęstszy błąd to dzielenie kodu wyłącznie według typów: wszystkie komponenty w <code>components</code>, wszystkie hooki w <code>hooks</code>. Po czasie nie wiadomo, co należy do jakiej funkcji produktu.</p>\n<h2>Feature-first</h2>\n<pre><code>src/\n  features/\n    checkout/\n      components/\n      api.ts\n      state.ts\n      CheckoutPage.tsx\n    catalog/\n    account/\n  shared/\n    ui/\n    lib/\n</code></pre>\n<p>Feature-first grupuje rzeczy, które zmieniają się razem. <code>shared</code> zawiera naprawdę uniwersalne elementy, a nie „wszystko, co kiedyś może się przydać”.</p>\n<h2>Granice i zależności</h2>\n<ul>\n<li>Komponent UI nie powinien sam znać adresów API.</li>\n<li>Logika biznesowa powinna być w czystych funkcjach, łatwych do testowania.</li>\n<li>Warstwa danych mapuje odpowiedzi API na model aplikacji.</li>\n<li>Feature nie importuje prywatnych plików innego feature'a.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Pytanie projektowe:</strong> jeśli usuniesz całą funkcję checkout, ile niepowiązanych plików trzeba będzie zmienić? Im mniej, tym lepsza granica.</div>"
+    },
+    {
+      "slug": "maszyna-stanu",
+      "title": "Stan jako maszyna stanów",
+      "summary": "Zamień booleanowe kombinacje w jawne stany i przejścia.",
+      "minutes": 15,
+      "body_html": "<p>Gdy w komponencie pojawiają się <code>isLoading</code>, <code>isError</code>, <code>isSuccess</code> i <code>isEditing</code>, łatwo uzyskać stan niemożliwy: ładowanie i błąd jednocześnie. Maszyna stanów opisuje dozwolone stany oraz akcje, które prowadzą z jednego do drugiego.</p>\n<pre><code>type State =\n  | { status: \"idle\" }\n  | { status: \"validating\" }\n  | { status: \"submitting\" }\n  | { status: \"success\"; orderId: string }\n  | { status: \"error\"; message: string };\n\ntype Action =\n  | { type: \"SUBMIT\" }\n  | { type: \"VALID\" }\n  | { type: \"SUCCESS\"; orderId: string }\n  | { type: \"FAIL\"; message: string };</code></pre>\n<h2>Reducer zamiast rozproszonych setterów</h2>\n<pre><code>function reducer(state: State, action: Action): State {\n  switch (action.type) {\n    case \"SUBMIT\":\n      return state.status === \"idle\" ? { status: \"validating\" } : state;\n    case \"VALID\":\n      return { status: \"submitting\" };\n    case \"SUCCESS\":\n      return { status: \"success\", orderId: action.orderId };\n    case \"FAIL\":\n      return { status: \"error\", message: action.message };\n  }\n}</code></pre>\n<p>Dzięki temu przejścia można testować bez renderowania UI, a komponent jedynie odczytuje stan i wysyła akcje.</p>\n<div class=\"lesson-callout\"><strong>Uwaga:</strong> nie każdy ekran potrzebuje formalnej biblioteki. Wystarczy jeden reducer i kilka jawnych wariantów. Chodzi o model, nie o narzędzie.</div>"
+    },
+    {
+      "slug": "api-bledy",
+      "title": "API, wyścigi i błędy",
+      "summary": "Jak nie pokazać danych z poprzedniego zapytania i jak cofać optymistyczne zmiany.",
+      "minutes": 16,
+      "body_html": "<p>Żądania sieciowe są wolne i mogą wrócić w innej kolejności. Jeśli użytkownik wpisze „a”, potem „ab”, odpowiedź dla „a” może dotrzeć po odpowiedzi dla „ab”. Bez anulowania zobaczysz nieaktualne dane.</p>\n<h2>AbortController</h2>\n<pre><code>useEffect(() =&gt; {\n  const controller = new AbortController();\n\n  async function load() {\n    setState({ status: \"loading\" });\n    try {\n      const response = await fetch(`/api/products?q=${query}`, {\n        signal: controller.signal,\n      });\n      if (!response.ok) throw new Error(\"HTTP \" + response.status);\n      setState({ status: \"success\", data: await response.json() });\n    } catch (error) {\n      if (error.name !== \"AbortError\") {\n        setState({ status: \"error\", message: \"Spróbuj ponownie\" });\n      }\n    }\n  }\n\n  load();\n  return () =&gt; controller.abort();\n}, [query]);</code></pre>\n<h2>Optymistyczna aktualizacja</h2>\n<p>Możesz od razu pokazać zmianę, ale musisz mieć plan cofnięcia. Zapisz poprzedni stan, wyślij żądanie, a przy błędzie przywróć snapshot i pokaż komunikat. Nie zostawiaj użytkownika z UI, które kłamie.</p>\n<div class=\"lesson-callout\"><strong>Reguła:</strong> każdy stan powinien mieć jednoznaczne znaczenie. „Ładowanie” nie może oznaczać jednocześnie „mam stare dane i nie wiem, czy są aktualne”.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-wzorce-b1",
+      "difficulty": "beginner",
+      "prompt": "Co oznacza organizacja feature-first?",
+      "code": "",
+      "choices": [
+        "Grupowanie kodu według funkcji produktu",
+        "Grupowanie tylko według rozszerzeń plików",
+        "Wszystko w jednym pliku",
+        "Brak wspólnych komponentów"
+      ],
+      "answer": 0,
+      "explanation": "Feature-first grupuje komponenty, API, stan i testy jednej funkcji. Ułatwia to zmianę i usuwanie całych funkcji."
+    },
+    {
+      "key": "js-wzorce-b2",
+      "difficulty": "beginner",
+      "prompt": "Czym jest funkcja czysta?",
+      "code": "",
+      "choices": [
+        "Zwraca ten sam wynik dla tych samych argumentów i nie ma efektów ubocznych",
+        "Zawsze zwraca Promise",
+        "Mutuje stan globalny",
+        "Wymaga Reacta"
+      ],
+      "answer": 0,
+      "explanation": "Funkcja czysta nie zależy od ukrytego stanu i nie modyfikuje świata. Łatwo ją testować i składać."
+    },
+    {
+      "key": "js-wzorce-i1",
+      "difficulty": "intermediate",
+      "prompt": "Dlaczego maszyna stanów jest lepsza od czterech niezależnych booleanów?",
+      "code": "",
+      "choices": [
+        "Uniemożliwia nielegalne kombinacje stanów",
+        "Jest zawsze szybsza",
+        "Usuwa potrzebę testów",
+        "Zastępuje API"
+      ],
+      "answer": 0,
+      "explanation": "Jeden wariant statusu wyklucza jednoczesne ładowanie i błąd. Przejścia są jawne i testowalne."
+    },
+    {
+      "key": "js-wzorce-i2",
+      "difficulty": "intermediate",
+      "prompt": "Co to jest derived state?",
+      "code": "",
+      "choices": [
+        "Wartość obliczana z istniejącego stanu podczas renderu",
+        "Stan zapisany w localStorage",
+        "Stan serwera",
+        "Kopia stanu w context"
+      ],
+      "answer": 0,
+      "explanation": "Jeśli wartość da się policzyć z istniejących danych, nie duplikuj jej w stanie. Mniej źródeł prawdy to mniej niespójności."
+    },
+    {
+      "key": "js-wzorce-a1",
+      "difficulty": "advanced",
+      "prompt": "Po co w efekcie fetch używać AbortController?",
+      "code": "",
+      "choices": [
+        "Aby anulować nieaktualne żądanie i uniknąć wyścigu odpowiedzi",
+        "Aby przyspieszyć JSON.parse",
+        "Aby ominąć CORS",
+        "Aby zapisać dane w cache"
+      ],
+      "answer": 0,
+      "explanation": "Gdy zapytanie się zmienia, poprzednie żądanie jest przerywane. Dzięki temu stara odpowiedź nie nadpisze nowej."
+    },
+    {
+      "key": "js-wzorce-a2",
+      "difficulty": "advanced",
+      "prompt": "Jak bezpiecznie zrobić optymistyczną aktualizację?",
+      "code": "",
+      "choices": [
+        "Pokazać zmianę od razu, zapisać poprzedni stan i cofnąć go przy błędzie",
+        "Nigdy nie pokazywać zmian przed odpowiedzią",
+        "Zignorować błąd",
+        "Wyłączyć walidację"
+      ],
+      "answer": 0,
+      "explanation": "Optymistyczny UI wymaga rollbacku i komunikatu. Inaczej użytkownik widzi sukces, którego nie było."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-wzorce-f1",
+      "front": "Czym jest feature-first?",
+      "back": "Organizacja kodu według funkcji produktu, a nie według typów plików. Funkcja zawiera swoje komponenty, API, stan i testy; shared zawiera tylko naprawdę wspólne elementy.",
+      "hint": ""
+    },
+    {
+      "key": "js-wzorce-f2",
+      "front": "Co daje stan jako maszyna stanów?",
+      "back": "Jawne warianty i dozwolone przejścia. Uniemożliwia stany sprzeczne, ułatwia testowanie i pokazuje, co może zrobić użytkownik.",
+      "hint": ""
+    },
+    {
+      "key": "js-wzorce-f3",
+      "front": "Kiedy wartość powinna być derived state?",
+      "back": "Gdy da się ją obliczyć z props lub istniejącego stanu. Nie przechowuj jej osobno, bo będziesz musiał synchronizować dwa źródła prawdy.",
+      "hint": ""
+    },
+    {
+      "key": "js-wzorce-f4",
+      "front": "Jak uniknąć wyścigu żądań?",
+      "back": "Użyj AbortController lub identyfikatora żądania; ignoruj odpowiedzi starsze niż aktualne zapytanie. Anulowanie jest lepsze niż zgadywanie.",
+      "hint": ""
+    },
+    {
+      "key": "js-wzorce-f5",
+      "front": "Jak działa optymistyczna aktualizacja?",
+      "back": "Zmieniasz UI przed potwierdzeniem serwera, ale zapisujesz snapshot i przy błędzie przywracasz poprzedni stan oraz pokazujesz komunikat.",
+      "hint": ""
+    }
+  ]
+}

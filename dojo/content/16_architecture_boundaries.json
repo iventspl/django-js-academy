@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "architecture-boundaries",
+    "name": "Software Architecture & Boundaries",
+    "tagline": "Coupling, cohesion, modules, ports, and decisions that age well.",
+    "description": "AI can generate code faster than teams can rethink systems. The durable skill is deciding where boundaries belong: what changes together, what must stay independent, and which trade-offs you are willing to own for years.",
+    "glyph": "mod",
+    "accent": "#7FD1AE"
+  },
+  "questions": [
+    {
+      "key": "architecture-boundaries-b1",
+      "difficulty": "beginner",
+      "prompt": "What do low coupling and high cohesion mean?",
+      "choices": [
+        "Modules know little about each other, while each module contains closely related responsibilities.",
+        "Every module imports every other module so nothing is duplicated.",
+        "The database has no foreign keys.",
+        "All code lives in one file to reduce imports."
+      ],
+      "answer": 0,
+      "explanation": "Cohesion is how strongly a module's responsibilities belong together. Coupling is how much modules depend on each other's details. Good boundaries aim for high cohesion inside a module and low, explicit coupling between modules."
+    },
+    {
+      "key": "architecture-boundaries-b2",
+      "difficulty": "beginner",
+      "prompt": "What is usually the best first architecture for a new Django product?",
+      "choices": [
+        "A modular monolith with clear app boundaries and one deployment.",
+        "A microservice per database table.",
+        "A separate service for every Django app on day one.",
+        "No boundaries until the codebase becomes unmaintainable."
+      ],
+      "answer": 0,
+      "explanation": "A modular monolith gives one deployable, one database, simple transactions, and fast iteration while still enforcing domain boundaries. Extract services when independent scaling, ownership, or deployment actually justify the operational cost."
+    },
+    {
+      "key": "architecture-boundaries-b3",
+      "difficulty": "beginner",
+      "prompt": "What is a bounded context?",
+      "choices": [
+        "A boundary inside which a domain model and its language have a specific, consistent meaning.",
+        "A Django middleware that blocks requests.",
+        "A database backup window.",
+        "A frontend CSS container."
+      ],
+      "answer": 0,
+      "explanation": "A bounded context protects a model from conflicting meanings. 'Customer' in billing, support, and marketing may be different models with different rules. Explicit contexts prevent one giant model from serving every department badly."
+    },
+    {
+      "key": "architecture-boundaries-b4",
+      "difficulty": "beginner",
+      "prompt": "Why keep Architecture Decision Records (ADRs)?",
+      "choices": [
+        "To record the context, decision, and consequences of important technical choices for future maintainers.",
+        "To replace all tests.",
+        "To document every line of code.",
+        "To avoid ever changing an architecture."
+      ],
+      "answer": 0,
+      "explanation": "An ADR explains why a choice was made, what alternatives were considered, and what it costs. That context is exactly what future humans and AI assistants lack. ADRs are short, dated, and immutable; superseding decisions get a new record."
+    },
+    {
+      "key": "architecture-boundaries-b5",
+      "difficulty": "beginner",
+      "prompt": "In ports-and-adapters (hexagonal) architecture, what is a port?",
+      "choices": [
+        "An interface the domain owns to describe what it needs or exposes.",
+        "A TCP port number.",
+        "A Django URL path.",
+        "A database migration."
+      ],
+      "answer": 0,
+      "explanation": "A port is an abstract boundary such as PaymentGateway or DocumentStore. Adapters implement it with Stripe, S3, or a test double. The domain depends on its own interface, not on vendor SDKs, which keeps business rules testable and replaceable."
+    },
+    {
+      "key": "architecture-boundaries-i1",
+      "difficulty": "intermediate",
+      "prompt": "Which dependency direction is healthiest in a layered or hexagonal design?",
+      "choices": [
+        "Domain/business rules depend on framework and infrastructure details.",
+        "Infrastructure and framework code depend inward on application/domain interfaces; domain code avoids importing vendor details.",
+        "Everything depends on the settings module.",
+        "Templates own the database schema."
+      ],
+      "answer": 1,
+      "explanation": "Dependency inversion keeps volatile details at the edge. Business rules should not import Stripe, S3, or request objects. Define what the domain needs as an interface, implement it in infrastructure, and inject the adapter at the application boundary."
+    },
+    {
+      "key": "architecture-boundaries-i2",
+      "difficulty": "intermediate",
+      "prompt": "When is extracting a microservice most justified?",
+      "choices": [
+        "Whenever a Django app exceeds 500 lines.",
+        "When the component needs independent scaling, deployment cadence, failure isolation, or team ownership that outweighs distributed-system overhead.",
+        "When you want to avoid writing tests.",
+        "When the database has more than ten tables."
+      ],
+      "answer": 1,
+      "explanation": "Microservices trade local simplicity for network partitions, eventual consistency, observability, versioning, and operational overhead. Extract when independent ownership or scaling is a real constraint, and start with a clear contract and failure plan."
+    },
+    {
+      "key": "architecture-boundaries-i3",
+      "difficulty": "intermediate",
+      "prompt": "What is the core trade-off between synchronous and asynchronous integration?",
+      "choices": [
+        "Synchronous is simpler to reason about but couples availability and latency; asynchronous decouples but introduces eventual consistency and delivery semantics.",
+        "Asynchronous is always faster for the user.",
+        "Synchronous calls never fail.",
+        "Asynchronous systems do not need monitoring."
+      ],
+      "answer": 0,
+      "explanation": "A synchronous call gives an immediate answer but makes the caller wait and can cascade failures. Async work survives disconnects and smooths load, but you must handle retries, duplicates, ordering, and status reporting. Choose per workflow, not by ideology."
+    },
+    {
+      "key": "architecture-boundaries-i4",
+      "difficulty": "intermediate",
+      "prompt": "What does CQRS separate?",
+      "choices": [
+        "The write model from one or more read models.",
+        "The frontend from the backend only.",
+        "Authentication from authorisation.",
+        "Development from production."
+      ],
+      "answer": 0,
+      "explanation": "CQRS separates commands that change state from queries optimized for reading. It can be as small as a denormalized read table or as large as event-sourced projections. It adds synchronization and consistency complexity, so use it for a real read/write mismatch."
+    },
+    {
+      "key": "architecture-boundaries-i5",
+      "difficulty": "intermediate",
+      "prompt": "How do explicit domain events differ from Django signals?",
+      "choices": [
+        "Domain events are named business facts produced by a workflow; signals are a generic in-process notification mechanism with implicit subscribers.",
+        "Signals are always transactional; domain events are not.",
+        "Domain events can only be used in microservices.",
+        "They are identical in every respect."
+      ],
+      "answer": 0,
+      "explanation": "OrderPlaced is a business fact that can be stored, published, retried, and consumed by other contexts. A post_save signal says a row changed. Prefer explicit events for business integration; keep signals for narrow framework hooks."
+    },
+    {
+      "key": "architecture-boundaries-a1",
+      "difficulty": "advanced",
+      "prompt": "What is the main cost of event sourcing?",
+      "choices": [
+        "You cannot audit changes.",
+        "You must own event schema evolution, replay, projections, snapshots, and operational tooling instead of simply updating current state.",
+        "It removes the need for a database.",
+        "It guarantees exactly-once delivery."
+      ],
+      "answer": 1,
+      "explanation": "Event sourcing gives an audit trail and temporal reconstruction, but events are forever: versioning, replay time, projection rebuilds, and GDPR deletion need deliberate design. Use it where the event history is a core business asset, not as a default persistence style."
+    },
+    {
+      "key": "architecture-boundaries-a2",
+      "difficulty": "advanced",
+      "prompt": "Why is a saga often preferred to a distributed two-phase commit across services?",
+      "choices": [
+        "A saga uses local transactions plus compensating actions, avoiding a fragile global lock while accepting intermediate states.",
+        "A saga guarantees atomicity with no compensating actions.",
+        "Two-phase commit is impossible in SQL databases.",
+        "A saga removes the need for idempotency."
+      ],
+      "answer": 0,
+      "explanation": "Distributed transactions are operationally difficult and couple service availability. A saga coordinates local transactions and explicit compensations, so the workflow must tolerate partial completion, retries, and duplicates. Design the business states to make intermediate states safe."
+    },
+    {
+      "key": "architecture-boundaries-a3",
+      "difficulty": "advanced",
+      "prompt": "What is an architecture fitness function?",
+      "choices": [
+        "An automated check that protects a desired architectural property, such as forbidden imports, latency budgets, or dependency direction.",
+        "A benchmark of developer typing speed.",
+        "A CSS media query.",
+        "A database backup schedule."
+      ],
+      "answer": 0,
+      "explanation": "Fitness functions turn architecture intentions into executable checks: import-linter rules, dependency-cruiser, query-count tests, contract tests, or performance budgets. They catch drift in CI instead of relying on a diagram nobody updates."
+    },
+    {
+      "key": "architecture-boundaries-a4",
+      "difficulty": "advanced",
+      "prompt": "How does the strangler fig pattern modernize a legacy system?",
+      "choices": [
+        "Rewrite everything at once behind a big-bang release.",
+        "Put a routing facade in front, migrate capabilities incrementally, and retire legacy paths only after the new ones are proven.",
+        "Copy the legacy code into a new repository and rename it.",
+        "Freeze all feature work for two years."
+      ],
+      "answer": 1,
+      "explanation": "Strangler modernization reduces risk by routing selected capabilities to new implementations while the old system keeps working. You need seams, observability, data synchronization, and a retirement plan. Big-bang rewrites concentrate risk and usually lose institutional knowledge."
+    },
+    {
+      "key": "architecture-boundaries-a5",
+      "difficulty": "advanced",
+      "prompt": "How do you keep a modular monolith from silently turning back into a ball of mud?",
+      "choices": [
+        "Rely on code review alone.",
+        "Enforce module boundaries with explicit public interfaces, forbidden-import checks, ownership rules, and tests that exercise modules through their contracts.",
+        "Put every model in one shared app.",
+        "Ban all database joins."
+      ],
+      "answer": 1,
+      "explanation": "Boundaries decay without enforcement. Define each module's public surface, keep cross-module writes behind services/events, add import-lint rules to CI, and review data ownership. The database schema is part of the boundary, not an implementation detail everyone can edit."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "architecture-boundaries-f1",
+      "difficulty": "beginner",
+      "front": "What are coupling and cohesion?",
+      "back": "Coupling measures how much modules depend on each other's details; cohesion measures how strongly a module's responsibilities belong together. Aim for high cohesion inside boundaries and low, explicit coupling across them.",
+      "hint": "Together inside, independent outside."
+    },
+    {
+      "key": "architecture-boundaries-f2",
+      "difficulty": "beginner",
+      "front": "What is a bounded context?",
+      "back": "A boundary where a domain model and its language have one consistent meaning. Billing's Customer and Support's Customer can be different models. Contexts prevent a single mega-model from serving incompatible rules.",
+      "hint": "Same word, different meaning."
+    },
+    {
+      "key": "architecture-boundaries-f3",
+      "difficulty": "intermediate",
+      "front": "When should you choose a modular monolith over microservices?",
+      "back": "For most new products: one deployment, one database, simple transactions, and fast iteration. Enforce internal module boundaries. Extract services only for real independent scaling, team ownership, deployment cadence, or failure isolation.",
+      "hint": "Start simple, keep seams."
+    },
+    {
+      "key": "architecture-boundaries-f4",
+      "difficulty": "intermediate",
+      "front": "What are ports and adapters?",
+      "back": "Ports are domain-owned interfaces describing required capabilities; adapters implement them with Stripe, S3, Postgres, or test doubles. Dependencies point inward, so business rules stay framework-independent and testable.",
+      "front_code": "class PaymentGateway(Protocol):\n    def charge(self, amount_cents: int) -> Receipt: ...\n\nclass StripeAdapter(PaymentGateway): ..."
+    },
+    {
+      "key": "architecture-boundaries-f5",
+      "difficulty": "advanced",
+      "front": "What belongs in an ADR?",
+      "back": "A short record of context, decision, alternatives, consequences, status, and date. It captures why, not just what. Keep ADRs immutable and supersede them with new ones when the decision changes.",
+      "front_code": "# ADR-004: Use a transactional outbox\nStatus: accepted\nContext: dual writes can lose events.\nDecision: commit outbox row with the business write.\nConsequences: relay + cleanup + monitoring required."
+    },
+    {
+      "key": "architecture-boundaries-f6",
+      "difficulty": "advanced",
+      "front": "Synchronous or asynchronous integration?",
+      "back": "Use sync for immediate answers and simple request/response; accept latency coupling and cascading failures. Use async for slow, retryable, or decoupled work; accept eventual consistency, duplicate delivery, ordering, and observability requirements.",
+      "hint": "Choose the failure mode you can operate."
+    },
+    {
+      "key": "architecture-boundaries-f7",
+      "difficulty": "advanced",
+      "front": "What is an architecture fitness function?",
+      "back": "An automated CI check for an architectural property: forbidden imports, dependency direction, latency/query budgets, contract compatibility, or module ownership. It makes architecture drift visible before it becomes a rewrite.",
+      "hint": "Architecture as executable constraints."
+    }
+  ]
+}

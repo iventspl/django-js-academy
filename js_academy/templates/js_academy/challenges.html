@@ -1,0 +1,60 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Wyzwania kodowania{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-challenges-wrap">
+  <header class="js-page-header js-challenge-header">
+    <p class="eyebrow eyebrow-js">Praktyka · testy w przeglądarce</p>
+    <h1>Kod, który<br><em>naprawdę działa.</em></h1>
+    <p class="js-lead">{{ challenge_total }} wyzwań z automatycznymi testami. Piszesz funkcję <code>solve</code>, uruchamiasz testy i od razu widzisz wynik. Bez instalacji, bez backendu i bez wysyłania kodu na serwer.</p>
+    <div class="hero-actions">
+      <a class="btn btn-ghost-dark" href="{% url 'js_academy:playground' %}">Otwórz piaskownicę <span aria-hidden="true">⌘</span></a>
+    </div>
+    <div class="js-path-summary">
+      <div><strong>{{ solved_count }}/{{ challenge_total }}</strong><span>rozwiązanych</span></div>
+      <div><strong>{{ challenge_total }}</strong><span>wyzwań</span></div>
+      <div><strong>3</strong><span>poziomy</span></div>
+      <div><strong>0</strong><span>wysłanych danych</span></div>
+    </div>
+  </header>
+
+  <nav class="js-filter-row" aria-label="Filtr trudności">
+    <a class="js-filter {% if not difficulty %}is-active{% endif %}" href="{% url 'js_academy:challenges' %}">Wszystkie</a>
+    <a class="js-filter {% if difficulty == 'beginner' %}is-active{% endif %}" href="?difficulty=beginner">Podstawy</a>
+    <a class="js-filter {% if difficulty == 'intermediate' %}is-active{% endif %}" href="?difficulty=intermediate">Średnie</a>
+    <a class="js-filter {% if difficulty == 'advanced' %}is-active{% endif %}" href="?difficulty=advanced">Trudne</a>
+  </nav>
+
+  <div class="js-challenge-grid">
+    {% for challenge in challenges %}
+      <a class="js-challenge-card {% if challenge.id in solved_ids %}is-solved{% endif %}" href="{{ challenge.get_absolute_url }}">
+        <div class="js-challenge-card-top">
+          <span class="js-challenge-number">{{ forloop.counter|stringformat:"02d" }}</span>
+          <span class="js-level">{{ challenge.get_difficulty_display }}</span>
+        </div>
+        <h2>{{ challenge.title }}</h2>
+        <p>{{ challenge.prompt|striptags|truncatechars:150 }}</p>
+        <div class="js-challenge-card-foot">
+          <span class="js-challenge-xp">+{{ challenge.xp }} XP</span>
+          {% if challenge.id in solved_ids %}
+            <span class="js-challenge-done">✓ rozwiązane</span>
+          {% else %}
+            <span>otwórz →</span>
+          {% endif %}
+        </div>
+      </a>
+    {% empty %}
+      <p class="js-empty-inline"><span>Brak wyzwań w tym filtrze.</span><a href="{% url 'js_academy:challenges' %}">Pokaż wszystkie</a></p>
+    {% endfor %}
+  </div>
+
+  <div class="js-bottom-cta">
+    <div>
+      <p class="eyebrow">Nie wiesz, od czego zacząć?</p>
+      <h2>Najpierw testy, potem optymalizacja.</h2>
+      <p>Każde wyzwanie ma podpowiedzi i rozwiązanie. Uruchamiaj testy często — kod bez uruchomienia to tylko hipoteza.</p>
+    </div>
+    <a class="btn" href="{% url 'js_academy:path' %}">Wróć do ścieżki →</a>
+  </div>
+</div>
+{% endblock %}

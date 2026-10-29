@@ -1,0 +1,3 @@
+# Python 3.12+ installs Django 6.1.x (latest stable).
+# Python 3.10–3.11 installs the latest Django 5.2 LTS patch instead.
+Django>=5.2,<6.2

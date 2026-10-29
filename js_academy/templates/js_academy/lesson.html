@@ -1,0 +1,97 @@
+{% extends "js_academy/base_js.html" %}
+
+{% block title %}{{ lesson.title }} · {{ module.title }}{% endblock %}
+{% block body_class %}page-js js-lesson-page{% endblock %}
+
+{% block content %}
+<div class="page-wrap js-wrap">
+  <div class="js-breadcrumb">
+    <a href="{% url 'js_academy:path' %}"><span aria-hidden="true">←</span> Ścieżka</a>
+    <span>/</span>
+    <a href="{{ module.get_absolute_url }}">{{ module.title }}</a>
+    <span>/</span>
+    <span>Lekcja {{ lesson_number }}</span>
+  </div>
+
+  <div class="js-lesson-layout">
+    <aside class="js-lesson-nav">
+      <div class="js-lesson-nav-head">
+        <span class="js-module-glyph" style="--js-accent: {{ module.accent }};">{{ module.glyph }}</span>
+        <div><strong>{{ module.title }}</strong><span>{{ module.lessons.count }} lekcji</span></div>
+      </div>
+      <ol>
+        {% for item in lessons %}
+          <li class="{% if item.id in completed_ids %}is-done{% endif %} {% if item.pk == lesson.pk %}is-current{% endif %}">
+            <a href="{{ item.get_absolute_url }}">
+              <span class="js-lesson-check" aria-hidden="true">{% if item.id in completed_ids %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+              <span>{{ item.title }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ol>
+      <a class="js-lesson-back" href="{{ module.get_absolute_url }}">← Wróć do modułu</a>
+    </aside>
+
+    <article class="js-lesson-article">
+      <header class="js-lesson-header">
+        <p class="eyebrow eyebrow-js">Lekcja {{ lesson_number }} z {{ lessons|length }} · {{ lesson.minutes }} min</p>
+        <h1>{{ lesson.title }}</h1>
+        <p class="js-lesson-summary">{{ lesson.summary }}</p>
+      </header>
+
+      <div class="js-lesson-body">
+        {{ lesson.body_html|safe }}
+      </div>
+
+      {% if lesson.live_demo_html %}
+        <section class="js-live-demo" aria-labelledby="demo-title">
+          <div class="js-live-demo-head">
+            <div>
+              <p class="eyebrow eyebrow-js-dark">Demo na żywo</p>
+              <h2 id="demo-title">{{ lesson.demo_title }}</h2>
+              <p>{{ lesson.demo_description }}</p>
+            </div>
+            <span class="tag tag-js-demo">iframe · sandbox</span>
+          </div>
+          <div class="js-demo-frame">
+            <iframe
+              title="{{ lesson.demo_title }} — interaktywne demo"
+              srcdoc="{{ lesson.live_demo_html }}"
+              sandbox="allow-scripts"
+              referrerpolicy="no-referrer"
+              loading="lazy"
+            ></iframe>
+          </div>
+          <p class="js-demo-note">Demo działa w izolowanej piaskownicy: nie ma dostępu do sesji, danych aplikacji ani innych stron. Kod demo jest częścią treści lekcji.</p>
+        </section>
+      {% endif %}
+
+      <div class="js-lesson-complete">
+        {% if completed %}
+          <div class="js-complete-state"><span aria-hidden="true">✓</span><div><strong>Lekcja ukończona</strong><p>Możesz wrócić do niej w każdej chwili.</p></div></div>
+          {% if following_lesson %}
+            <a class="btn btn-js" href="{{ following_lesson.get_absolute_url }}">Następna lekcja: {{ following_lesson.title }} <span aria-hidden="true">→</span></a>
+          {% else %}
+            <a class="btn btn-js" href="{{ module.get_absolute_url }}">Zakończ moduł <span aria-hidden="true">→</span></a>
+          {% endif %}
+        {% else %}
+          <form method="post" action="{% url 'js_academy:complete_lesson' module.slug lesson.slug %}">
+            {% csrf_token %}
+            <button class="btn btn-js" type="submit" name="next" value="1">Ukończ lekcję i przejdź dalej <span aria-hidden="true">→</span></button>
+          </form>
+          <p>Odhaczaj dopiero po przepisaniu przykładu i odpowiedzeniu sobie na pytanie „dlaczego to działa?”.</p>
+        {% endif %}
+      </div>
+
+      <nav class="js-lesson-pager" aria-label="Nawigacja lekcji">
+        {% if previous_lesson %}
+          <a href="{{ previous_lesson.get_absolute_url }}"><span aria-hidden="true">←</span><small>Poprzednia</small><strong>{{ previous_lesson.title }}</strong></a>
+        {% else %}<span></span>{% endif %}
+        {% if following_lesson %}
+          <a class="is-next" href="{{ following_lesson.get_absolute_url }}"><small>Następna</small><strong>{{ following_lesson.title }}</strong><span aria-hidden="true">→</span></a>
+        {% endif %}
+      </nav>
+    </article>
+  </div>
+</div>
+{% endblock %}

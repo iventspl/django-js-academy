@@ -1,0 +1,253 @@
+{
+  "topic": {
+    "slug": "platform-engineering",
+    "name": "Platform Engineering & Operations",
+    "tagline": "CI/CD, environments, observability, incidents, and cost.",
+    "description": "A system is not finished when it renders. Learn how code becomes a reliable service: automated delivery, reproducible infrastructure, safe rollouts, actionable observability, backup recovery, incident command, and cost awareness.",
+    "glyph": "plt",
+    "accent": "#A8DADC"
+  },
+  "questions": [
+    {
+      "key": "platform-engineering-b1",
+      "difficulty": "beginner",
+      "prompt": "What is the difference between continuous integration and continuous delivery?",
+      "choices": [
+        "CI merges and verifies changes automatically; CD keeps every change in a deployable state and often deploys automatically.",
+        "CI is production monitoring; CD is a database.",
+        "They are the same thing.",
+        "CD means writing code directly on the server."
+      ],
+      "answer": 0,
+      "explanation": "CI builds and tests each change, catching integration problems early. CD automates the path to a deployable artifact; continuous deployment goes further and releases automatically. Both depend on reliable tests and rollback."
+    },
+    {
+      "key": "platform-engineering-b2",
+      "difficulty": "beginner",
+      "prompt": "What is infrastructure as code (IaC)?",
+      "choices": [
+        "Managing servers, networks, and platform resources through versioned, reviewable configuration rather than manual console changes.",
+        "Writing HTML for the infrastructure team.",
+        "A database ORM.",
+        "A CSS framework."
+      ],
+      "answer": 0,
+      "explanation": "IaC makes environments reproducible and changes reviewable. Terraform, Pulumi, CloudFormation, and Kubernetes manifests are examples. Drift detection and a plan/review step matter; manual console edits undermine reproducibility."
+    },
+    {
+      "key": "platform-engineering-b3",
+      "difficulty": "beginner",
+      "prompt": "Why should staging resemble production?",
+      "choices": [
+        "Differences in database, proxy, cache, or configuration cause bugs that only appear after release.",
+        "Staging should use different code.",
+        "Production should be the only test environment.",
+        "Parity means using the same customer data."
+      ],
+      "answer": 0,
+      "explanation": "Environment parity surfaces configuration, networking, dependency, and data-shape problems early. Use production-like services and anonymised/synthetic data. Never copy sensitive customer data into staging without controls."
+    },
+    {
+      "key": "platform-engineering-b4",
+      "difficulty": "beginner",
+      "prompt": "How should application secrets be supplied in production?",
+      "choices": [
+        "From a secret manager or secured environment injection, with rotation and least-privilege access.",
+        "Committed to the repository for reproducibility.",
+        "In a public JavaScript bundle.",
+        "Hardcoded in settings.py."
+      ],
+      "answer": 0,
+      "explanation": "Secrets should not live in source control or images. Use a secret manager, scoped runtime identity, rotation, audit access, and separate values per environment. Assume a leaked secret will eventually happen and design for rotation."
+    },
+    {
+      "key": "platform-engineering-b5",
+      "difficulty": "beginner",
+      "prompt": "What are the three pillars of observability?",
+      "choices": ["Logs, metrics, and traces", "HTML, CSS, and JavaScript", "Users, roles, and permissions", "Backups, seeds, and fixtures"],
+      "answer": 0,
+      "explanation": "Logs explain events, metrics quantify behaviour over time, and traces show request paths across services. They complement each other. Alert on user-facing symptoms and use the pillars to diagnose causes."
+    },
+    {
+      "key": "platform-engineering-i1",
+      "difficulty": "intermediate",
+      "prompt": "What is a canary deployment?",
+      "choices": [
+        "Sending a small percentage of traffic to a new version, watching health, then increasing exposure or rolling back.",
+        "Deploying to every server at once.",
+        "Running tests only on the developer laptop.",
+        "A database migration that deletes rows."
+      ],
+      "answer": 0,
+      "explanation": "Canaries limit blast radius by comparing a small cohort against the baseline. Define success signals, observe errors/latency/business metrics, and automate rollback. Blue-green swaps two full environments and is a different trade-off."
+    },
+    {
+      "key": "platform-engineering-i2",
+      "difficulty": "intermediate",
+      "prompt": "How do feature flags complement deployment?",
+      "choices": [
+        "They separate deploying code from enabling behaviour, enabling gradual rollout and fast disable without redeploying.",
+        "They replace authentication.",
+        "They guarantee code has no bugs.",
+        "They remove the need for testing."
+      ],
+      "answer": 0,
+      "explanation": "Flags reduce release risk but add state and cleanup work. Define owners, default states, targeting rules, and expiry. Never use flags as a substitute for permissions or as permanent forks in the codebase."
+    },
+    {
+      "key": "platform-engineering-i3",
+      "difficulty": "intermediate",
+      "prompt": "What should an alert usually be based on?",
+      "choices": [
+        "A user-facing symptom or SLO breach, such as error rate or latency, with enough context to act.",
+        "Every CPU spike.",
+        "A single log line.",
+        "The number of files changed."
+      ],
+      "answer": 0,
+      "explanation": "Symptom-based alerts reduce noise and focus on user impact. High CPU may be normal. Each alert should be actionable, owned, and linked to a runbook. Track alert volume and tune thresholds; alert fatigue is an outage risk."
+    },
+    {
+      "key": "platform-engineering-i4",
+      "difficulty": "intermediate",
+      "prompt": "What do RTO and RPO mean?",
+      "choices": [
+        "RTO is the target time to restore service; RPO is the maximum acceptable data loss measured in time.",
+        "RTO is database size; RPO is request rate.",
+        "They are two names for uptime.",
+        "RTO applies only to frontend code."
+      ],
+      "answer": 0,
+      "explanation": "RTO drives recovery procedures; RPO drives backup frequency and replication. A backup is not proven until restore is tested. Define these per data class and rehearse disaster recovery, including credentials and external dependencies."
+    },
+    {
+      "key": "platform-engineering-i5",
+      "difficulty": "intermediate",
+      "prompt": "Why prefer immutable container images?",
+      "choices": [
+        "The exact tested artifact is promoted between environments instead of being rebuilt with unknown differences.",
+        "They cannot be scanned for vulnerabilities.",
+        "They remove the need for configuration.",
+        "They make databases unnecessary."
+      ],
+      "answer": 0,
+      "explanation": "Build once, test, scan, and promote the same image digest. Runtime config comes from environment/secrets, not a rebuilt image. Tag by digest, not only a mutable latest tag, so rollbacks are exact."
+    },
+    {
+      "key": "platform-engineering-a1",
+      "difficulty": "advanced",
+      "prompt": "What is software supply-chain security in a deployment pipeline?",
+      "choices": [
+        "Verifying dependencies, build inputs, images, provenance, and signatures so a compromised component cannot silently reach production.",
+        "Only checking the application's Python syntax.",
+        "Disabling lockfiles.",
+        "Allowing any package from any source."
+      ],
+      "answer": 0,
+      "explanation": "Use lockfiles, vulnerability scanning, SBOMs, trusted registries, signed artifacts, least-privilege CI credentials, and provenance checks. Pin and review dependencies. The build system itself is part of the attack surface."
+    },
+    {
+      "key": "platform-engineering-a2",
+      "difficulty": "advanced",
+      "prompt": "How should a database migration be coordinated with application deployment?",
+      "choices": [
+        "Use expand/contract and backward-compatible steps so old and new app versions can run during the rollout.",
+        "Run a destructive migration first.",
+        "Stop all traffic for every small change.",
+        "Assume migrations are instantaneous."
+      ],
+      "answer": 0,
+      "explanation": "Rolling deployments overlap versions. Add compatible schema, deploy dual-write/read code, backfill, switch, then remove later. Separate schema changes from data backfills when necessary. Plan rollback and monitor locks/lag."
+    },
+    {
+      "key": "platform-engineering-a3",
+      "difficulty": "advanced",
+      "prompt": "What is the role of an incident commander?",
+      "choices": [
+        "Coordinate response, maintain a shared timeline, assign investigation, communicate status, and decide on mitigation — without necessarily debugging personally.",
+        "Write all the code fixes alone.",
+        "Assign blame during the incident.",
+        "Hide the incident from stakeholders."
+      ],
+      "answer": 0,
+      "explanation": "Incidents need one coordinating role so responders do not duplicate work or lose the timeline. The commander drives mitigation first, then investigation. Clear communication and explicit decisions reduce chaos and recovery time."
+    },
+    {
+      "key": "platform-engineering-a4",
+      "difficulty": "advanced",
+      "prompt": "What makes a postmortem useful?",
+      "choices": [
+        "A blameless timeline, contributing factors, what worked, concrete actions with owners and dates, and follow-through.",
+        "A single sentence saying human error occurred.",
+        "A list of people to punish.",
+        "A document nobody reviews."
+      ],
+      "answer": 0,
+      "explanation": "Systems fail through interacting conditions; blame stops learning. Focus on detection, response, and prevention. Track action items to completion and share lessons. Review whether mitigations actually reduce risk rather than adding process."
+    },
+    {
+      "key": "platform-engineering-a5",
+      "difficulty": "advanced",
+      "prompt": "Why is cost an architectural concern, not just a finance concern?",
+      "choices": [
+        "Cost shapes scalability, queue design, data retention, caching, model routing, and whether a feature is sustainable at scale.",
+        "Cost only matters after profitability.",
+        "Cloud resources are always free.",
+        "Cost is unrelated to engineering decisions."
+      ],
+      "answer": 0,
+      "explanation": "Per-request, per-token, storage, egress, and query costs compound. Instrument unit economics, set budgets and alerts, and design for efficient paths. Premature cost optimisation can harm reliability, but ignoring cost creates a slow outage."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "platform-engineering-f1",
+      "difficulty": "beginner",
+      "front": "What is the CI/CD loop?",
+      "back": "Build and test every change (CI), produce an immutable artifact, deploy it through an automated, observable path (CD), and monitor/rollback if needed. The goal is small, reversible changes with fast feedback.",
+      "hint": "Build, verify, release, observe."
+    },
+    {
+      "key": "platform-engineering-f2",
+      "difficulty": "beginner",
+      "front": "Why use infrastructure as code?",
+      "back": "It makes environments reproducible and changes reviewable. Store configuration in version control, plan/review changes, detect drift, and avoid undocumented console edits.",
+      "hint": "Environments as reviewable code."
+    },
+    {
+      "key": "platform-engineering-f3",
+      "difficulty": "intermediate",
+      "front": "What are the three pillars of observability?",
+      "back": "Logs (events), metrics (aggregated behaviour), and traces (request paths across services). Use them together to detect symptoms and diagnose causes. Propagate correlation IDs through async work.",
+      "hint": "Logs, metrics, traces."
+    },
+    {
+      "key": "platform-engineering-f4",
+      "difficulty": "intermediate",
+      "front": "How do canary and blue-green differ?",
+      "back": "Canary sends a small share of traffic to the new version and expands or rolls back. Blue-green runs two full environments and switches traffic. Canary limits blast radius; blue-green enables instant switch/rollback but doubles capacity.",
+      "hint": "Small cohort vs two environments."
+    },
+    {
+      "key": "platform-engineering-f5",
+      "difficulty": "advanced",
+      "front": "What do RTO and RPO mean?",
+      "back": "Recovery Time Objective: target time to restore service. Recovery Point Objective: maximum acceptable data loss, measured in time. A backup is only trustworthy after a tested restore and recovery rehearsal.",
+      "hint": "How fast, how much data."
+    },
+    {
+      "key": "platform-engineering-f6",
+      "difficulty": "advanced",
+      "front": "What belongs in an incident response practice?",
+      "back": "A clear commander, shared timeline, severity levels, communication cadence, mitigation-first mindset, scoped credentials, runbooks, and a blameless postmortem with owned follow-ups.",
+      "hint": "Coordinate, mitigate, learn."
+    },
+    {
+      "key": "platform-engineering-f7",
+      "difficulty": "advanced",
+      "front": "What is unit economics for a Django service?",
+      "back": "Cost per meaningful unit: request, tenant, order, document, or AI workflow. Instrument database, compute, storage, egress, and model-token costs, set budgets, and design efficient paths before scale magnifies waste.",
+      "hint": "Cost per outcome."
+    }
+  ]
+}

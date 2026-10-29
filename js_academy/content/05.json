@@ -1,0 +1,161 @@
+{
+  "module": {
+    "slug": "react-podstawy",
+    "title": "React — podstawy",
+    "subtitle": "Komponenty, JSX, props, stan i efekty. Od pomysłu do działającej aplikacji.",
+    "description": "Poznasz model mentalny Reacta: UI jako funkcja stanu, jednokierunkowy przepływ danych i renderowanie deklaratywne. To fundament pod React Native.",
+    "level": "core",
+    "glyph": "05",
+    "accent": "#61DAFB",
+    "duration_minutes": 80,
+    "outcomes": [
+      "Tworzysz komponenty funkcyjne i rozumiesz JSX.",
+      "Przekazujesz dane przez props i podnosisz stan, gdy kilka komponentów go potrzebuje.",
+      "Aktualizujesz stan bez mutacji i rozumiesz, kiedy następuje render.",
+      "Pobierasz dane w useEffect z poprawną obsługą anulowania."
+    ],
+    "project_title": "Lista zadań w React",
+    "project_brief": "Zbuduj aplikację z dodawaniem, filtrowaniem i usuwaniem zadań. Podziel UI na komponenty, utrzymuj stan w jednym miejscu i zapisz dane w localStorage.",
+    "project_steps": [
+      "Zaprojektuj drzewo komponentów: App, Form, List, Item, Filter.",
+      "Dodaj stan zadań i filtr za pomocą useState.",
+      "Zaimplementuj dodawanie, usuwanie i oznaczanie jako wykonane.",
+      "Dodaj zapis/odczyt localStorage i pusty stan."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "komponenty-jsx",
+      "title": "Komponenty, JSX i props",
+      "summary": "UI jako funkcja danych. Czym są props i dlaczego są tylko do odczytu.",
+      "minutes": 16,
+      "body_html": "<p><strong>React</strong> opisuje interfejs deklaratywnie: mówisz, jak UI ma wyglądać dla danego stanu, a React aktualizuje DOM. Podstawową jednostką jest komponent — funkcja zwracająca JSX.</p>\n<pre><code>type GreetingProps = {\n  name: string;\n  role?: string;\n};\n\nfunction Greeting({ name, role = \"gość\" }: GreetingProps) {\n  return (\n    &lt;section&gt;\n      &lt;h1&gt;Cześć, {name}!&lt;/h1&gt;\n      &lt;p&gt;Rola: {role}&lt;/p&gt;\n    &lt;/section&gt;\n  );\n}</code></pre>\n<h2>JSX to nie HTML</h2>\n<p>JSX wygląda jak HTML, ale jest składnią przekształcaną do wywołań funkcji. Wstawiasz wyrażenia w <code>{}</code>, używasz <code>className</code> zamiast <code>class</code> i zamykasz wszystkie tagi.</p>\n<pre><code>const user = { name: \"Ala\" };\nconst isAdmin = true;\n\n&lt;h1&gt;{user.name}&lt;/h1&gt;\n&lt;p&gt;{isAdmin ? \"Administrator\" : \"Użytkownik\"}&lt;/p&gt;</code></pre>\n<h2>Props są tylko do odczytu</h2>\n<p>Komponent nie powinien modyfikować propsów. Jeśli potrzebuje zmienić dane, otrzymuje funkcję lub sam zarządza stanem. Jednokierunkowy przepływ danych jest kluczowy dla przewidywalności.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> jeśli komponent robi zbyt wiele, podziel go. Mały komponent z jasnymi propsami jest łatwiejszy do testowania i ponownego użycia.</div>"
+    },
+    {
+      "slug": "stan-zdarzenia",
+      "title": "Stan i zdarzenia",
+      "summary": "useState, aktualizacje funkcyjne i zdarzenia bez mutowania.",
+      "minutes": 17,
+      "body_html": "<p>Stan to pamięć komponentu między renderami. Zmiana stanu powoduje ponowne wywołanie komponentu, a React porównuje wynik z poprzednim UI.</p>\n<pre><code>import { useState } from \"react\";\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n\n  return (\n    &lt;button onClick={() =&gt; setCount((current) =&gt; current + 1)}&gt;\n      Kliknięcia: {count}\n    &lt;/button&gt;\n  );\n}</code></pre>\n<p>Gdy nowa wartość zależy od poprzedniej, używaj aktualizacji funkcyjnej. Dzięki temu nie zgubisz aktualizacji przy wielu zdarzeniach.</p>\n<h2>Zdarzenia</h2>\n<pre><code>function Search() {\n  const [q, setQ] = useState(\"\");\n\n  function handleChange(event: React.ChangeEvent&lt;HTMLInputElement&gt;) {\n    setQ(event.target.value);\n  }\n\n  return &lt;input value={q} onChange={handleChange} /&gt;;\n}</code></pre>\n<p>Pole kontrolowane ma <code>value</code> ze stanu i <code>onChange</code>. To jeden sposób myślenia o formularzach, nie jedyny — czasem wystarczy formularz niekontrolowany.</p>\n<div class=\"lesson-callout\"><strong>Nie mutuj stanu.</strong> Zamiast <code>items.push(x)</code> użyj <code>setItems((current) =&gt; [...current, x])</code>. React musi zobaczyć nową referencję.</div>"
+    },
+    {
+      "slug": "listy-efekty",
+      "title": "Listy, warunki i efekty",
+      "summary": "Klucze, renderowanie warunkowe, useEffect i pobieranie danych z API.",
+      "minutes": 18,
+      "body_html": "<p>Listy renderujesz przez <code>map</code>, ale każdy element potrzebuje stabilnego <code>key</code>. Klucz pomaga Reactowi dopasować elementy między renderami.</p>\n<pre><code>function TodoList({ items }: { items: Todo[] }) {\n  return (\n    &lt;ul&gt;\n      {items.map((item) =&gt; (\n        &lt;li key={item.id}&gt;{item.title}&lt;/li&gt;\n      ))}\n    &lt;/ul&gt;\n  );\n}</code></pre>\n<p>Nie używaj indeksu tablicy jako klucza, jeśli lista może się zmieniać kolejnością. Stabilne id jest bezpieczniejsze.</p>\n<h2>useEffect</h2>\n<pre><code>useEffect(() =&gt; {\n  const controller = new AbortController();\n\n  async function load() {\n    try {\n      const response = await fetch(`/api/todos?q=${query}`, {\n        signal: controller.signal,\n      });\n      if (!response.ok) throw new Error(\"Błąd HTTP\");\n      setItems(await response.json());\n    } catch (error) {\n      if (error.name !== \"AbortError\") setError(\"Nie udało się pobrać danych\");\n    }\n  }\n\n  load();\n  return () =&gt; controller.abort();\n}, [query]);</code></pre>\n<p>Efekt uruchamia się po renderze. Tablica zależności mówi, kiedy ma się powtórzyć. Funkcja czyszcząca anuluje poprzednie żądanie, gdy zapytanie się zmieni.</p>\n<div class=\"lesson-callout\"><strong>Pytanie kontrolne:</strong> czy ten efekt naprawdę jest potrzebny? Jeśli wartość można policzyć z props/stanu podczas renderu, nie potrzebujesz efektu ani dodatkowego stanu.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-react-b1",
+      "difficulty": "beginner",
+      "prompt": "Jak wstawić wyrażenie JavaScript do JSX?",
+      "choices": [
+        "W nawiasach kwadratowych []",
+        "W nawiasach klamrowych {}",
+        "W cudzysłowach",
+        "Przez atrybut data-js"
+      ],
+      "answer": 1,
+      "explanation": "Wyrażenia w JSX umieszcza się w {}. Można tam wstawić zmienną, obliczenie, wywołanie funkcji lub wyrażenie warunkowe, ale nie pełny blok if."
+    },
+    {
+      "key": "js-react-b2",
+      "difficulty": "beginner",
+      "prompt": "Czy komponent powinien modyfikować otrzymane props?",
+      "choices": [
+        "Tak, jeśli są obiektami.",
+        "Nie — props są tylko do odczytu.",
+        "Tylko w React Native.",
+        "Tylko gdy używa useState."
+      ],
+      "answer": 1,
+      "explanation": "Props są danymi od rodzica i nie powinny być mutowane. Zmiana danych należy do właściciela stanu; dziecko komunikuje intencję przez callback."
+    },
+    {
+      "key": "js-react-i1",
+      "difficulty": "intermediate",
+      "prompt": "Dlaczego do aktualizacji zależnej od poprzedniego stanu warto użyć setCount((c) => c + 1)?",
+      "choices": [
+        "Bo zwykłe setCount(count + 1) może zgubić aktualizacje przy wielu zdarzeniach.",
+        "Bo setCount nie przyjmuje liczb.",
+        "Bo wymaga tego TypeScript.",
+        "Bo funkcja działa tylko w useEffect."
+      ],
+      "answer": 0,
+      "explanation": "Aktualizacja funkcyjna otrzymuje aktualny stan w momencie przetwarzania. Zapobiega nadpisaniu wcześniejszych aktualizacji, gdy zdarzenia występują szybko."
+    },
+    {
+      "key": "js-react-i2",
+      "difficulty": "intermediate",
+      "prompt": "Po co elementom listy nadaje się key?",
+      "choices": [
+        "Aby React mógł dopasować elementy między renderami.",
+        "Aby ustawić kolor elementu.",
+        "Aby wymusić ponowne pobranie danych.",
+        "Aby dodać element do DOM."
+      ],
+      "answer": 0,
+      "explanation": "key pomaga uzgodnić listę między renderami. Stabilne id jest lepsze niż indeks, szczególnie gdy elementy są dodawane, usuwane lub sortowane."
+    },
+    {
+      "key": "js-react-a1",
+      "difficulty": "advanced",
+      "prompt": "Co robi funkcja zwracana z useEffect?",
+      "choices": [
+        "Jest wywoływana przed każdym renderem.",
+        "Służy do sprzątania przed kolejnym efektem lub odmontowaniem komponentu.",
+        "Zastępuje stan komponentu.",
+        "Jest ignorowana przez React."
+      ],
+      "answer": 1,
+      "explanation": "Funkcja czyszcząca anuluje subskrypcje, timery lub żądania. React wywołuje ją przed ponownym uruchomieniem efektu i przy odmontowaniu."
+    },
+    {
+      "key": "js-react-a2",
+      "difficulty": "advanced",
+      "prompt": "Który warunek poprawnie pokazuje loader, błąd i dane?",
+      "choices": [
+        "{loading && <Loader />}{error && <Error />}{data && <List data={data} />}",
+        "{loading ? <Loader /> : error ? <Error /> : <List data={data} />}",
+        "{<Loader />}{<Error />}{<List />}",
+        "{loading, error, data}"
+      ],
+      "answer": 1,
+      "explanation": "Zagnieżdżony operator warunkowy wyraża priorytet stanów: loader, potem błąd, potem dane. Osobne warunki mogą wyrenderować kilka stanów naraz, jeśli dane nie są wykluczające."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-react-f1",
+      "difficulty": "beginner",
+      "front": "Czym jest komponent React?",
+      "back": "Funkcją, która przyjmuje props i zwraca JSX opisujący UI. React wywołuje ją przy renderze i porównuje wynik z poprzednim drzewem. Komponent powinien być mały i mieć jasny kontrakt."
+    },
+    {
+      "key": "js-react-f2",
+      "difficulty": "intermediate",
+      "front": "Kiedy useEffect jest potrzebny?",
+      "back": "Gdy komponent musi zsynchronizować się z czymś zewnętrznym: siecią, subskrypcją, timerem, DOM API. Nie używaj efektu do zwykłego obliczania wartości z props/stanu — to robi się podczas renderu.",
+      "front_code": "useEffect(() => {\n  const id = setInterval(tick, 1000);\n  return () => clearInterval(id);\n}, []);"
+    },
+    {
+      "key": "js-react-f3",
+      "difficulty": "advanced",
+      "front": "Jak bezpiecznie pobrać dane w useEffect?",
+      "back": "Użyj AbortController, sprawdź response.ok, obsłuż błąd i zwróć cleanup, który anuluje żądanie. Pamiętaj o zależnościach efektu. Nie ustawiaj stanu po odmontowaniu bez zabezpieczenia.",
+      "front_code": "useEffect(() => {\n  const c = new AbortController();\n  load(c.signal);\n  return () => c.abort();\n}, [query]);"
+    },
+    {
+      "key": "js-react-f4",
+      "front": "Kontrolowany czy niekontrolowany input?",
+      "back": "Kontrolowany ma value ze stanu i onChange — łatwo walidować na bieżąco. Niekontrolowany korzysta z DOM/ref, prostszy dla dużych formularzy. Wybór zależy od potrzeb walidacji i integracji."
+    },
+    {
+      "key": "js-react-f5",
+      "front": "Dlaczego indeks tablicy bywa złym key?",
+      "back": "Po zmianie kolejności, dodaniu lub usunięciu elementu React może przypisać stan i DOM do niewłaściwego wiersza. Używaj stabilnego id, jeśli lista może się zmieniać."
+    }
+  ]
+}

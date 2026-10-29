@@ -1,0 +1,73 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Wiedza JavaScript{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-knowledge-wrap">
+  <header class="js-page-header">
+    <p class="eyebrow eyebrow-js">Wiedza · kontekst · rozmowa</p>
+    <h1>Więcej niż<br><em>składnia.</em></h1>
+    <p class="js-lead">Ciekawostki, które zostają w pamięci, słownik pojęć bez ściemy i pytania rekrutacyjne z modelowymi odpowiedziami. Wszystko po polsku, w jednym miejscu.</p>
+    <div class="js-path-summary">
+      <div><strong>{{ fact_count }}</strong><span>ciekawostek</span></div>
+      <div><strong>{{ term_count }}</strong><span>pojęć</span></div>
+      <div><strong>{{ interview_count }}</strong><span>pytań rekrutacyjnych</span></div>
+    </div>
+  </header>
+
+  <div class="js-knowledge-grid">
+    <a class="js-knowledge-card js-knowledge-facts" href="{% url 'js_academy:facts' %}">
+      <span class="js-knowledge-glyph">✦</span>
+      <p class="eyebrow eyebrow-js">Ciekawostki</p>
+      <h2>Rzeczy, które<br>zaskakują w JS.</h2>
+      <p>Historie, pułapki i małe odkrycia, które tłumaczą, dlaczego język zachowuje się właśnie tak.</p>
+      <span class="js-knowledge-link">Przeglądaj ciekawostki →</span>
+    </a>
+    <a class="js-knowledge-card js-knowledge-glossary" href="{% url 'js_academy:glossary' %}">
+      <span class="js-knowledge-glyph">A→Z</span>
+      <p class="eyebrow eyebrow-js-dark">Słownik</p>
+      <h2>Pojęcia,<br>bez owijania.</h2>
+      <p>Krótka definicja, praktyczny przykład i miejsce, w którym pojęcie naprawdę się przydaje.</p>
+      <span class="js-knowledge-link">Otwórz słownik →</span>
+    </a>
+    <a class="js-knowledge-card js-knowledge-interview" href="{% url 'js_academy:interview' %}">
+      <span class="js-knowledge-glyph">?</span>
+      <p class="eyebrow eyebrow-js-dark">Rozmowa</p>
+      <h2>Pytania, które<br>padają naprawdę.</h2>
+      <p>Modelowe odpowiedzi, typowe błędy i pytania pogłębiające. Bez wyuczonych formułek.</p>
+      <span class="js-knowledge-link">Przygotuj się do rozmowy →</span>
+    </a>
+  </div>
+
+  <div class="js-knowledge-preview-grid">
+    <section class="js-panel">
+      <div class="js-panel-head"><div><p class="eyebrow eyebrow-js-dark">Na dobry początek</p><h2>Ciekawostka</h2></div><span>✦</span></div>
+      {% for fact in facts %}
+        <article class="js-mini-fact"><strong>{{ fact.title }}</strong><p>{{ fact.body|truncatewords:26 }}</p></article>
+      {% empty %}
+        <p class="muted">Brak ciekawostek.</p>
+      {% endfor %}
+      <a class="js-deck-foot-link" href="{% url 'js_academy:facts' %}">Wszystkie ciekawostki →</a>
+    </section>
+
+    <section class="js-panel">
+      <div class="js-panel-head"><div><p class="eyebrow eyebrow-js-dark">Słownik</p><h2>Pojęcia</h2></div><span>A→Z</span></div>
+      <div class="js-mini-terms">
+        {% for term in terms %}
+          <div><strong>{{ term.term }}</strong><p>{{ term.definition|truncatewords:13 }}</p></div>
+        {% endfor %}
+      </div>
+      <a class="js-deck-foot-link" href="{% url 'js_academy:glossary' %}">Cały słownik →</a>
+    </section>
+  </div>
+
+  <section class="js-panel js-knowledge-interview-preview">
+    <div class="js-panel-head"><div><p class="eyebrow eyebrow-js-dark">Rozmowa techniczna</p><h2>Przykładowe pytania</h2></div><span>?</span></div>
+    <div class="js-mini-interview">
+      {% for item in questions %}
+        <div><span class="tag tag-js-dark">{{ item.get_difficulty_display }}</span><strong>{{ item.question }}</strong></div>
+      {% endfor %}
+    </div>
+    <a class="js-deck-foot-link" href="{% url 'js_academy:interview' %}">Wszystkie pytania i odpowiedzi →</a>
+  </section>
+</div>
+{% endblock %}

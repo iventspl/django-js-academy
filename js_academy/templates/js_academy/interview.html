@@ -1,0 +1,53 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Pytania rekrutacyjne{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-interview-wrap">
+  <nav class="js-breadcrumb"><a href="{% url 'js_academy:knowledge' %}">Wiedza</a><span>/</span><span>Rozmowa</span></nav>
+  <header class="js-page-header">
+    <p class="eyebrow eyebrow-js">30 pytań · odpowiedzi i pytania pogłębiające</p>
+    <h1>Rozmowa<br><em>bez improwizacji.</em></h1>
+    <p class="js-lead">Modelowe odpowiedzi pokazują sposób myślenia, a nie gotowy skrypt. Czytaj pytanie, odpowiedz na głos, potem porównaj i wejdź w pytanie pogłębiające.</p>
+  </header>
+
+  <form class="js-knowledge-search" method="get" action="{% url 'js_academy:interview' %}">
+    <label class="sr-only" for="interview-q">Szukaj pytania</label>
+    <input id="interview-q" name="q" type="search" value="{{ query }}" placeholder="Szukaj: event loop, context, XSS...">
+    {% if difficulty %}<input type="hidden" name="difficulty" value="{{ difficulty }}">{% endif %}
+    {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+    <button class="btn btn-js" type="submit">Szukaj</button>
+  </form>
+
+  <nav class="js-filter-row" aria-label="Filtr poziomu">
+    <a class="js-filter {% if not difficulty %}is-active{% endif %}" href="{% url 'js_academy:interview' %}{% if category %}?category={{ category|urlencode }}{% endif %}">Wszystkie</a>
+    <a class="js-filter {% if difficulty == 'beginner' %}is-active{% endif %}" href="?difficulty=beginner{% if category %}&amp;category={{ category|urlencode }}{% endif %}">Podstawy</a>
+    <a class="js-filter {% if difficulty == 'intermediate' %}is-active{% endif %}" href="?difficulty=intermediate{% if category %}&amp;category={{ category|urlencode }}{% endif %}">Średnie</a>
+    <a class="js-filter {% if difficulty == 'advanced' %}is-active{% endif %}" href="?difficulty=advanced{% if category %}&amp;category={{ category|urlencode }}{% endif %}">Trudne</a>
+  </nav>
+
+  <nav class="js-filter-row js-filter-row-sub" aria-label="Filtr kategorii">
+    {% for item in categories %}
+      <a class="js-filter js-filter-small {% if category == item %}is-active{% endif %}" href="?category={{ item|urlencode }}{% if difficulty %}&amp;difficulty={{ difficulty }}{% endif %}">{{ item }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="js-interview-list">
+    {% for item in questions %}
+      <details class="js-interview-card" {% if forloop.first %}open{% endif %}>
+        <summary>
+          <span class="js-interview-number">{{ forloop.counter|stringformat:"02d" }}</span>
+          <span class="js-interview-question">{{ item.question }}</span>
+          <span class="tag tag-js-dark">{{ item.get_difficulty_display }}</span>
+        </summary>
+        <div class="js-interview-answer">
+          <p>{{ item.answer|linebreaksbr }}</p>
+          {% if item.follow_up %}<div class="js-follow-up"><span>Pytanie pogłębiające</span><strong>{{ item.follow_up }}</strong></div>{% endif %}
+          <span class="js-interview-category">{{ item.category }}</span>
+        </div>
+      </details>
+    {% empty %}
+      <p class="js-empty-inline"><span>Brak pytań dla tych filtrów.</span><a href="{% url 'js_academy:interview' %}">Wyczyść filtry</a></p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

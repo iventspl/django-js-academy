@@ -1,0 +1,135 @@
+{% extends "dojo/base.html" %}
+
+{% block title %}Run results · {{ attempt.scope_label }}{% endblock %}
+{% block body_class %}page-results{% endblock %}
+
+{% block content %}
+<div class="page-wrap results-wrap">
+  <section class="results-hero">
+    <div class="result-score" style="--value: {{ attempt.score_percent }}%;">
+      <div class="result-score-inner">
+        <strong>{{ attempt.score_percent }}<span>%</span></strong>
+        <span>{{ attempt.correct_count }} of {{ attempt.length }}</span>
+      </div>
+    </div>
+    <div class="result-copy">
+      <p class="eyebrow eyebrow-light">Run complete · {{ attempt.scope_label }} · {{ attempt.difficulty_label }}</p>
+      <h1>{{ verdict }}</h1>
+      <p class="result-lead">
+        {% if attempt.score_percent == 100 %}
+          A clean sweep. Your reward is 25 bonus XP and the smug satisfaction of a perfect notebook.
+        {% elif attempt.score_percent >= 80 %}
+          You have the shape of it. Read the misses below and the next run will feel easier.
+        {% elif attempt.score_percent >= 50 %}
+          The foundation is there. The explanations are the lesson — give the wrong ones a second look.
+        {% else %}
+          Good data. A hard run tells you exactly where to aim next, which is more useful than an easy pass.
+        {% endif %}
+      </p>
+      <div class="result-actions">
+        <a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}?topic={{ attempt.topic.slug|default:'' }}&amp;difficulty={{ attempt.difficulty }}&amp;length={{ attempt.length }}">Run it again <span aria-hidden="true">↻</span></a>
+        <a class="btn btn-ghost-light" href="{% url 'dojo:flashcards' %}">Review fiszki <span aria-hidden="true">▣</span></a>
+      </div>
+    </div>
+  </section>
+
+  <div class="result-stat-grid">
+    <div class="result-stat">
+      <span>Correct answers</span>
+      <strong>{{ attempt.correct_count }}<small>/{{ attempt.length }}</small></strong>
+    </div>
+    <div class="result-stat">
+      <span>XP earned</span>
+      <strong>+{{ attempt.xp_earned }}</strong>
+      {% if attempt.bonus_xp %}<small>includes +{{ attempt.bonus_xp }} bonus</small>{% endif %}
+    </div>
+    <div class="result-stat">
+      <span>Best streak inside run</span>
+      <strong>{{ best_streak }}</strong>
+      <small>{% if best_streak > 1 %}in a row, nicely done{% else %}one correct answer at a time{% endif %}</small>
+    </div>
+    <div class="result-stat">
+      <span>Difficulty</span>
+      <strong class="result-stat-text">{{ attempt.difficulty_label }}</strong>
+      <small>{{ attempt.topic.name|default:"All eight paths" }}</small>
+    </div>
+  </div>
+
+  <section class="section result-breakdown" aria-labelledby="breakdown-title">
+    <div class="section-head section-head-tight">
+      <div>
+        <p class="eyebrow eyebrow-dark">The shape of the run</p>
+        <h2 id="breakdown-title">Where the points came from.</h2>
+      </div>
+      <a class="text-link" href="{% url 'dojo:progress' %}">See the long game →</a>
+    </div>
+    <div class="breakdown-grid">
+      {% for row in by_difficulty %}
+        {% if row.total %}
+          <div class="breakdown-card">
+            <div class="breakdown-head"><strong>{{ row.label }}</strong><span>{{ row.correct }}/{{ row.total }}</span></div>
+            <div class="progress-track progress-track-dark"><span style="--bar: {{ row.percent }}%;"></span></div>
+            <p>{{ row.percent }}% accuracy</p>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="review-section" aria-labelledby="review-title">
+    <div class="section-head section-head-tight">
+      <div>
+        <p class="eyebrow eyebrow-dark">The useful part</p>
+        <h2 id="review-title">Every answer, explained.</h2>
+      </div>
+      <p class="section-aside">Open a row to revisit the reasoning. The misses are worth more than the wins.</p>
+    </div>
+
+    <div class="review-list">
+      {% for row in attempt_questions %}
+        <details class="review-item {% if row.is_correct %}review-correct{% else %}review-wrong{% endif %}" {% if not row.is_correct and forloop.first %}open{% endif %}>
+          <summary>
+            <span class="review-status" aria-hidden="true">{% if row.is_correct %}✓{% else %}×{% endif %}</span>
+            <span class="review-question">{{ row.question.prompt }}</span>
+            <span class="review-meta">{{ row.question.get_difficulty_display }}</span>
+            <span class="review-toggle" aria-hidden="true">+</span>
+          </summary>
+          <div class="review-body">
+            {% if row.question.code %}
+              <pre class="inline-code"><code>{{ row.question.code }}</code></pre>
+            {% endif %}
+            <div class="review-answers">
+              <div class="{% if row.is_correct %}review-answer-good{% else %}review-answer-bad{% endif %}">
+                <span>Your answer</span>
+                <p>{{ row.selected.text|default:"No answer" }}</p>
+              </div>
+              {% if not row.is_correct %}
+                <div class="review-answer-good">
+                  <span>Correct answer</span>
+                  <p>{{ row.question.correct_choice.text }}</p>
+                </div>
+              {% endif %}
+            </div>
+            <div class="review-why">
+              <span class="eyebrow eyebrow-dark">Why</span>
+              <p>{{ row.question.explanation|linebreaks }}</p>
+              {% if row.question.explanation_code %}
+                <pre class="inline-code"><code>{{ row.question.explanation_code }}</code></pre>
+              {% endif %}
+            </div>
+          </div>
+        </details>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="end-cta">
+    <div>
+      <p class="eyebrow eyebrow-light">Next move</p>
+      <h2>Close the loop with a flashcard.</h2>
+      <p>Retrieval without options is harder — and it is where the learning sticks.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'dojo:flashcards' %}">Open fiszki <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+{% endblock %}

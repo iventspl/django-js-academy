@@ -1,0 +1,167 @@
+{
+  "module": {
+    "slug": "node-narzedzia",
+    "title": "Node.js i narzędzia",
+    "subtitle": "Event loop, npm, moduły, CLI i praca poza przeglądarką.",
+    "description": "React i React Native nie istnieją w pustce. Ten moduł wyjaśnia, jak JavaScript działa w Node, jak zarządzać zależnościami i jak nie zablokować procesu synchronicznym I/O.",
+    "level": "advanced",
+    "glyph": "11",
+    "accent": "#84CC16",
+    "duration_minutes": 65,
+    "outcomes": [
+      "Rozumiesz kolejność call stack, mikrozadań i makrozadań w event loop.",
+      "Używasz package.json, lockfile i skryptów npm świadomie.",
+      "Rozróżniasz ESM od CommonJS i wiesz, kiedy używać process.env.",
+      "Unikasz blokowania procesu przez synchroniczne operacje I/O."
+    ],
+    "project_title": "CLI do raportu wydatków",
+    "project_brief": "Zbuduj małe narzędzie Node, które czyta plik JSON, waliduje dane, liczy sumy i wypisuje raport. Dodaj obsługę błędów i kody wyjścia.",
+    "project_steps": [
+      "Utwórz package.json i skrypt npm start.",
+      "Odczytaj plik asynchronicznie i obsłuż błąd.",
+      "Zbuduj czyste funkcje analizy danych.",
+      "Dodaj flagę --help i czytelne kody wyjścia."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "event-loop",
+      "title": "Event loop bez mitów",
+      "summary": "Call stack, mikrozadania, setTimeout i kolejność wykonania kodu.",
+      "minutes": 15,
+      "body_html": "<p>JavaScript w Node działa na jednym wątku, ale event loop pozwala obsługiwać wiele operacji I/O. Kod synchroniczny trafia na stos wywołań. Po jego opróżnieniu Node wykonuje wszystkie <strong>mikrozadania</strong> (Promise, queueMicrotask), a następnie kolejne fazy, m.in. timery.</p>\n<pre><code>console.log(\"1 sync\");\n\nsetTimeout(() =&gt; console.log(\"3 timeout\"), 0);\n\nPromise.resolve().then(() =&gt; console.log(\"2 promise\"));\n\nconsole.log(\"4 sync\");</code></pre>\n<p>Wynik: 1, 4, 2, 3. Promise trafia do kolejki mikrozadań i ma priorytet przed timerem.</p>\n<h2>Nie blokuj pętli</h2>\n<pre><code>// zły pomysł w serwerze/CLI\nconst data = fs.readFileSync(\"big.json\", \"utf8\");\n\n// lepiej\nconst data = await fs.promises.readFile(\"big.json\", \"utf8\");</code></pre>\n<p>Synchroniczne I/O blokuje wszystko. W skrypcie jednorazowym może być wygodne, ale w serwerze lub narzędziu z wieloma zadaniami lepiej używać wersji asynchronicznych.</p>\n<div class=\"lesson-callout\"><strong>Uwaga:</strong> Node i przeglądarka mają event loop, ale różne API i fazy. Nie zakładaj, że kolejność setTimeout będzie identyczna w każdym środowisku.</div>"
+    },
+    {
+      "slug": "npm-moduly",
+      "title": "npm, package.json i moduły",
+      "summary": "Zależności, wersje, lockfile, skrypty i różnica ESM/CommonJS.",
+      "minutes": 15,
+      "body_html": "<p><code>package.json</code> opisuje projekt, zależności i skrypty. <code>package-lock.json</code> lub <code>pnpm-lock.yaml</code> przypina dokładne wersje, dzięki czemu CI instaluje to samo, co deweloper.</p>\n<pre><code>{\n  \"name\": \"moje-cli\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"start\": \"node src/index.js\",\n    \"test\": \"vitest\"\n  },\n  \"dependencies\": {\n    \"zod\": \"^3.23.8\"\n  }\n}</code></pre>\n<h2>npm install vs npm ci</h2>\n<p><code>npm install</code> może zaktualizować lockfile. <code>npm ci</code> instaluje dokładnie z lockfile i jest typowe dla CI. Nie usuwaj lockfile'a „dla porządku”.</p>\n<h2>ESM i CommonJS</h2>\n<pre><code>// ESM\nimport { readFile } from \"node:fs/promises\";\nexport function parse(data) { ... }\n\n// CommonJS\nconst { readFile } = require(\"node:fs/promises\");\nmodule.exports = { parse };</code></pre>\n<p>Nowe projekty zwykle wybierają ESM (<code>\"type\": \"module\"</code>), ale wiele bibliotek nadal działa w CJS. Mieszanie wymaga zrozumienia interopu.</p>\n<div class=\"lesson-callout\"><strong>Bezpieczeństwo:</strong> każda zależność to kod, który uruchamiasz. Sprawdzaj źródło, popularność, aktywność i advisories. Używaj <code>npm audit</code>, ale nie traktuj go jak wyroczni.</div>"
+    },
+    {
+      "slug": "node-api-cli",
+      "title": "Node API, env i CLI",
+      "summary": "Pliki, proces, zmienne środowiskowe, strumienie i kody wyjścia.",
+      "minutes": 14,
+      "body_html": "<p>Node daje dostęp do systemu plików, procesu i sieci. To potężne, ale wymaga dyscypliny: waliduj argumenty, nie loguj sekretów i zwracaj poprawne kody wyjścia.</p>\n<pre><code>import { readFile } from \"node:fs/promises\";\n\nconst path = process.argv[2];\nif (!path) {\n  console.error(\"Użycie: node report.js &lt;plik.json&gt;\");\n  process.exitCode = 1;\n} else {\n  const raw = await readFile(path, \"utf8\");\n  const data = JSON.parse(raw);\n  console.log(data);\n}</code></pre>\n<h2>process.env</h2>\n<pre><code>const apiUrl = process.env.API_URL;\nif (!apiUrl) throw new Error(\"Brak API_URL\");\n</code></pre>\n<p>Zmienne środowiskowe są stringami. Nie wkładaj do nich sekretów w repozytorium; w produkcji używaj secret managera. Dla lokalnego developmentu użyj pliku <code>.env</code> objętego .gitignore.</p>\n<h2>Strumienie</h2>\n<p>Dla dużych plików czytaj strumieniowo zamiast ładować całość do pamięci. <code>createReadStream</code> i pipeline pozwalają przetwarzać dane kawałek po kawałku.</p>\n<div class=\"lesson-callout\"><strong>CLI:</strong> czytelny komunikat błędu i kod wyjścia to część UX. Skrypt, który zawsze kończy się kodem 0, kłamie automatyzacji.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-node-b1",
+      "difficulty": "beginner",
+      "prompt": "Do czego służy package.json?",
+      "code": "",
+      "choices": [
+        "Opisuje projekt, zależności i skrypty",
+        "Zastępuje kod źródłowy",
+        "Przechowuje hasła",
+        "Jest plikiem CSS"
+      ],
+      "answer": 0,
+      "explanation": "package.json zawiera metadane, zależności i skrypty npm. Lockfile przypina dokładne wersje."
+    },
+    {
+      "key": "js-node-b2",
+      "difficulty": "beginner",
+      "prompt": "Czym jest npm ci?",
+      "code": "",
+      "choices": [
+        "Instalacją dokładnie z lockfile, typową dla CI",
+        "Usunięciem node_modules",
+        "Publikacją pakietu",
+        "Uruchomieniem przeglądarki"
+      ],
+      "answer": 0,
+      "explanation": "npm ci nie modyfikuje lockfile i instaluje dokładnie zapisane wersje. To powtarzalne w CI."
+    },
+    {
+      "key": "js-node-i1",
+      "difficulty": "intermediate",
+      "prompt": "Co wykona się szybciej: Promise.then czy setTimeout z zerem?",
+      "code": "",
+      "choices": [
+        "Promise.then, bo mikrozadania mają priorytet",
+        "setTimeout",
+        "Zawsze równolegle",
+        "Zależy od koloru terminala"
+      ],
+      "answer": 0,
+      "explanation": "Mikrozadania są opróżniane przed kolejną fazą event loop, więc Promise.then zwykle wykona się przed timerem."
+    },
+    {
+      "key": "js-node-i2",
+      "difficulty": "intermediate",
+      "prompt": "Czym są process.env?",
+      "code": "",
+      "choices": [
+        "Zmiennymi środowiskowymi dostępnymi jako stringi",
+        "Zmiennymi lokalnymi funkcji",
+        "Plikami JSON",
+        "Modułami npm"
+      ],
+      "answer": 0,
+      "explanation": "process.env udostępnia konfigurację środowiska. Wartości są stringami, więc liczby trzeba parsować i walidować."
+    },
+    {
+      "key": "js-node-a1",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego fs.readFileSync w serwerze jest ryzykowne?",
+      "code": "",
+      "choices": [
+        "Blokuje event loop na czas operacji",
+        "Nie obsługuje UTF-8",
+        "Nie działa na Windows",
+        "Usuwa plik"
+      ],
+      "answer": 0,
+      "explanation": "Synchroniczne I/O zatrzymuje przetwarzanie innych żądań. Użyj wersji asynchronicznej lub strumieni."
+    },
+    {
+      "key": "js-node-a2",
+      "difficulty": "advanced",
+      "prompt": "Czym różni się ESM od CommonJS?",
+      "code": "",
+      "choices": [
+        "ESM używa import/export, CJS require/module.exports",
+        "CJS działa tylko w przeglądarce",
+        "ESM nie ma modułów",
+        "Nie ma różnic"
+      ],
+      "answer": 0,
+      "explanation": "To dwa systemy modułów. ESM jest nowszy i standardowy w przeglądarkach; CJS dominował w Node. Interop wymaga uwagi."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-node-f1",
+      "front": "Jak działa event loop?",
+      "back": "Kod synchroniczny wykonuje się na stosie, potem mikrozadania (Promise), a następnie kolejne fazy, w tym timery. Długi blok synchroniczny zatrzymuje wszystko.",
+      "hint": ""
+    },
+    {
+      "key": "js-node-f2",
+      "front": "Co robi package-lock.json?",
+      "back": "Przypina dokładne wersje całego drzewa zależności, aby instalacje były powtarzalne. npm ci korzysta z niego bez aktualizacji.",
+      "hint": ""
+    },
+    {
+      "key": "js-node-f3",
+      "front": "Po co używać process.env?",
+      "back": "Do konfiguracji zależnej od środowiska: adresów API, flag, poświadczeń. Wartości są stringami i wymagają walidacji.",
+      "hint": ""
+    },
+    {
+      "key": "js-node-f4",
+      "front": "Kiedy użyć strumieni?",
+      "back": "Przy dużych plikach lub danych, których nie chcesz ładować w całości do pamięci. Strumienie przetwarzają dane kawałek po kawałku.",
+      "hint": ""
+    },
+    {
+      "key": "js-node-f5",
+      "front": "ESM czy CommonJS?",
+      "back": "Nowe projekty często wybierają ESM (import/export, type: module). CJS nadal jest w wielu bibliotekach. Nie mieszaj ich bez zrozumienia interopu.",
+      "hint": ""
+    }
+  ]
+}

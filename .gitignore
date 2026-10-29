@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Local environment and test scaffolding
+.venv/
+.deps/
+.tmp/
+.wheels/
+staticfiles/
+.screens/
+.chrome-temp*/
+.ziptest/
+
+# Local learner data
+db.sqlite3
+db.sqlite3-journal
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
