@@ -1,5 +1,24 @@
 # Changelog
 
+## 4.7 — 2026-10-29
+
+### More modules, global search and achievements
+
+- Added three modules:
+  - **Wzorce projektowe w JS** — observer/pub-sub, factory, strategy and command, with a live store demo.
+  - **Web APIs w praktyce** — fetch/abort/timeout, localStorage vs IndexedDB, Web Workers, streams and notifications.
+  - **Debugging i DevTools** — breakpoints, call stack, Network/Performance, source maps and production errors.
+- Added **global search** at `/js/szukaj/` and in the JS sidebar across modules, lessons, components, challenges, glossary, facts and interview questions.
+- Added **8 achievements** to the progress page: first lesson, ten lessons, first quiz, 80% quiz, 25 cards, first challenge, five challenges and a seven-day streak.
+- Added the 12th live demo: a store with two observer views and an unsubscribe control.
+- JS Akademia now has **21 modules, 64 lessons, 137 questions, 126 flashcards, 12 demos, 31 challenges and 13 components**.
+
+### Verification
+
+- **83 tests pass**.
+- Search, empty search, achievements and new module counts are covered by tests.
+- Component and demo scripts are syntax-checked with Node.
+
 ## 4.6 — 2026-10-29
 
 ### MVC in JavaScript

@@ -2,7 +2,7 @@
 
 A local-first learning game for Python, Django and JavaScript. It mixes multiple-choice quiz runs, open flashcards (fiszki), spaced repetition, explanations, coding challenges and a progress notebook — with a deliberately polished interface that runs the same way on macOS and Windows.
 
-No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.6 MVC guide and component.
+No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.7 search, achievements and three modules.
 
 ## What is inside
 
@@ -11,7 +11,7 @@ No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHAN
 - **28 real-world cheatsheets** covering permissions, uploads, private storage, email, webhooks, N+1 queries, search, migrations, deployment, LLM gateways, RAG, evals, prompt injection, ADRs, and more.
 - **6 application blueprints** for SaaS, marketplace, booking, CMS, support desk, and mobile API products — with data models, starter code, build order, and production traps.
 - **8 Architecture Studio labs** for AI document assistants, tool-using agents, multi-tenant SaaS, webhook platforms, marketplace ledgers, real-time fan-out, analytics pipelines, and legacy modernization.
-- **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 18 modules, 55 lessons, 119 quiz questions, 111 flashcards, 11 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 50-term glossary, 30 interview questions, and XP/streaks.
+- **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 21 modules, 64 lessons, 137 quiz questions, 126 flashcards, 12 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 50-term glossary, 30 interview questions, and XP/streaks.
 - **Release radar** with current Django versions, LTS windows, CVE summaries, and source links to the official release notes.
 - **Spaced repetition** for every card with four recall ratings: Again, Hard, Good, Easy.
 - **Explanations for every quiz answer**, often with a code sample, so a wrong answer still teaches something.
@@ -184,18 +184,21 @@ Use the **Django / JavaScript** switch in the sidebar to enter **JS Akademia**, 
 | Mistrzostwo JS: powtórka i rozmowa | 3 | 15 | 25 | Obrona decyzji projektowej |
 | AI a praca programisty | 3 | 6 | 5 | Audyt kodu wygenerowanego przez AI |
 | MVC w JavaScript | 4 | 8 | 6 | Lista produktów MVC |
+| Wzorce projektowe w JS | 3 | 6 | 5 | Mini store z obserwatorem |
+| Web APIs w praktyce | 3 | 6 | 5 | Cache offline |
+| Debugging i DevTools | 3 | 6 | 5 | Polowanie na błąd |
 
 The platform includes:
 
-- **18 modules / 55 lessons** with Polish explanations, code and practical warnings.
-- **119 quiz questions** with detailed explanations.
-- **111 open flashcards** with spaced repetition.
-- **11 live iframe demos** — real interactive HTML/JS examples embedded directly in lessons.
+- **21 modules / 64 lessons** with Polish explanations, code and practical warnings.
+- **137 quiz questions** with detailed explanations.
+- **126 open flashcards** with spaced repetition.
+- **12 live iframe demos** — real interactive HTML/JS examples embedded directly in lessons.
 - **31 coding challenges** with an in-browser editor and automatic tests.
 - **13 ready-made components** with live preview, full HTML/CSS/JS and copyable code.
 - **36 curiosities**, a **50-term glossary**, and **30 interview questions with model answers**.
 - **XP, levels and daily streaks** based on real completed work.
-- **18 module projects** with a concrete build checklist.
+- **21 module projects** with a concrete build checklist.
 - Full Polish interface, `lang="pl"`, and a separate yellow JS visual identity.
 
 ### Practice and knowledge
@@ -220,6 +223,16 @@ The **Komponenty** library at `/js/komponenty/` contains 13 real-world UI fragme
 - a live MVC product browser component.
 
 The key rule: the controller changes state; selectors compute data; the view renders. Do not pass six loose scalars into every function — pass one state object, and let each selector read only the fields it needs.
+
+### Search, practice and milestones
+
+- **Global search** at `/js/szukaj/` (and in the JS sidebar) searches modules, lessons, components, challenges, glossary terms, curiosities and interview questions.
+- **Design patterns** module: observer/pub-sub, factory, strategy and command, with a live store demo.
+- **Web APIs** module: `fetch`, abort/timeout, localStorage vs IndexedDB, Web Workers, streams and notifications.
+- **Debugging** module: breakpoints, call stack, Network/Performance tools, source maps, production errors and regression tests.
+- **Achievements** on the progress page: first lesson, ten lessons, first quiz, 80% quiz, 25 cards, first challenge, five challenges and a seven-day streak.
+
+The suite includes tests for search results, empty search, achievements and the new modules.
 
 The **Wiedza** tab contains:
 
@@ -303,7 +316,7 @@ The scheduler is intentionally small and transparent, inspired by SM-2. It is no
 │   ├── services.py              # postęp i harmonogram fiszek
 │   ├── content.py               # walidacja i seed treści
 │   ├── runner.py                # edytor wyzwań w sandbox iframe
-│   ├── content/*.json           # 18 modułów: JS → TS → React → RN
+│   ├── content/*.json           # 21 modułów: JS → TS → React → RN
 │   ├── content/demos.json       # 10 dem iframe
 │   ├── content/knowledge.json   # ciekawostki, słownik, wywiad
 │   ├── content/challenges.json  # 30 wyzwań z testami
@@ -447,7 +460,7 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **80 tests** in total.
+The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **83 tests** in total.
 
 You can also run Django's deployment check before hosting anything:
 

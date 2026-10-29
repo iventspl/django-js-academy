@@ -35,6 +35,28 @@
     </div>
   </section>
 
+  <section class="js-achievements" aria-labelledby="achievements-title">
+    <div class="section-head section-head-tight">
+      <div><p class="eyebrow eyebrow-js">Kamienie milowe</p><h2 id="achievements-title">Osiągnięcia.</h2></div>
+      <span class="js-achievements-count">{{ achievements_earned }}/{{ achievements|length }}</span>
+    </div>
+    <div class="js-achievement-grid">
+      {% for item in achievements %}
+        <article class="js-achievement {% if item.earned %}is-earned{% endif %}">
+          <span class="js-achievement-icon">{{ item.icon }}</span>
+          <div>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.description }}</p>
+            <div class="js-achievement-meter">
+              <div class="progress-track progress-track-dark"><span style="--bar: {{ item.percent }}%;"></span></div>
+              <span>{% if item.earned %}zdobyte{% else %}{{ item.progress }}/{{ item.target }}{% endif %}</span>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
   <section class="section" aria-labelledby="module-progress-title">
     <div class="section-head section-head-tight">
       <div><p class="eyebrow eyebrow-js">Mapa modułów</p><h2 id="module-progress-title">Gdzie jesteś.</h2></div>

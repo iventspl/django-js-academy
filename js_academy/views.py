@@ -31,6 +31,7 @@ from .models import (
 )
 from .runner import build_challenge_runner
 from .services import (
+    achievements,
     due_cards,
     flashcard_decks,
     flashcard_progress,
@@ -383,12 +384,17 @@ def flashcards_rate(
 @require_GET
 def progress(request: HttpRequest) -> HttpResponse:
     learner = _learner()
+    achievement_list = achievements(learner)
     return render(
         request,
         "js_academy/progress.html",
         {
             "modules": _modules_with_progress(learner),
             "stats": overall_stats(learner),
+            "achievements": achievement_list,
+            "achievements_earned": sum(
+                1 for item in achievement_list if item["earned"]
+            ),
             "attempts": JsAttempt.objects.filter(
                 learner=learner, completed_at__isnull=False
             ).select_related("module")[:10],
@@ -642,3 +648,51 @@ def mvc_guide(request: HttpRequest) -> HttpResponse:
             "page_title": "MVC w JavaScript",
         },
     )
+
+
+@require_GET
+def search(request: HttpRequest) -> HttpResponse:
+    query = request.GET.get("q", "").strip()
+    context = {
+        "query": query,
+        "active_nav": "js_search",
+        "page_title": "Szukaj w JS Akademii",
+        "groups": [],
+    }
+    if query:
+        modules = JsModule.objects.filter(
+            Q(title__icontains=query)
+            | Q(subtitle__icontains=query)
+            | Q(description__icontains=query)
+        )[:8]
+        lessons = JsLesson.objects.select_related("module").filter(
+            Q(title__icontains=query)
+            | Q(summary__icontains=query)
+            | Q(body_html__icontains=query)
+        )[:12]
+        components = JsComponent.objects.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        )[:8]
+        challenges = JsChallenge.objects.filter(
+            Q(title__icontains=query) | Q(prompt__icontains=query)
+        )[:8]
+        terms = JsTerm.objects.filter(
+            Q(term__icontains=query) | Q(definition__icontains=query)
+        )[:10]
+        facts = JsFact.objects.filter(
+            Q(title__icontains=query) | Q(body__icontains=query)
+        )[:8]
+        interview = JsInterviewQuestion.objects.filter(
+            Q(question__icontains=query) | Q(answer__icontains=query)
+        )[:8]
+        context["groups"] = [
+            {"label": "Moduły", "kind": "module", "items": modules},
+            {"label": "Lekcje", "kind": "lesson", "items": lessons},
+            {"label": "Komponenty", "kind": "component", "items": components},
+            {"label": "Wyzwania", "kind": "challenge", "items": challenges},
+            {"label": "Słownik", "kind": "term", "items": terms},
+            {"label": "Ciekawostki", "kind": "fact", "items": facts},
+            {"label": "Pytania rekrutacyjne", "kind": "interview", "items": interview},
+        ]
+        context["total"] = sum(len(group["items"]) for group in context["groups"])
+    return render(request, "js_academy/search.html", context)

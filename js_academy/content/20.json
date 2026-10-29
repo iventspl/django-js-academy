@@ -1,0 +1,162 @@
+{
+  "module": {
+    "slug": "web-api",
+    "title": "Web APIs w praktyce",
+    "subtitle": "fetch, storage, workers, streams i powiadomienia — bez magii przeglądarki.",
+    "description": "Przeglądarka to nie tylko DOM. Ten moduł uczy korzystać z API platformy: sieci, magazynów danych, wątków roboczych i strumieni, z uwzględnieniem uprawnień i błędów.",
+    "level": "advanced",
+    "glyph": "20",
+    "accent": "#2DD4BF",
+    "duration_minutes": 70,
+    "outcomes": [
+      "Obsługujesz fetch z błędami HTTP, timeoutem i anulowaniem.",
+      "Wybierasz localStorage, IndexedDB lub Cache Storage świadomie.",
+      "Rozumiesz, po co Web Worker i kiedy strumień ma sens.",
+      "Prosisz o uprawnienia w kontekście i szanujesz odmowę."
+    ],
+    "project_title": "Cache offline dla listy notatek",
+    "project_brief": "Zbuduj listę notatek, która zapisuje dane lokalnie, pokazuje stan offline i synchronizuje się po powrocie sieci. Dodaj obsługę błędu i czyszczenie starych danych.",
+    "project_steps": [
+      "Wybierz magazyn danych i uzasadnij wybór.",
+      "Dodaj zapis, odczyt i usuwanie.",
+      "Obsłuż offline i błąd sieci.",
+      "Dodaj testy logiki i sprawdź limity."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "fetch-http",
+      "title": "fetch, HTTP i anulowanie",
+      "summary": "response.ok, JSON, timeout, AbortController i komunikaty błędów.",
+      "minutes": 16,
+      "body_html": "<p><code>fetch</code> zwraca Promise, który rozwiązuje się także dla odpowiedzi 404 i 500. To częsty błąd: kod zakłada sukces, bo nie ma wyjątku.</p>\n<pre><code>async function getJSON(url, signal) {\n  const response = await fetch(url, { signal });\n  if (!response.ok) {\n    throw new Error(`HTTP ${response.status}`);\n  }\n  return response.json();\n}</code></pre>\n<h2>Anulowanie</h2>\n<pre><code>const controller = new AbortController();\nconst promise = getJSON(\"/api/items\", controller.signal);\ncontroller.abort(); // przerywa żądanie</code></pre>\n<p>Anulowanie jest potrzebne, gdy zmienia się filtr lub użytkownik wychodzi z ekranu. Bez tego stara odpowiedź może nadpisać nowszą.</p>\n<h2>Timeout</h2>\n<p><code>AbortSignal.timeout(5000)</code> jest wygodny w nowych środowiskach. W starszych trzeba połączyć timer z controllerem. Zawsze sprzątaj timer.</p>\n<h2>Błędy</h2>\n<p>Rozróżniaj brak sieci, błąd HTTP, błąd parsowania JSON i anulowanie. Użytkownik potrzebuje innej akcji dla „brak internetu” i „serwer odrzucił dane”.</p>\n<div class=\"lesson-callout\"><strong>Bezpieczeństwo:</strong> nie wysyłaj sekretów w query stringu. Tokeny i klucze API zostają na backendzie, a frontend dostaje własny, uwierzytelniony endpoint.</div>"
+    },
+    {
+      "slug": "storage",
+      "title": "localStorage, IndexedDB i Cache",
+      "summary": "Który magazyn do czego i dlaczego localStorage nie jest bazą danych.",
+      "minutes": 16,
+      "body_html": "<p>Przeglądarka daje kilka magazynów. Wybór zależy od rozmiaru, struktury, trwałości i wrażliwości danych.</p>\n<h2>localStorage</h2>\n<ul>\n<li>synchroniczny, więc duży zapis może blokować główny wątek,</li>\n<li>przechowuje stringi — obiekty trzeba serializować,</li>\n<li>nie jest szyfrowany; nie wkładaj tam tokenów,</li>\n<li>dobry do małych preferencji i flag.</li>\n</ul>\n<h2>IndexedDB</h2>\n<p>Asynchroniczna baza klucz-wartość z indeksami i transakcjami. Nadaje się do większych danych offline, ale ma bardziej złożone API. Często używa się nakładki, np. idb.</p>\n<h2>Cache Storage</h2>\n<p>Do cache'owania odpowiedzi HTTP i zasobów offline. Nie zastępuje bazy danych aplikacji.</p>\n<pre><code>localStorage.setItem(\"theme\", \"dark\");\nconst theme = localStorage.getItem(\"theme\") ?? \"light\");\n\n// obiekt\nlocalStorage.setItem(\"filters\", JSON.stringify(filters));\nconst saved = JSON.parse(localStorage.getItem(\"filters\") ?? \"{}\");</code></pre>\n<div class=\"lesson-callout\"><strong>Bezpieczeństwo:</strong> dane w localStorage są dostępne dla każdego skryptu na stronie. XSS może je odczytać. Tokeny sesji lepiej trzymać w HttpOnly cookie.</div>"
+    },
+    {
+      "slug": "workers-streams",
+      "title": "Workers, streams i powiadomienia",
+      "summary": "Ciężka praca poza głównym wątkiem, dane kawałek po kawałku i uprawnienia.",
+      "minutes": 16,
+      "body_html": "<h2>Web Worker</h2>\n<p>Worker działa w osobnym wątku i nie ma dostępu do DOM. Komunikacja odbywa się przez <code>postMessage</code>. Używaj go do ciężkich obliczeń, parsowania dużych plików lub przetwarzania obrazów.</p>\n<pre><code>const worker = new Worker(\"worker.js\");\nworker.postMessage({ numbers: largeArray });\nworker.onmessage = (event) =&gt; console.log(event.data);</code></pre>\n<h2>Strumienie</h2>\n<p><code>ReadableStream</code> pozwala przetwarzać dane, zanim przyjdzie całość. To podstawa streamingu odpowiedzi LLM i dużych plików. Pamiętaj o anulowaniu i obsłudze błędów w połowie strumienia.</p>\n<h2>Powiadomienia</h2>\n<pre><code>const permission = await Notification.requestPermission();\nif (permission === \"granted\") {\n  new Notification(\"Gotowe\", { body: \"Raport został wygenerowany.\" });\n}</code></pre>\n<p>Proś o uprawnienie w kontekście, gdy użytkownik rozumie korzyść. Obsłuż odmowę i nie blokuj całej aplikacji.</p>\n<div class=\"lesson-callout\"><strong>Main thread:</strong> animacje i interakcje muszą pozostać responsywne. Jeśli obliczenie trwa dłużej niż kilkadziesiąt milisekund, przenieś je do workera lub podziel na kawałki.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-web-b1",
+      "difficulty": "beginner",
+      "prompt": "Co robi response.ok?",
+      "code": "",
+      "choices": [
+        "Mówi, czy status HTTP jest w zakresie 200–299",
+        "Parsuje JSON",
+        "Anuluje żądanie",
+        "Sprawdza CORS"
+      ],
+      "answer": 0,
+      "explanation": "fetch nie odrzuca Promise dla 404. response.ok pozwala odróżnić sukces HTTP od błędu."
+    },
+    {
+      "key": "js-web-b2",
+      "difficulty": "beginner",
+      "prompt": "Który magazyn jest synchroniczny?",
+      "code": "",
+      "choices": [
+        "localStorage",
+        "IndexedDB",
+        "Cache Storage",
+        "Web Worker"
+      ],
+      "answer": 0,
+      "explanation": "localStorage blokuje główny wątek. IndexedDB jest asynchroniczna."
+    },
+    {
+      "key": "js-web-i1",
+      "difficulty": "intermediate",
+      "prompt": "Po co AbortController przy fetch?",
+      "code": "",
+      "choices": [
+        "Aby anulować nieaktualne żądanie",
+        "Aby przyspieszyć JSON",
+        "Aby ominąć CORS",
+        "Aby zapisać dane w cache"
+      ],
+      "answer": 0,
+      "explanation": "Anulowanie zapobiega wyścigowi odpowiedzi i niepotrzebnej pracy."
+    },
+    {
+      "key": "js-web-i2",
+      "difficulty": "intermediate",
+      "prompt": "Czego Web Worker nie może zrobić?",
+      "code": "",
+      "choices": [
+        "Bezpośrednio manipulować DOM",
+        "Wykonywać obliczeń",
+        "Komunikować się przez postMessage",
+        "Przetwarzać tablic"
+      ],
+      "answer": 0,
+      "explanation": "Worker nie ma dostępu do DOM. Wyniki przekazuje do głównego wątku."
+    },
+    {
+      "key": "js-web-a1",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego tokenu sesji nie należy trzymać w localStorage?",
+      "code": "",
+      "choices": [
+        "Jest dostępny dla XSS i nie jest szyfrowany",
+        "localStorage jest zbyt szybki",
+        "Nie działa w Chrome",
+        "Token zawsze wygasa"
+      ],
+      "answer": 0,
+      "explanation": "XSS może odczytać localStorage. HttpOnly cookie nie jest dostępne dla JS."
+    },
+    {
+      "key": "js-web-a2",
+      "difficulty": "advanced",
+      "prompt": "Kiedy strumień ma przewagę nad czekaniem na całość?",
+      "code": "",
+      "choices": [
+        "Gdy dane są duże lub mają być pokazywane na bieżąco",
+        "Gdy odpowiedź jest małym JSON-em",
+        "Gdy nie ma sieci",
+        "Zawsze"
+      ],
+      "answer": 0,
+      "explanation": "Strumień pozwala przetwarzać dane przyrostowo i wcześniej pokazać wynik, np. w LLM."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-web-f1",
+      "front": "Dlaczego fetch nie rzuca błędu dla 404?",
+      "back": "fetch rozwiązuje Promise dla każdej odpowiedzi HTTP. Musisz sprawdzić response.ok i samodzielnie rzucić błąd."
+    },
+    {
+      "key": "js-web-f2",
+      "front": "localStorage vs IndexedDB",
+      "back": "localStorage: małe, synchroniczne stringi. IndexedDB: większe dane, transakcje, asynchroniczność. Tokeny trzymaj w HttpOnly cookie, nie w localStorage."
+    },
+    {
+      "key": "js-web-f3",
+      "front": "Po co Web Worker?",
+      "back": "Aby wykonać ciężką pracę poza głównym wątkiem i nie blokować UI. Worker nie ma DOM; komunikuje się przez postMessage."
+    },
+    {
+      "key": "js-web-f4",
+      "front": "Czym jest ReadableStream?",
+      "back": "Strumień danych, który można czytać kawałek po kawałku. Używany do dużych plików i streamingu odpowiedzi LLM."
+    },
+    {
+      "key": "js-web-f5",
+      "front": "Jak prosić o powiadomienia?",
+      "back": "W kontekście, gdy użytkownik rozumie korzyść. Obsłuż odmowę i nie blokuj aplikacji. Uprawnienie można odebrać w ustawieniach."
+    }
+  ]
+}

@@ -1,0 +1,162 @@
+{
+  "module": {
+    "slug": "debugging",
+    "title": "Debugging i DevTools",
+    "subtitle": "Breakpointy, network, wydajność i błędy, które zdarzają się tylko na produkcji.",
+    "description": "Debugowanie to nie zgadywanie. Ten moduł uczy stawiać hipotezy, używać breakpointów, czytać stos wywołań, analizować sieć i znajdować wycieki pamięci.",
+    "level": "advanced",
+    "glyph": "21",
+    "accent": "#F87171",
+    "duration_minutes": 65,
+    "outcomes": [
+      "Stawiasz hipotezę i weryfikujesz ją breakpointem lub testem.",
+      "Czytasz call stack, scope i warunki w DevTools.",
+      "Analizujesz żądania sieciowe i problemy wydajności.",
+      "Zbierasz kontekst błędu produkcyjnego bez logowania sekretów."
+    ],
+    "project_title": "Polowanie na błąd",
+    "project_brief": "Weź aplikację z listą i filtrem, która czasem pokazuje pustą stronę po zmianie filtra. Odtwórz błąd, zbierz dowody i napisz test regresyjny.",
+    "project_steps": [
+      "Zapisz kroki reprodukcji.",
+      "Sprawdź stan, sieć i stos wywołań.",
+      "Znajdź założenie, które jest fałszywe.",
+      "Dodaj test i zabezpieczenie na przyszłość."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "breakpointy",
+      "title": "Breakpointy i call stack",
+      "summary": "Jak przejść od objawu do przyczyny bez losowego komentowania kodu.",
+      "minutes": 15,
+      "body_html": "<p>Debugowanie zaczyna się od hipotezy: „podejrzewam, że currentPage nie resetuje się po filtrze”. Dopiero potem wybierasz narzędzie.</p>\n<h2>Breakpoint</h2>\n<p>W DevTools otwórz Sources, znajdź plik i kliknij numer linii. Zatrzymasz wykonanie przed instrukcją. Możesz sprawdzić scope, dodać watch i przejść krok po kroku.</p>\n<pre><code>function applyFilter(query) {\n  const filtered = filterProducts(products, query);\n  currentPage = 1; // breakpoint tutaj\n  render(filtered);\n}</code></pre>\n<h2>Warunkowy breakpoint</h2>\n<p>Zatrzymuj tylko wtedy, gdy warunek jest spełniony, np. <code>query === \"react\"</code> lub <code>items.length === 0</code>. Nie przeklikujesz stu iteracji.</p>\n<h2>Call stack</h2>\n<p>Stos pokazuje, kto wywołał funkcję. Jeśli metoda widzi stary stan, sprawdź, z którego renderu pochodzi domknięcie — stos i scope często wyjaśniają więcej niż czytanie całego pliku.</p>\n<div class=\"lesson-callout\"><strong>Nawyk:</strong> zapisz hipotezę przed kliknięciem. „Sprawdzę, czy page jest resetowany” jest lepsze niż „poklikam i zobaczę”.</div>"
+    },
+    {
+      "slug": "network-wydajnosc",
+      "title": "Network i wydajność",
+      "summary": "Waterfall, cache, rozmiar odpowiedzi, długie zadania i wycieki pamięci.",
+      "minutes": 16,
+      "body_html": "<h2>Network</h2>\n<ul>\n<li>sprawdź status, nagłówki i rozmiar odpowiedzi,</li>\n<li>zobacz, czy żądanie jest cache'owane,</li>\n<li>sprawdź kolejność i wodospad — może blokujesz coś niepotrzebnie,</li>\n<li>sprawdź, czy błąd CORS nie ukrywa prawdziwego problemu.</li>\n</ul>\n<h2>Performance</h2>\n<p>Długie zadanie na głównym wątku blokuje kliknięcia i render. W panelu Performance nagraj interakcję i sprawdź, gdzie spędzany jest czas. Nie optymalizuj na podstawie przeczucia.</p>\n<h2>Pamięć</h2>\n<p>Wyciek często wynika z listenerów, timerów i subskrypcji, których nikt nie odpina. W Memory zrób snapshot przed i po powtórzeniu akcji; rosnąca liczba obiektów to sygnał.</p>\n<pre><code>useEffect(() =&gt; {\n  const id = setInterval(tick, 1000);\n  return () =&gt; clearInterval(id);\n}, []);</code></pre>\n<div class=\"lesson-callout\"><strong>Mierz:</strong> Lighthouse, Performance i RUM odpowiadają na różne pytania. Liczba linii kodu nie jest metryką szybkości.</div>"
+    },
+    {
+      "slug": "bledy-produkcja",
+      "title": "Błędy w produkcji",
+      "summary": "Globalne handlery, source maps, logi bez sekretów i test regresyjny.",
+      "minutes": 15,
+      "body_html": "<p>W produkcji nie masz breakpointa. Masz logi, monitoring i umiejętność odtworzenia scenariusza.</p>\n<h2>Globalne błędy</h2>\n<pre><code>window.addEventListener(\"error\", (event) =&gt; {\n  report({ message: event.message, source: event.filename });\n});\n\nwindow.addEventListener(\"unhandledrejection\", (event) =&gt; {\n  report({ reason: String(event.reason) });\n});</code></pre>\n<h2>Source maps</h2>\n<p>Minifikacja zmienia nazwy i linie. Source map pozwala odtworzyć oryginalny stos. Nie publikuj map z sekretami; kontroluj dostęp.</p>\n<h2>Co logować</h2>\n<p>Loguj identyfikator żądania, wersję aplikacji, typ operacji i stan, który prowadzi do błędu. Nie loguj haseł, tokenów ani pełnych danych osobowych.</p>\n<div class=\"lesson-callout\"><strong>Po naprawie:</strong> dodaj test regresyjny. Błąd, który nie ma testu, lubi wrócić przy następnym refaktorze.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-debug-b1",
+      "difficulty": "beginner",
+      "prompt": "Od czego zacząć debugowanie?",
+      "code": "",
+      "choices": [
+        "Od hipotezy i kroków reprodukcji",
+        "Od usunięcia połowy kodu",
+        "Od zmiany frameworka",
+        "Od wyłączenia testów"
+      ],
+      "answer": 0,
+      "explanation": "Hipoteza i reprodukcja porządkują proces. Dopiero potem wybierasz breakpoint lub test."
+    },
+    {
+      "key": "js-debug-b2",
+      "difficulty": "beginner",
+      "prompt": "Co pokazuje call stack?",
+      "code": "",
+      "choices": [
+        "Kto wywołał bieżącą funkcję",
+        "Rozmiar bundle'a",
+        "Status HTTP",
+        "Zawartość localStorage"
+      ],
+      "answer": 0,
+      "explanation": "Stos wywołań pokazuje ścieżkę do aktualnego miejsca, co pomaga znaleźć źródło problemu."
+    },
+    {
+      "key": "js-debug-i1",
+      "difficulty": "intermediate",
+      "prompt": "Po co warunkowy breakpoint?",
+      "code": "",
+      "choices": [
+        "Aby zatrzymać wykonanie tylko dla konkretnego przypadku",
+        "Aby przyspieszyć JS",
+        "Aby ominąć CORS",
+        "Aby usunąć listener"
+      ],
+      "answer": 0,
+      "explanation": "Warunek ogranicza liczbę zatrzymań i pozwala skupić się na konkretnym stanie."
+    },
+    {
+      "key": "js-debug-i2",
+      "difficulty": "intermediate",
+      "prompt": "Co często powoduje wyciek pamięci?",
+      "code": "",
+      "choices": [
+        "Niezależne listenery, timery i subskrypcje bez cleanupu",
+        "Zbyt mało zmiennych",
+        "Używanie const",
+        "Zbyt krótkie nazwy"
+      ],
+      "answer": 0,
+      "explanation": "Obiekty pozostające w subskrypcjach lub timerach nie mogą zostać zwolnione przez GC."
+    },
+    {
+      "key": "js-debug-a1",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego source maps są ważne w produkcji?",
+      "code": "",
+      "choices": [
+        "Pozwalają odtworzyć oryginalne linie i nazwy w stosie błędu",
+        "Zmniejszają bundle",
+        "Zastępują testy",
+        "Szyfrują logi"
+      ],
+      "answer": 0,
+      "explanation": "Minifikowany kod traci czytelność. Source map mapuje błąd z powrotem do źródła."
+    },
+    {
+      "key": "js-debug-a2",
+      "difficulty": "advanced",
+      "prompt": "Czego nie należy logować?",
+      "code": "",
+      "choices": [
+        "Haseł, tokenów i pełnych danych osobowych",
+        "Wersji aplikacji",
+        "Identyfikatora żądania",
+        "Typu operacji"
+      ],
+      "answer": 0,
+      "explanation": "Logi często trafiają do zewnętrznych systemów. Sekrety i dane osobowe nie powinny tam trafiać."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-debug-f1",
+      "front": "Jak zacząć debugowanie?",
+      "back": "Zapisz objaw, kroki reprodukcji i hipotezę. Następnie sprawdź ją breakpointem, logiem lub testem. Nie zmieniaj kodu losowo."
+    },
+    {
+      "key": "js-debug-f2",
+      "front": "Do czego służy warunkowy breakpoint?",
+      "back": "Zatrzymuje wykonanie tylko wtedy, gdy warunek jest prawdziwy, np. items.length === 0. Oszczędza czas przy pętlach i wielu iteracjach."
+    },
+    {
+      "key": "js-debug-f3",
+      "front": "Co sprawdzić w Network?",
+      "back": "Status, nagłówki, rozmiar, cache, kolejność żądań i błędy CORS. Czasem problem nie jest w JS, tylko w odpowiedzi lub cache."
+    },
+    {
+      "key": "js-debug-f4",
+      "front": "Jak znaleźć wyciek pamięci?",
+      "back": "Powtórz akcję i porównaj snapshoty pamięci. Sprawdź listenery, timery, subskrypcje i duże obiekty trzymane przez domknięcia."
+    },
+    {
+      "key": "js-debug-f5",
+      "front": "Co zrobić po naprawie błędu?",
+      "back": "Dodać test regresyjny i krótki zapis przyczyny. Bez tego ten sam błąd wróci przy następnej zmianie."
+    }
+  ]
+}

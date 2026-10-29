@@ -34,6 +34,11 @@
       </div>
 
       {% if request.resolver_match.namespace == 'js_academy' %}
+        <form class="js-nav-search" action="{% url 'js_academy:search' %}" method="get">
+          <label class="sr-only" for="js-nav-q">Szukaj w JS Akademii</label>
+          <input id="js-nav-q" name="q" type="search" value="{{ request.GET.q|default:'' }}" placeholder="Szukaj w akademii…">
+          <button type="submit" aria-label="Szukaj">↗</button>
+        </form>
         <nav class="main-nav" aria-label="Nawigacja JS Akademii">
           <a class="nav-link {% if active_nav == 'js_start' %}is-active{% endif %}" href="{% url 'js_academy:home' %}">
             <span class="nav-glyph" aria-hidden="true">⌂</span>

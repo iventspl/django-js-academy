@@ -1,0 +1,162 @@
+{
+  "module": {
+    "slug": "wzorce-projektowe",
+    "title": "Wzorce projektowe w JS",
+    "subtitle": "Obserwator, fabryka, strategia i komenda — po co, kiedy i bez ceremonii.",
+    "description": "Wzorce to wspólny język rozwiązań, nie lista rzeczy do wklejenia. Ten moduł pokazuje, jak rozpoznać problem, dobrać minimalny wzorzec i nie zamienić kodu w fabrykę fabryk.",
+    "level": "advanced",
+    "glyph": "19",
+    "accent": "#C084FC",
+    "duration_minutes": 70,
+    "outcomes": [
+      "Rozpoznajesz problem, zanim wybierzesz wzorzec.",
+      "Budujesz obserwatora z subskrypcją i bezpiecznym odpinaniem.",
+      "Stosujesz fabrykę, strategię i komendę bez nadmiaru warstw.",
+      "Wiesz, kiedy zwykła funkcja jest lepsza od wzorca."
+    ],
+    "project_title": "Mini store z obserwatorem",
+    "project_brief": "Zbuduj prosty store z subskrypcją, aktualizacją stanu i odpinaniem listenerów. Dodaj drugi widok, który reaguje na tę samą zmianę.",
+    "project_steps": [
+      "Zdefiniuj stan i funkcję subscribe.",
+      "Dodaj aktualizację stanu i notify.",
+      "Podłącz dwa niezależne widoki.",
+      "Dodaj unsubscribe i sprawdź, czy nie ma wycieku."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "wzorce-to-slownictwo",
+      "title": "Wzorce to słownictwo, nie religia",
+      "summary": "Problem, kontekst i minimalne rozwiązanie zamiast kopiowania schematów.",
+      "minutes": 15,
+      "body_html": "<p>Wzorzec projektowy to nazwane rozwiązanie powtarzalnego problemu w danym kontekście. Nie jest celem samym w sobie. Jeśli dodajesz fabrykę, bo „wypada”, prawdopodobnie tworzysz warstwę, której nikt nie potrzebuje.</p>\n<h2>Najpierw problem</h2>\n<ul>\n<li>Czy wiele części aplikacji ma reagować na tę samą zmianę? → obserwator.</li>\n<li>Czy tworzenie obiektów zależy od konfiguracji? → fabryka.</li>\n<li>Czy algorytm ma być wymienny? → strategia.</li>\n<li>Czy akcję trzeba zapisać, cofnąć lub wykonać później? → komenda.</li>\n</ul>\n<p>Dopiero potem wybierasz wzorzec. Często wystarczy funkcja, obiekt lub mapa funkcji.</p>\n<h2>Kompozycja przed dziedziczeniem</h2>\n<p>JavaScript nie wymaga klas do wzorców. Fabryka może być funkcją, strategia — obiektem funkcji, a obserwator — zbiorem callbacków. Czytelność jest ważniejsza niż liczba warstw.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> jeśli usuniesz wzorzec, czy kod nadal da się zrozumieć? Jeśli tak, może wcale nie był potrzebny.</div>"
+    },
+    {
+      "slug": "obserwator",
+      "title": "Obserwator i pub/sub",
+      "summary": "Subskrypcja, powiadamianie i odpinanie listenerów bez wycieków pamięci.",
+      "minutes": 16,
+      "body_html": "<p>Obserwator pozwala wielu częściom aplikacji reagować na zmianę bez bezpośredniego wiązania ich ze sobą. W prostym wydaniu to zbiór funkcji, które są wywoływane po zmianie stanu.</p>\n<pre><code>function createStore(initialState) {\n  let state = initialState;\n  const listeners = new Set();\n\n  return {\n    getState: () =&gt; state,\n    subscribe(listener) {\n      listeners.add(listener);\n      return () =&gt; listeners.delete(listener);\n    },\n    setState(next) {\n      state = { ...state, ...next };\n      listeners.forEach((listener) =&gt; listener(state));\n    },\n  };\n}</code></pre>\n<h2>Unsubscribe jest częścią kontraktu</h2>\n<p>Każda subskrypcja powinna mieć sposób odpięcia. W przeciwnym razie odmontowany widok nadal żyje w pamięci i reaguje na zmiany. Zwracanie funkcji <code>unsubscribe</code> jest prostym i skutecznym rozwiązaniem.</p>\n<h2>Nie mieszaj zdarzeń z danymi</h2>\n<p>Listener powinien otrzymać nowy stan i sam zdecydować, co renderować. Jeśli obserwator zaczyna znać szczegóły widoków, granica znika.</p>\n<div class=\"lesson-callout\"><strong>Uwaga:</strong> pub/sub to nie to samo co event bus bez zasad. Zbyt wiele zdarzeń bez typów i właściciela kończy się chaosem. Zaczynaj od jednego store'a i konkretnych zmian.</div>"
+    },
+    {
+      "slug": "fabryka-strategia-komenda",
+      "title": "Fabryka, strategia, komenda",
+      "summary": "Trzy wzorce, które naprawdę upraszczają kod — gdy użyte w dobrym miejscu.",
+      "minutes": 17,
+      "body_html": "<h2>Fabryka</h2>\n<p>Fabryka ukrywa decyzję o tym, jaki obiekt utworzyć. Przydaje się, gdy typ zależy od konfiguracji, a reszta kodu nie powinna znać wszystkich konstruktorów.</p>\n<pre><code>function createNotifier(type) {\n  if (type === \"email\") return { send: sendEmail };\n  if (type === \"sms\") return { send: sendSms };\n  throw new Error(\"Nieznany kanał\");\n}</code></pre>\n<h2>Strategia</h2>\n<p>Strategia to wymienny algorytm. Zamiast łańcucha <code>if/else</code> przekazujesz funkcję lub obiekt z metodą.</p>\n<pre><code>const shipping = {\n  courier: (weight) =&gt; 15 + weight * 2,\n  pickup: () =&gt; 0,\n};\n\nconst cost = shipping[method](weight);</code></pre>\n<h2>Komenda</h2>\n<p>Komenda zamyka akcję w obiekcie: <code>execute</code>, <code>undo</code>, dane. Dobre do cofania, kolejek i historii operacji.</p>\n<pre><code>const addItem = {\n  execute: () =&gt; cart.add(product),\n  undo: () =&gt; cart.remove(product),\n};</code></pre>\n<p>Nie każda akcja potrzebuje komendy. Jeśli nie potrzebujesz cofania ani kolejki, zwykła funkcja jest prostsza.</p>\n<div class=\"lesson-callout\"><strong>Reguła:</strong> wzorzec ma usunąć konkretny ból. Jeśli bólu nie ma, dodajesz złożoność za darmo.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-pat-b1",
+      "difficulty": "beginner",
+      "prompt": "Kiedy obserwator ma sens?",
+      "code": "",
+      "choices": [
+        "Gdy wiele części ma reagować na tę samą zmianę stanu",
+        "Gdy potrzebujesz jednej funkcji",
+        "Gdy chcesz uniknąć testów",
+        "Zawsze w każdej aplikacji"
+      ],
+      "answer": 0,
+      "explanation": "Obserwator oddziela źródło zmiany od odbiorców. Ma sens, gdy rzeczywiście wiele widoków lub modułów reaguje na ten sam stan."
+    },
+    {
+      "key": "js-pat-b2",
+      "difficulty": "beginner",
+      "prompt": "Co powinna zwracać funkcja subscribe?",
+      "code": "",
+      "choices": [
+        "Funkcję unsubscribe",
+        "Promise",
+        "Nowy stan",
+        "Element DOM"
+      ],
+      "answer": 0,
+      "explanation": "Zwracanie funkcji odpinającej pozwala bezpiecznie usuwać listenery i unikać wycieków."
+    },
+    {
+      "key": "js-pat-i1",
+      "difficulty": "intermediate",
+      "prompt": "Czym jest strategia w JavaScript?",
+      "code": "",
+      "choices": [
+        "Wymiennym algorytmem przekazanym jako funkcja lub obiekt",
+        "Klasą dziedziczącą po klasie bazowej",
+        "Tylko wzorcem z Java",
+        "Sposobem na cachowanie"
+      ],
+      "answer": 0,
+      "explanation": "Strategia pozwala wymienić algorytm bez zmiany wywołującego kodu. W JS często wystarczy funkcja w mapie."
+    },
+    {
+      "key": "js-pat-i2",
+      "difficulty": "intermediate",
+      "prompt": "Kiedy komenda jest przydatna?",
+      "code": "",
+      "choices": [
+        "Gdy potrzebujesz cofania, historii lub kolejki akcji",
+        "Gdy chcesz dodać więcej ifów",
+        "Gdy każda funkcja ma być klasą",
+        "Zawsze przy fetch"
+      ],
+      "answer": 0,
+      "explanation": "Komenda zamyka akcję i jej dane, co ułatwia undo, kolejkowanie i audyt."
+    },
+    {
+      "key": "js-pat-a1",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego obserwator bez unsubscribe może powodować wyciek?",
+      "code": "",
+      "choices": [
+        "Odmontowany widok nadal jest w zbiorze listenerów i trzyma referencje",
+        "Set nie pozwala usuwać",
+        "JavaScript nie ma GC",
+        "Listener zawsze działa synchronicznie"
+      ],
+      "answer": 0,
+      "explanation": "Jeśli listener pozostaje w zbiorze, GC nie może go usunąć, a każda zmiana nadal go wywołuje."
+    },
+    {
+      "key": "js-pat-a2",
+      "difficulty": "advanced",
+      "prompt": "Kiedy wzorzec może zaszkodzić?",
+      "code": "",
+      "choices": [
+        "Gdy dodaje warstwy bez konkretnego problemu",
+        "Gdy jest udokumentowany",
+        "Gdy ma testy",
+        "Gdy używa funkcji zamiast klas"
+      ],
+      "answer": 0,
+      "explanation": "Wzorce mają ograniczać złożoność. Jeśli jej nie rozwiązują, stają się dodatkowym kosztem utrzymania."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-pat-f1",
+      "front": "Kiedy użyć obserwatora?",
+      "back": "Gdy wiele odbiorców ma reagować na zmianę jednego stanu lub zdarzenia, a nie chcesz wiązać ich bezpośrednio ze źródłem."
+    },
+    {
+      "key": "js-pat-f2",
+      "front": "Po co unsubscribe?",
+      "back": "Aby usunąć listener z pamięci i zatrzymać reakcje na zmiany po zniszczeniu widoku. Bez tego łatwo o wyciek."
+    },
+    {
+      "key": "js-pat-f3",
+      "front": "Fabryka — po co?",
+      "back": "Ukrywa decyzję o typie tworzonego obiektu. Przydaje się, gdy konfiguracja wybiera implementację, a reszta kodu nie powinna znać konstruktorów."
+    },
+    {
+      "key": "js-pat-f4",
+      "front": "Strategia — po co?",
+      "back": "Pozwala wymienić algorytm bez zmiany wywołania. W JS często wystarczy obiekt funkcji zamiast hierarchii klas."
+    },
+    {
+      "key": "js-pat-f5",
+      "front": "Komenda — po co?",
+      "back": "Zamyka akcję w obiekcie z execute/undo. Przydaje się do cofania, historii i kolejek operacji."
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Szukaj w JS Akademii{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-search-page">
+  <header class="js-page-header">
+    <p class="eyebrow eyebrow-js">Przeszukaj całą akademię</p>
+    <h1>Jedno miejsce.<br><em>Wszystkie odpowiedzi.</em></h1>
+    <p class="js-lead">Szukaj w lekcjach, komponentach, wyzwaniach, słowniku, ciekawostkach i pytaniach rekrutacyjnych. Wpisz pojęcie, funkcję albo fragment kodu.</p>
+  </header>
+
+  <form class="js-search-big" method="get" action="{% url 'js_academy:search' %}">
+    <label class="sr-only" for="big-q">Szukaj</label>
+    <input id="big-q" name="q" type="search" value="{{ query }}" placeholder="np. currentView, promise, flexbox, MVC…" autofocus>
+    <button class="btn btn-js" type="submit">Szukaj</button>
+  </form>
+
+  {% if query %}
+    <p class="js-search-summary">Dla „<strong>{{ query }}</strong>” znaleziono <strong>{{ total }}</strong> wyników.</p>
+    {% if not total %}
+      <div class="js-empty-inline"><span>Brak wyników. Spróbuj krótszego pojęcia.</span><a href="{% url 'js_academy:knowledge' %}">Przejdź do wiedzy</a></div>
+    {% endif %}
+    <div class="js-search-groups">
+      {% for group in groups %}
+        {% if group.items %}
+          <section class="js-search-group">
+            <div class="js-search-group-head"><h2>{{ group.label }}</h2><span>{{ group.items|length }}</span></div>
+            <div class="js-search-results">
+              {% for item in group.items %}
+                {% if group.kind == 'module' %}
+                  <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.subtitle }}</span></a>
+                {% elif group.kind == 'lesson' %}
+                  <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.module.title }} · {{ item.summary|truncatechars:120 }}</span></a>
+                {% elif group.kind == 'component' %}
+                  <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.category }} · {{ item.description|truncatechars:120 }}</span></a>
+                {% elif group.kind == 'challenge' %}
+                  <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.get_difficulty_display }} · {{ item.prompt|striptags|truncatechars:120 }}</span></a>
+                {% elif group.kind == 'term' %}
+                  <a href="{% url 'js_academy:glossary' %}?q={{ item.term|urlencode }}"><strong>{{ item.term }}</strong><span>{{ item.definition|truncatechars:140 }}</span></a>
+                {% elif group.kind == 'fact' %}
+                  <a href="{% url 'js_academy:facts' %}"><strong>{{ item.title }}</strong><span>{{ item.body|truncatechars:140 }}</span></a>
+                {% elif group.kind == 'interview' %}
+                  <a href="{% url 'js_academy:interview' %}?q={{ item.question|truncatechars:40|urlencode }}"><strong>{{ item.question }}</strong><span>{{ item.get_difficulty_display }} · {{ item.answer|truncatechars:140 }}</span></a>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+      {% empty %}
+        <div class="js-empty-inline"><span>Brak wyników. Spróbuj krótszego pojęcia.</span><a href="{% url 'js_academy:knowledge' %}">Przejdź do wiedzy</a></div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="js-search-hints">
+      <div><strong>Szukaj pojęć</strong><p>currentView, event loop, domknięcie, AbortController.</p></div>
+      <div><strong>Szukaj kodu</strong><p>filter, reduce, useState, useEffect, IntersectionObserver.</p></div>
+      <div><strong>Szukaj sytuacji</strong><p>walidacja, paginacja, offline, cache, XSS, MVC.</p></div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

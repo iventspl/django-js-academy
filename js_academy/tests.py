@@ -33,11 +33,11 @@ class SeededJsTestCase(TestCase):
 
 class JsContentTests(SeededJsTestCase):
     def test_content_counts(self):
-        self.assertEqual(len(load_bundles()), 18)
-        self.assertEqual(JsModule.objects.count(), 18)
-        self.assertEqual(JsLesson.objects.count(), 55)
-        self.assertEqual(JsQuestion.objects.count(), 119)
-        self.assertEqual(JsFlashcard.objects.count(), 111)
+        self.assertEqual(len(load_bundles()), 21)
+        self.assertEqual(JsModule.objects.count(), 21)
+        self.assertEqual(JsLesson.objects.count(), 64)
+        self.assertEqual(JsQuestion.objects.count(), 137)
+        self.assertEqual(JsFlashcard.objects.count(), 126)
         self.assertEqual(JsComponent.objects.count(), 13)
 
     def test_every_module_has_expected_lessons_questions_and_cards(self):
@@ -66,7 +66,7 @@ class JsContentTests(SeededJsTestCase):
 
     def test_live_demos_are_attached_and_sandboxed(self):
         demo_lessons = JsLesson.objects.exclude(live_demo_html="")
-        self.assertEqual(demo_lessons.count(), 11)
+        self.assertEqual(demo_lessons.count(), 12)
         for lesson in demo_lessons:
             self.assertTrue(lesson.demo_title)
             self.assertTrue(lesson.demo_description)
@@ -80,8 +80,8 @@ class JsContentTests(SeededJsTestCase):
     def test_seed_is_idempotent(self):
         lesson = JsLesson.objects.first()
         call_command("seed_js", verbosity=0)
-        self.assertEqual(JsModule.objects.count(), 18)
-        self.assertEqual(JsLesson.objects.count(), 55)
+        self.assertEqual(JsModule.objects.count(), 21)
+        self.assertEqual(JsLesson.objects.count(), 64)
         self.assertEqual(JsLesson.objects.get(pk=lesson.pk).title, lesson.title)
 
     def test_lessons_are_in_curriculum_order(self):
@@ -107,6 +107,9 @@ class JsContentTests(SeededJsTestCase):
                 "mistrzostwo-js",
                 "ai-praca",
                 "mvc-w-js",
+                "wzorce-projektowe",
+                "web-api",
+                "debugging",
             ],
         )
 
@@ -358,6 +361,34 @@ class JsPlaygroundTests(SeededJsTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "succeedAt")
         self.assertContains(response, "await solve")
+
+
+class JsSearchAndAchievementTests(SeededJsTestCase):
+    def test_search_finds_mvc_and_promises(self):
+        response = self.client.get(reverse("js_academy:search"), {"q": "currentView"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "MVC w JavaScript")
+        response = self.client.get(reverse("js_academy:search"), {"q": "promise"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Promise")
+        self.assertContains(response, "wyników")
+
+    def test_search_empty_state(self):
+        response = self.client.get(reverse("js_academy:search"), {"q": "xyz-nie-ma"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Brak wyników")
+
+    def test_achievements_track_first_lesson(self):
+        from .services import achievements
+
+        learner = Learner.local()
+        lesson = JsLesson.objects.first()
+        JsLessonProgress.objects.create(learner=learner, lesson=lesson)
+        items = achievements(learner)
+        earned = {item["key"] for item in items if item["earned"]}
+        self.assertIn("first-step", earned)
+        self.assertNotIn("ten-lessons", earned)
+        self.assertEqual(len(items), 8)
 
 
 class JsMvcTests(SeededJsTestCase):

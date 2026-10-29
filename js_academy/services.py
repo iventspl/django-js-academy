@@ -206,6 +206,98 @@ def overall_stats(learner: Learner) -> dict:
     }
 
 
+def achievements(learner: Learner) -> list[dict]:
+    completed_lessons = JsLessonProgress.objects.filter(learner=learner).count()
+    completed_quizzes = JsAttempt.objects.filter(
+        learner=learner, completed_at__isnull=False
+    )
+    best_quiz = max(
+        (attempt.score_percent for attempt in completed_quizzes), default=0
+    )
+    reviewed_cards = JsFlashcardReview.objects.filter(learner=learner).count()
+    passed_challenges = JsChallengeCompletion.objects.filter(
+        learner=learner, passed=True
+    ).count()
+    streak = gamification(learner)["streak"]
+    items = [
+        {
+            "key": "first-step",
+            "icon": "01",
+            "title": "Pierwszy krok",
+            "description": "Ukończ pierwszą lekcję.",
+            "earned": completed_lessons >= 1,
+            "progress": min(completed_lessons, 1),
+            "target": 1,
+        },
+        {
+            "key": "ten-lessons",
+            "icon": "10",
+            "title": "Dziesiątka",
+            "description": "Ukończ 10 lekcji.",
+            "earned": completed_lessons >= 10,
+            "progress": min(completed_lessons, 10),
+            "target": 10,
+        },
+        {
+            "key": "first-quiz",
+            "icon": "?",
+            "title": "Pierwszy quiz",
+            "description": "Ukończ dowolny quiz modułu.",
+            "earned": completed_quizzes.exists(),
+            "progress": min(completed_quizzes.count(), 1),
+            "target": 1,
+        },
+        {
+            "key": "quiz-80",
+            "icon": "80",
+            "title": "Pewna ręka",
+            "description": "Zdobądź co najmniej 80% w quizie.",
+            "earned": best_quiz >= 80,
+            "progress": min(best_quiz, 80),
+            "target": 80,
+        },
+        {
+            "key": "cards-25",
+            "icon": "▣",
+            "title": "Fiszki w ruchu",
+            "description": "Powtórz 25 fiszek.",
+            "earned": reviewed_cards >= 25,
+            "progress": min(reviewed_cards, 25),
+            "target": 25,
+        },
+        {
+            "key": "first-challenge",
+            "icon": "⌘",
+            "title": "Kod działa",
+            "description": "Ukończ pierwsze wyzwanie.",
+            "earned": passed_challenges >= 1,
+            "progress": min(passed_challenges, 1),
+            "target": 1,
+        },
+        {
+            "key": "five-challenges",
+            "icon": "5",
+            "title": "Debugger",
+            "description": "Ukończ 5 wyzwań.",
+            "earned": passed_challenges >= 5,
+            "progress": min(passed_challenges, 5),
+            "target": 5,
+        },
+        {
+            "key": "streak-7",
+            "icon": "7",
+            "title": "Tydzień rytmu",
+            "description": "Utrzymaj serię przez 7 dni.",
+            "earned": streak >= 7,
+            "progress": min(streak, 7),
+            "target": 7,
+        },
+    ]
+    for item in items:
+        item["percent"] = percent(item["progress"], item["target"])
+    return items
+
+
 def _cards_with_reviews(learner: Learner, module: JsModule | None = None) -> list[tuple]:
     cards = JsFlashcard.objects.select_related("module").prefetch_related(
         Prefetch(
