@@ -76,6 +76,19 @@
       ],
       "practice": "Implement three tools, one write approval and a five-task evaluation set. Success: no write executes without approval and every run has a trace.",
       "minutes": 25
+    },
+    {
+      "slug": "agent-memory-state",
+      "title": "Agent memory, state and planning",
+      "summary": "What an agent should remember, what it should forget, and how to keep long tasks coherent.",
+      "body_html": "<p>An agent without memory repeats work; an agent with unlimited memory becomes slow, expensive and leaky. The design question is what belongs in state, what belongs in a summary, and what should be retrieved on demand.</p>\n<h2>Three kinds of memory</h2>\n<ul>\n<li><strong>Working state</strong> — the current task, plan, constraints and observations.</li>\n<li><strong>Episodic memory</strong> — what happened in this session, useful for recovery.</li>\n<li><strong>Long-term memory</strong> — user preferences, project facts, past decisions, usually retrieved from storage.</li>\n</ul>\n<p>Do not put all three in the prompt. Context is a budget.</p>\n<h2>An explicit state object</h2>\n<pre><code>state = {\n    \"goal\": \"Prepare a competitor brief\",\n    \"constraints\": [\"use only public sources\", \"max 5 pages\"],\n    \"plan\": [\"collect sources\", \"summarise\", \"compare\", \"draft\"],\n    \"completed\": [],\n    \"open_questions\": [],\n    \"observations\": [],\n}</code></pre>\n<p>Update state after every tool call. A trace can be reconstructed from it, and a failed run can resume instead of restarting.</p>\n<h2>Summarise, don't accumulate</h2>\n<p>Replace long observation lists with a compressed summary and keep pointers to the raw records. Summaries can lose detail, so keep critical facts in explicit fields with source ids.</p>\n<h2>Memory and privacy</h2>\n<p>Long-term memory is a data store. Decide what may be stored, for how long, and how a user deletes it. Never memorise secrets, and do not let one tenant's memory leak into another's context.</p>\n<div class=\"ai-callout\"><strong>Test:</strong> interrupt an agent mid-task, persist state, resume, and verify it does not repeat completed steps or lose a constraint.</div>",
+      "takeaways": [
+        "Separate working state, session history and long-term memory.",
+        "Summarise long observations while keeping source pointers.",
+        "Memory is a privacy surface; define retention and deletion."
+      ],
+      "practice": "Design a state schema for a five-step research task, then simulate a failure after step three and resume it. Success: no completed step is repeated and no constraint is lost.",
+      "minutes": 22
     }
   ],
   "questions": [

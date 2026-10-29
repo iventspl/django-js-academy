@@ -74,6 +74,19 @@
       ],
       "practice": "Sketch the four modules and their public functions before coding. Success: you can replace the provider without editing the CLI or storage tests.",
       "minutes": 25
+    },
+    {
+      "slug": "reading-ai-research",
+      "title": "How to read AI research and documentation",
+      "summary": "A practical method for extracting claims, evidence and limitations without getting lost.",
+      "body_html": "<p>AI changes quickly, and most learning happens outside a course. The skill is not reading every paper; it is deciding quickly whether a claim is relevant, reproducible and supported.</p>\n<h2>Read the paper in layers</h2>\n<ol>\n<li><strong>Title and abstract</strong> — what problem and what claimed result?</li>\n<li><strong>Figures and tables</strong> — what was actually measured?</li>\n<li><strong>Method</strong> — what data, baseline and evaluation protocol?</li>\n<li><strong>Limitations</strong> — what do the authors admit?</li>\n<li><strong>Only then</strong> the full related-work and implementation details.</li>\n</ol>\n<p>Ask three questions: what is the baseline, what is the metric, and would this result survive a different dataset?</p>\n<h2>Separate claim from evidence</h2>\n<pre><code>Claim:  “Our method improves reasoning by 18%.”\nEvidence: “On benchmark X, with model Y, using judge Z,\n          compared with a prompt-only baseline.”\nMissing:  variance, cost, failure slices, contamination checks.</code></pre>\n<p>A result is a sentence plus a protocol. If the protocol is missing, treat the number as marketing until you can reproduce it.</p>\n<h2>Documentation is a contract</h2>\n<p>For APIs, check the version, deprecation notes, rate limits, error codes and whether the output schema is guaranteed. A tutorial written for an older SDK can waste a day. Pin the version you are reading and test one minimal call.</p>\n<h2>Reproduce the smallest claim</h2>\n<p>Do not start by reimplementing the whole paper. Find the smallest experiment that would falsify the claim: a baseline, one dataset, one metric, one seed. If you cannot reproduce it at small scale, the larger claim is not yet useful to you.</p>\n<div class=\"ai-callout\"><strong>Learning habit:</strong> write a five-line note for every paper or major doc: problem, method, evidence, limitation, and what you would test.</div>",
+      "takeaways": [
+        "Read abstracts, figures, methods and limitations before the full paper.",
+        "Every performance claim needs a baseline, metric and protocol.",
+        "Reproduce the smallest falsifiable claim before building on the work."
+      ],
+      "practice": "Pick one recent AI paper or API release. Write a five-line note and one experiment that could falsify its main claim. Success: the experiment is small enough to run this week.",
+      "minutes": 22
     }
   ],
   "questions": [

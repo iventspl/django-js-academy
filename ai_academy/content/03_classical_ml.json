@@ -75,6 +75,19 @@
       ],
       "practice": "Build the pipeline, run five-fold CV, choose a threshold from a cost matrix and save a versioned artifact. Success: a fresh process can load it and score one row.",
       "minutes": 25
+    },
+    {
+      "slug": "imbalanced-cost-sensitive",
+      "title": "Imbalanced data and cost-sensitive decisions",
+      "summary": "Why accuracy fails on rare events, and how to choose a model and threshold from costs.",
+      "body_html": "<p>Fraud, churn, default and disease are rare. A model can be 99% accurate by predicting “negative” every time and still be useless.</p>\n<h2>Diagnose the imbalance</h2>\n<pre><code>counts = y_train.value_counts()\nrates = y_train.value_counts(normalize=True)\nprint(counts, rates)</code></pre>\n<p>Look at the rate and the absolute count. A 2% positive rate in a million rows is very different from 2% in 200 rows.</p>\n<h2>Start with the right metric</h2>\n<ul>\n<li><strong>Precision</strong> — when we alert, how often are we right?</li>\n<li><strong>Recall</strong> — what fraction of real events do we catch?</li>\n<li><strong>PR-AUC</strong> — often more informative than ROC-AUC for rare positives.</li>\n<li><strong>Cost-weighted error</strong> — the metric closest to the business decision.</li>\n</ul>\n<h2>Handle imbalance without fooling yourself</h2>\n<pre><code>from sklearn.linear_model import LogisticRegression\n\nmodel = LogisticRegression(\n    class_weight=\"balanced\", max_iter=2000\n).fit(X_train, y_train)</code></pre>\n<p>Class weights, resampling, threshold tuning and cost-sensitive learning are all valid. The important rule: apply resampling only to the training data, never to validation or test. Otherwise your evaluation is contaminated.</p>\n<h2>Choose a threshold from a cost matrix</h2>\n<pre><code>cost = false_positives * cost_fp + false_negatives * cost_fn\n</code></pre>\n<p>Plot precision and recall across thresholds, then choose the operating point that fits the team's capacity. A fraud team cannot review 10,000 alerts per day; capacity is part of the cost.</p>\n<div class=\"ai-callout\"><strong>Report:</strong> base rate, metric, precision/recall at the chosen threshold, alert volume and the assumed costs. Without alert volume, a recall number is not actionable.</div>",
+      "takeaways": [
+        "Accuracy is misleading when the positive class is rare.",
+        "Resample only training data; keep validation and test distributions honest.",
+        "A threshold is chosen from costs and operational capacity, not from a default."
+      ],
+      "practice": "Take an imbalanced dataset, compute the majority baseline, then compare class-weighted logistic regression at two thresholds. Success: the report includes alert volume and cost.",
+      "minutes": 22
     }
   ],
   "questions": [

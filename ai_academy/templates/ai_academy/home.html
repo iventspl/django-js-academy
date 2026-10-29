@@ -8,15 +8,14 @@
     <div class="ai-hero-copy">
       <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> AI Academy · applied path</p>
       <h1>From curious beginner<br>to <em>AI engineer.</em></h1>
-      <p class="ai-hero-lead">A structured 12-month route through Python, machine learning, deep learning and LLMs — with twelve real projects, evaluation habits, deployment, and a job-search plan. No hype, no hand-waving.</p>
+      <p class="ai-hero-lead">A 12-month route from Python and data to machine learning, LLMs, agents and production. Twelve real projects, honest evaluation and a job-search plan — without the hype.</p>
       <div class="ai-hero-actions">
         {% if next %}
-          <a class="btn btn-ai" href="{{ next.lesson.get_absolute_url }}">Continue: {{ next.lesson.title }} <span aria-hidden="true">→</span></a>
+          <a class="btn btn-ai" href="{{ next.lesson.get_absolute_url }}">Continue learning <span aria-hidden="true">→</span></a>
         {% else %}
-          <a class="btn btn-ai" href="{% url 'ai_academy:path' %}">Open the path <span aria-hidden="true">→</span></a>
+          <a class="btn btn-ai" href="{% url 'ai_academy:path' %}">Start the path <span aria-hidden="true">→</span></a>
         {% endif %}
-        <a class="btn btn-ai-ghost" href="{% url 'ai_academy:projects' %}">See the projects <span aria-hidden="true">◫</span></a>
-        <a class="btn btn-ai-ghost" href="{% url 'ai_academy:career' %}">Career map <span aria-hidden="true">✦</span></a>
+        <a class="btn btn-ai-ghost" href="{% url 'ai_academy:projects' %}">Explore projects <span aria-hidden="true">◫</span></a>
       </div>
       <div class="ai-role-line">
         <span>Target role</span>
@@ -169,14 +168,5 @@
       </div>
     </section>
   {% endif %}
-
-  <section class="ai-cta-band">
-    <div>
-      <p class="eyebrow eyebrow-ai-light">Start small, ship consistently</p>
-      <h2>You do not need permission to begin.</h2>
-      <p>Open the first lesson, write one baseline, and put it in a repository. The path is designed to be finished one honest project at a time.</p>
-    </div>
-    <a class="btn btn-ai" href="{% url 'ai_academy:path' %}">See the full 12-month plan <span aria-hidden="true">→</span></a>
-  </section>
 </div>
 {% endblock %}

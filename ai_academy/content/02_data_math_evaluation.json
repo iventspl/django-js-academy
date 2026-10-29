@@ -74,6 +74,19 @@
       ],
       "practice": "Write the prediction moment, list three leakage risks and choose a cost-based threshold. Success: a reviewer can reproduce your split and explain the threshold without asking you.",
       "minutes": 25
+    },
+    {
+      "slug": "uncertainty-calibration",
+      "title": "Probability, uncertainty and calibration",
+      "summary": "What a model score really means, and why confidence must be measured rather than assumed.",
+      "body_html": "<p>A model that says “0.9” is making a claim about the world. Calibration asks whether that claim is true: among all cases scored around 0.9, roughly 90% should be positive.</p>\n<h2>Where uncertainty comes from</h2>\n<ul>\n<li><strong>Aleatoric uncertainty</strong> — irreducible noise in the data.</li>\n<li><strong>Epistemic uncertainty</strong> — the model does not know because it has not seen enough relevant data.</li>\n<li><strong>Distribution shift</strong> — the input no longer resembles training data.</li>\n</ul>\n<p>A single softmax probability often hides all three. That is why out-of-distribution detection and abstention are separate problems.</p>\n<h2>Measure calibration</h2>\n<pre><code>import numpy as np\nfrom sklearn.calibration import calibration_curve\n\nprob_true, prob_pred = calibration_curve(\n    y_valid, scores, n_bins=10, strategy=\"quantile\"\n)\n# Points near the diagonal mean the probabilities are trustworthy.</code></pre>\n<p>Brier score combines calibration and discrimination. A model can rank well but be badly calibrated; if a human uses the number directly, that matters.</p>\n<h2>Thresholds are not probabilities</h2>\n<pre><code>threshold = 0.35\nprediction = scores &gt;= threshold</code></pre>\n<p>Lowering the threshold increases recall and false positives. The threshold is a product decision; the probability is a model output. Keep them separate in code and documentation.</p>\n<h2>When to abstain</h2>\n<p>Abstain when confidence is low, the input is out of distribution, or the evidence is insufficient. Measure coverage — the fraction of cases the system handles — alongside accuracy on the covered set. A model that answers 60% of cases with 95% accuracy may be more useful than one that answers everything with 70%.</p>\n<div class=\"ai-callout\"><strong>Debugging check:</strong> if predicted probabilities are all near 0.5, the model may be underfit, badly scaled or trained on contradictory labels.</div>",
+      "takeaways": [
+        "Calibration measures whether predicted probabilities match observed frequencies.",
+        "A ranking score and a deployment threshold are different objects.",
+        "Abstention and coverage are product features, not model failures."
+      ],
+      "practice": "Plot a calibration curve for any classifier and compare it with a threshold-based decision. Success: you can explain whether a human should trust the number or only the ranking.",
+      "minutes": 22
     }
   ],
   "questions": [

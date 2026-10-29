@@ -75,6 +75,19 @@
       ],
       "practice": "Create 10 questions with known source passages, measure recall@3 and list two retrieval failures. Success: you can explain whether each wrong answer was a retrieval or generation failure.",
       "minutes": 25
+    },
+    {
+      "slug": "structured-extraction",
+      "title": "Structured extraction with schemas",
+      "summary": "Turn unstructured text into validated fields, with explicit failure and repair paths.",
+      "body_html": "<p>Many LLM features are extraction tasks: pull names, amounts, dates, categories and action items out of text. The output must be machine-readable and validated, not just plausible prose.</p>\n<h2>Define the schema first</h2>\n<pre><code>from pydantic import BaseModel, Field\n\nclass Invoice(BaseModel):\n    vendor: str\n    total: float = Field(ge=0)\n    currency: str = Field(min_length=3, max_length=3)\n    due_date: str | None = None\n    line_items: list[str] = []</code></pre>\n<p>The schema is the contract. It defines required fields, types and constraints before the prompt exists.</p>\n<h2>Prompt with an explicit output contract</h2>\n<pre><code>Return JSON matching this schema. Do not add commentary.\nIf a field is not present, use null rather than inventing it.\nText:\n&lt;document&gt;...&lt;/document&gt;</code></pre>\n<p>Delimit the document as data. Do not let untrusted text become instructions.</p>\n<h2>Validate and repair</h2>\n<pre><code>raw = call_model(prompt)\ntry:\n    invoice = Invoice.model_validate_json(raw)\nexcept ValidationError:\n    repair = call_model(f\"Fix this JSON to match the schema:\\n{raw}\")\n    invoice = Invoice.model_validate_json(repair)</code></pre>\n<p>One repair attempt is reasonable. Infinite repair loops hide a prompt or schema problem. Log the invalid output shape, not the entire sensitive document.</p>\n<h2>Evaluate field by field</h2>\n<p>Measure exact match for IDs and dates, numeric tolerance for amounts, and set overlap for line items. A single “extraction accuracy” number hides which field is failing.</p>\n<div class=\"ai-callout\"><strong>Rule:</strong> if the model cannot find a required field, prefer an explicit null or validation error over a hallucinated value.</div>",
+      "takeaways": [
+        "Define the extraction schema before writing the prompt.",
+        "Validate output in code; treat malformed JSON as a normal failure path.",
+        "Evaluate per field rather than with one aggregate score."
+      ],
+      "practice": "Write a Pydantic schema for a receipt and extract five fields from three sample receipts. Success: invalid JSON is caught, repaired once or rejected, and field errors are reported separately.",
+      "minutes": 22
     }
   ],
   "questions": [

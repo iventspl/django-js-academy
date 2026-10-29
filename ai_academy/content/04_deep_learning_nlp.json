@@ -74,6 +74,19 @@
       ],
       "practice": "Train a TF-IDF baseline on a small labelled set, inspect 10 errors, then decide whether fine-tuning is justified. Success: the decision cites a metric and a cost.",
       "minutes": 25
+    },
+    {
+      "slug": "embeddings-semantic-search",
+      "title": "Embeddings and semantic search",
+      "summary": "How vectors turn meaning into a search index, and how to evaluate retrieval before adding an LLM.",
+      "body_html": "<p>An embedding maps text to a vector. Similar meanings end up close together, which lets you search by intent instead of exact keywords. This is the retrieval half of RAG and a useful product feature on its own.</p>\n<h2>Cosine similarity</h2>\n<pre><code>import numpy as np\n\ndef cosine(a, b):\n    a, b = np.array(a), np.array(b)\n    return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))</code></pre>\n<p>Cosine compares direction, not magnitude. Normalize vectors once if you will compare many of them; then the dot product is enough.</p>\n<h2>Build a tiny index</h2>\n<pre><code>def search(query_vector, vectors, items, k=3):\n    scores = [cosine(query_vector, vector) for vector in vectors]\n    ranked = sorted(range(len(items)), key=lambda i: scores[i], reverse=True)\n    return [(items[i], scores[i]) for i in ranked[:k]]</code></pre>\n<p>For a local prototype this is enough. At scale, use an approximate nearest-neighbour index and measure the quality/latency trade-off.</p>\n<h2>Chunk before embedding</h2>\n<p>Embed passages, not entire documents. Chunks should carry a source id, position and enough context to stand alone. Overlap preserves boundary context but duplicates results if it is too large.</p>\n<h2>Evaluate retrieval</h2>\n<ul>\n<li><strong>Recall@k</strong> — did the right passage appear in the top k?</li>\n<li><strong>MRR</strong> — how high did the first relevant result rank?</li>\n<li><strong>Slice analysis</strong> — exact names, numbers, code and long-tail vocabulary often fail.</li>\n</ul>\n<p>Before adding a reranker or an LLM, inspect 20 retrieval failures. You may need better chunking, hybrid keyword search or a different embedding model.</p>\n<div class=\"ai-callout\"><strong>Common trap:</strong> judging retrieval by the final chatbot answer. If retrieval missed the evidence, a better prompt cannot save it.</div>",
+      "takeaways": [
+        "Embeddings support semantic search but still need chunking and provenance.",
+        "Evaluate recall@k before blaming generation.",
+        "Hybrid keyword + semantic retrieval often beats either alone."
+      ],
+      "practice": "Embed 20 short passages, run 10 queries and compute recall@3 by hand. Success: you can name the queries where semantic search failed and why.",
+      "minutes": 22
     }
   ],
   "questions": [

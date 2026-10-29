@@ -77,6 +77,19 @@
       ],
       "practice": "Wrap an AI function in FastAPI, add a timeout, a structured error and one metric. Success: a provider timeout returns 504 rather than hanging or exposing a stack trace.",
       "minutes": 25
+    },
+    {
+      "slug": "model-cards-incidents",
+      "title": "Model cards, audits and incidents",
+      "summary": "The documentation and operational habits that make an AI system accountable.",
+      "body_html": "<p>A deployed model is a socio-technical system. Documentation, audit logs and incident response are how a team understands what it built and what happens when it fails.</p>\n<h2>Model or system card</h2>\n<pre><code>## Intended use\nCustomer-support triage for internal agents.\n\n## Out of scope\nLegal advice, refunds above 500, account deletion.\n\n## Data and evaluation\n30 labelled emails; precision 0.84, recall 0.71.\nKnown weak slice: non-English messages.\n\n## Human oversight\nWrites require approval. Low confidence routes to a human.\n\n## Limitations\nNo guarantee of complete PII removal. Do not use as the sole decision-maker.</code></pre>\n<p>A card is not marketing. It records intended use, non-goals, metrics, slices, oversight and residual risk.</p>\n<h2>Audit logs</h2>\n<p>Log the model and prompt version, retrieved source ids, tool calls, approvals, latency, cost and safety flags. Redact secrets and personal data. Make logs searchable by trace id so an incident can be reconstructed.</p>\n<h2>Incident severity</h2>\n<ul>\n<li><strong>SEV-1</strong> — data exposure, unsafe action or widespread outage. Disable first.</li>\n<li><strong>SEV-2</strong> — severe quality regression or cost spike.</li>\n<li><strong>SEV-3</strong> — localized errors with a workaround.</li>\n</ul>\n<h2>Rollback and postmortem</h2>\n<pre><code>feature flag: triage_v2 = off\nrollback: deploy previous image / restore previous prompt\nowner: on-call AI engineer\ncommunication: status page + internal channel</code></pre>\n<p>The postmortem should include timeline, impact, detection, root cause, what went well, and one regression test added to the evaluation suite.</p>\n<div class=\"ai-callout\"><strong>Maturity:</strong> if nobody knows who can disable the feature, it is not production-ready.</div>",
+      "takeaways": [
+        "A model card records intended use, metrics, slices, oversight and limitations.",
+        "Audit logs must reconstruct a trace without storing secrets.",
+        "Every AI feature needs a named owner, kill switch and rollback path."
+      ],
+      "practice": "Write a one-page model card and a SEV-1 checklist for one of your projects. Success: another engineer can disable the feature and identify the affected requests.",
+      "minutes": 22
     }
   ],
   "questions": [

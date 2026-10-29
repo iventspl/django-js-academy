@@ -1,5 +1,31 @@
 # Changelog
 
+## 4.18 — 2026-10-29
+
+### AI Academy: more lessons and a 20-example code library
+
+- Added eight more substantial lessons, one to every module:
+  - reproducible Python project setup
+  - reading AI research and documentation
+  - probability, uncertainty and calibration
+  - imbalanced data and cost-sensitive decisions
+  - embeddings and semantic search
+  - structured extraction with schemas
+  - agent memory, state and planning
+  - model cards, audits and incidents
+- Expanded the **AI code library from 8 to 20 examples**, adding batch embedding caches, cosine search, prompt-injection tests, model-card generation, drift checks, idempotent writes, provider injection, LLM judging, cost estimation, tracing, dead-letter queues and evaluation reports.
+- AI Academy now has **42 lessons and a 20-example code library**; **121 tests pass**.
+
+## 4.17 — 2026-10-29
+
+### AI Academy home cleanup
+
+- Simplified the hero to two actions: continue learning and explore projects.
+- Removed the redundant career CTA and the closing CTA band.
+- Shortened the hero copy to one clear promise.
+- Kept the next lesson, path stages, project highlights and role destinations.
+- Verified the cleaned home in Chrome; **121 tests pass**.
+
 ## 4.16 — 2026-10-29
 
 ### More real-world AI projects and a code library
