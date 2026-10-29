@@ -307,6 +307,72 @@
       "topic": "ai-integration",
       "code": "from django.core.cache import cache\n\ndef check_ai_budget(tenant, estimated_tokens):\n    day = timezone.localdate().isoformat()\n    key = f\"ai:tokens:{tenant.pk}:{day}\"\n    used = cache.get(key, 0)\n    limit = tenant.ai_daily_token_limit\n    if used + estimated_tokens > limit:\n        raise RateLimitExceeded(\"Daily AI budget reached\")\n\n    # Use a shared cache/Redis in production; this is not atomic across workers.\n    cache.set(key, used + estimated_tokens, timeout=60 * 60 * 30)\n    return limit - used - estimated_tokens\n",
       "pitfalls": "A cache counter is not a billing ledger; reconcile actual provider usage. Reserve budget before the call and settle actual tokens afterward. Do not silently route to a weaker model without evaluating quality. Cache keys must include tenant and prompt/retrieval version."
+    },
+    {
+      "key": "htmx-partial-view",
+      "title": "Return a partial for HTMX and a full page otherwise",
+      "category": "Frontend & HTMX",
+      "summary": "Use one URL for both the enhanced fragment and the no-JavaScript page, branching on the HX-Request header.",
+      "when_to_use": "A list, form, or detail panel should update in place with HTMX but still work when opened or refreshed directly.",
+      "language": "python",
+      "topic": "htmx-server-driven-ui",
+      "code": "# views.py\nfrom django.template.response import TemplateResponse\n\n\ndef item_list(request):\n    items = Item.objects.order_by(\"name\")\n    is_htmx = request.headers.get(\"HX-Request\") == \"true\"\n    template = \"items/_list.html\" if is_htmx else \"items/list.html\"\n    return TemplateResponse(request, template, {\"items\": items})\n",
+      "pitfalls": "Never treat HX-Request as authentication or authorization. The same URL must work as a direct browser request. Keep one source of markup: the full template should include the same partial. Test both paths, including empty states and permission failures. Return a consistent redirect or 404 in both modes."
+    },
+    {
+      "key": "htmx-csrf-token",
+      "title": "Send Django's CSRF token with HTMX requests",
+      "category": "Frontend & HTMX",
+      "summary": "Keep CSRF protection enabled and pass the token through the form or the X-CSRFToken header.",
+      "when_to_use": "Any HTMX POST, PUT, PATCH, or DELETE that changes server state.",
+      "language": "html",
+      "topic": "htmx-server-driven-ui",
+      "code": "<form hx-post=\"{% url 'items:create' %}\"\n      hx-target=\"#items\"\n      hx-swap=\"beforeend\">\n  {% csrf_token %}\n  {{ form.as_p }}\n  <button type=\"submit\">Add item</button>\n</form>\n\n<!-- For buttons outside a form, put the header on a shared parent. -->\n<body hx-headers='{\"X-CSRFToken\": \"{{ csrf_token }}\"}'>",
+      "pitfalls": "Do not use @csrf_exempt to make HTMX work. Do not disable CsrfViewMiddleware. A form request includes csrfmiddlewaretoken automatically; non-form triggers need the header. Tokens rotate after login, so do not cache a rendered token across sessions. Keep the token out of URLs and logs."
+    },
+    {
+      "key": "htmx-oob-feedback",
+      "title": "Update a counter and toast out of band after a mutation",
+      "category": "Frontend & HTMX",
+      "summary": "Return the new row plus secondary fragments marked hx-swap-oob, so one response updates several regions.",
+      "when_to_use": "Creating a row should also update a count, a badge, or a toast without a second request.",
+      "language": "html",
+      "topic": "htmx-server-driven-ui",
+      "code": "<!-- Main response: append this to #items. -->\n<li id=\"item-{{ item.pk }}\">{{ item.name }}</li>\n\n<!-- Secondary fragments update themselves elsewhere on the page. -->\n<span id=\"item-count\" hx-swap-oob=\"true\">{{ count }}</span>\n<div id=\"toast\" hx-swap-oob=\"beforeend:#toasts\">Item added</div>",
+      "pitfalls": "Out-of-band elements must be top-level in the response and their ids or selectors must exist. Keep ids unique; duplicate ids make the swap unpredictable. Do not turn every response into a page-wide rewrite. Prefer OOB for small, clearly owned fragments such as counters, toasts, and badges."
+    },
+    {
+      "key": "htmx-form-errors",
+      "title": "Re-render an HTMX form with validation errors intact",
+      "category": "Frontend & HTMX",
+      "summary": "Return the bound form fragment with errors, then configure HTMX to swap a 422 response when you use that status.",
+      "when_to_use": "A create or edit form uses HTMX and needs accessible, server-rendered validation feedback.",
+      "language": "python",
+      "topic": "htmx-server-driven-ui",
+      "code": "def create_item(request):\n    form = ItemForm(request.POST or None)\n    if request.method == \"POST\":\n        if form.is_valid():\n            item = form.save()\n            return render(request, \"items/_row.html\", {\"item\": item})\n        return render(request, \"items/_form.html\", {\"form\": form}, status=422)\n    return render(request, \"items/_form.html\", {\"form\": form})\n\n# In the base template, allow 422 responses to swap:\ndocument.body.addEventListener(\"htmx:beforeSwap\", (event) => {\n  if (event.detail.xhr.status === 422) {\n    event.detail.shouldSwap = true;\n    event.detail.isError = false;\n  }\n});",
+      "pitfalls": "HTMX does not swap 4xx responses by default, so a bare 422 looks like silence. Either return 200 with the re-rendered form or explicitly allow the swap. Keep the bound form so user input survives. Return the form fragment, not a full page. Mark the error region with aria-live so assistive technology hears the update."
+    },
+    {
+      "key": "django-stubs-mypy",
+      "title": "Type-check Django models and querysets with django-stubs",
+      "category": "Tooling",
+      "summary": "Add the django-stubs mypy plugin so the ORM is checked instead of silently becoming Any.",
+      "when_to_use": "A project wants static typing without replacing Django's ORM or rewriting models.",
+      "language": "toml",
+      "topic": "python-typing-tooling",
+      "code": "# pyproject.toml\n[tool.mypy]\nplugins = [\"mypy_django_plugin.main\"]\nstrict = true\nwarn_unused_ignores = true\n\n[tool.django-stubs]\ndjango_settings_module = \"config.settings\"\n\n# Install matching versions:\n# pip install \"django-stubs[compatible-mypy]\"\n# mypy .",
+      "pitfalls": "The plugin is what teaches mypy about the ORM; stubs alone are not enough. django_settings_module must import cleanly and must not run production side effects. Start strict for new modules and use per-module overrides for legacy code. Do not paper over errors with blanket type: ignore comments; narrow them and leave a reason."
+    },
+    {
+      "key": "ruff-precommit-pytest",
+      "title": "One reproducible Python toolchain with Ruff and pre-commit",
+      "category": "Tooling",
+      "summary": "Put linting, formatting, and test configuration in pyproject, then run the same commands locally and in CI.",
+      "when_to_use": "Starting a project or standardizing a codebase that has accumulated different editor and CI settings.",
+      "language": "toml",
+      "topic": "python-typing-tooling",
+      "code": "# pyproject.toml\n[tool.ruff]\nline-length = 100\ntarget-version = \"py312\"\n\n[tool.ruff.lint]\nselect = [\"E4\", \"E7\", \"E9\", \"F\", \"I\", \"B\", \"DJ\", \"UP\"]\n\n[tool.pytest.ini_options]\nDJANGO_SETTINGS_MODULE = \"config.settings\"\npython_files = [\"tests.py\", \"test_*.py\", \"*_tests.py\"]\n\n# .pre-commit-config.yaml\nrepos:\n  - repo: https://github.com/astral-sh/ruff-pre-commit\n    rev: v0.14.0\n    hooks:\n      - id: ruff\n        args: [--fix]\n      - id: ruff-format",
+      "pitfalls": "Pin the pre-commit revision and update it deliberately. Run the hooks once over the whole repo before enabling them for everyone. Do not let a formatter and a linter fight over the same rules. Make CI run the same Ruff version. Keep test settings importable without a real database connection."
     }
   ]
 }

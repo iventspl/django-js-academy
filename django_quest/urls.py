@@ -8,5 +8,6 @@ admin.site.index_title = "Content & learner data"
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("js/", include("js_academy.urls")),
+    path("ai/", include("ai_academy.urls")),
     path("", include("dojo.urls")),
 ]

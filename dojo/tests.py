@@ -25,10 +25,14 @@ from .models import (
 from .services import (
     complete_attempt,
     create_attempt,
+    create_attempt_from_questions,
+    create_retry_attempt,
+    create_weak_spot_attempt,
     dashboard_stats,
     due_flashcards,
     flashcard_progress,
     record_answer,
+    weak_spots,
 )
 
 
@@ -41,10 +45,10 @@ class SeededTestCase(TestCase):
 class ContentTests(SeededTestCase):
     def test_bundle_counts_and_shape(self):
         bundles = load_bundles()
-        self.assertEqual(len(bundles), 22)
-        self.assertEqual(Topic.objects.count(), 22)
-        self.assertEqual(Question.objects.count(), 330)
-        self.assertEqual(Flashcard.objects.count(), 154)
+        self.assertEqual(len(bundles), 24)
+        self.assertEqual(Topic.objects.count(), 24)
+        self.assertEqual(Question.objects.count(), 360)
+        self.assertEqual(Flashcard.objects.count(), 168)
         for topic in Topic.objects.all():
             self.assertEqual(topic.questions.count(), 15)
             self.assertEqual(topic.flashcards.count(), 7)
@@ -66,9 +70,9 @@ class ContentTests(SeededTestCase):
         choice = Question.objects.first().choices.first()
         old_pk = choice.pk
         call_command("seed_content", verbosity=0)
-        self.assertEqual(Topic.objects.count(), 22)
-        self.assertEqual(Question.objects.count(), 330)
-        self.assertEqual(Flashcard.objects.count(), 154)
+        self.assertEqual(Topic.objects.count(), 24)
+        self.assertEqual(Question.objects.count(), 360)
+        self.assertEqual(Flashcard.objects.count(), 168)
         self.assertEqual(Question.objects.first().choices.first().pk, old_pk)
 
 
@@ -353,8 +357,8 @@ class ProgressAndModelTests(SeededTestCase):
         self.assertEqual(Attempt.objects.count(), 0)
         self.assertEqual(StudyEvent.objects.count(), 0)
         self.assertEqual(FlashcardReview.objects.count(), 0)
-        self.assertEqual(Question.objects.count(), 330)
-        self.assertEqual(Flashcard.objects.count(), 154)
+        self.assertEqual(Question.objects.count(), 360)
+        self.assertEqual(Flashcard.objects.count(), 168)
 
     def test_streak_counts_consecutive_days(self):
         learner = Learner.local()
@@ -409,7 +413,7 @@ class ProgressAndModelTests(SeededTestCase):
 
 class FieldGuideTests(SeededTestCase):
     def test_guide_content_counts(self):
-        self.assertEqual(Cheatsheet.objects.count(), 28)
+        self.assertEqual(Cheatsheet.objects.count(), 34)
         self.assertEqual(AppBlueprint.objects.count(), 6)
         self.assertEqual(ArchitectureCase.objects.count(), 8)
         self.assertEqual(ReleaseNote.objects.count(), 6)
@@ -509,3 +513,156 @@ class FieldGuideTests(SeededTestCase):
         self.assertContains(response, "Real-world app blueprints")
         self.assertContains(response, reverse("dojo:cheatsheets"))
 
+
+
+class SearchTests(SeededTestCase):
+    def test_search_finds_topics_questions_and_recipes(self):
+        response = self.client.get(reverse("dojo:search"), {"q": "htmx"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Server-Driven UI")
+        self.assertContains(response, "Return a partial for HTMX")
+        self.assertContains(response, "Questions")
+        self.assertGreaterEqual(response.context["counts"]["recipes"], 3)
+
+    def test_search_finds_tooling_recipe_and_card(self):
+        response = self.client.get(reverse("dojo:search"), {"q": "mypy"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Type-check Django models")
+        self.assertContains(response, "Python Typing")
+        self.assertGreaterEqual(response.context["counts"]["cards"], 1)
+
+    def test_search_finds_release_notes(self):
+        response = self.client.get(reverse("dojo:search"), {"q": "CVE"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Release notes")
+        self.assertGreaterEqual(response.context["counts"]["releases"], 1)
+
+    def test_search_needs_two_characters_and_shows_idle_state(self):
+        response = self.client.get(reverse("dojo:search"), {"q": "h"})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["searched"])
+        self.assertContains(response, "Search the")
+
+    def test_search_empty_state(self):
+        response = self.client.get(reverse("dojo:search"), {"q": "xyz-not-real"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_count"], 0)
+        self.assertContains(response, "Nothing matched")
+
+    def test_home_sidebar_exposes_search(self):
+        response = self.client.get(reverse("dojo:home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("dojo:search"))
+
+
+class AdaptivePracticeTests(SeededTestCase):
+    def _wrong_question(self, question):
+        learner = Learner.local()
+        attempt = create_attempt_from_questions(learner, [question.pk])
+        attempt_question = attempt.attempt_questions.get()
+        wrong = question.choices.filter(is_correct=False).first()
+        record_answer(attempt_question, wrong)
+        return attempt, question
+
+    def test_weak_spots_track_questions_never_answered_correctly(self):
+        question = Question.objects.get(key="htmx-b1")
+        self._wrong_question(question)
+        learner = Learner.local()
+        self.assertEqual([item.pk for item in weak_spots(learner)], [question.pk])
+        self.assertEqual(dashboard_stats(learner)["weak_spot_count"], 1)
+
+    def test_weak_spot_disappears_after_a_correct_answer(self):
+        question = Question.objects.get(key="typing-b1")
+        self._wrong_question(question)
+        learner = Learner.local()
+        retry = create_attempt_from_questions(learner, [question.pk])
+        attempt_question = retry.attempt_questions.get()
+        record_answer(attempt_question, question.choices.get(is_correct=True))
+        self.assertNotIn(question.pk, [item.pk for item in weak_spots(learner)])
+
+    def test_home_offers_the_weak_spot_run(self):
+        question = Question.objects.get(key="htmx-b3")
+        self._wrong_question(question)
+        response = self.client.get(reverse("dojo:home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Review 1 weak spot")
+        self.assertContains(response, reverse("dojo:weak_spots"))
+
+    def test_weak_spot_view_creates_a_focused_attempt(self):
+        question = Question.objects.get(key="htmx-b2")
+        self._wrong_question(question)
+        response = self.client.post(reverse("dojo:weak_spots"))
+        self.assertEqual(response.status_code, 302)
+        attempt = Attempt.objects.latest("id")
+        self.assertEqual(attempt.length, 1)
+        self.assertEqual(
+            list(attempt.attempt_questions.values_list("question_id", flat=True)),
+            [question.pk],
+        )
+
+    def test_weak_spot_view_is_safe_when_nothing_is_open(self):
+        response = self.client.post(reverse("dojo:weak_spots"), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No open weak spots")
+        self.assertEqual(Attempt.objects.count(), 0)
+
+    def test_retry_missed_creates_only_the_missed_questions(self):
+        learner = Learner.local()
+        questions = list(
+            Question.objects.filter(topic__slug="htmx-server-driven-ui")[:2]
+        )
+        attempt = create_attempt_from_questions(
+            learner,
+            [question.pk for question in questions],
+            topic=questions[0].topic,
+            difficulty="beginner",
+        )
+        missed_ids = []
+        for index, attempt_question in enumerate(attempt.attempt_questions.all()):
+            if index == 0:
+                choice = attempt_question.question.choices.get(is_correct=True)
+            else:
+                choice = attempt_question.question.choices.filter(is_correct=False).first()
+                missed_ids.append(attempt_question.question_id)
+            record_answer(attempt_question, choice)
+        complete_attempt(attempt)
+
+        results = self.client.get(reverse("dojo:quiz_results", args=[attempt.pk]))
+        self.assertContains(results, "Retry 1 missed")
+
+        response = self.client.post(reverse("dojo:retry_missed", args=[attempt.pk]))
+        self.assertEqual(response.status_code, 302)
+        retry = Attempt.objects.latest("id")
+        self.assertEqual(
+            list(retry.attempt_questions.values_list("question_id", flat=True)),
+            missed_ids,
+        )
+        self.assertEqual(retry.topic, questions[0].topic)
+
+    def test_retry_missed_rejects_a_perfect_attempt(self):
+        learner = Learner.local()
+        question = Question.objects.get(key="typing-b2")
+        attempt = create_attempt_from_questions(learner, [question.pk])
+        attempt_question = attempt.attempt_questions.get()
+        record_answer(attempt_question, question.choices.get(is_correct=True))
+        complete_attempt(attempt)
+        with self.assertRaises(ValueError):
+            create_retry_attempt(learner, attempt)
+
+    def test_retry_missed_view_reports_nothing_to_retry(self):
+        learner = Learner.local()
+        question = Question.objects.get(key="typing-b3")
+        attempt = create_attempt_from_questions(learner, [question.pk])
+        attempt_question = attempt.attempt_questions.get()
+        record_answer(attempt_question, question.choices.get(is_correct=True))
+        complete_attempt(attempt)
+        response = self.client.post(
+            reverse("dojo:retry_missed", args=[attempt.pk]), follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "no missed questions")
+        self.assertEqual(Attempt.objects.count(), 1)
+
+    def test_create_weak_spot_attempt_raises_without_candidates(self):
+        with self.assertRaises(ValueError):
+            create_weak_spot_attempt(Learner.local())

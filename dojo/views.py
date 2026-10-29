@@ -20,6 +20,7 @@ from .models import (
     DIFFICULTY_CHOICES,
     Flashcard,
     Learner,
+    Question,
     ReleaseNote,
     ReleaseSeries,
     Topic,
@@ -30,6 +31,8 @@ from .services import (
     award_flashcard,
     complete_attempt,
     create_attempt,
+    create_retry_attempt,
+    create_weak_spot_attempt,
     dashboard_stats,
     due_flashcards,
     flashcard_overview,
@@ -63,6 +66,105 @@ def home(request: HttpRequest) -> HttpResponse:
     }
     return render(request, "dojo/home.html", context)
 
+
+@require_GET
+def search(request: HttpRequest) -> HttpResponse:
+    query = request.GET.get("q", "").strip()
+    searched = len(query) >= 2
+    topics = Topic.objects.none()
+    questions = Question.objects.none()
+    cards = Flashcard.objects.none()
+    recipes = Cheatsheet.objects.none()
+    blueprints = AppBlueprint.objects.none()
+    cases = ArchitectureCase.objects.none()
+    releases = ReleaseNote.objects.none()
+    counts = {
+        "topics": 0,
+        "questions": 0,
+        "cards": 0,
+        "recipes": 0,
+        "blueprints": 0,
+        "cases": 0,
+        "releases": 0,
+    }
+
+    if searched:
+        topic_qs = Topic.objects.filter(
+            Q(name__icontains=query)
+            | Q(tagline__icontains=query)
+            | Q(description__icontains=query)
+        )
+        question_qs = Question.objects.filter(
+            Q(prompt__icontains=query) | Q(code__icontains=query),
+            is_active=True,
+        ).select_related("topic")
+        card_qs = Flashcard.objects.filter(
+            Q(front__icontains=query)
+            | Q(back__icontains=query)
+            | Q(hint__icontains=query)
+        ).select_related("topic")
+        recipe_qs = Cheatsheet.objects.filter(
+            Q(title__icontains=query)
+            | Q(summary__icontains=query)
+            | Q(when_to_use__icontains=query)
+            | Q(code__icontains=query)
+            | Q(category__icontains=query)
+        ).select_related("topic")
+        blueprint_qs = AppBlueprint.objects.filter(
+            Q(name__icontains=query)
+            | Q(tagline__icontains=query)
+            | Q(problem__icontains=query)
+            | Q(stack_notes__icontains=query)
+        ).select_related("topic")
+        case_qs = ArchitectureCase.objects.filter(
+            Q(name__icontains=query)
+            | Q(tagline__icontains=query)
+            | Q(scenario__icontains=query)
+            | Q(requirements__icontains=query)
+        ).select_related("topic")
+        release_qs = ReleaseNote.objects.filter(
+            Q(version__icontains=query)
+            | Q(headline__icontains=query)
+            | Q(summary__icontains=query)
+            | Q(why_it_matters__icontains=query)
+        )
+
+        counts = {
+            "topics": topic_qs.count(),
+            "questions": question_qs.count(),
+            "cards": card_qs.count(),
+            "recipes": recipe_qs.count(),
+            "blueprints": blueprint_qs.count(),
+            "cases": case_qs.count(),
+            "releases": release_qs.count(),
+        }
+        topics = topic_qs[:8]
+        questions = question_qs[:10]
+        cards = card_qs[:8]
+        recipes = recipe_qs[:8]
+        blueprints = blueprint_qs[:8]
+        cases = case_qs[:8]
+        releases = release_qs[:8]
+
+    return render(
+        request,
+        "dojo/search.html",
+        {
+            "query": query,
+            "searched": searched,
+            "topics": topics,
+            "questions": questions,
+            "cards": cards,
+            "recipes": recipes,
+            "blueprints": blueprints,
+            "cases": cases,
+            "releases": releases,
+            "counts": counts,
+            "total_count": sum(counts.values()),
+            "topic_total": Topic.objects.count(),
+            "active_nav": "search",
+        },
+    )
 
 
 @require_http_methods(["GET", "POST"])
@@ -236,6 +338,7 @@ def quiz_results(request: HttpRequest, attempt_id: int) -> HttpResponse:
             best_streak = max(best_streak, running)
         else:
             running = 0
+    missed_count = sum(1 for row in attempt_questions if not row.is_correct)
     return render(
         request,
         "dojo/quiz_results.html",
@@ -245,9 +348,38 @@ def quiz_results(request: HttpRequest, attempt_id: int) -> HttpResponse:
             "by_difficulty": by_difficulty,
             "verdict": verdict,
             "best_streak": best_streak,
+            "missed_count": missed_count,
             "active_nav": "quiz",
         },
     )
+
+
+@require_POST
+def retry_missed(request: HttpRequest, attempt_id: int) -> HttpResponse:
+    learner = Learner.local()
+    attempt = get_object_or_404(
+        Attempt.objects.select_related("topic"),
+        pk=attempt_id,
+        learner=learner,
+        completed_at__isnull=False,
+    )
+    try:
+        retry = create_retry_attempt(learner, attempt)
+    except ValueError as exc:
+        messages.info(request, str(exc))
+        return redirect("dojo:quiz_results", attempt_id=attempt.pk)
+    return redirect("dojo:quiz_question", attempt_id=retry.pk)
+
+
+@require_POST
+def weak_spots_practice(request: HttpRequest) -> HttpResponse:
+    learner = Learner.local()
+    try:
+        attempt = create_weak_spot_attempt(learner)
+    except ValueError as exc:
+        messages.info(request, str(exc))
+        return redirect("dojo:progress")
+    return redirect("dojo:quiz_question", attempt_id=attempt.pk)
 
 
 @require_GET

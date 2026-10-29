@@ -13,6 +13,12 @@
       <div class="hero-actions">
         <a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}">Start a quiz run <span aria-hidden="true">→</span></a>
         <a class="btn btn-ghost-dark" href="{% url 'dojo:flashcards' %}">Open fiszki <span aria-hidden="true">▣</span></a>
+        {% if stats.weak_spot_count %}
+          <form method="post" action="{% url 'dojo:weak_spots' %}">
+            {% csrf_token %}
+            <button class="btn btn-ghost-dark" type="submit">Review {% if stats.weak_spot_count > 10 %}10 of {{ stats.weak_spot_count }}{% else %}{{ stats.weak_spot_count }}{% endif %} weak spot{{ stats.weak_spot_count|pluralize }} <span aria-hidden="true">↺</span></button>
+          </form>
+        {% endif %}
       </div>
       <ul class="hero-facts" aria-label="Content overview">
         <li><strong>{{ stats.total_questions }}</strong><span>questions</span></li>
@@ -118,7 +124,7 @@
       <div class="how-step">
         <span class="step-number">01</span>
         <h3>Take a run</h3>
-        <p>Five to twenty questions. Pick one path or mix all eight. Every answer comes with a why.</p>
+        <p>Five to twenty questions. Pick one path or mix the full map. Every answer comes with a why.</p>
       </div>
       <div class="how-step">
         <span class="step-number">02</span>
@@ -184,12 +190,22 @@
     </div>
   </a>
 
+  <a class="platform-bridge platform-bridge-ai" href="{% url 'ai_academy:home' %}">
+    <span class="platform-bridge-mark platform-bridge-mark-ai">AI</span>
+    <div>
+      <p class="eyebrow eyebrow-light">Nowa platforma · 12-month path</p>
+      <strong>AI Academy</strong>
+      <p>Python → machine learning → LLMs → production. Eight real projects, evaluation habits and a job-search plan.</p>
+    </div>
+    <span class="platform-bridge-link">Enter AI Academy <span aria-hidden="true">→</span></span>
+  </a>
+
   <a class="platform-bridge" href="{% url 'js_academy:home' %}">
     <span class="platform-bridge-mark">JS</span>
     <div>
       <p class="eyebrow eyebrow-light">Nowa platforma · po polsku</p>
       <strong>JS Akademia</strong>
-      <p>JavaScript → TypeScript → React → React Native. 24 lekcje, quizy, fiszki i projekty.</p>
+      <p>JavaScript → TypeScript → React → React Native. Lekcje, quizy, fiszki i projekty od podstaw do produkcji.</p>
     </div>
     <span class="platform-bridge-link">Przejdź do JS <span aria-hidden="true">→</span></span>
   </a>

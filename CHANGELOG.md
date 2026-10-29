@@ -1,5 +1,95 @@
 # Changelog
 
+## 4.13 — 2026-10-29
+
+### AI Academy: Python for AI prerequisite module
+
+- Added a four-lesson **Python for AI** module at the start of the path:
+  - Python data structures, comprehensions, JSON and generators.
+  - Typed functions, dataclasses, project structure, environments and tests.
+  - NumPy vectorisation, pandas cleaning, summaries and leakage-safe splits.
+  - API calls with secrets, timeouts, bounded retries, async boundaries and pytest mocks.
+- Added a real **Notes-to-Dataset Pipeline** project and a matching downloadable test pack.
+- Updated the 12-month calendar, role maps and all course counts: **8 modules, 25 lessons, 48 questions, 40 cards and 8 projects**.
+- Added tests for the new module and project pack; the suite now has **119 tests**.
+
+## 4.12 — 2026-10-29
+
+### AI Academy: active practice and a reference layer
+
+- Added **key takeaways** and a **“Do this now” exercise** to all 21 AI lessons, each with a concrete success criterion.
+- Added a searchable **55-term AI glossary** with categories, examples and links back to the relevant module.
+- Added **AI Academy search** across modules, lessons, projects and glossary terms, with word-start matching so “RAG” does not match “average”.
+- Added an AI sidebar search field plus Glossary and Search navigation.
+- Added glossary/search tests and documentation; the suite now has **118 tests**.
+
+## 4.11 — 2026-10-29
+
+### AI Academy: a 12-month applied AI engineering path
+
+- Added a third learning platform, **AI Academy**, at `/ai/`.
+- Added seven modules and 21 lessons:
+  - AI Foundations & Python
+  - Data, Math & Evaluation
+  - Classical Machine Learning
+  - Deep Learning & NLP
+  - LLM Engineering & RAG
+  - Agents, Tools & Evaluation
+  - Production, MLOps & Career
+- Added 42 quiz questions and 35 concept cards with spaced repetition.
+- Added seven real project briefs: Study Buddy CLI, Churn Dataset Audit, Default-Risk Predictor, Support Ticket Classifier, Docs Answer Engine, Research Copilot and the AI Product Capstone.
+- Added a 12-month calendar, job-readiness score, three role maps, portfolio checklist and interview map.
+- Integrated a third platform switch, AI sidebar navigation, the AI home bridge and the `seed_ai` startup command.
+- Added AI Academy tests and documentation.
+- Added a downloadable **test pack** for every AI project: starter module, pytest acceptance suite, requirements and README.
+- The suite now has **114 tests**.
+
+## 4.10 — 2026-10-29
+
+### Larger, more readable typography
+
+- Raised the project root from 16px to an 18px scale and set the body to `1rem`, so the common 12–13px copy now renders around 14–16px.
+- Set a readable floor for code blocks and inline code (about 14.4px), including JS Akademia lesson code, glossary snippets, and flashcard code.
+- Adjusted the home date heading so the larger scale does not wrap it.
+- Verified desktop and 390px mobile layouts in Chrome; no horizontal page overflow.
+
+## 4.9 — 2026-10-29
+
+### HTMX, typing, search and adaptive practice
+
+- Added two Django Quest paths:
+  - **HTMX & Server-Driven UI** — HTML fragments, `hx-target`/`hx-swap`, CSRF, 422 validation, out-of-band swaps, `HX-Trigger`, history, request races, and when not to use HTMX.
+  - **Python Typing, Packaging & Tooling** — runtime vs static typing, unions and `Protocol`, `django-stubs` + mypy, Ruff, pytest-django, `TypeVar`/`ParamSpec`, `TYPE_CHECKING`, and reproducible lockfiles.
+- Added 30 questions, 14 flashcards and six field-guide recipes: HTMX partials, CSRF headers, OOB feedback, form errors, django-stubs, and Ruff/pre-commit.
+- Added **global search** at `/search/` and in the Django sidebar across topics, questions, flashcards, recipes, blueprints, architecture labs, and release notes.
+- Added **retry missed**: after a run, rebuild a quiz from only the questions answered incorrectly.
+- Added **weak-spot practice**: questions answered but never answered correctly are collected into a focused run from the progress page or home.
+- Fixed stale “all eight paths” and JS lesson-count copy.
+- Django Quest now has **24 paths, 360 questions, 168 flashcards, 34 recipes, 6 blueprints, 8 architecture labs and 6 release notes**.
+
+### Verification
+
+- **98 tests pass**, including search coverage, weak-spot tracking, retry-only-missed runs, and the expanded content counts.
+- New pages and the search layout were rendered in Chrome at desktop size.
+
+## 4.8 — 2026-10-29
+
+### Function fundamentals: arguments and return values
+
+- Expanded **Fundamenty JavaScript** from 3 to 7 lessons:
+  - **Parametry i argumenty** — positional binding, missing/extra arguments, defaults, rest, destructuring, primitives vs references, and who supplies callback arguments.
+  - **Return: wartość, którą funkcja oddaje** — `undefined` without `return`, early returns, returning objects, implicit arrow returns, query vs command, and the missing-`return` bug in `controller.js`.
+  - **Callbacki i funkcje wyższego rzędu** — callback contracts, array-method arguments, `map(parseInt)`, event handlers and returning functions.
+  - **Funkcje czyste i kontroler** — pure selectors, side-effecting views, explicit arguments instead of globals, and the `event → update → selectProducts → render` flow.
+- Added 7 quiz questions, 6 flashcards and a live **“Argumenty wchodzą, return wychodzi”** demo with a simulated missing `return`.
+- Fixed the MVC examples to declare view state with `let` before reassigning it.
+- JS Akademia now has **21 modules, 68 lessons, 144 questions, 132 flashcards, 13 demos, 31 challenges and 13 components**.
+
+### Verification
+
+- **83 tests pass**, including content counts, quiz length and demo sandbox checks.
+- The new demo script is syntax-checked with Node and rendered in Chrome.
+
 ## 4.7 — 2026-10-29
 
 ### More modules, global search and achievements

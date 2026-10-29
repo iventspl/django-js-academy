@@ -1,22 +1,25 @@
 # Django Quest
 
-A local-first learning game for Python, Django and JavaScript. It mixes multiple-choice quiz runs, open flashcards (fiszki), spaced repetition, explanations, coding challenges and a progress notebook — with a deliberately polished interface that runs the same way on macOS and Windows.
+A local-first learning game for Python, Django, JavaScript and applied AI. It mixes multiple-choice quiz runs, open flashcards (fiszki), spaced repetition, explanations, coding challenges and a progress notebook — with a deliberately polished interface that runs the same way on macOS and Windows.
 
-No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.7 search, achievements and three modules.
+No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.13 Python for AI module, the 4.12 practice update, the 4.11 launch, and the earlier search and adaptive-practice releases.
 
 ## What is inside
 
-- **330 quiz questions** across 22 learning paths and 3 levels: beginner, intermediate, advanced.
-- **154 open flashcards** — question on the front, full answer on the back, optional code and hints.
-- **28 real-world cheatsheets** covering permissions, uploads, private storage, email, webhooks, N+1 queries, search, migrations, deployment, LLM gateways, RAG, evals, prompt injection, ADRs, and more.
+- **360 quiz questions** across 24 learning paths and 3 levels: beginner, intermediate, advanced.
+- **168 open flashcards** — question on the front, full answer on the back, optional code and hints.
+- **34 real-world cheatsheets** covering permissions, uploads, private storage, email, webhooks, N+1 queries, search, migrations, deployment, LLM gateways, RAG, evals, prompt injection, ADRs, HTMX, typing, and tooling.
 - **6 application blueprints** for SaaS, marketplace, booking, CMS, support desk, and mobile API products — with data models, starter code, build order, and production traps.
 - **8 Architecture Studio labs** for AI document assistants, tool-using agents, multi-tenant SaaS, webhook platforms, marketplace ledgers, real-time fan-out, analytics pipelines, and legacy modernization.
-- **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 21 modules, 64 lessons, 137 quiz questions, 126 flashcards, 12 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 50-term glossary, 30 interview questions, and XP/streaks.
+- **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 21 modules, 68 lessons, 144 quiz questions, 132 flashcards, 13 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 50-term glossary, 30 interview questions, and XP/streaks.
+- **AI Academy** — a 12-month applied AI engineering path with 8 modules, 25 lessons, 48 quiz questions, 40 concept cards, 55 glossary terms, 8 real projects and a career map.
 - **Release radar** with current Django versions, LTS windows, CVE summaries, and source links to the official release notes.
 - **Spaced repetition** for every card with four recall ratings: Again, Hard, Good, Easy.
 - **Explanations for every quiz answer**, often with a code sample, so a wrong answer still teaches something.
 - **Learning-friendly scoring:** +10 XP for a correct answer, +2 XP for a useful miss, completion bonuses for strong runs.
 - **Progress notebook:** accuracy, mastery per topic, XP levels, daily streak, 28-day activity heatmap, quiz history, and achievements.
+- **Global search** at `/search/` (and in the Django sidebar) across questions, flashcards, recipes, blueprints, architecture labs, and release notes.
+- **Adaptive practice:** retry only the questions missed in a run, or launch a weak-spot run built from questions you have answered but never answered correctly.
 - **Keyboard-friendly study:** `1`–`4` to choose or rate, `Enter` to submit, `Space` to flip a card.
 - **Responsive layout** with reduced-motion support and no external fonts, CDNs, or telemetry.
 
@@ -102,6 +105,8 @@ python start.py --host 0.0.0.0    # expose on the local network (set DJANGO_ALLO
 | AI-Assisted Engineering | 15 | 7 | Specs, context, verification, review, agents, security |
 | Platform Engineering & Operations | 15 | 7 | CI/CD, IaC, canaries, observability, incidents, cost |
 | Security Architecture & Threat Modeling | 15 | 7 | STRIDE, zero trust, supply chain, AI-specific threats |
+| HTMX & Server-Driven UI | 15 | 7 | Hypermedia, partial swaps, CSRF, OOB updates, history, races |
+| Python Typing, Packaging & Tooling | 15 | 7 | Type hints, mypy, django-stubs, Ruff, pytest, lockfiles |
 
 Every path has **5 beginner, 5 intermediate, and 5 advanced questions**, so you can start easy and still find sharp edges later.
 
@@ -109,7 +114,7 @@ Every path has **5 beginner, 5 intermediate, and 5 advanced questions**, so you 
 
 The **Field guide** in the sidebar is the “real work” companion to the quizzes:
 
-- **Cheatsheets** — 28 copyable patterns for object permissions, login middleware, safe uploads, private object storage, transactional email, signed webhooks, jobs after commit, outbox delivery, N+1 audits, stable pagination, Postgres full-text search, production settings, schema changes, permission tests, scoped DRF querysets, streamed exports, health checks, LLM gateways, RAG citations, evals, prompt-injection defence, ADRs, and architecture fitness tests.
+- **Cheatsheets** — 34 copyable patterns for object permissions, login middleware, safe uploads, private object storage, transactional email, signed webhooks, jobs after commit, outbox delivery, N+1 audits, stable pagination, Postgres full-text search, production settings, schema changes, permission tests, scoped DRF querysets, streamed exports, health checks, LLM gateways, RAG citations, evals, prompt-injection defence, ADRs, architecture fitness tests, HTMX partials/CSRF/OOB errors, django-stubs, and Ruff/pre-commit.
 - **Application blueprints** — six whole-product studies:
   - SaaS subscription workspace
   - Two-sided marketplace
@@ -162,11 +167,11 @@ The architecture paths in the quiz cover the theory behind those labs: boundarie
 
 ## JS Akademia — Polish JavaScript → React Native platform
 
-Use the **Django / JavaScript** switch in the sidebar to enter **JS Akademia**, a fully Polish-language learning path:
+Use the **Django / JavaScript / AI** switch in the sidebar to enter **JS Akademia**, a fully Polish-language learning path:
 
 | Module | Lessons | Quiz | Fiszki | Projekt |
 | --- | ---: | ---: | ---: | --- |
-| Fundamenty JavaScript | 3 | 6 | 5 | Kalkulator budżetu |
+| Fundamenty JavaScript | 7 | 13 | 11 | Kalkulator budżetu |
 | Nowoczesny JavaScript | 3 | 6 | 5 | Klient API z błędami |
 | DOM, formularze i przeglądarka | 3 | 6 | 5 | Lista zadań w JS |
 | TypeScript w praktyce | 3 | 6 | 5 | Typowany koszyk |
@@ -190,10 +195,10 @@ Use the **Django / JavaScript** switch in the sidebar to enter **JS Akademia**, 
 
 The platform includes:
 
-- **21 modules / 64 lessons** with Polish explanations, code and practical warnings.
-- **137 quiz questions** with detailed explanations.
-- **126 open flashcards** with spaced repetition.
-- **12 live iframe demos** — real interactive HTML/JS examples embedded directly in lessons.
+- **21 modules / 68 lessons** with Polish explanations, code and practical warnings.
+- **144 quiz questions** with detailed explanations.
+- **132 open flashcards** with spaced repetition.
+- **13 live iframe demos** — real interactive HTML/JS examples embedded directly in lessons.
 - **31 coding challenges** with an in-browser editor and automatic tests.
 - **13 ready-made components** with live preview, full HTML/CSS/JS and copyable code.
 - **36 curiosities**, a **50-term glossary**, and **30 interview questions with model answers**.
@@ -262,6 +267,38 @@ The live demos are self-contained HTML documents shown in a sandboxed iframe (`s
 
 The path deliberately teaches JavaScript and TypeScript before React, then React before React Native. You can switch platforms at any time; progress for each is independent.
 
+## AI Academy — applied AI engineer path
+
+Use the **AI** switch in the sidebar to enter **AI Academy**, an English-language 12-month route from beginner to job-ready applied AI engineering.
+
+| Stage | Module | Lessons | Project |
+| --- | --- | ---: | --- |
+| Foundation | Python for AI | 4 | Notes-to-Dataset Pipeline |
+| Foundation | AI Foundations & Python | 3 | Study Buddy CLI |
+| Foundation | Data, Math & Evaluation | 3 | Churn Dataset Audit |
+| Core ML | Classical Machine Learning | 3 | Default-Risk Predictor |
+| Core ML | Deep Learning & NLP | 3 | Support Ticket Classifier |
+| LLM Engineering | LLM Engineering & RAG | 3 | Docs Answer Engine |
+| LLM Engineering | Agents, Tools & Evaluation | 3 | Research Copilot |
+| Production & Career | Production, MLOps & Career | 3 | AI Product Capstone |
+
+Most modules have **three lessons**; **Python for AI** has four. Every module has **six quiz questions**, **five concept cards** and a substantial project brief with scenario, deliverables, milestones, rubric and stretch goals. The path totals **25 lessons, 48 questions, 40 cards and 8 projects**.
+
+### What makes it useful
+
+- **The 12-month calendar** — 8–12 focused hours per week, with explicit monthly outcomes and a capstone in month 11, followed by portfolio and interview work in month 12.
+- **Projects are the curriculum** — Notes-to-Dataset Pipeline, Study Buddy CLI, Churn Audit, Default-Risk Predictor, Support Ticket Classifier, Docs Answer Engine, Research Copilot and the AI Product Capstone.
+- **Job-readiness score** — a blend of lessons completed, quiz average, concept-card recall and shipped projects. It is a compass, not a certificate.
+- **Three role maps** — LLM / GenAI Engineer, Machine Learning Engineer, and AI Automation / Solutions Engineer, with the modules and portfolio pieces that fit each.
+- **Evaluation-first** — every project asks for a baseline, a metric, failure analysis and a model or system card. The interview page drills the questions behind the questions.
+- **Concept cards** — spaced-repetition prompts for definitions, trade-offs and failure modes, separate from multiple-choice recognition.
+- **Lesson takeaways and “Do this now” exercises** — every lesson ends with three durable ideas and one small exercise with a success criterion, so reading turns into practice.
+- **Searchable 55-term glossary and course search** — find a term, lesson, project or module by name, definition or concept; the glossary links each term back to the module where it matters.
+- **Downloadable project test packs** — every project page serves a zip with `starter.py`, a pytest acceptance suite, `requirements.txt` and a README, so learners can run the contract in their own environment.
+- **No external services required** — the curriculum, projects and progress tracker run locally in the same SQLite database.
+
+AI Academy lives at `/ai/`; the seed command is `python manage.py seed_ai --if-changed`.
+
 ## How the learning loop works
 
 ### Quiz runs
@@ -317,12 +354,23 @@ The scheduler is intentionally small and transparent, inspired by SM-2. It is no
 │   ├── content.py               # walidacja i seed treści
 │   ├── runner.py                # edytor wyzwań w sandbox iframe
 │   ├── content/*.json           # 21 modułów: JS → TS → React → RN
-│   ├── content/demos.json       # 10 dem iframe
+│   ├── content/demos.json       # 12 dem iframe
 │   ├── content/knowledge.json   # ciekawostki, słownik, wywiad
-│   ├── content/challenges.json  # 30 wyzwań z testami
+│   ├── content/challenges.json  # 31 wyzwań z testami
 │   ├── content/components.json  # 13 komponentów HTML/CSS/JS
 │   ├── templates/js_academy/
 │   └── static/js_academy/
+├── ai_academy/                  # 12-month applied AI path
+│   ├── models.py                # modules, lessons, attempts, cards, projects
+│   ├── services.py              # progress, readiness, scheduling, stats
+│   ├── content.py               # validation and seeding
+│   ├── career.py                # role maps, 12-month plan, interview topics
+│   ├── content/*.json           # 8 modules, 25 lessons
+│   ├── content/projects.json    # 8 real project briefs
+│   ├── content/glossary.json    # 55 plain-language AI terms
+│   ├── project_tests/           # downloadable pytest starter packs
+│   ├── templates/ai_academy/
+│   └── static/ai_academy/
 └── templates/                   # 404 / 500 pages
 ```
 
@@ -339,6 +387,7 @@ pip install -r requirements.txt
 python manage.py migrate
 python manage.py seed_content
 python manage.py seed_js
+python manage.py seed_ai
 python manage.py runserver
 ```
 
@@ -446,6 +495,28 @@ The challenge runner is rendered server-side and executes only inside a sandboxe
 
 The full test suite also executes every challenge solution against its test cases in Node and checks the generated runner for JavaScript syntax.
 
+### Editing AI Academy content
+
+AI Academy keeps its curriculum in `ai_academy/content/`:
+
+- `00…07_*.json` — one bundle per module with `module`, `lessons`, `questions` and `flashcards`.
+- `projects.json` — the eight project briefs, linked to modules by slug.
+- `glossary.json` — the searchable reference terms, optionally linked to a module.
+- `project_tests/` — downloadable starter/test packs, one folder per project.
+
+Module fields: `slug`, `title`, `subtitle`, `description`, `stage`, `difficulty`, `glyph`, `accent`, `duration_weeks`, `outcomes`, `skills`.
+Lesson fields: `slug`, `title`, `summary`, `body_html`, `minutes`.
+Question fields: `key`, `difficulty`, `prompt`, `code`, `choices` (four), `answer`, `explanation`.
+Project fields: `slug`, `module`, `title`, `tagline`, `scenario`, `build`, `difficulty`, `duration_hours`, `skills`, `deliverables`, `milestones`, `rubric`, `stretch`, `portfolio_note`.
+
+```bash
+python manage.py seed_ai --check
+python manage.py seed_ai
+python manage.py seed_ai --if-changed
+```
+
+The validator requires at least 3 lessons, 5 questions and 4 cards per module, exactly four unique choices per question, and a known module slug for every project. `body_html` is trusted seed content; never render learner input with `|safe`.
+
 ### Optional admin
 
 The Django admin is available at `/admin/` for inspecting or editing content and learner data:
@@ -460,7 +531,7 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **83 tests** in total.
+The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **119 tests** in total.
 
 You can also run Django's deployment check before hosting anything:
 

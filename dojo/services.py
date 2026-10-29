@@ -10,7 +10,7 @@ import random
 from datetime import timedelta
 
 from django.db import transaction
-from django.db.models import Count, Prefetch, Q, Sum
+from django.db.models import Count, Max, Prefetch, Q, Sum
 from django.utils import timezone
 
 from .models import (
@@ -65,6 +65,105 @@ def create_attempt(
             ]
         )
     return attempt
+
+
+def create_attempt_from_questions(
+    learner: Learner,
+    question_ids: list[int],
+    *,
+    topic: Topic | None = None,
+    difficulty: str = "",
+    limit: int | None = None,
+) -> Attempt:
+    """Create a run from an explicit set of questions, preserving order diversity."""
+    ids = list(dict.fromkeys(int(question_id) for question_id in question_ids))
+    if not ids:
+        raise ValueError("There are no questions to practise yet.")
+    random.shuffle(ids)
+    if limit is not None:
+        ids = ids[:limit]
+    with transaction.atomic():
+        attempt = Attempt.objects.create(
+            learner=learner,
+            topic=topic,
+            difficulty=difficulty,
+            length=len(ids),
+        )
+        AttemptQuestion.objects.bulk_create(
+            [
+                AttemptQuestion(attempt=attempt, question_id=question_id, position=index)
+                for index, question_id in enumerate(ids)
+            ]
+        )
+    return attempt
+
+
+def create_retry_attempt(learner: Learner, attempt: Attempt) -> Attempt:
+    """Create a new run containing only the questions missed in a finished run."""
+    missed_ids = list(
+        attempt.attempt_questions.filter(
+            selected__isnull=False,
+            is_correct=False,
+        ).values_list("question_id", flat=True)
+    )
+    if not missed_ids:
+        raise ValueError("This run has no missed questions to retry.")
+    return create_attempt_from_questions(
+        learner,
+        missed_ids,
+        topic=attempt.topic,
+        difficulty=attempt.difficulty,
+    )
+
+
+def _weak_spot_ids(learner: Learner) -> list[int]:
+    """Question ids the learner has answered but never answered correctly."""
+    rows = (
+        AttemptQuestion.objects.filter(
+            attempt__learner=learner,
+            selected__isnull=False,
+            question__is_active=True,
+        )
+        .values("question_id")
+        .annotate(
+            attempts=Count("id"),
+            correct=Count("id", filter=Q(is_correct=True)),
+            last_answered=Max("answered_at"),
+        )
+        .filter(correct=0)
+        .order_by("last_answered", "question_id")
+    )
+    return [row["question_id"] for row in rows]
+
+
+def weak_spots(learner: Learner, limit: int | None = None) -> list[Question]:
+    """Questions with an attempt but no correct answer on record."""
+    ids = _weak_spot_ids(learner)
+    if limit is not None:
+        ids = ids[:limit]
+    if not ids:
+        return []
+    questions = {
+        question.pk: question
+        for question in Question.objects.filter(pk__in=ids).select_related("topic")
+    }
+    return [questions[question_id] for question_id in ids if question_id in questions]
+
+
+def weak_spot_count(learner: Learner) -> int:
+    return len(_weak_spot_ids(learner))
+
+
+def create_weak_spot_attempt(learner: Learner, limit: int = 10) -> Attempt:
+    questions = weak_spots(learner, limit=limit)
+    if not questions:
+        raise ValueError(
+            "No open weak spots: every answered question has a correct answer on record."
+        )
+    return create_attempt_from_questions(
+        learner,
+        [question.pk for question in questions],
+    )
 
 
 def record_answer(attempt_question: AttemptQuestion, choice) -> bool:
@@ -256,6 +355,7 @@ def dashboard_stats(learner: Learner) -> dict:
         "correct": correct,
         "accuracy": percent(correct, answered),
         "completed_attempts": completed_attempts,
+        "weak_spot_count": weak_spot_count(learner),
         "today_xp": today_xp,
         "daily_goal": DAILY_XP_GOAL,
         "daily_percent": percent(today_xp, DAILY_XP_GOAL),

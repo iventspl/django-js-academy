@@ -54,6 +54,26 @@
     </div>
   </div>
 
+  <section class="weak-spot-band" aria-labelledby="weak-spot-title">
+    <div>
+      <p class="eyebrow eyebrow-dark">Adaptive practice</p>
+      <h2 id="weak-spot-title">Close the open loops.</h2>
+      {% if stats.weak_spot_count %}
+        <p>{{ stats.weak_spot_count }} question{{ stats.weak_spot_count|pluralize }} you have answered but never answered correctly. A short run keeps them from becoming permanent blind spots.</p>
+      {% else %}
+        <p>No open weak spots. Every question you have answered has a correct answer on record. Start a mixed run to find a new edge.</p>
+      {% endif %}
+    </div>
+    {% if stats.weak_spot_count %}
+      <form method="post" action="{% url 'dojo:weak_spots' %}">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Practice {% if stats.weak_spot_count > 10 %}10 of {{ stats.weak_spot_count }}{% else %}{{ stats.weak_spot_count }}{% endif %} weak spot{{ stats.weak_spot_count|pluralize }} <span aria-hidden="true">↺</span></button>
+      </form>
+    {% else %}
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:quiz_setup' %}">Find a new edge <span aria-hidden="true">→</span></a>
+    {% endif %}
+  </section>
+
   <section class="section progress-section" aria-labelledby="mastery-title">
     <div class="section-head section-head-tight">
       <div>

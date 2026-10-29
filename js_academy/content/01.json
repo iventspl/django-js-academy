@@ -2,23 +2,26 @@
   "module": {
     "slug": "fundamenty-js",
     "title": "Fundamenty JavaScript",
-    "subtitle": "Zmienne, typy, funkcje i praca z danymi — bez magicznych skrótów.",
-    "description": "Pierwszy moduł buduje fundament, na którym opiera się cały React. Zrozumiesz wartości, zakresy, funkcje wyższego rzędu i operacje na tablicach, zamiast zapamiętywać składnię.",
+    "subtitle": "Zmienne, typy, funkcje, argumenty i wartości zwracane — fundament bez magii.",
+    "description": "Pierwszy moduł buduje fundament, na którym opiera się cały React. Zrozumiesz wartości, zakresy, funkcje wyższego rzędu, przekazywanie argumentów i świadome używanie return — także w prostym controller.js.",
     "level": "start",
     "glyph": "01",
     "accent": "#F7DF1E",
-    "duration_minutes": 55,
+    "duration_minutes": 105,
     "outcomes": [
       "Rozróżniasz typy prymitywne i referencyjne oraz wiesz, kiedy używać let, a kiedy const.",
       "Piszesz funkcje, rozumiesz zakres i potrafisz wyjaśnić domknięcie (closure).",
       "Używasz map, filter i reduce do przetwarzania danych bez mutowania wejścia.",
-      "Świadomie wybierasz === zamiast == i unikasz cichych konwersji."
+      "Rozróżniasz parametry od argumentów i wiesz, co dzieje się przy braku, nadmiarze i wartości domyślnej.",
+      "Świadomie używasz return: odróżniasz funkcje liczące (query) od funkcji wykonujących skutek (command).",
+      "Projektujesz funkcje czyste i przekazujesz dane jawnie, zamiast czytać globalsy."
     ],
     "project_title": "Kalkulator budżetu w konsoli",
     "project_brief": "Zbuduj mały moduł, który przyjmuje listę transakcji, liczy sumę przychodów i wydatków, zwraca saldo i największy wydatek. Całość bez mutowania oryginalnej tablicy.",
     "project_steps": [
       "Zdefiniuj transakcje jako tablicę obiektów z polami type, amount i title.",
       "Napisz funkcje filtrujące i sumujące z użyciem filter oraz reduce.",
+      "Zadbaj, aby każda funkcja licząca zwracała wynik, a funkcja prezentująca tylko wypisywała go w konsoli.",
       "Dodaj funkcję formatującą wynik w czytelny tekst.",
       "Przetestuj przypadki: brak transakcji, tylko wydatki, ujemne saldo."
     ]
@@ -44,6 +47,34 @@
       "summary": "map, filter, reduce, spread i destrukturyzacja — codzienne narzędzia pracy z danymi.",
       "minutes": 14,
       "body_html": "<p>W praktyce większość kodu aplikacji to transformowanie danych. Zamiast pisać ręczne pętle, używaj metod, które jasno wyrażają intencję.</p>\n<h2>map, filter, reduce</h2>\n<pre><code>const products = [\n  { name: \"Kawa\", price: 20, available: true },\n  { name: \"Herbata\", price: 12, available: false },\n];\n\nconst names = products.map((p) =&gt; p.name);\nconst available = products.filter((p) =&gt; p.available);\nconst total = products.reduce((sum, p) =&gt; sum + p.price, 0);</code></pre>\n<p><code>map</code> zwraca nową tablicę tej samej długości, <code>filter</code> — nową tablicę pasujących elementów, a <code>reduce</code> sprowadza całość do jednej wartości.</p>\n<h2>Niemutowalna aktualizacja</h2>\n<p>React wykrywa zmiany przez porównanie referencji. Jeśli zmutujesz tablicę w miejscu, możesz nie wywołać renderu. Twórz nowe struktury.</p>\n<pre><code>// źle\nitems.push(newItem);\n\n// dobrze\nconst nextItems = [...items, newItem];\n\n// aktualizacja obiektu\nconst nextUser = { ...user, name: \"Ola\" };</code></pre>\n<h2>Destrukturyzacja</h2>\n<pre><code>const { name, price } = product;\nconst [first, second] = products;\nconst { city = \"Warszawa\" } = address ?? {};</code></pre>\n<div class=\"lesson-callout\"><strong>Pamiętaj:</strong> spread tworzy płytką kopię. Zagnieżdżone obiekty nadal są współdzielone. Głęboką aktualizację buduj świadomie, poziom po poziomie.</div>"
+    },
+    {
+      "slug": "argumenty-i-parametry",
+      "title": "Parametry i argumenty: jak dane wchodzą do funkcji",
+      "summary": "Parametr to nazwa w definicji, argument to wartość w wywołaniu. Zobaczysz, co dzieje się przy braku argumentu, nadmiarze i przekazaniu obiektu.",
+      "minutes": 16,
+      "body_html": "<p>Najkrótsza definicja: <strong>parametry</strong> są w definicji funkcji, <strong>argumenty</strong> — w miejscu wywołania.</p>\n<pre><code>function greet(name, punctuation) { // name i punctuation to parametry\n  return `Cześć, ${name}${punctuation}`;\n}\n\ngreet(\"Ala\", \"!\"); // \"Ala\" i \"!\" to argumenty</code></pre>\n<p>JavaScript wiąże je <strong>pozycyjnie</strong>: pierwszy argument trafia do pierwszego parametru, drugi do drugiego. Nazwy parametrów nie mają znaczenia dla wywołującego — znaczenie ma kolejność.</p>\n<h2>Za mało i za dużo argumentów</h2>\n<pre><code>function add(a, b) {\n  return a + b;\n}\n\nadd(2);        // NaN — b ma wartość undefined\nadd(2, 3, 4);  // 5 — czwarty argument jest ignorowany\n\nfunction show(first, ...rest) {\n  return { first, rest };\n}\n\nshow(1, 2, 3); // { first: 1, rest: [2, 3] }</code></pre>\n<p>Brak argumentu nie jest błędem. Parametr po prostu dostaje <code>undefined</code>, a <code>2 + undefined</code> daje <code>NaN</code>. Nadmiarowe argumenty są dostępne przez <code>arguments</code> (w klasycznych funkcjach) albo przez <code>rest</code>, ale bez tego są ignorowane.</p>\n<p><strong>Rest</strong> (<code>...rest</code>) musi być ostatnim parametrem i zbiera pozostałe argumenty w prawdziwą tablicę. Nie myl go ze spreadem: rest zbiera przy definicji, spread rozrzuca przy wywołaniu.</p>\n<h2>Wartości domyślne</h2>\n<pre><code>function createUser(name, role = \"user\", active = true) {\n  return { name, role, active };\n}\n\ncreateUser(\"Ala\");                    // role: \"user\", active: true\ncreateUser(\"Ala\", undefined, false);  // role: \"user\"\ncreateUser(\"Ala\", null);              // role: null — null nie uruchamia defaultu</code></pre>\n<p>Default uruchamia się tylko wtedy, gdy argument jest <code>undefined</code> (albo go brak). <code>null</code>, <code>0</code>, <code>\"\"</code> i <code>false</code> są pełnoprawnymi wartościami. To częste źródło błędu w formularzach: puste pole daje <code>\"\"</code>, nie <code>undefined</code>.</p>\n<p>Default może odwołać się do wcześniejszego parametru:</p>\n<pre><code>function makeRange(start, end = start + 10) {\n  return { start, end };\n}\n\nmakeRange(5); // { start: 5, end: 15 }</code></pre>\n<h2>Destrukturyzacja parametrów</h2>\n<pre><code>function renderCard({ title, price = 0, tags = [] }) {\n  return `${title}: ${price} zł (${tags.length} tagów)`;\n}\n\nrenderCard({ title: \"Kawa\", price: 12.5 });</code></pre>\n<p>Gdy funkcja przyjmuje obiekt, od razu rozłóż go na nazwane pola. Zyskujesz czytelne wywołanie i domyślne wartości. Uwaga: destrukturyzacja <code>undefined</code> rzuca błąd, więc jeśli cały obiekt jest opcjonalny, użyj <code>function renderCard({ title, price = 0 } = {})</code>.</p>\n<h2>Prymitywy i obiekty</h2>\n<p>Liczby, stringi, booleany, <code>null</code> i <code>undefined</code> są przekazywane przez wartość: funkcja dostaje kopię. Obiekty i tablice — przez referencję: funkcja dostaje kopię referencji do tego samego obiektu.</p>\n<pre><code>function rename(user) {\n  user.name = \"Ola\";   // mutuje współdzielony obiekt\n}\n\nconst user = { name: \"Ala\" };\nrename(user);\nconsole.log(user.name); // \"Ola\"\n\nfunction replace(user) {\n  user = { name: \"Nowy\" }; // zmienia tylko lokalną zmienną\n}\n\nreplace(user);\nconsole.log(user.name); // \"Ola\"</code></pre>\n<p>To rozróżnienie wyjaśnia, dlaczego jedna funkcja „zmienia” obiekt wywołującego, a inna nie. Nie chodzi o <code>const</code>: <code>const</code> blokuje przypisanie do zmiennej, nie mutację obiektu.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> jeśli funkcja ma zmienić dane, nazwij to jasno (<code>applyDiscount</code>) i udokumentuj mutację. Jeśli ma tylko policzyć wynik, nie dotykaj wejścia — zwróć nową wartość. Więcej o tym w lekcji o funkcjach czystych.</div>\n<h2>Kto podaje argumenty?</h2>\n<p>Nie zawsze wywołujesz funkcję sam. Callbacki wywołuje ktoś inny i to on decyduje, co trafi do parametrów:</p>\n<pre><code>const prices = [10, 20, 30];\nprices.map((price, index) =&gt; price * (index + 1)); // [10, 40, 90]\n\nbutton.addEventListener(\"click\", (event) =&gt; {\n  console.log(event.target); // event dostarcza przeglądarka\n});</code></pre>\n<p>Dlatego sygnatura callbacku jest kontraktem. <code>map</code> przekazuje <code>(element, index, array)</code>, a <code>addEventListener</code> przekazuje obiekt zdarzenia. Jeśli napiszesz <code>prices.map(parseInt)</code>, <code>parseInt</code> dostanie indeks jako drugi argument (radix) i wynik będzie błędny.</p>\n<div class=\"lesson-callout\"><strong>W kontrolerze:</strong> handler zdarzenia dostaje <code>event</code>, a nie gotowy string. Najpierw wyciągnij dane (<code>event.target.value</code>), potem przekaż je dalej jako zwykły argument: <code>update({ query: event.target.value })</code>.</div>"
+    },
+    {
+      "slug": "zwracanie-wartosci",
+      "title": "Return: wartość, którą funkcja oddaje",
+      "summary": "Dlaczego jedna funkcja zwraca wynik, a inna tylko wykonuje skutek — i co się stanie, gdy zapomnisz return w kontrolerze.",
+      "minutes": 18,
+      "body_html": "<p>Wywołanie funkcji jest <strong>wyrażeniem</strong>: ma wartość. Tę wartość ustala <code>return</code>.</p>\n<pre><code>function add(a, b) {\n  return a + b;\n}\n\nconst sum = add(2, 3);        // 5\nconsole.log(add(2, 3) * 2);   // 10</code></pre>\n<p><code>return</code> robi dwie rzeczy: kończy funkcję i przekazuje wartość wywołującemu. Kod po <code>return</code> w tej samej ścieżce się nie wykona.</p>\n<h2>Brak return to undefined</h2>\n<pre><code>function logSum(a, b) {\n  console.log(a + b); // wypisuje 5, ale nic nie zwraca\n}\n\nconst result = logSum(2, 3);\nconsole.log(result); // undefined</code></pre>\n<p><code>console.log</code> nie jest <code>return</code>. Wypisanie wartości to efekt uboczny; wynikiem funkcji nadal jest <code>undefined</code>. Jeśli zrobisz <code>const x = console.log(\"hej\")</code>, <code>x</code> będzie <code>undefined</code>.</p>\n<p>Każda funkcja, która nie ma <code>return</code> (albo ma <code>return;</code> bez wartości), zwraca <code>undefined</code>. To nie jest błąd sam w sobie — ale bywa błędem, gdy wywołujący oczekuje danych.</p>\n<h2>Wczesny return zamiast zagnieżdżeń</h2>\n<pre><code>function priceLabel(price) {\n  if (price == null) return \"Brak ceny\";\n  if (price &lt;= 0) return \"Cena musi być dodatnia\";\n  return `${price.toFixed(2)} zł`;\n}</code></pre>\n<p>„Guard clauses” upraszczają funkcję: najpierw obsługujesz przypadki brzegowe, potem ścieżkę główną. Każdy <code>return</code> kończy funkcję, więc nie potrzebujesz <code>else</code>.</p>\n<h2>Więcej niż jedna wartość</h2>\n<p><code>return</code> zwraca jedną wartość. Gdy potrzebujesz kilku, zwróć obiekt lub tablicę i od razu je rozłóż:</p>\n<pre><code>function calculateTotal(price, quantity, discount = 0) {\n  const subtotal = price * quantity;\n  const discountValue = subtotal * (discount / 100);\n  return {\n    subtotal,\n    discountValue,\n    total: subtotal - discountValue,\n  };\n}\n\nconst { total } = calculateTotal(39.9, 3, 10);</code></pre>\n<p>Zwracanie obiektu jest czytelniejsze niż pozycyjna tablica, bo wywołujący widzi nazwy pól. To ten sam wybór, który w kontrolerze prowadzi do <code>{ key, direction }</code> zamiast gołego stringa.</p>\n<h2>Funkcja strzałkowa i ukryty return</h2>\n<pre><code>const double = (x) =&gt; x * 2;           // return ukryty\nconst makeUser = (name) =&gt; ({ name }); // nawiasy, bo to obiekt\nconst broken = (x) =&gt; { x * 2; };      // undefined!\n\nconsole.log(double(4));       // 8\nconsole.log(makeUser(\"Ala\")); // { name: \"Ala\" }\nconsole.log(broken(4));       // undefined</code></pre>\n<p>Strzałka z wyrażeniem po prawej stronie zwraca je automatycznie. Strzałka z nawiasami klamrowymi otwiera <strong>blok</strong>, więc potrzebujesz jawnego <code>return</code>. <code>() =&gt; { name: \"Ala\" }</code> nie zwraca obiektu — zwraca <code>undefined</code> (a <code>name:</code> jest etykietą).</p>\n<h2>Kiedy return nie jest potrzebny</h2>\n<p>Rozróżnij dwa rodzaje funkcji:</p>\n<ul>\n<li><strong>Query</strong> — pyta o wynik: <code>filterProducts</code>, <code>calculateTotal</code>, <code>formatPrice</code>. Musi zwrócić wartość, bo wywołujący na niej pracuje.</li>\n<li><strong>Command</strong> — powoduje skutek: <code>render</code>, <code>save</code>, <code>handleClick</code>. Może nie zwracać nic; jej wynikiem jest zmiana w świecie (DOM, zapis, nawigacja).</li>\n</ul>\n<p>Handler zdarzenia jest commandem: przeglądarka wywołuje go i <strong>ignoruje</strong> zwróconą wartość. <code>return false</code> w <code>addEventListener</code> nie anuluje zdarzenia (do tego służy <code>event.preventDefault()</code>).</p>\n<h2>Gdzie to boli w controller.js</h2>\n<pre><code>function selectProducts(products, state) {\n  const query = state.query.trim().toLowerCase();\n  products.filter((product) =&gt;\n    product.name.toLowerCase().includes(query)\n  );\n}\n\nfunction render() {\n  const visible = selectProducts(products, state);\n  list.innerHTML = visible.map(card).join(\"\");\n}</code></pre>\n<p>Brak <code>return</code> przed <code>products.filter</code> oznacza, że <code>selectProducts</code> zwraca <code>undefined</code>. W <code>render</code> <code>visible</code> też jest <code>undefined</code>, a <code>visible.map</code> rzuca <code>TypeError</code>. Poprawka jest jedną linią:</p>\n<pre><code>return products.filter((product) =&gt; ...);</code></pre>\n<p>To najczęstszy błąd początkujących w kontrolerze: funkcja „coś robi”, ale nie oddaje wyniku, którego oczekuje następny krok. Łańcuch <code>dane → selektor → render</code> działa tylko wtedy, gdy selektor zwraca dane.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> po każdym wywołaniu zapytaj „co ta funkcja zwraca?”. Jeśli następna linia używa wyniku, <code>return</code> musi istnieć. Jeśli funkcja tylko renderuje lub zapisuje, brak return jest w porządku.</div>"
+    },
+    {
+      "slug": "callbacki-i-funkcje-wyzszego-rzedu",
+      "title": "Callbacki i funkcje wyższego rzędu",
+      "summary": "Funkcja jako argument: kto ją wywoła, z jakimi parametrami i czego od niej oczekuje.",
+      "minutes": 15,
+      "body_html": "<p>Funkcja może być argumentem innej funkcji. Funkcja, która przyjmuje funkcję lub zwraca funkcję, jest <strong>funkcją wyższego rzędu</strong>. Callback to funkcja przekazana do wywołania później.</p>\n<pre><code>function repeat(times, action) {\n  for (let i = 0; i &lt; times; i++) {\n    action(i);\n  }\n}\n\nrepeat(3, (index) =&gt; console.log(\"Krok\", index));</code></pre>\n<p>To <code>repeat</code> decyduje, kiedy i z jakimi argumentami wywoła <code>action</code>. Ty przekazujesz tylko funkcję; nie wywołujesz jej w miejscu przekazania. <code>repeat(3, action())</code> byłoby błędem — wywołałoby funkcję od razu i przekazało jej wynik.</p>\n<h2>Kontrakt callbacku</h2>\n<pre><code>const products = [\n  { name: \"Kawa\", price: 12 },\n  { name: \"Herbata\", price: 8 },\n];\n\nconst names = products.map((product, index) =&gt; `${index + 1}. ${product.name}`);\nconst cheap = products.filter((product) =&gt; product.price &lt; 10);\nconst total = products.reduce((sum, product) =&gt; sum + product.price, 0);</code></pre>\n<p>Każda metoda tablicowa przekazuje inne argumenty:</p>\n<ul>\n<li><code>map</code>, <code>filter</code>, <code>forEach</code>: <code>(element, index, array)</code>,</li>\n<li><code>reduce</code>: <code>(akumulator, element, index, array)</code>,</li>\n<li><code>sort</code>: <code>(a, b)</code> — dwa elementy do porównania,</li>\n<li><code>addEventListener</code>: <code>(event)</code> — obiekt zdarzenia.</li>\n</ul>\n<p>Nie musisz przyjmować wszystkich parametrów. Jeśli używasz tylko pierwszego, napisz <code>(product) =&gt;</code>. Ale nie zakładaj, że drugi parametr to coś innego, niż mówi kontrakt.</p>\n<h2>Klasyczna pułapka: parseInt w map</h2>\n<pre><code>[\"1\", \"2\", \"3\"].map(parseInt); // [1, NaN, NaN]</code></pre>\n<p><code>map</code> przekazuje trzy argumenty, a <code>parseInt(string, radix)</code> używa drugiego jako podstawy systemu. Dla drugiego elementu radix wynosi <code>1</code>, co jest niepoprawne. Poprawka: <code>map((text) =&gt; parseInt(text, 10))</code>. To pokazuje, że sygnatura callbacku jest częścią API.</p>\n<h2>Callback w kontrolerze</h2>\n<pre><code>function onSearch(event) {\n  update({ query: event.target.value });\n}\n\nsearch.addEventListener(\"input\", onSearch); // przekazujesz referencję\n// search.addEventListener(\"input\", onSearch()); // błąd: wywołanie od razu</code></pre>\n<p>Do <code>addEventListener</code> przekazujesz <strong>funkcję</strong>, nie jej wynik. Przeglądarka wywoła ją później i przekaże <code>event</code>. Dlatego <code>onSearch</code> musi przyjąć ten parametr, jeśli chce go użyć.</p>\n<p>Gdy potrzebujesz dodatkowych danych, zamknij je w funkcji strzałkowej:</p>\n<pre><code>function bindSort(select) {\n  select.addEventListener(\"change\", (event) =&gt; {\n    const [key, direction] = event.target.value.split(\":\");\n    update({ sort: { key, direction } });\n  });\n}</code></pre>\n<p><code>bindSort</code> przyjmuje element, a wewnętrzny callback przyjmuje zdarzenie. Dwa poziomy argumentów: jeden konfiguruje funkcję, drugi obsługuje konkretne zdarzenie.</p>\n<h2>Zwracanie funkcji</h2>\n<pre><code>function createValidator(minLength) {\n  return (value) =&gt; value.length &gt;= minLength;\n}\n\nconst isValidPassword = createValidator(8);\nisValidPassword(\"tajne123\"); // true</code></pre>\n<p><code>createValidator</code> zwraca funkcję, która pamięta <code>minLength</code> dzięki domknięciu. To wzorzec „fabryka funkcji”: konfiguracja raz, użycie wiele razy.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> przekazując callback, sprawdź dwie rzeczy: czy przekazujesz referencję (bez <code>()</code>) i jakie argumenty dostarczy wywołujący. W kontrolerze prawie zawsze jest to <code>event</code>.</div>"
+    },
+    {
+      "slug": "funkcje-czyste-kontroler",
+      "title": "Funkcje czyste i kontroler: argumenty → return → render",
+      "summary": "Jak podzielić funkcje na liczące i wykonujące skutki, żeby controller.js był przewidywalny i testowalny.",
+      "minutes": 18,
+      "body_html": "<p>Masz już argumenty i <code>return</code>. Teraz najważniejsza decyzja projektowa: <strong>która funkcja liczy, a która zmienia świat</strong>.</p>\n<h2>Funkcja czysta</h2>\n<pre><code>function filterProducts(products, state) {\n  const query = state.query.trim().toLowerCase();\n  return products.filter((product) =&gt;\n    product.name.toLowerCase().includes(query)\n  );\n}</code></pre>\n<p>Funkcja czysta:</p>\n<ul>\n<li>dla tych samych argumentów zwraca ten sam wynik,</li>\n<li>nie mutuje argumentów,</li>\n<li>nie czyta zmiennych spoza swoich parametrów (ani <code>Date.now</code>, ani <code>Math.random</code>),</li>\n<li>nie dotyka DOM, sieci, storage ani <code>console.log</code>.</li>\n</ul>\n<p>Dzięki temu możesz ją wywołać w konsoli i teście bez przeglądarki. <code>filterProducts(products, { query: \"kawa\" })</code> zawsze zwraca tablicę — nie potrzebuje stanu aplikacji.</p>\n<h2>Funkcja z efektem ubocznym</h2>\n<pre><code>function render(visible, state) {\n  list.className = `products products--${state.view}`;\n  list.innerHTML = visible.map(productCard).join(\"\");\n  count.textContent = `${visible.length} produktów`;\n}</code></pre>\n<p><code>render</code> dotyka DOM, więc nie jest czysta. I nie musi nic zwracać: jej zadaniem jest zmiana widoku. To command, nie query.</p>\n<h2>controller.js: kto co dostaje i co zwraca</h2>\n<pre><code>// controller.js\nlet state = {\n  query: \"\",\n  sort: { key: \"name\", direction: \"asc\" },\n  view: \"grid\",\n};\n\nfunction selectProducts(products, state) {\n  const filtered = filterProducts(products, state);\n  return sortProducts(filtered, state.sort);\n}\n\nfunction update(patch) {\n  state = { ...state, ...patch };\n  const visible = selectProducts(products, state);\n  render(visible, state);\n  return state;\n}\n\nsearch.addEventListener(\"input\", (event) =&gt; {\n  update({ query: event.target.value });\n});\n\nsortSelect.addEventListener(\"change\", (event) =&gt; {\n  const [key, direction] = event.target.value.split(\":\");\n  update({ sort: { key, direction } });\n});</code></pre>\n<p>Prześledź przepływ:</p>\n<pre><code>event → update(patch) → nowy state\n                     → selectProducts(products, state) → tablica\n                     → render(visible, state) → DOM\n                     → return state (dla testów)</code></pre>\n<p>Każda funkcja ma inny kontrakt:</p>\n<ul>\n<li><code>selectProducts</code> — query: przyjmuje dane i stan, <strong>zwraca</strong> nową tablicę.</li>\n<li><code>render</code> — command: przyjmuje gotową tablicę i stan, <strong>nie zwraca</strong> nic sensownego.</li>\n<li><code>update</code> — command, który dodatkowo zwraca nowy stan, żeby test mógł sprawdzić wynik bez czytania DOM.</li>\n<li>callback zdarzenia — command wywołany przez przeglądarkę; jego return jest ignorowany.</li>\n</ul>\n<p>Dlatego „funkcja musi coś zwracać” nie jest uniwersalną regułą. Reguła brzmi: <strong>funkcja musi zwracać to, czego oczekuje jej wywołujący</strong>. Jeśli następny krok używa wyniku — return jest obowiązkowy. Jeśli funkcja tylko renderuje lub zapisuje — nie.</p>\n<h2>Dlaczego argumenty, a nie globalsy</h2>\n<pre><code>// trudne do testu: funkcja czyta wszystko z zewnątrz\nfunction selectProducts() {\n  return products.filter((p) =&gt; p.name.includes(currentQuery));\n}\n\n// testowalne: wszystko, czego potrzebuje, jest w argumentach\nfunction selectProducts(products, state) {\n  return products.filter((p) =&gt; p.name.includes(state.query));\n}</code></pre>\n<p>Przekazywanie argumentów jawnie czyni zależności widocznymi. W kontrolerze oznacza to też, że <code>render</code> nie musi czytać globalnego <code>state</code> — dostaje to, co ma pokazać. Łatwiej podmienić dane w teście i łatwiej zrozumieć, co funkcja zmienia.</p>\n<h2>Nie mutuj stanu przy okazji</h2>\n<pre><code>// ryzykowne: zmienia stary obiekt, więc porównanie stary/nowy nic nie pokaże\nstate.query = \"kawa\";\nrender(selectProducts(products, state), state);\n\n// bezpieczne: nowy obiekt, stary stan pozostaje nietknięty\nstate = { ...state, query: \"kawa\" };</code></pre>\n<p>W vanilla JS mutacja często „działa”, bo <code>render</code> czyta aktualny obiekt. Problem pojawia się, gdy chcesz cofnąć zmianę, porównać stany, zapisać historię albo użyć Reacta — tam liczy się nowa referencja. Nawyk tworzenia nowego stanu jest tańszy niż debugowanie później.</p>\n<div class=\"lesson-callout\"><strong>Kontrakt kontrolera:</strong> zdarzenie dostarcza argumenty, selektory zwracają dane, widok wykonuje skutek. Jeśli funkcja jest w środku łańcucha, jej <code>return</code> jest tym, co widzi następny krok. Jeśli jest na końcu — wystarczy skutek.</div>"
     }
   ],
   "questions": [
@@ -127,6 +158,104 @@
       ],
       "answer": 1,
       "explanation": "concat zwraca nową tablicę. push, przypisanie po indeksie i splice mutują istniejącą tablicę. W React często używa się też spreadu: [...items, newItem]."
+    },
+    {
+      "key": "js-fund-b3",
+      "difficulty": "beginner",
+      "prompt": "W tym kodzie który element jest argumentem?",
+      "code": "function greet(name) {\n  return `Cześć, ${name}`;\n}\n\ngreet(\"Ala\");",
+      "choices": [
+        "name",
+        "\"Ala\"",
+        "greet",
+        "return"
+      ],
+      "answer": 1,
+      "explanation": "name to parametr w definicji funkcji. \"Ala\" to argument przekazany w wywołaniu greet(\"Ala\"). JavaScript wiąże go z pierwszym parametrem."
+    },
+    {
+      "key": "js-fund-b4",
+      "difficulty": "beginner",
+      "prompt": "Co zwróci add(2)?",
+      "code": "function add(a, b) {\n  return a + b;\n}\n\nadd(2);",
+      "choices": [
+        "NaN",
+        "2",
+        "undefined",
+        "SyntaxError"
+      ],
+      "answer": 0,
+      "explanation": "Brak drugiego argumentu oznacza, że b ma wartość undefined. 2 + undefined daje NaN. Wartość domyślna nie zadziała, bo parametr b jej nie ma."
+    },
+    {
+      "key": "js-fund-i3",
+      "difficulty": "intermediate",
+      "prompt": "Co zwróci makeUser(null)?",
+      "code": "function makeUser(role = \"user\") {\n  return { role };\n}\n\nmakeUser(null);",
+      "choices": [
+        "{ role: \"user\" }",
+        "{ role: null }",
+        "null",
+        "undefined"
+      ],
+      "answer": 1,
+      "explanation": "Wartość domyślna uruchamia się tylko dla undefined (lub braku argumentu). null jest świadomie przekazaną wartością, więc zostaje w role."
+    },
+    {
+      "key": "js-fund-i4",
+      "difficulty": "intermediate",
+      "prompt": "Co znajdzie się w result?",
+      "code": "function logSum(a, b) {\n  console.log(a + b);\n}\n\nconst result = logSum(2, 3);",
+      "choices": [
+        "5",
+        "undefined",
+        "NaN",
+        "\"5\""
+      ],
+      "answer": 1,
+      "explanation": "console.log wypisuje 5, ale nie jest return. Funkcja nie zwraca wartości, więc result ma undefined. Wypisanie to efekt uboczny, nie wynik."
+    },
+    {
+      "key": "js-fund-i5",
+      "difficulty": "intermediate",
+      "prompt": "Co zwróci selectProducts, jeśli w funkcji brakuje return?",
+      "code": "function selectProducts(products, state) {\n  products.filter((p) => p.name.includes(state.query));\n}\n\nconst visible = selectProducts(products, state);",
+      "choices": [
+        "Nową tablicę produktów",
+        "undefined",
+        "Oryginalną tablicę products",
+        "Błąd już w selectProducts"
+      ],
+      "answer": 1,
+      "explanation": "filter tworzy nową tablicę, ale bez return wynik jest porzucany. visible ma undefined, a błąd pojawi się dopiero później, np. przy visible.map(...)."
+    },
+    {
+      "key": "js-fund-a3",
+      "difficulty": "advanced",
+      "prompt": "Co zwróci makeUser(\"Ala\")?",
+      "code": "const makeUser = (name) => { name: \"Ala\" };",
+      "choices": [
+        "{ name: \"Ala\" }",
+        "\"Ala\"",
+        "undefined",
+        "SyntaxError"
+      ],
+      "answer": 2,
+      "explanation": "Nawiasy klamrowe po strzałce otwierają blok, a nie obiekt. name: \"Ala\" jest etykietą, funkcja nie ma return, więc wynik to undefined. Poprawnie: (name) => ({ name })."
+    },
+    {
+      "key": "js-fund-a4",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego [\"1\", \"2\", \"3\"].map(parseInt) daje [1, NaN, NaN]?",
+      "code": "[\"1\", \"2\", \"3\"].map(parseInt);",
+      "choices": [
+        "parseInt nie działa na stringach",
+        "map przekazuje indeks jako drugi argument, a parseInt traktuje go jako radix",
+        "map zawsze zwraca NaN dla stringów",
+        "parseInt mutuje tablicę"
+      ],
+      "answer": 1,
+      "explanation": "map wywołuje callback z (element, index, array). parseInt(string, radix) bierze indeks jako podstawę systemu: 0, 1, 2. Radix 1 jest niepoprawny, więc wynik to NaN. Poprawka: map((text) => parseInt(text, 10))."
     }
   ],
   "flashcards": [
@@ -158,6 +287,44 @@
       "key": "js-fund-f5",
       "front": "Co robi spread w obiekcie?",
       "back": "Tworzy płytką kopię właściwości: const next = { ...user, name: \"Ola\" }. Zagnieżdżone obiekty nadal są współdzielone, więc głęboką zmianę buduj poziom po poziomie."
+    },
+    {
+      "key": "js-fund-f6",
+      "difficulty": "beginner",
+      "front": "Czym różni się parametr od argumentu?",
+      "back": "Parametr to nazwa w definicji funkcji. Argument to wartość przekazana w wywołaniu. JavaScript wiąże je pozycyjnie: pierwszy argument trafia do pierwszego parametru.",
+      "front_code": "function greet(name) { ... }\ngreet(\"Ala\");"
+    },
+    {
+      "key": "js-fund-f7",
+      "difficulty": "beginner",
+      "front": "Co się dzieje, gdy brakuje argumentu?",
+      "back": "Parametr dostaje undefined, więc np. 2 + undefined daje NaN. Wartość domyślna uruchamia się tylko dla undefined lub braku argumentu — nie dla null, 0, \"\" ani false."
+    },
+    {
+      "key": "js-fund-f8",
+      "difficulty": "intermediate",
+      "front": "Co zwraca funkcja bez return?",
+      "back": "undefined. console.log tylko wypisuje wartość i nie jest return. Jeśli następny krok używa wyniku funkcji, brak return prowadzi do undefined i często do TypeError."
+    },
+    {
+      "key": "js-fund-f9",
+      "difficulty": "intermediate",
+      "front": "Kiedy funkcja musi coś zwracać?",
+      "back": "Query (np. filterProducts, calculateTotal) musi zwrócić wynik, bo wywołujący na nim pracuje. Command (np. render, save, event handler) może nie zwracać nic — jego wynikiem jest skutek. Zawsze zwracaj to, czego oczekuje wywołujący."
+    },
+    {
+      "key": "js-fund-f10",
+      "difficulty": "intermediate",
+      "front": "Czym różni się rest od spread?",
+      "back": "Rest (...args) zbiera pozostałe argumenty w tablicę i musi być ostatnim parametrem. Spread (...items) rozrzuca tablicę lub obiekt w miejscu wywołania albo w literalu.",
+      "front_code": "function show(first, ...rest) { ... }\nshow(...[1, 2, 3]);"
+    },
+    {
+      "key": "js-fund-f11",
+      "difficulty": "advanced",
+      "front": "Jakie argumenty dostaje callback w map, a jakie w addEventListener?",
+      "back": "map przekazuje (element, index, array), reduce (akumulator, element, index, array), a addEventListener przekazuje (event). Dlatego map(parseInt) jest błędem: parseInt dostaje indeks jako radix."
     }
   ]
 }

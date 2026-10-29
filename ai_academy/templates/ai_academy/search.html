@@ -1,0 +1,94 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}Search AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <header class="ai-page-header">
+    <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> The index</p>
+    <h1>Search the<br><em>AI Academy.</em></h1>
+    <p class="ai-page-lead">Modules, lessons, projects and glossary terms in one place. Use it when a concept appears in a project and you need the lesson that explains it.</p>
+    <form class="ai-search-big" method="get" role="search">
+      <label class="sr-only" for="ai-search-q">Search AI Academy</label>
+      <input id="ai-search-q" name="q" type="search" value="{{ query }}" placeholder="Try: RAG, overfitting, token, prompt injection…" autofocus>
+      <button class="btn btn-ai" type="submit">Search</button>
+    </form>
+    <div class="ai-search-suggestions">
+      <span>Try</span>
+      <a href="{% url 'ai_academy:search' %}?q=RAG">RAG</a>
+      <a href="{% url 'ai_academy:search' %}?q=overfitting">overfitting</a>
+      <a href="{% url 'ai_academy:search' %}?q=token">token</a>
+      <a href="{% url 'ai_academy:search' %}?q=prompt+injection">prompt injection</a>
+    </div>
+  </header>
+
+  {% if searched %}
+    <div class="ai-result-count"><strong>{{ total_count }}</strong> result{{ total_count|pluralize }} for “{{ query }}” · <a href="{% url 'ai_academy:search' %}">clear</a></div>
+    {% if total_count %}
+      <div class="ai-search-groups">
+        {% if counts.modules %}
+          <section class="ai-search-group">
+            <div class="ai-search-group-head"><h2>Modules</h2><span>{{ counts.modules }}</span></div>
+            {% for module in modules %}
+              <a class="ai-search-result" href="{{ module.get_absolute_url }}">
+                <span class="ai-search-kind">Module</span>
+                <span><strong>{{ module.title }}</strong><small>{{ module.subtitle }}</small></span>
+                <span aria-hidden="true">→</span>
+              </a>
+            {% endfor %}
+          </section>
+        {% endif %}
+        {% if counts.lessons %}
+          <section class="ai-search-group">
+            <div class="ai-search-group-head"><h2>Lessons</h2><span>{{ counts.lessons }}</span></div>
+            {% for lesson in lessons %}
+              <a class="ai-search-result" href="{{ lesson.get_absolute_url }}">
+                <span class="ai-search-kind">Lesson</span>
+                <span><strong>{{ lesson.title }}</strong><small>{{ lesson.module.title }} · {{ lesson.summary }}</small></span>
+                <span aria-hidden="true">→</span>
+              </a>
+            {% endfor %}
+          </section>
+        {% endif %}
+        {% if counts.projects %}
+          <section class="ai-search-group">
+            <div class="ai-search-group-head"><h2>Projects</h2><span>{{ counts.projects }}</span></div>
+            {% for project in projects %}
+              <a class="ai-search-result" href="{{ project.get_absolute_url }}">
+                <span class="ai-search-kind">Project</span>
+                <span><strong>{{ project.title }}</strong><small>{{ project.tagline }}</small></span>
+                <span aria-hidden="true">↗</span>
+              </a>
+            {% endfor %}
+          </section>
+        {% endif %}
+        {% if counts.terms %}
+          <section class="ai-search-group">
+            <div class="ai-search-group-head"><h2>Glossary</h2><span>{{ counts.terms }}</span></div>
+            {% for term in terms %}
+              <a class="ai-search-result" href="{% url 'ai_academy:glossary' %}?q={{ term.term|urlencode }}">
+                <span class="ai-search-kind">Term</span>
+                <span><strong>{{ term.term }}</strong><small>{{ term.definition|truncatechars:150 }}</small></span>
+                <span aria-hidden="true">→</span>
+              </a>
+            {% endfor %}
+          </section>
+        {% endif %}
+      </div>
+    {% else %}
+      <section class="ai-empty">
+        <span class="ai-empty-mark">0</span>
+        <h2>Nothing matched “{{ query }}”.</h2>
+        <p>Try a shorter term or browse the glossary.</p>
+        <a class="btn btn-ai" href="{% url 'ai_academy:glossary' %}">Open the glossary</a>
+      </section>
+    {% endif %}
+  {% else %}
+    <div class="ai-search-idle">
+      <a href="{% url 'ai_academy:glossary' %}"><span>A</span><strong>Glossary</strong><small>{{ term_total }} terms, plain-language definitions.</small></a>
+      <a href="{% url 'ai_academy:path' %}"><span>▤</span><strong>12-month path</strong><small>Every lesson in order.</small></a>
+      <a href="{% url 'ai_academy:projects' %}"><span>◫</span><strong>Projects</strong><small>Eight portfolio briefs.</small></a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,444 @@
+{
+  "terms": [
+    {
+      "key": "artificial-intelligence",
+      "term": "Artificial intelligence",
+      "category": "Foundations",
+      "definition": "The broad goal of building systems that perform tasks associated with human intelligence, such as language, vision, planning or decision-making.",
+      "example": "A spam filter, a route planner and a chatbot all sit under the AI umbrella.",
+      "module": "ai-foundations"
+    },
+    {
+      "key": "machine-learning",
+      "term": "Machine learning",
+      "category": "Machine learning",
+      "definition": "A family of methods where a program learns patterns from data instead of following only hand-written rules.",
+      "example": "A churn model learns from past customers rather than a manually written list of rules.",
+      "module": "ai-foundations"
+    },
+    {
+      "key": "supervised-learning",
+      "term": "Supervised learning",
+      "category": "Machine learning",
+      "definition": "Learning an input-to-output mapping from labelled examples.",
+      "example": "Predicting whether a customer will churn from historical labelled outcomes.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "unsupervised-learning",
+      "term": "Unsupervised learning",
+      "category": "Machine learning",
+      "definition": "Finding structure in data without labels, such as clusters, anomalies or embeddings.",
+      "example": "Grouping customers by behaviour without predefined segments.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "reinforcement-learning",
+      "term": "Reinforcement learning",
+      "category": "Machine learning",
+      "definition": "Learning behaviour from rewards and consequences through interaction with an environment.",
+      "example": "Training an agent to play a game by rewarding winning moves.",
+      "module": "ai-foundations"
+    },
+    {
+      "key": "training",
+      "term": "Training",
+      "category": "Foundations",
+      "definition": "The process of adjusting model parameters by showing it examples and minimizing a loss.",
+      "example": "Fine-tuning a model or fitting a logistic regression are both training.",
+      "module": "ai-foundations"
+    },
+    {
+      "key": "inference",
+      "term": "Inference",
+      "category": "Foundations",
+      "definition": "Using a trained model to produce a prediction or generation for a new input.",
+      "example": "Every request to an LLM API is inference.",
+      "module": "ai-foundations"
+    },
+    {
+      "key": "baseline",
+      "term": "Baseline",
+      "category": "Evaluation",
+      "definition": "The simplest reasonable predictor used to judge whether a more complex model adds value.",
+      "example": "Predicting the majority class for an imbalanced classifier.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "data-leakage",
+      "term": "Data leakage",
+      "category": "Evaluation",
+      "definition": "Information in training that will not be available at prediction time, or that is derived from the target.",
+      "example": "Using a cancellation reason recorded after churn to predict churn.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "overfitting",
+      "term": "Overfitting",
+      "category": "Machine learning",
+      "definition": "When a model memorizes training data and fails to generalize to new data.",
+      "example": "Training loss falls while validation loss rises.",
+      "module": "classical-ml"
+    },
+    {
+      "key": "underfitting",
+      "term": "Underfitting",
+      "category": "Machine learning",
+      "definition": "When a model is too simple or undertrained to capture the signal in the data.",
+      "example": "A linear model on a strongly non-linear problem with poor train and validation scores.",
+      "module": "classical-ml"
+    },
+    {
+      "key": "feature",
+      "term": "Feature",
+      "category": "Machine learning",
+      "definition": "An input variable used by a model to make a prediction.",
+      "example": "Tenure, monthly spend and support tickets can be churn features.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "label",
+      "term": "Label",
+      "category": "Machine learning",
+      "definition": "The target outcome a supervised model is trained to predict.",
+      "example": "Churned / not churned is the label in a churn dataset.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "precision",
+      "term": "Precision",
+      "category": "Evaluation",
+      "definition": "Of all cases the model marked positive, the fraction that were actually positive.",
+      "example": "If 10 fraud alerts are raised and 6 are fraud, precision is 0.6.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "recall",
+      "term": "Recall",
+      "category": "Evaluation",
+      "definition": "Of all actual positive cases, the fraction the model found.",
+      "example": "If 10 frauds exist and the model catches 7, recall is 0.7.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "f1-score",
+      "term": "F1 score",
+      "category": "Evaluation",
+      "definition": "The harmonic mean of precision and recall, useful when both matter.",
+      "example": "A single balanced score for a classifier with imbalanced classes.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "roc-auc",
+      "term": "ROC-AUC",
+      "category": "Evaluation",
+      "definition": "A ranking metric that measures how well a model separates positives from negatives across thresholds.",
+      "example": "Useful for comparing ranking quality, but it does not choose your operating threshold.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "calibration",
+      "term": "Calibration",
+      "category": "Evaluation",
+      "definition": "When predicted probabilities match observed frequencies.",
+      "example": "Among cases scored 0.8, roughly 80% should be positive.",
+      "module": "data-math-evaluation"
+    },
+    {
+      "key": "cross-validation",
+      "term": "Cross-validation",
+      "category": "Machine learning",
+      "definition": "Repeatedly splitting data into train and validation folds to estimate generalization and variance.",
+      "example": "Five-fold stratified cross-validation for a classifier.",
+      "module": "classical-ml"
+    },
+    {
+      "key": "regularization",
+      "term": "Regularization",
+      "category": "Machine learning",
+      "definition": "A penalty on model complexity that shrinks coefficients or weights to improve generalization.",
+      "example": "L2 regularization in logistic regression or weight decay in a neural network.",
+      "module": "classical-ml"
+    },
+    {
+      "key": "gradient-descent",
+      "term": "Gradient descent",
+      "category": "Deep learning",
+      "definition": "An optimization method that updates parameters in the direction that reduces loss.",
+      "example": "The optimizer steps downhill using gradients computed by backpropagation.",
+      "module": "deep-learning-nlp"
+    },
+    {
+      "key": "neural-network",
+      "term": "Neural network",
+      "category": "Deep learning",
+      "definition": "A stack of learned layers with non-linear activations.",
+      "example": "A multilayer perceptron for tabular data or a transformer for language.",
+      "module": "deep-learning-nlp"
+    },
+    {
+      "key": "backpropagation",
+      "term": "Backpropagation",
+      "category": "Deep learning",
+      "definition": "The algorithm that computes gradients of the loss with respect to network parameters.",
+      "example": "Frameworks call it when you run loss.backward().",
+      "module": "deep-learning-nlp"
+    },
+    {
+      "key": "transformer",
+      "term": "Transformer",
+      "category": "Deep learning",
+      "definition": "A neural architecture based on self-attention and feed-forward layers, used by modern language models.",
+      "example": "GPT-style models and BERT-style encoders are transformers.",
+      "module": "deep-learning-nlp"
+    },
+    {
+      "key": "tokenization",
+      "term": "Tokenization",
+      "category": "Deep learning",
+      "definition": "Splitting text into tokens and mapping them to integer IDs for a model.",
+      "example": "A rare word may be split into several subword tokens.",
+      "module": "deep-learning-nlp"
+    },
+    {
+      "key": "token",
+      "term": "Token",
+      "category": "LLM engineering",
+      "definition": "A unit of text produced by a tokenizer; the model predicts and bills in tokens.",
+      "example": "A short word may be one token; a long word may be several.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "embedding",
+      "term": "Embedding",
+      "category": "Deep learning",
+      "definition": "A dense vector representation where nearby vectors tend to have similar meaning.",
+      "example": "Sentence embeddings power semantic search and RAG retrieval.",
+      "module": "deep-learning-nlp"
+    },
+    {
+      "key": "attention",
+      "term": "Self-attention",
+      "category": "Deep learning",
+      "definition": "A mechanism that lets each token weigh information from other tokens in its context.",
+      "example": "The word bank gets a different representation in a financial versus river context.",
+      "module": "deep-learning-nlp"
+    },
+    {
+      "key": "context-window",
+      "term": "Context window",
+      "category": "LLM engineering",
+      "definition": "The maximum number of tokens a model can attend to in one request, including prompt and output.",
+      "example": "A long document may need chunking to fit the context window.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "temperature",
+      "term": "Temperature",
+      "category": "LLM engineering",
+      "definition": "A sampling setting that controls randomness in generation.",
+      "example": "Use near-zero temperature for extraction; higher values for ideation.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "hallucination",
+      "term": "Hallucination",
+      "category": "LLM engineering",
+      "definition": "Generated content that sounds plausible but is unsupported or false.",
+      "example": "An invented citation or API method in a model answer.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "prompt",
+      "term": "Prompt",
+      "category": "LLM engineering",
+      "definition": "The instructions and context sent to a language model.",
+      "example": "A system instruction plus delimited user input and a requested output schema.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "system-prompt",
+      "term": "System prompt",
+      "category": "LLM engineering",
+      "definition": "Durable instructions that set the model's role, constraints and output policy.",
+      "example": "You are a support triage assistant; return JSON only.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "few-shot",
+      "term": "Few-shot prompting",
+      "category": "LLM engineering",
+      "definition": "Teaching a task by including a small number of examples in the prompt.",
+      "example": "Two input/output examples before asking for a new extraction.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "fine-tuning",
+      "term": "Fine-tuning",
+      "category": "LLM engineering",
+      "definition": "Updating a pretrained model's weights on task-specific examples.",
+      "example": "Adapting a small model to a consistent support-ticket taxonomy.",
+      "module": "deep-learning-nlp"
+    },
+    {
+      "key": "lora",
+      "term": "LoRA",
+      "category": "LLM engineering",
+      "definition": "A parameter-efficient fine-tuning method that trains small low-rank adapters instead of all weights.",
+      "example": "Fine-tuning a large model on a single GPU with adapter weights.",
+      "module": "deep-learning-nlp"
+    },
+    {
+      "key": "rag",
+      "term": "RAG",
+      "category": "LLM engineering",
+      "definition": "Retrieval-augmented generation: retrieve evidence, put it in the prompt, and answer with citations.",
+      "example": "A docs assistant that answers only from indexed passages.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "chunking",
+      "term": "Chunking",
+      "category": "LLM engineering",
+      "definition": "Splitting documents into passages for retrieval and prompting.",
+      "example": "Overlapping 200-token chunks that respect headings.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "vector-search",
+      "term": "Vector search",
+      "category": "LLM engineering",
+      "definition": "Finding items by embedding similarity rather than exact keyword match.",
+      "example": "Searching notes by meaning using cosine similarity.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "reranker",
+      "term": "Reranker",
+      "category": "LLM engineering",
+      "definition": "A second-stage model that reorders retrieved candidates by relevance.",
+      "example": "A cross-encoder reranks the top 20 chunks before generation.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "citation",
+      "term": "Citation",
+      "category": "LLM engineering",
+      "definition": "A reference from an answer back to the supporting source or chunk.",
+      "example": "Every claim links to the retrieved passage it came from.",
+      "module": "llm-engineering"
+    },
+    {
+      "key": "agent",
+      "term": "Agent",
+      "category": "Agents",
+      "definition": "A system that chooses actions, uses tools and observes results in a loop toward a goal.",
+      "example": "A research assistant that searches, calculates and saves notes.",
+      "module": "agents-evaluation"
+    },
+    {
+      "key": "tool-calling",
+      "term": "Tool calling",
+      "category": "Agents",
+      "definition": "Letting a model request a typed function with validated arguments.",
+      "example": "The model calls search_notes with a query instead of inventing an answer.",
+      "module": "agents-evaluation"
+    },
+    {
+      "key": "workflow",
+      "term": "Workflow",
+      "category": "Agents",
+      "definition": "A deterministic sequence of steps with known branches and failure paths.",
+      "example": "Extract → validate → retrieve → draft → approve → send.",
+      "module": "agents-evaluation"
+    },
+    {
+      "key": "guardrail",
+      "term": "Guardrail",
+      "category": "Safety",
+      "definition": "A control that limits what an AI system can do or output.",
+      "example": "Blocking writes without approval or rejecting unsafe content.",
+      "module": "agents-evaluation"
+    },
+    {
+      "key": "prompt-injection",
+      "term": "Prompt injection",
+      "category": "Safety",
+      "definition": "Untrusted content that tries to override instructions or trigger unsafe actions.",
+      "example": "A retrieved document says to ignore the system prompt and reveal secrets.",
+      "module": "agents-evaluation"
+    },
+    {
+      "key": "pii",
+      "term": "PII",
+      "category": "Safety",
+      "definition": "Personally identifiable information that must be minimized, protected and retained deliberately.",
+      "example": "Names, emails and account numbers in prompts or logs.",
+      "module": "production-career"
+    },
+    {
+      "key": "drift",
+      "term": "Data drift",
+      "category": "Production",
+      "definition": "A change in input distribution over time that can degrade model quality.",
+      "example": "Customer behaviour shifts after a pricing change.",
+      "module": "production-career"
+    },
+    {
+      "key": "observability",
+      "term": "Observability",
+      "category": "Production",
+      "definition": "The logs, traces and metrics that let you understand system behaviour and failures.",
+      "example": "A trace linking prompt version, retrieved chunks, tools, latency and cost.",
+      "module": "production-career"
+    },
+    {
+      "key": "golden-set",
+      "term": "Golden set",
+      "category": "Evaluation",
+      "definition": "A curated, versioned set of inputs and expected properties used to evaluate an AI system.",
+      "example": "25 questions with expected sources for a RAG assistant.",
+      "module": "agents-evaluation"
+    },
+    {
+      "key": "llm-as-judge",
+      "term": "LLM-as-judge",
+      "category": "Evaluation",
+      "definition": "Using a model to grade outputs against a rubric, with known biases that require calibration.",
+      "example": "A judge scores faithfulness, but a human reviews a sample.",
+      "module": "agents-evaluation"
+    },
+    {
+      "key": "mlops",
+      "term": "MLOps",
+      "category": "Production",
+      "definition": "The practices for deploying, monitoring and maintaining ML and AI systems in production.",
+      "example": "CI, model registry, monitoring and rollback for an AI feature.",
+      "module": "production-career"
+    },
+    {
+      "key": "quantization",
+      "term": "Quantization",
+      "category": "LLM engineering",
+      "definition": "Reducing numeric precision of model weights to lower memory and latency, usually with some quality trade-off.",
+      "example": "Running a smaller quantized model on a laptop.",
+      "module": "production-career"
+    },
+    {
+      "key": "latency",
+      "term": "Latency",
+      "category": "Production",
+      "definition": "The time between a request and a response, often measured at p50 and p95.",
+      "example": "Streaming can improve perceived latency without reducing total generation time.",
+      "module": "production-career"
+    },
+    {
+      "key": "token-cost",
+      "term": "Token cost",
+      "category": "Production",
+      "definition": "The cost of input and output tokens, which scales with prompt size, context and output length.",
+      "example": "A bloated prompt can cost more than a smaller model with better retrieval.",
+      "module": "production-career"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}AI careers · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <header class="ai-page-header">
+    <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> The destination</p>
+    <h1>AI careers.<br><em>A plan, not a wish.</em></h1>
+    <p class="ai-page-lead">You do not need a research PhD to build AI products. You need evidence that you can frame a problem, build a system, evaluate it honestly, and ship it. This page turns the curriculum into a job-search plan.</p>
+    <div class="ai-page-actions">
+      <a class="btn btn-ai" href="{% url 'ai_academy:path' %}">Start the 12-month path <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ai-ghost" href="{% url 'ai_academy:projects' %}">See the portfolio <span aria-hidden="true">◫</span></a>
+    </div>
+  </header>
+
+  <section class="ai-section" aria-labelledby="roles-title">
+    <div class="ai-section-head">
+      <div><p class="eyebrow eyebrow-ai-dark">Choose a destination</p><h2 id="roles-title">Three realistic roles from one core.</h2></div>
+      <p class="ai-section-aside">All three share foundations, evaluation and production habits. The difference is where you spend your project time.</p>
+    </div>
+    <div class="ai-role-grid ai-role-grid-large">
+      {% for role in roles %}
+        <article class="ai-role-card ai-role-card-large">
+          <span class="tag tag-ai">{{ role.title }}</span>
+          <h3>{{ role.tagline }}</h3>
+          <dl>
+            <div><dt>Modules</dt><dd>{{ role.modules }}</dd></div>
+            <div><dt>Focus</dt><dd>{{ role.focus }}</dd></div>
+            <div><dt>Portfolio</dt><dd>{{ role.portfolio }}</dd></div>
+          </dl>
+          <p>{{ role.fit }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ai-section" aria-labelledby="plan-title">
+    <div class="ai-section-head">
+      <div><p class="eyebrow eyebrow-ai-dark">The year</p><h2 id="plan-title">What “job-ready in 12 months” actually looks like.</h2></div>
+      <p class="ai-section-aside">Twelve months is realistic for a focused beginner with 8–12 hours per week. It is not a guarantee, and it is not a race.</p>
+    </div>
+    <ol class="ai-plan-list ai-plan-list-large">
+      {% for item in plan %}
+        <li>
+          <span class="ai-plan-months">{{ item.months }}</span>
+          <div><strong>{{ item.title }}</strong><span>{{ item.modules }}</span></div>
+          <span class="ai-plan-output">{{ item.output }}</span>
+          <span class="ai-plan-hours">{{ item.hours }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="ai-section" aria-labelledby="portfolio-title">
+    <div class="ai-section-head">
+      <div><p class="eyebrow eyebrow-ai-dark">Portfolio checklist</p><h2 id="portfolio-title">What goes in the repository.</h2></div>
+    </div>
+    <div class="ai-portfolio-grid">
+      <div class="ai-panel"><h3>Every project</h3><ul class="ai-check-list"><li>Problem and intended user in one paragraph.</li><li>Architecture diagram and key trade-offs.</li><li>Evaluation: baseline, metric, result, failure slices.</li><li>One honest limitation and one next step.</li><li>Reproducible setup and a demo.</li></ul></div>
+      <div class="ai-panel"><h3>Lead with three</h3><ul class="ai-check-list"><li>Docs Answer Engine — RAG, citations, evals.</li><li>Research Copilot — tools, approvals, traces.</li><li>AI Product Capstone — deployed, monitored, case study.</li></ul></div>
+      <div class="ai-panel"><h3>What to avoid</h3><ul class="ai-check-list"><li>Notebooks with no README or evaluation.</li><li>Tutorial copies with a new colour palette.</li><li>Claims without a measurement.</li><li>“It works” with no failure analysis.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="ai-section" aria-labelledby="interview-title">
+    <div class="ai-section-head">
+      <div><p class="eyebrow eyebrow-ai-dark">Interview map</p><h2 id="interview-title">The questions behind the questions.</h2></div>
+      <p class="ai-section-aside">Practice answering with a project example, a trade-off, and a measurement.</p>
+    </div>
+    <div class="ai-interview-grid">
+      {% for topic in interview_topics %}
+        <article class="ai-panel">
+          <h3>{{ topic.area }}</h3>
+          <ul class="ai-check-list">{% for question in topic.questions %}<li>{{ question }}</li>{% endfor %}</ul>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ai-cta-band">
+    <div><p class="eyebrow eyebrow-ai-light">Weekly operating system</p><h2>Study, build, evaluate, apply.</h2><p>Two hours of study, six of building, two of writing/evaluation and two of applications or networking. Ship something small every two weeks.</p></div>
+    <a class="btn btn-ai" href="{% url 'ai_academy:progress' %}">Open readiness <span aria-hidden="true">↗</span></a>
+  </section>
+</div>
+{% endblock %}

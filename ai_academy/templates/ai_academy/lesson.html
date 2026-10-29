@@ -1,0 +1,92 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}{{ lesson.title }} · {{ module.title }}{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <div class="ai-breadcrumb">
+    <a href="{% url 'ai_academy:path' %}">← 12-month path</a>
+    <span>/</span>
+    <a href="{{ module.get_absolute_url }}">{{ module.title }}</a>
+    <span>/</span>
+    <span>Lesson {{ lesson_number }}</span>
+  </div>
+
+  <div class="ai-lesson-layout">
+    <aside class="ai-lesson-nav">
+      <div class="ai-lesson-nav-head">
+        <span class="ai-module-glyph">{{ module.glyph }}</span>
+        <div><strong>{{ module.title }}</strong><span>{{ lessons|length }} lessons</span></div>
+      </div>
+      <ol>
+        {% for item in lessons %}
+          <li class="{% if item.id in completed_ids %}is-done{% endif %} {% if item.pk == lesson.pk %}is-current{% endif %}">
+            <a href="{{ item.get_absolute_url }}">
+              <span class="ai-lesson-check">{% if item.id in completed_ids %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+              <span>{{ item.title }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ol>
+      <a class="ai-lesson-back" href="{{ module.get_absolute_url }}">← Back to module</a>
+    </aside>
+
+    <article class="ai-lesson-article">
+      <header class="ai-lesson-header">
+        <p class="eyebrow eyebrow-ai-dark">Lesson {{ lesson_number }} of {{ lessons|length }} · {{ lesson.minutes }} min</p>
+        <h1>{{ lesson.title }}</h1>
+        <p class="ai-lesson-summary">{{ lesson.summary }}</p>
+      </header>
+
+      <div class="ai-lesson-body">
+        {{ lesson.body_html|safe }}
+      </div>
+
+      {% if lesson.takeaway_list or lesson.practice %}
+        <section class="ai-lesson-practice" aria-labelledby="practice-title">
+          <div class="ai-takeaways">
+            <p class="eyebrow eyebrow-ai-dark">Keep this</p>
+            <h2 id="practice-title">Key takeaways</h2>
+            <ul class="ai-check-list">
+              {% for item in lesson.takeaway_list %}<li>{{ item }}</li>{% endfor %}
+            </ul>
+          </div>
+          {% if lesson.practice %}
+            <div class="ai-do-now">
+              <p class="eyebrow eyebrow-ai-dark">Do this now</p>
+              <h3>Turn the idea into practice</h3>
+              <p>{{ lesson.practice|linebreaks }}</p>
+            </div>
+          {% endif %}
+        </section>
+      {% endif %}
+
+      <div class="ai-lesson-complete">
+        {% if completed %}
+          <div class="ai-complete-state"><span aria-hidden="true">✓</span><div><strong>Lesson complete</strong><p>You can revisit it any time.</p></div></div>
+          {% if following_lesson %}
+            <a class="btn btn-ai" href="{{ following_lesson.get_absolute_url }}">Next: {{ following_lesson.title }} <span aria-hidden="true">→</span></a>
+          {% else %}
+            <a class="btn btn-ai" href="{{ module.get_absolute_url }}">Finish module <span aria-hidden="true">→</span></a>
+          {% endif %}
+        {% else %}
+          <form method="post" action="{% url 'ai_academy:complete_lesson' module.slug lesson.slug %}">
+            {% csrf_token %}
+            <button class="btn btn-ai" type="submit" name="next" value="1">Complete lesson and continue <span aria-hidden="true">→</span></button>
+          </form>
+          <p>Mark it complete after you can explain the main idea without the page.</p>
+        {% endif %}
+      </div>
+
+      <nav class="ai-lesson-pager" aria-label="Lesson navigation">
+        {% if previous_lesson %}
+          <a href="{{ previous_lesson.get_absolute_url }}"><span aria-hidden="true">←</span><small>Previous</small><strong>{{ previous_lesson.title }}</strong></a>
+        {% else %}<span></span>{% endif %}
+        {% if following_lesson %}
+          <a class="is-next" href="{{ following_lesson.get_absolute_url }}"><small>Next</small><strong>{{ following_lesson.title }}</strong><span aria-hidden="true">→</span></a>
+        {% endif %}
+      </nav>
+    </article>
+  </div>
+</div>
+{% endblock %}

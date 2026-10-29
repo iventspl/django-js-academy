@@ -1,0 +1,257 @@
+{
+  "topic": {
+    "slug": "htmx-server-driven-ui",
+    "name": "HTMX & Server-Driven UI",
+    "tagline": "Hypermedia, partial swaps, and progressive enhancement without a SPA.",
+    "description": "HTMX lets the server return HTML fragments that update the page directly. Learn the request/response contract, hx-target and swap modes, CSRF, validation errors, out-of-band updates, history, caching, and the cases where a dedicated client framework is still the better tool.",
+    "glyph": "hx",
+    "accent": "#7DD3FC"
+  },
+  "questions": [
+    {
+      "key": "htmx-b1",
+      "difficulty": "beginner",
+      "prompt": "What does an HTMX endpoint usually return to the browser?",
+      "choices": [
+        "A JSON payload that a client-side renderer turns into HTML",
+        "An HTML fragment that HTMX swaps into the page",
+        "A compiled JavaScript bundle",
+        "A WebSocket frame"
+      ],
+      "answer": 1,
+      "explanation": "HTMX is hypermedia-oriented: the server returns HTML, often just a fragment, and HTMX inserts it at the target. JSON is still possible, but it is not the default contract."
+    },
+    {
+      "key": "htmx-b2",
+      "difficulty": "beginner",
+      "prompt": "Which attribute decides where the response is inserted?",
+      "choices": [
+        "hx-get",
+        "hx-target",
+        "hx-swap",
+        "hx-trigger"
+      ],
+      "answer": 1,
+      "explanation": "hx-target selects the element to update. hx-swap controls how it is replaced: innerHTML, outerHTML, beforeend, and so on."
+    },
+    {
+      "key": "htmx-b3",
+      "difficulty": "beginner",
+      "prompt": "What happens when a button with hx-post=\"/items/\" is clicked?",
+      "choices": [
+        "The browser performs a normal form submission and reloads the page.",
+        "HTMX sends a background POST request and swaps the response into the target.",
+        "HTMX opens a WebSocket connection to /items/.",
+        "The button toggles a CSS class without a request."
+      ],
+      "answer": 1,
+      "explanation": "hx-post issues an AJAX POST when the element is triggered. The response is inserted according to hx-target and hx-swap; the page does not reload unless the server sends HX-Redirect or the code forces it."
+    },
+    {
+      "key": "htmx-b4",
+      "difficulty": "beginner",
+      "prompt": "What does progressive enhancement mean in an HTMX app?",
+      "choices": [
+        "The app requires JavaScript before any content can be read.",
+        "Links and forms work as normal HTTP requests, and HTMX upgrades them when JavaScript is available.",
+        "Every response must include a fallback JSON API.",
+        "The server renders only the first request and the client takes over afterwards."
+      ],
+      "answer": 1,
+      "explanation": "The HTML should remain usable without JavaScript. HTMX intercepts normal links and forms and turns them into partial updates, but the same URLs still need to work as full-page requests."
+    },
+    {
+      "key": "htmx-b5",
+      "difficulty": "beginner",
+      "prompt": "Which response header tells HTMX to perform a full browser redirect?",
+      "choices": [
+        "HX-Push-Url",
+        "HX-Redirect",
+        "HX-Refresh",
+        "HX-Location"
+      ],
+      "answer": 1,
+      "explanation": "HX-Redirect sets window.location for a full navigation. HX-Location performs a client-side-style redirect without a full page reload, and HX-Push-Url only changes the address bar."
+    },
+    {
+      "key": "htmx-i1",
+      "difficulty": "intermediate",
+      "prompt": "What does hx-target=\"closest .card\" select?",
+      "choices": [
+        "The first .card in the document",
+        "The nearest ancestor of the triggering element that matches .card",
+        "The element with id card",
+        "The next sibling with class .card"
+      ],
+      "answer": 1,
+      "explanation": "closest walks up from the triggered element. It is useful when a button inside a card should update that card rather than a global container."
+    },
+    {
+      "key": "htmx-i2",
+      "difficulty": "intermediate",
+      "prompt": "How does hx-swap=\"outerHTML\" differ from the default innerHTML?",
+      "choices": [
+        "It replaces the target element itself with the response.",
+        "It inserts the response after the target.",
+        "It replaces only the target's text content.",
+        "It disables swapping for that request."
+      ],
+      "answer": 0,
+      "explanation": "innerHTML replaces the target's children. outerHTML replaces the target element, so the response must include the wrapper element again if you want to keep it."
+    },
+    {
+      "key": "htmx-i3",
+      "difficulty": "intermediate",
+      "prompt": "What is the safest way to send Django's CSRF token with an HTMX POST?",
+      "choices": [
+        "Mark the view with @csrf_exempt.",
+        "Include {% csrf_token %} in the form, or send the token in the X-CSRFToken header.",
+        "Disable CsrfViewMiddleware for AJAX requests.",
+        "Use GET instead of POST."
+      ],
+      "answer": 1,
+      "explanation": "Django accepts the token in the csrfmiddlewaretoken form field or the X-CSRFToken header. Keep CSRF protection on; csrf_exempt is not an AJAX solution."
+    },
+    {
+      "key": "htmx-i4",
+      "difficulty": "intermediate",
+      "prompt": "By default, what does HTMX do with a 422 response?",
+      "choices": [
+        "It swaps the response into the target like a 200.",
+        "It does not swap; it fires an error event, unless you configure beforeSwap to allow it.",
+        "It retries the request three times.",
+        "It reloads the whole page."
+      ],
+      "answer": 1,
+      "explanation": "HTMX swaps 2xx responses by default. For a validation response with status 422, either return 200 with the re-rendered form or handle htmx:beforeSwap and set shouldSwap = true."
+    },
+    {
+      "key": "htmx-i5",
+      "difficulty": "intermediate",
+      "prompt": "What does hx-trigger=\"keyup changed delay:300ms\" do?",
+      "choices": [
+        "Fires on every keypress and sends every request immediately.",
+        "Fires after keyup only when the value changed, waiting 300 ms to debounce.",
+        "Fires once when the page loads.",
+        "Fires on Enter only."
+      ],
+      "answer": 1,
+      "explanation": "changed suppresses requests when the value did not change, and delay:300ms debounces rapid typing. This is the usual pattern for live search."
+    },
+    {
+      "key": "htmx-a1",
+      "difficulty": "advanced",
+      "prompt": "What is the purpose of hx-swap-oob in a response?",
+      "choices": [
+        "To update a different element on the page from the same response.",
+        "To bypass CSRF checks.",
+        "To stream a response over WebSockets.",
+        "To keep the response out of the browser history."
+      ],
+      "answer": 0,
+      "explanation": "Out-of-band swaps let one response update several regions: for example, append a row to a list and replace a counter or toast. The OOB element is matched by id or a selector in the attribute."
+    },
+    {
+      "key": "htmx-a2",
+      "difficulty": "advanced",
+      "prompt": "What does the HX-Trigger response header do?",
+      "choices": [
+        "It triggers a custom client-side event that other scripts can listen for.",
+        "It tells Django to run a management command.",
+        "It forces a full page reload.",
+        "It changes the HTTP method of the next request."
+      ],
+      "answer": 0,
+      "explanation": "HX-Trigger dispatches an event on the triggering element or body, optionally with JSON detail. It is useful for closing a dialog, refreshing a counter, or showing a toast without coupling the server to DOM details."
+    },
+    {
+      "key": "htmx-a3",
+      "difficulty": "advanced",
+      "prompt": "Why must a URL used with hx-push-url=\"true\" also work as a normal page?",
+      "choices": [
+        "Because HTMX always reloads the page afterwards.",
+        "Because users can refresh, bookmark, or open the URL directly, so the server must render a complete page.",
+        "Because hx-push-url disables fragment responses.",
+        "Because the browser blocks history changes on partial responses."
+      ],
+      "answer": 1,
+      "explanation": "Pushing a URL only changes the address bar. On refresh or direct navigation there is no HTMX request context, so the same view must return a full page. This is progressive enhancement applied to history."
+    },
+    {
+      "key": "htmx-a4",
+      "difficulty": "advanced",
+      "prompt": "What problem does hx-sync=\"closest form:abort\" solve?",
+      "choices": [
+        "It prevents stale responses from an earlier keystroke overwriting a newer result by coordinating requests.",
+        "It encrypts form data in transit.",
+        "It resets the form after every request.",
+        "It disables the form while the page loads."
+      ],
+      "answer": 0,
+      "explanation": "When several requests can be in flight, hx-sync controls which one wins. abort cancels the previous request for the same form; drop ignores new requests while one is active. Without coordination, a slow response can overwrite a newer one."
+    },
+    {
+      "key": "htmx-a5",
+      "difficulty": "advanced",
+      "prompt": "When is HTMX a poor fit?",
+      "choices": [
+        "A CRUD form that benefits from server-rendered validation errors",
+        "A page with complex local state, offline editing, or a canvas/rich-text editor",
+        "A list with filters and pagination",
+        "A dashboard that updates one widget at a time"
+      ],
+      "answer": 1,
+      "explanation": "HTMX shines when the server owns state and HTML is the contract. Highly interactive client-side tools, offline-first collaboration, and rich editors usually need a dedicated client framework or a hybrid island."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "htmx-f1",
+      "difficulty": "beginner",
+      "front": "How does HTMX differ from a JSON SPA?",
+      "back": "The server returns HTML fragments, not JSON that the client must render. State and navigation stay closer to the server; HTMX swaps fragments into the DOM. A SPA is better when complex client-side state must live in the browser.",
+      "front_code": "<button hx-get=\"/items/\" hx-target=\"#items\">Refresh</button>"
+    },
+    {
+      "key": "htmx-f2",
+      "difficulty": "beginner",
+      "front": "What do hx-target and hx-swap control?",
+      "back": "hx-target chooses the element to update. hx-swap chooses how: innerHTML (default), outerHTML, beforeend, afterend, delete, and so on. Use CSS selectors plus closest/find/next for local targets.",
+      "front_code": "<div id=\"items\"></div>\n<button hx-get=\"/items/\" hx-target=\"#items\" hx-swap=\"innerHTML\">Reload</button>"
+    },
+    {
+      "key": "htmx-f3",
+      "difficulty": "intermediate",
+      "front": "How do you send Django's CSRF token with HTMX?",
+      "back": "Either include {% csrf_token %} inside the form that hx-post submits, or send the token in the X-CSRFToken header via hx-headers. Do not disable CSRF middleware or exempt the view.",
+      "front_code": "<body hx-headers='{\"X-CSRFToken\": \"{{ csrf_token }}\"}'>"
+    },
+    {
+      "key": "htmx-f4",
+      "difficulty": "intermediate",
+      "front": "How should an HTMX form return validation errors?",
+      "back": "Re-render the form fragment with bound errors so the user keeps their input. Return 200, or return 422 and configure htmx:beforeSwap to allow the swap. Do not return a JSON error page for an HTML target.",
+      "back_code": "document.body.addEventListener('htmx:beforeSwap', (event) => {\n  if (event.detail.xhr.status === 422) {\n    event.detail.shouldSwap = true;\n    event.detail.isError = false;\n  }\n});"
+    },
+    {
+      "key": "htmx-f5",
+      "difficulty": "advanced",
+      "front": "What is an out-of-band swap?",
+      "back": "A response can update more than its main target. An element with hx-swap-oob=\"true\" (or a selector such as beforeend:#toasts) is matched elsewhere in the page. Use it for counters, toasts, and secondary panels; keep ids unique.",
+      "front_code": "<div id=\"toast\" hx-swap-oob=\"beforeend:#toasts\">Saved</div>"
+    },
+    {
+      "key": "htmx-f6",
+      "difficulty": "advanced",
+      "front": "What are HX-Trigger and HX-Redirect used for?",
+      "back": "HX-Trigger fires a client-side custom event, optionally with JSON detail, so other scripts can react. HX-Redirect performs a full browser redirect. HX-Location changes location without a full reload; HX-Push-Url only updates history."
+    },
+    {
+      "key": "htmx-f7",
+      "difficulty": "advanced",
+      "front": "How do you prevent stale HTMX responses?",
+      "back": "Use hx-sync to coordinate requests: closest form:abort cancels the previous request, while drop ignores new ones. Debounce inputs with changed delay:300ms. Test slow responses, not just fast local ones.",
+      "front_code": "<input hx-get=\"/search/\" hx-trigger=\"keyup changed delay:300ms\"\n       hx-target=\"#results\" hx-sync=\"this:abort\">"
+    }
+  ]
+}

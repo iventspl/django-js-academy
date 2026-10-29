@@ -1,0 +1,139 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}{{ module.title }} · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <div class="ai-breadcrumb">
+    <a href="{% url 'ai_academy:path' %}">← 12-month path</a>
+    <span>/</span>
+    <span>Module {{ module.glyph }}</span>
+  </div>
+
+  <header class="ai-module-header" style="--accent: {{ module.accent }};">
+    <div class="ai-module-header-main">
+      <span class="ai-module-glyph ai-module-glyph-large">{{ module.glyph }}</span>
+      <div>
+        <p class="eyebrow eyebrow-ai-dark">{{ module.get_stage_display }} · {{ module.duration_weeks }} weeks · {{ module.get_difficulty_display }}</p>
+        <h1>{{ module.title }}</h1>
+        <p>{{ module.subtitle }}</p>
+      </div>
+    </div>
+    <div class="ai-module-header-stats">
+      <div><strong>{{ progress.completed_lessons }}/{{ progress.lesson_total }}</strong><span>lessons</span></div>
+      <div><strong>{{ progress.best_score }}%</strong><span>best quiz</span></div>
+      <div><strong>{{ cards.reviewed }}/{{ cards.total }}</strong><span>cards met</span></div>
+    </div>
+  </header>
+
+  <div class="ai-module-layout">
+    <div class="ai-module-main">
+      <section class="ai-panel" aria-labelledby="about-title">
+        <p class="eyebrow eyebrow-ai-dark">Why this module</p>
+        <h2 id="about-title">What you will be able to do</h2>
+        <p>{{ module.description }}</p>
+        <div class="ai-outcome-grid">
+          <div>
+            <h3>Outcomes</h3>
+            <ul class="ai-check-list">
+              {% for outcome in module.outcome_list %}<li>{{ outcome }}</li>{% endfor %}
+            </ul>
+          </div>
+          <div>
+            <h3>Job-relevant skills</h3>
+            <ul class="ai-skill-list">
+              {% for skill in module.skill_list %}<li>{{ skill }}</li>{% endfor %}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="ai-panel" aria-labelledby="lessons-title">
+        <div class="ai-panel-head">
+          <div>
+            <p class="eyebrow eyebrow-ai-dark">The lessons</p>
+            <h2 id="lessons-title">{{ progress.lesson_total }} steps, in order</h2>
+          </div>
+          <span class="ai-panel-count">{{ progress.lesson_percent }}% complete</span>
+        </div>
+        <div class="ai-lesson-list">
+          {% for lesson in progress.lessons %}
+            <a class="ai-lesson-row {% if lesson.id in progress.completed_ids %}is-done{% endif %}" href="{{ lesson.get_absolute_url }}">
+              <span class="ai-lesson-number">{% if lesson.id in progress.completed_ids %}✓{% else %}{{ forloop.counter|stringformat:"02d" }}{% endif %}</span>
+              <span class="ai-lesson-copy">
+                <strong>{{ lesson.title }}</strong>
+                <span>{{ lesson.summary }}</span>
+              </span>
+              <span class="ai-lesson-minutes">{{ lesson.minutes }} min</span>
+              <span class="ai-lesson-arrow" aria-hidden="true">→</span>
+            </a>
+          {% endfor %}
+        </div>
+        {% if progress.next_lesson %}
+          <a class="btn btn-ai ai-panel-cta" href="{{ progress.next_lesson.get_absolute_url }}">{% if progress.completed_lessons %}Continue lesson{% else %}Start the first lesson{% endif %} <span aria-hidden="true">→</span></a>
+        {% endif %}
+      </section>
+
+      {% for row in projects %}
+        {% if row.project.module_id == module.id %}
+          <section class="ai-panel ai-project-panel" aria-labelledby="project-title">
+            <div class="ai-panel-head">
+              <div>
+                <p class="eyebrow eyebrow-ai-dark">Build it for real</p>
+                <h2 id="project-title">{{ row.project.title }}</h2>
+              </div>
+              <span class="tag tag-ai">{{ row.project.duration_hours }} hours</span>
+            </div>
+            <p>{{ row.project.tagline }}</p>
+            <div class="ai-project-panel-foot">
+              <span>{% if row.completed %}Shipped ✓{% else %}Not shipped yet{% endif %}</span>
+              <a class="btn btn-ai" href="{{ row.project.get_absolute_url }}">Open project brief <span aria-hidden="true">→</span></a>
+            </div>
+          </section>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <aside class="ai-module-rail">
+      <div class="ai-rail-card">
+        <p class="eyebrow eyebrow-ai-dark">Checkpoint</p>
+        <h2>Quiz this module</h2>
+        <p>Six questions across the module. Explanations on every answer.</p>
+        {% if progress.attempt_count %}
+          <p class="ai-rail-meta">Best score {{ progress.best_score }}% · {{ progress.attempt_count }} attempt{{ progress.attempt_count|pluralize }}</p>
+        {% endif %}
+        <form method="post" action="{% url 'ai_academy:quiz_start' module.slug %}">
+          {% csrf_token %}
+          <button class="btn btn-ai btn-ai-wide" type="submit">{% if progress.attempt_count %}Run it again{% else %}Start quiz{% endif %} <span aria-hidden="true">?</span></button>
+        </form>
+      </div>
+
+      <div class="ai-rail-card">
+        <p class="eyebrow eyebrow-ai-dark">Recall</p>
+        <h2>{{ cards.total }} concept cards</h2>
+        <p>{{ cards.due }} due now. Cards return sooner when you rate them “Again”.</p>
+        <div class="progress-track progress-track-dark"><span style="--bar: {{ cards.percent }}%;"></span></div>
+        <p class="ai-rail-meta">{{ cards.reviewed }} of {{ cards.total }} met</p>
+        <a class="btn btn-ai-ghost btn-ai-wide" href="{% url 'ai_academy:flashcards' module.slug %}">Study cards <span aria-hidden="true">▣</span></a>
+      </div>
+
+      {% if attempts %}
+        <div class="ai-rail-card">
+          <p class="eyebrow eyebrow-ai-dark">Recent attempts</p>
+          {% for attempt in attempts %}
+            <a class="ai-attempt-row" href="{% url 'ai_academy:quiz_results' attempt.pk %}">
+              <span>{{ attempt.completed_at|date:"j M" }}</span>
+              <strong>{{ attempt.score_percent }}%</strong>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="ai-rail-tip">
+        <span aria-hidden="true">i</span>
+        <p>Do the project before you feel ready. The brief is designed to expose exactly what you still need to learn.</p>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,345 @@
+{
+  "projects": [
+    {
+      "slug": "notes-dataset-pipeline",
+      "module": "python-for-ai",
+      "title": "Notes-to-Dataset Pipeline",
+      "tagline": "Turn messy notes and JSON exports into a clean, reproducible dataset for an AI experiment.",
+      "scenario": "You have a folder of notes, JSON exports and CSV fragments. Before any model can learn from them, you need a repeatable pipeline: load, normalise, deduplicate, clean, split and summarise. A teammate must be able to run one command and get the same dataset.",
+      "build": "Build a Python package and CLI that reads raw text/JSON records, normalises text and labels, removes duplicates, writes a cleaned CSV, performs a stratified train/validation split, and emits a JSON summary with row counts, label distribution and missingness. Add unit tests for the transformations and a small README.",
+      "difficulty": "beginner",
+      "duration_hours": 8,
+      "skills": [
+        "Python data structures",
+        "JSON and CSV",
+        "pandas cleaning",
+        "Reproducible splits",
+        "pytest",
+        "CLI design"
+      ],
+      "deliverables": [
+        "Python package with a documented CLI command",
+        "Cleaned CSV plus train/validation split files",
+        "JSON summary of row counts, labels and missingness",
+        "Unit tests for cleaning, deduplication and split determinism",
+        "README with setup and one-command reproduction"
+      ],
+      "milestones": [
+        "Define the record schema and load raw JSON/text files.",
+        "Implement cleaning, label normalisation and deduplication.",
+        "Add a deterministic stratified split and summary output.",
+        "Write tests, run the pipeline twice and compare artifacts."
+      ],
+      "rubric": [
+        "The same command produces the same row counts and split.",
+        "Cleaning is covered by tests, including malformed or empty records.",
+        "The summary exposes label balance and missingness.",
+        "The README lets a new person reproduce the dataset."
+      ],
+      "stretch": [
+        "Add a second input format and a schema validation step.",
+        "Add a data-quality report with duplicate and outlier counts.",
+        "Package the pipeline as a small CLI with a --dry-run flag."
+      ],
+      "portfolio_note": "This is the least glamorous project and one of the most useful. It proves you can make data work reproducible before touching a model."
+    },
+    {
+      "slug": "study-buddy-cli",
+      "module": "ai-foundations",
+      "title": "Study Buddy CLI",
+      "tagline": "A terminal assistant that turns your notes into quizzes — with a budget and a fallback.",
+      "scenario": "You are learning a new topic and want active recall, not another passive reading session. Build a command-line tool that reads a notes file, generates a short quiz, checks your answers, and saves a session log. It must work without a paid API by falling back to a deterministic local generator when no key is configured.",
+      "build": "A Python CLI with three commands: ingest (clean and chunk a markdown notes file), quiz (generate 5 questions with a local mock or an LLM provider), and review (score answers and write a JSON session log). Include a token/cost estimate and a hard cap per session. The code should separate the provider client, quiz logic, and CLI so each can be tested.",
+      "difficulty": "beginner",
+      "duration_hours": 10,
+      "skills": [
+        "Python CLI",
+        "File I/O and JSON",
+        "Environment variables and secrets",
+        "Prompt design",
+        "Offline fallback and tests"
+      ],
+      "deliverables": [
+        "Working CLI with ingest, quiz and review commands",
+        "Provider abstraction with an offline mock implementation",
+        "JSON session log containing score, topics and timestamp",
+        "README with setup, usage, cost cap and limitations",
+        "At least three tests for parsing, scoring and the no-key fallback"
+      ],
+      "milestones": [
+        "Day 1: parse notes, define the JSON session schema, write the offline question generator.",
+        "Day 2: add an optional LLM provider with a timeout and a cost/token estimate.",
+        "Day 3: build the interactive review loop, persist sessions and add tests.",
+        "Day 4: write the README, record a short demo and list three failure modes."
+      ],
+      "rubric": [
+        "The tool runs from a clean environment with the documented commands.",
+        "Secrets are not committed and the no-key mode works.",
+        "The test suite covers the scoring logic and malformed input.",
+        "The README explains what the tool does, how it fails and what you would improve."
+      ],
+      "stretch": [
+        "Add spaced repetition scheduling for missed questions.",
+        "Support multiple notes files and a topic filter.",
+        "Add a streaming output mode with a cancel key."
+      ],
+      "portfolio_note": "This is your first proof that you can build a small AI product around a model rather than a notebook. Keep the README honest about the mock path."
+    },
+    {
+      "slug": "churn-audit",
+      "module": "data-math-evaluation",
+      "title": "Churn Dataset Audit",
+      "tagline": "Before modelling, prove that the data and the metric can support a real decision.",
+      "scenario": "A subscription business wants to reduce churn. You receive a customer-month table with usage, plan, support tickets and a churned label. Your job is not to produce the fanciest model; it is to audit the data, define the prediction moment, and recommend a metric and baseline.",
+      "build": "A reproducible analysis notebook or script plus a one-page decision memo. Inspect schema, missingness, duplicates, label balance and time coverage. Identify at least two leakage risks. Choose a temporal split, build a majority-class baseline and a simple logistic regression, and report precision/recall at a threshold tied to a retention campaign.",
+      "difficulty": "beginner",
+      "duration_hours": 8,
+      "skills": [
+        "Exploratory data analysis",
+        "Data leakage detection",
+        "Temporal validation",
+        "Classification metrics",
+        "Written decision memo"
+      ],
+      "deliverables": [
+        "Reproducible audit script or notebook with fixed seeds",
+        "One-page memo covering schema, leakage, split, metric and baseline",
+        "Confusion matrix and precision/recall at a chosen threshold",
+        "List of data questions to ask the business"
+      ],
+      "milestones": [
+        "Profile the data and write the prediction moment in one sentence.",
+        "List leakage risks and remove or justify each suspicious field.",
+        "Build the temporal split and compare baseline with logistic regression.",
+        "Write the memo and present the recommendation in a 3-minute walkthrough."
+      ],
+      "rubric": [
+        "The prediction moment and label definition are explicit.",
+        "The split respects time and avoids customer leakage.",
+        "The metric is justified by the cost of false positives and false negatives.",
+        "The memo states what the data cannot answer."
+      ],
+      "stretch": [
+        "Add a slice analysis by plan and tenure.",
+        "Compare PR-AUC with ROC-AUC and explain the difference.",
+        "Estimate the campaign cost and break-even threshold."
+      ],
+      "portfolio_note": "Data audits are underrated portfolio pieces. This project shows judgment before modelling, which is exactly what junior AI roles need."
+    },
+    {
+      "slug": "default-risk-predictor",
+      "module": "classical-ml",
+      "title": "Default-Risk Predictor",
+      "tagline": "An end-to-end tabular ML service with a pipeline, threshold and model card.",
+      "scenario": "A lending team needs a risk score for small business applications. They care about missed defaults, false alarms that annoy good customers, and the ability to explain the main drivers. Build a reproducible model and package it behind a small prediction interface.",
+      "build": "Train and evaluate a binary classifier using a scikit-learn pipeline with imputation, encoding and scaling. Compare a regularized logistic regression with a gradient-boosting model using repeated cross-validation. Choose an operating threshold from a cost matrix, then expose the model through a CLI or FastAPI endpoint. Write a model card with intended use, features, metrics, slices and limitations.",
+      "difficulty": "intermediate",
+      "duration_hours": 14,
+      "skills": [
+        "Scikit-learn pipelines",
+        "Cross-validation",
+        "Threshold selection",
+        "Model comparison",
+        "Model cards",
+        "FastAPI or CLI serving"
+      ],
+      "deliverables": [
+        "Training script with pinned requirements and fixed seeds",
+        "Pipeline plus saved model artifact and versioned metadata",
+        "Evaluation report with repeated CV, test metrics and slice analysis",
+        "Prediction CLI or FastAPI endpoint with input validation",
+        "Model card with intended use and explicit non-goals"
+      ],
+      "milestones": [
+        "Build the preprocessing pipeline and reproduce a baseline.",
+        "Compare two model families with repeated stratified CV.",
+        "Select a threshold from the cost matrix and analyze slices.",
+        "Serve the model, add input validation and write the model card."
+      ],
+      "rubric": [
+        "All preprocessing is inside the pipeline and fitted per fold.",
+        "Model comparison reports variance, not only a single score.",
+        "The threshold is justified by costs and the downstream process.",
+        "The artifact can be loaded and scored from a clean process."
+      ],
+      "stretch": [
+        "Add calibration and a reliability curve.",
+        "Add SHAP or permutation explanations for the top drivers.",
+        "Add a drift report comparing train and holdout distributions."
+      ],
+      "portfolio_note": "This is the classic ML engineer project. The model card and threshold rationale are what make it credible."
+    },
+    {
+      "slug": "support-ticket-classifier",
+      "module": "deep-learning-nlp",
+      "title": "Support Ticket Classifier",
+      "tagline": "Compare a classical baseline with a fine-tuned transformer and explain the trade-off.",
+      "scenario": "A support team receives thousands of tickets per week and wants automatic routing to billing, bug, account or other. They need high precision for the urgent bug queue and a human fallback for uncertain cases. You have a labelled sample and a limited compute budget.",
+      "build": "Build a TF-IDF + linear baseline, then fine-tune a small pretrained transformer. Evaluate per-class precision/recall, confusion patterns and calibration. Add an uncertainty threshold that routes low-confidence tickets to a human. Package the winning approach behind a small API or CLI with a model card and error analysis.",
+      "difficulty": "intermediate",
+      "duration_hours": 16,
+      "skills": [
+        "Text preprocessing",
+        "TF-IDF baselines",
+        "PyTorch training loops",
+        "Transformer fine-tuning",
+        "Error analysis",
+        "Selective prediction"
+      ],
+      "deliverables": [
+        "Reproducible baseline and fine-tuning scripts",
+        "Per-class evaluation and confusion matrix",
+        "Uncertainty threshold with coverage/accuracy trade-off",
+        "Inference API or CLI with a human-review path",
+        "Error analysis of at least 20 misclassified examples"
+      ],
+      "milestones": [
+        "Clean and split the dataset; establish the label taxonomy.",
+        "Train the TF-IDF baseline and record its confusion patterns.",
+        "Fine-tune a small transformer and compare with the baseline.",
+        "Add uncertainty routing, error analysis and a model card."
+      ],
+      "rubric": [
+        "The split is stratified and the test set is untouched during tuning.",
+        "The baseline is evaluated on the same split as the transformer.",
+        "Error analysis identifies concrete label or data problems.",
+        "The human-review path is usable and documented."
+      ],
+      "stretch": [
+        "Add multi-label handling for tickets with two issues.",
+        "Compare a prompted LLM with the fine-tuned model on a small eval set.",
+        "Add active learning: choose the most uncertain tickets for labelling."
+      ],
+      "portfolio_note": "The interesting story is not “I fine-tuned BERT”; it is why the baseline was or was not enough and how uncertain cases reach a human."
+    },
+    {
+      "slug": "docs-answer-engine",
+      "module": "llm-engineering",
+      "title": "Docs Answer Engine",
+      "tagline": "A RAG assistant that cites evidence, abstains when unsure and has an evaluation set.",
+      "scenario": "Your team's knowledge is scattered across markdown docs, PDFs and runbooks. Build an answer engine that retrieves the right passages, answers with numbered citations, and refuses to answer when the evidence is missing. The system must be useful to a new engineer during onboarding.",
+      "build": "Ingest a small document set, clean and chunk it with structure awareness, create embeddings and a searchable index, and build a retrieval + generation pipeline. Support keyword and semantic retrieval, add a reranker if it improves recall, and require citations. Create a 25-question golden set including unanswerable questions. Report retrieval recall@k, citation validity and answer correctness.",
+      "difficulty": "intermediate",
+      "duration_hours": 18,
+      "skills": [
+        "Document ingestion and chunking",
+        "Embeddings and vector search",
+        "Hybrid retrieval",
+        "Prompting with evidence",
+        "Citation validation",
+        "RAG evaluation"
+      ],
+      "deliverables": [
+        "Ingestion script and versioned index",
+        "Retrieval + answer pipeline with citations",
+        "25-question golden set with expected sources",
+        "Evaluation report for retrieval, faithfulness and abstention",
+        "README with architecture diagram and known failure modes"
+      ],
+      "milestones": [
+        "Ingest and chunk the corpus; inspect chunk quality manually.",
+        "Build a retrieval baseline and measure recall@k.",
+        "Add grounded generation with citations and abstention.",
+        "Create the golden set, evaluate both halves and write the report."
+      ],
+      "rubric": [
+        "Every answer cites a retrieved source by number.",
+        "The system abstains on questions whose evidence is absent.",
+        "Evaluation separates retrieval failure from generation failure.",
+        "The README explains chunking and index refresh decisions."
+      ],
+      "stretch": [
+        "Add hybrid BM25 + embedding retrieval and compare recall.",
+        "Add a reranker and measure the latency/quality trade-off.",
+        "Add incremental index updates when a document changes."
+      ],
+      "portfolio_note": "This is the core LLM engineering project. A clear evaluation table and honest failure analysis matter more than a polished chat UI."
+    },
+    {
+      "slug": "research-copilot",
+      "module": "agents-evaluation",
+      "title": "Research Copilot",
+      "tagline": "A tool-using assistant with approvals, traces and a trajectory evaluation suite.",
+      "scenario": "An analyst needs help researching a question across notes, a calculator and a mock web search. The assistant may read and calculate freely, but any write action (saving a note or sending a summary) requires explicit approval. You must show exactly what happened when it fails.",
+      "build": "Implement three typed tools: search_notes (read-only), calculate (safe arithmetic), and save_note (write, requires approval). Build a bounded agent loop or a workflow with a router, add step/cost limits, and log a structured trace. Create 15 tasks with expected tool-use properties and evaluate final answers plus trajectories.",
+      "difficulty": "advanced",
+      "duration_hours": 20,
+      "skills": [
+        "Function calling",
+        "Tool schemas",
+        "Agent loops",
+        "Human approval",
+        "Tracing",
+        "Trajectory evaluation"
+      ],
+      "deliverables": [
+        "Typed tool implementations with validation and timeouts",
+        "Bounded agent or workflow with an approval gate for writes",
+        "Structured trace log for every run",
+        "15-task evaluation set covering success, abstention and unsafe requests",
+        "Failure report with at least three reproduced failure modes"
+      ],
+      "milestones": [
+        "Define tool schemas and implement them behind a common interface.",
+        "Build the loop or workflow with limits and a final-answer path.",
+        "Add approval, tracing and a small evaluation harness.",
+        "Run the eval, fix the top failure and document the rest."
+      ],
+      "rubric": [
+        "The assistant cannot write without approval.",
+        "Every run is traceable end to end.",
+        "The evaluation checks tool choice and arguments, not only final text.",
+        "Limits prevent runaway loops and cost."
+      ],
+      "stretch": [
+        "Add a second model and compare trajectory quality.",
+        "Add a deterministic workflow fallback for common requests.",
+        "Run an adversarial prompt-injection suite against retrieved notes."
+      ],
+      "portfolio_note": "This project proves you understand autonomy as a risk. The approval gate and eval harness are the interview talking points."
+    },
+    {
+      "slug": "ai-product-capstone",
+      "module": "production-career",
+      "title": "AI Product Capstone",
+      "tagline": "Deploy one real AI feature, measure it, operate it and present it as a case study.",
+      "scenario": "Choose one of your earlier projects and turn it into a small product with a real user. It must run in a deployed environment, expose a typed API, stream or respond within a latency budget, log traces, and have a rollback path. The goal is evidence you can own the whole lifecycle, not another notebook.",
+      "build": "Harden the chosen feature: containerize it, add configuration and secret management, validate inputs, add timeouts/rate limits, and deploy it. Add a feedback mechanism and a dashboard or report for latency, cost, quality and safety flags. Write a case study with problem, constraints, baseline, architecture, evaluation, incidents, result and next step. Record a 3-minute demo.",
+      "difficulty": "advanced",
+      "duration_hours": 30,
+      "skills": [
+        "FastAPI and containers",
+        "Deployment and configuration",
+        "Observability and cost control",
+        "Safety and rollback",
+        "Case-study writing",
+        "Demo communication"
+      ],
+      "deliverables": [
+        "Deployed feature with a public or recorded demo",
+        "Typed API and container or reproducible deployment script",
+        "Trace/quality/cost report with at least one week of data or a simulated run",
+        "Safety and rollback checklist",
+        "Case study and 3-minute demo video"
+      ],
+      "milestones": [
+        "Choose the feature and write the one-page problem and success metric.",
+        "Harden the API, add config/secrets, timeouts and rate limits.",
+        "Deploy, add traces and a feedback path, then run an evaluation.",
+        "Write the case study, record the demo and rehearse the 5-minute interview story."
+      ],
+      "rubric": [
+        "A new user can run the demo from the README.",
+        "The service handles a provider timeout and an invalid input.",
+        "The case study reports a baseline, a metric and a failure.",
+        "The rollback and safety plan are explicit."
+      ],
+      "stretch": [
+        "Add a second user and a simple tenant boundary.",
+        "Run a small red-team exercise and add regression cases.",
+        "Compare two models or retrieval strategies with a cost/quality table."
+      ],
+      "portfolio_note": "This is the project you lead with in interviews. It demonstrates end-to-end ownership and the judgment to operate an AI system."
+    }
+  ]
+}

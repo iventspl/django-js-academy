@@ -1,0 +1,195 @@
+{
+  "module": {
+    "slug": "python-for-ai",
+    "title": "Python for AI",
+    "subtitle": "The practical Python subset you need before models, APIs and data pipelines.",
+    "description": "A focused Python module for AI work: data structures, typed functions, NumPy and pandas, API calls, errors and tests. It skips web frameworks and language trivia, and ends with a real notes-to-dataset pipeline.",
+    "stage": "foundation",
+    "difficulty": "beginner",
+    "glyph": "00",
+    "accent": "#60A5FA",
+    "duration_weeks": 3,
+    "outcomes": [
+      "Turn lists, dictionaries and JSON into clean, predictable AI data structures.",
+      "Write typed functions and small modules with tests instead of fragile notebooks.",
+      "Load, clean and summarise tabular data with pandas and vectorised NumPy operations.",
+      "Call an AI API safely with environment secrets, timeouts, retries and error handling."
+    ],
+    "skills": [
+      "Python data structures",
+      "Functions and typing",
+      "Virtual environments",
+      "NumPy and pandas",
+      "CSV and JSON pipelines",
+      "HTTP APIs and error handling",
+      "pytest"
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "python-data-toolkit",
+      "title": "The Python data toolkit for AI",
+      "summary": "Lists, dictionaries, sets, comprehensions, JSON and generators — the shapes AI data actually takes.",
+      "body_html": "<p>Most AI code is data plumbing. Before a model sees anything, a list becomes a DataFrame, a JSON response becomes a dictionary, and a document becomes a stream of chunks. Choose the right structure and the rest gets simpler.</p>\n<h2>Four containers, four jobs</h2>\n<ul>\n<li><strong>List</strong> — ordered, mutable, duplicates allowed. Use it for batches, messages and predictions.</li>\n<li><strong>Dictionary</strong> — keyed lookup. Use it for records, JSON objects and configuration.</li>\n<li><strong>Tuple</strong> — ordered and immutable. Use it for fixed groups such as (input, label).</li>\n<li><strong>Set</strong> — unique values. Use it for vocabularies, IDs and deduplication.</li>\n</ul>\n<pre><code>record = {\"text\": \"reset my password\", \"label\": \"account\"}\nlabels = {\"billing\", \"bug\", \"account\"}\nbatch = [record, {\"text\": \"charged twice\", \"label\": \"billing\"}]\n\nfor item in batch:\n    print(item[\"text\"], \"→\", item[\"label\"])</code></pre>\n<h2>Comprehensions: transform a batch</h2>\n<pre><code>texts = [item[\"text\"].lower() for item in batch]\nlengths = {item[\"label\"]: len(item[\"text\"]) for item in batch}\nunique_labels = {item[\"label\"] for item in batch}</code></pre>\n<p>Comprehensions are fine for a single readable transformation. If the logic needs branches and comments, use a normal loop instead of a dense one-liner.</p>\n<h2>JSON is a dictionary with rules</h2>\n<pre><code>import json\n\npayload = json.loads('{\"question\": \"What is RAG?\"}')\nencoded = json.dumps({\"answer\": \"Retrieval-augmented generation\"}, ensure_ascii=False)\n\nwith open(\"sessions.json\", \"w\", encoding=\"utf-8\") as handle:\n    json.dump({\"sessions\": []}, handle, ensure_ascii=False, indent=2)</code></pre>\n<p>JSON objects map to dictionaries, arrays to lists, strings to strings, and numbers to numbers. Always pass a file encoding and decide explicitly how to handle invalid JSON.</p>\n<h2>Generators for large data</h2>\n<pre><code>def read_lines(path):\n    with open(path, encoding=\"utf-8\") as handle:\n        for line in handle:\n            yield line.strip()</code></pre>\n<p>A generator produces one item at a time instead of loading everything into memory. That matters when you process a large notes file, log export or document corpus.</p>\n<div class=\"ai-callout\"><strong>AI habit:</strong> keep raw data immutable. Build new lists and dictionaries with comprehensions instead of mutating a shared record inside a loop.</div>",
+      "takeaways": [
+        "Lists, dicts, tuples and sets have different jobs; choose by behaviour, not habit.",
+        "JSON maps naturally to dictionaries and lists, but needs explicit encoding and error handling.",
+        "Generators keep large files and corpora memory-friendly."
+      ],
+      "practice": "Take a JSON list of 20 notes and produce: a list of lowercase texts, a set of unique labels, and a dictionary counting labels. Success: no nested loop longer than three lines and no mutation of the original records.",
+      "minutes": 18
+    },
+    {
+      "slug": "python-functions-structure",
+      "title": "Functions, typing and a project that survives",
+      "summary": "Small typed functions, dataclasses, virtual environments and tests — the difference between a notebook and a tool.",
+      "body_html": "<p>AI experiments rot quickly when everything lives in one notebook cell. A small project with clear functions can be tested, reused in a CLI, and deployed behind an API.</p>\n<h2>Functions with explicit contracts</h2>\n<pre><code>from dataclasses import dataclass\n\n@dataclass\nclass Note:\n    text: str\n    label: str\n\ndef clean_text(text: str) -&gt; str:\n    return \" \".join(text.strip().lower().split())\n\ndef to_note(raw: dict) -&gt; Note:\n    return Note(\n        text=clean_text(raw.get(\"text\", \"\")),\n        label=raw.get(\"label\", \"unlabelled\"),\n    )</code></pre>\n<p>A typed function documents its inputs and output. Python does not enforce the types at runtime, but tests, editors and mypy can catch mistakes before a model run.</p>\n<h2>Defaults, keyword arguments and *args</h2>\n<pre><code>def chunk_text(text: str, size: int = 500, overlap: int = 50) -&gt; list[str]:\n    if size &lt;= overlap:\n        raise ValueError(\"size must be greater than overlap\")\n    step = size - overlap\n    return [text[i:i + size] for i in range(0, len(text), step)]</code></pre>\n<p>Keyword arguments make call sites readable: <code>chunk_text(text, size=800, overlap=80)</code>. Validate impossible combinations early instead of debugging them deep in a model call.</p>\n<h2>A project shape that scales</h2>\n<pre><code>notes_ai/\n  pyproject.toml\n  requirements.txt\n  src/notes_ai/\n    __init__.py\n    data.py\n    pipeline.py\n    cli.py\n  tests/\n    test_pipeline.py</code></pre>\n<p>Use a virtual environment and pin dependencies. Keep notebooks in a separate <code>notebooks/</code> folder for exploration. The code that produces results belongs in <code>src/</code>; the code that proves it works belongs in <code>tests/</code>.</p>\n<h2>Test the contract, not the implementation</h2>\n<pre><code>def test_chunk_text_rejects_bad_overlap():\n    try:\n        chunk_text(\"abc\", size=10, overlap=10)\n    except ValueError:\n        return\n    raise AssertionError(\"expected ValueError\")</code></pre>\n<p>Good tests describe behaviour: what happens with empty input, a bad parameter, a missing key, or a provider timeout. That is how a notebook becomes a tool.</p>\n<div class=\"ai-callout\"><strong>Minimum viable structure:</strong> one virtual environment, pinned dependencies, a <code>src/</code> package, a <code>tests/</code> folder, and a README that says how to run both.</div>",
+      "takeaways": [
+        "Typed functions and dataclasses make data contracts visible.",
+        "Validate impossible arguments at the boundary, not deep inside a pipeline.",
+        "A virtual environment, pinned dependencies and tests turn a notebook into a tool."
+      ],
+      "practice": "Turn one messy notebook cell into a typed function with a docstring and two tests: one happy path and one invalid input. Success: the tests run without a model call.",
+      "minutes": 18
+    },
+    {
+      "slug": "python-numpy-pandas",
+      "title": "NumPy and pandas for AI data",
+      "summary": "Arrays, vectorisation, DataFrames, missing values and a clean train/validation split.",
+      "body_html": "<p>NumPy and pandas are the default tools for tabular and numeric data. The goal is not to memorise every method; it is to stop writing Python loops for operations that already exist and are tested.</p>\n<h2>NumPy: arrays and vectorisation</h2>\n<pre><code>import numpy as np\n\nscores = np.array([0.2, 0.8, 0.6, 0.4])\nlabels = scores &gt;= 0.5\nprint(labels)                 # [False  True  True False]\nprint(scores.mean(), scores.std())</code></pre>\n<p>Vectorised operations run in compiled code and express intent clearly. Broadcasting lets you combine arrays of compatible shapes without manual loops. If you are writing a Python loop over a million numbers, check for a vectorised version first.</p>\n<h2>DataFrames are tables with labels</h2>\n<pre><code>import pandas as pd\n\ndf = pd.read_csv(\"notes.csv\")\nprint(df.shape)\nprint(df.dtypes)\nprint(df.isna().mean().sort_values(ascending=False).head())\n\nclean = df.drop_duplicates(subset=[\"text\"]).copy()\nclean[\"text\"] = clean[\"text\"].str.strip().str.lower()\nclean[\"label\"] = clean[\"label\"].fillna(\"unlabelled\")</code></pre>\n<p>Inspect shape, types and missingness before modelling. A column that looks numeric may be stored as text because of one bad row.</p>\n<h2>Grouping and summaries</h2>\n<pre><code>summary = (\n    clean.groupby(\"label\")\n    .agg(rows=(\"text\", \"size\"), avg_length=(\"text\", lambda s: s.str.len().mean()))\n    .sort_values(\"rows\", ascending=False)\n)\nprint(summary)</code></pre>\n<p>Slice analysis starts here: overall averages hide which classes, customers or time periods are failing.</p>\n<h2>Split without leakage</h2>\n<pre><code>from sklearn.model_selection import train_test_split\n\ntrain, valid = train_test_split(\n    clean, test_size=0.2, random_state=42, stratify=clean[\"label\"]\n)\ntrain.to_csv(\"train.csv\", index=False)\nvalid.to_csv(\"valid.csv\", index=False)</code></pre>\n<p>For time-dependent data, split by time instead of randomly. For grouped data, split by customer or document. The split must match how the model will be used.</p>\n<div class=\"ai-callout\"><strong>Pipeline habit:</strong> save the raw file, the cleaned file and the split script. If you cannot reproduce the split, you cannot trust the score.</div>",
+      "takeaways": [
+        "Vectorised NumPy operations replace slow Python loops and make intent clear.",
+        "Always inspect shape, types, duplicates and missing values before modelling.",
+        "The split must match deployment: random, temporal or grouped."
+      ],
+      "practice": "Load a CSV into pandas, clean text and labels, print a label summary, and save a stratified train/validation split. Success: rerunning the script produces the same row counts.",
+      "minutes": 18
+    },
+    {
+      "slug": "python-apis-testing",
+      "title": "APIs, secrets and error handling",
+      "summary": "Call an AI provider without leaking keys, hanging forever, or crashing on a bad response.",
+      "body_html": "<p>Most AI applications are a thin Python layer around external APIs. That layer must handle slow providers, invalid JSON, rate limits and missing credentials without exposing secrets or hanging the user.</p>\n<h2>Read secrets from the environment</h2>\n<pre><code>import os\n\napi_key = os.environ.get(\"LLM_API_KEY\")\nif not api_key:\n    raise RuntimeError(\"Set LLM_API_KEY before running this command\")</code></pre>\n<p>Never commit a key. Do not put it in a notebook output, a README or a prompt. Commit a <code>.env.example</code> with placeholders, and keep the real file out of version control.</p>\n<h2>Every external call needs a timeout</h2>\n<pre><code>import requests\n\ndef ask(prompt: str) -&gt; str:\n    response = requests.post(\n        \"https://api.example.com/v1/chat\",\n        headers={\"Authorization\": f\"Bearer {api_key}\"},\n        json={\"prompt\": prompt},\n        timeout=30,\n    )\n    response.raise_for_status()\n    data = response.json()\n    return data[\"choices\"][0][\"message\"][\"content\"]</code></pre>\n<p>A timeout bounds latency and frees workers. Catch provider errors, decide whether the operation is safe to retry, and return a useful fallback or error to the caller.</p>\n<h2>Do not retry blindly</h2>\n<pre><code>for attempt in range(3):\n    try:\n        return ask(prompt)\n    except requests.Timeout:\n        if attempt == 2:\n            raise\n        time.sleep(2 ** attempt)</code></pre>\n<p>Retries are for transient failures. A 400 invalid request will not fix itself. Writes need an idempotency key so a retry does not create a duplicate.</p>\n<h2>Async is not automatically faster</h2>\n<p><code>async</code>/<code>await</code> helps when you have many independent I/O-bound calls. It does not speed up CPU-bound model preprocessing. Start synchronous, measure, and introduce concurrency only when the bottleneck is waiting on the network.</p>\n<h2>Test with a fake provider</h2>\n<pre><code>def test_ask_uses_a_successful_response(monkeypatch):\n    class FakeResponse:\n        def raise_for_status(self): pass\n        def json(self): return {\"choices\": [{\"message\": {\"content\": \"ok\"}}]}\n\n    monkeypatch.setattr(requests, \"post\", lambda *a, **k: FakeResponse())\n    assert ask(\"hello\") == \"ok\"</code></pre>\n<p>Mocking the provider keeps tests fast, free and deterministic. Keep one small live smoke test separate from the unit suite.</p>\n<div class=\"ai-callout\"><strong>Production minimum:</strong> secret from env, timeout, status check, structured error, bounded retry, and a test with a fake response.</div>",
+      "takeaways": [
+        "Secrets belong in environment variables, never in source or prompts.",
+        "Every external call needs a timeout, status check and explicit failure path.",
+        "Retry only transient, idempotent operations; mock the provider in tests."
+      ],
+      "practice": "Write a function that calls a fake LLM endpoint with a 5-second timeout, checks the status, parses JSON, and raises a clear error when the key is missing. Success: a test covers success and malformed JSON without network access.",
+      "minutes": 18
+    }
+  ],
+  "questions": [
+    {
+      "key": "pyai-b1",
+      "difficulty": "beginner",
+      "prompt": "Which Python structure maps most naturally to a JSON object?",
+      "choices": [
+        "list",
+        "dict",
+        "tuple",
+        "set"
+      ],
+      "answer": 1,
+      "explanation": "JSON objects become dictionaries: keys map to strings and values map to Python objects. JSON arrays become lists."
+    },
+    {
+      "key": "pyai-b2",
+      "difficulty": "beginner",
+      "prompt": "What is the main benefit of a virtual environment?",
+      "choices": [
+        "It makes Python execute faster.",
+        "It isolates a project's interpreter and installed packages from other projects.",
+        "It encrypts the API key.",
+        "It replaces tests."
+      ],
+      "answer": 1,
+      "explanation": "A venv keeps dependencies isolated. Pin them in requirements or a lockfile so the environment is reproducible."
+    },
+    {
+      "key": "pyai-i1",
+      "difficulty": "intermediate",
+      "prompt": "Why is a vectorised NumPy operation usually better than a Python loop over a large array?",
+      "choices": [
+        "It changes the data type automatically.",
+        "The operation runs in compiled code and expresses the transformation more efficiently.",
+        "It avoids the need for validation.",
+        "It always uses less memory."
+      ],
+      "answer": 1,
+      "explanation": "NumPy moves the loop into compiled code. It is usually faster and clearer, though memory use still matters for very large arrays."
+    },
+    {
+      "key": "pyai-i2",
+      "difficulty": "intermediate",
+      "prompt": "What is a generator useful for when processing a large notes file?",
+      "choices": [
+        "It loads the entire file into memory at once.",
+        "It yields one item at a time, keeping memory usage low.",
+        "It automatically cleans the text.",
+        "It makes the file writable."
+      ],
+      "answer": 1,
+      "explanation": "A generator produces values lazily. You can process a large corpus without holding every line or record in memory."
+    },
+    {
+      "key": "pyai-a1",
+      "difficulty": "advanced",
+      "prompt": "An API call returns a 429 rate-limit response. What is the most reasonable handling?",
+      "choices": [
+        "Retry immediately in an infinite loop.",
+        "Respect the retry guidance, use bounded exponential backoff, and surface a clear error if it persists.",
+        "Ignore the status code and parse the body.",
+        "Disable the timeout."
+      ],
+      "answer": 1,
+      "explanation": "429 is transient but must be bounded. Back off, cap attempts, and fail clearly. A tight retry loop makes the rate limit worse."
+    },
+    {
+      "key": "pyai-a2",
+      "difficulty": "advanced",
+      "prompt": "You discover that a feature was computed using the full dataset mean before the train/test split. What is the problem?",
+      "choices": [
+        "The mean is always wrong.",
+        "The test set influenced preprocessing, creating leakage and an optimistic score.",
+        "Pandas cannot compute means.",
+        "The model will train too slowly."
+      ],
+      "answer": 1,
+      "explanation": "Preprocessing statistics must be learned from the training fold only. Otherwise the validation or test set leaks into training."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "pyai-f1",
+      "difficulty": "beginner",
+      "front": "List vs dict vs set vs tuple?",
+      "back": "List: ordered and mutable. Dict: keyed lookup. Set: unique values. Tuple: fixed, immutable group. Choose by the behaviour you need."
+    },
+    {
+      "key": "pyai-f2",
+      "difficulty": "beginner",
+      "front": "Why use a virtual environment for AI projects?",
+      "back": "It isolates the interpreter and dependencies, so one project's package versions do not break another. Pin dependencies for reproducibility.",
+      "front_code": "python -m venv .venv\nsource .venv/bin/activate\npip install -r requirements.txt"
+    },
+    {
+      "key": "pyai-f3",
+      "difficulty": "intermediate",
+      "front": "When should you use a generator?",
+      "back": "When you process a large file or corpus and do not need all items in memory at once. A generator yields one item per iteration."
+    },
+    {
+      "key": "pyai-f4",
+      "difficulty": "intermediate",
+      "front": "What should every LLM API call have?",
+      "back": "A timeout, status check, secret from the environment, explicit error handling, and a bounded retry policy only for transient failures."
+    },
+    {
+      "key": "pyai-f5",
+      "difficulty": "advanced",
+      "front": "Why is preprocessing before a train/test split dangerous?",
+      "back": "It lets information from validation or test data influence training statistics, which is data leakage and produces optimistic evaluation."
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}The 12-month path · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <header class="ai-page-header">
+    <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> The curriculum</p>
+    <h1>The 12-month<br><em>applied AI path.</em></h1>
+    <p class="ai-page-lead">Start with the Python data toolkit, then build foundations, a classical model, deep learning, LLMs, RAG, agents and production. Eight modules, eight projects, and a capstone that becomes your interview story.</p>
+    <div class="ai-page-actions">
+      {% if stats.completed_lessons %}
+        <a class="btn btn-ai" href="{% url 'ai_academy:progress' %}">Open progress <span aria-hidden="true">↗</span></a>
+      {% else %}
+        <a class="btn btn-ai" href="{% url 'ai_academy:module' stages.0.rows.0.module.slug %}">Start module one <span aria-hidden="true">→</span></a>
+      {% endif %}
+      <a class="btn btn-ai-ghost" href="{% url 'ai_academy:projects' %}">Browse projects <span aria-hidden="true">◫</span></a>
+    </div>
+  </header>
+
+  <section class="ai-next-band ai-prereq-band" aria-labelledby="prereq-title">
+    <div>
+      <p class="eyebrow eyebrow-ai-dark">Before module one</p>
+      <h2 id="prereq-title">You need basic Python — not prior ML.</h2>
+      <p>If variables, loops, functions and dictionaries are still new, spend two weeks in Django Quest’s Python Core first. You do not need a GPU: a laptop, a free/local model, or a small API budget is enough for every project.</p>
+    </div>
+    <div class="ai-next-actions">
+      <a class="btn btn-ai-ghost" href="{% url 'dojo:quiz_setup' %}?topic=python-core">Check Python Core <span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+
+  <section class="ai-plan-band" aria-labelledby="plan-title">
+    <div class="ai-section-head">
+      <div>
+        <p class="eyebrow eyebrow-ai-dark">The calendar</p>
+        <h2 id="plan-title">A realistic year, not a fantasy sprint.</h2>
+      </div>
+      <p class="ai-section-aside">Based on 8–12 focused hours per week. If you have more time, ship more projects; do not skip evaluation.</p>
+    </div>
+    <ol class="ai-plan-list">
+      {% for item in plan %}
+        <li>
+          <span class="ai-plan-months">{{ item.months }}</span>
+          <div>
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.modules }}</span>
+          </div>
+          <span class="ai-plan-output">{{ item.output }}</span>
+          <span class="ai-plan-hours">{{ item.hours }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  {% for stage in stages %}
+    <section class="ai-stage-section" aria-labelledby="stage-{{ stage.key }}">
+      <div class="ai-stage-section-head">
+        <span class="ai-stage-index">{{ forloop.counter|stringformat:"02d" }}</span>
+        <div>
+          <p class="eyebrow eyebrow-ai-dark">{{ stage.label }}</p>
+          <h2 id="stage-{{ stage.key }}">{{ stage.label }}</h2>
+          <p>{{ stage.weeks }} weeks · {{ stage.lesson_total }} lessons · {{ stage.completed }} complete</p>
+        </div>
+      </div>
+      <div class="ai-module-grid">
+        {% for row in stage.rows %}
+          <article class="ai-module-card" style="--accent: {{ row.module.accent }};">
+            <div class="ai-module-card-top">
+              <span class="ai-module-glyph">{{ row.module.glyph }}</span>
+              <span class="tag tag-ai-soft">{{ row.module.get_difficulty_display }}</span>
+            </div>
+            <h3><a href="{{ row.module.get_absolute_url }}">{{ row.module.title }}</a></h3>
+            <p>{{ row.module.subtitle }}</p>
+            <div class="ai-module-meta">
+              <span>{{ row.module.duration_weeks }} weeks</span>
+              <span>{{ row.lesson_total }} lessons</span>
+              <span>{{ row.card_total }} cards</span>
+            </div>
+            <div class="ai-module-progress">
+              <div class="progress-label"><span>Lessons</span><strong>{{ row.completed_lessons }}/{{ row.lesson_total }}</strong></div>
+              <div class="progress-track progress-track-dark"><span style="--bar: {{ row.lesson_percent }}%;"></span></div>
+            </div>
+            <div class="ai-module-foot">
+              <a href="{{ row.module.get_absolute_url }}">{% if row.is_complete %}Review module{% else %}Open module{% endif %} <span aria-hidden="true">→</span></a>
+              {% if row.best_score %}<span class="ai-module-score">Quiz {{ row.best_score }}%</span>{% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endfor %}
+
+  <section class="ai-section" aria-labelledby="projects-title">
+    <div class="ai-section-head">
+      <div>
+        <p class="eyebrow eyebrow-ai-dark">Proof of work</p>
+        <h2 id="projects-title">The projects are the curriculum.</h2>
+      </div>
+      <a class="ai-text-link" href="{% url 'ai_academy:projects' %}">All projects <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="ai-project-list">
+      {% for row in projects %}
+        <a class="ai-project-row" href="{{ row.project.get_absolute_url }}">
+          <span class="ai-project-index">{{ forloop.counter|stringformat:"02d" }}</span>
+          <span class="ai-project-main">
+            <strong>{{ row.project.title }}</strong>
+            <span>{{ row.project.tagline }}</span>
+          </span>
+          <span class="tag tag-ai-soft">{{ row.project.get_difficulty_display }}</span>
+          <span class="ai-project-hours">{{ row.project.duration_hours }} h</span>
+          <span class="ai-project-state">{% if row.completed %}Shipped ✓{% else %}Open →{% endif %}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ai-cta-band">
+    <div>
+      <p class="eyebrow eyebrow-ai-light">The contract</p>
+      <h2>Finish the path with evidence, not just notes.</h2>
+      <p>Every module ends with a project, a quiz and concept cards. Your progress page blends all three into a readiness score.</p>
+    </div>
+    <a class="btn btn-ai" href="{% url 'ai_academy:career' %}">See the career plan <span aria-hidden="true">→</span></a>
+  </section>
+</div>
+{% endblock %}

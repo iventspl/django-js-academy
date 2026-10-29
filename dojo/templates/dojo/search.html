@@ -1,0 +1,217 @@
+{% extends "dojo/base.html" %}
+
+{% block title %}Search · Django Quest{% endblock %}
+{% block body_class %}page-search{% endblock %}
+
+{% block content %}
+<div class="page-wrap search-wrap">
+  <header class="search-hero">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> The index</p>
+    <h1>Search the <em>whole dojo.</em></h1>
+    <p class="page-lead">Questions, flashcards, recipes, blueprints, architecture labs, and release notes — one field, every shelf.</p>
+
+    <form class="search-big" method="get" role="search">
+      <label class="sr-only" for="dojo-search-q">Search Django Quest</label>
+      <span class="search-big-icon" aria-hidden="true">⌕</span>
+      <input id="dojo-search-q" type="search" name="q" value="{{ query }}" placeholder="Try: htmx, webhook, mypy, CVE, tenancy…" autofocus>
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+
+    <div class="search-suggestions" aria-label="Example searches">
+      <span>Try</span>
+      <a href="{% url 'dojo:search' %}?q=htmx">htmx</a>
+      <a href="{% url 'dojo:search' %}?q=webhook">webhook</a>
+      <a href="{% url 'dojo:search' %}?q=mypy">mypy</a>
+      <a href="{% url 'dojo:search' %}?q=tenant">tenant</a>
+      <a href="{% url 'dojo:search' %}?q=CVE">CVE</a>
+    </div>
+  </header>
+
+  {% if searched %}
+    <div class="search-summary" role="status">
+      <strong>{{ total_count }}</strong> result{{ total_count|pluralize }} for “{{ query }}”
+      {% if total_count %}· <a href="{% url 'dojo:search' %}">Clear</a>{% endif %}
+    </div>
+
+    {% if total_count %}
+      <div class="search-groups">
+        {% if counts.topics %}
+          <section class="search-group" aria-labelledby="search-topics-title">
+            <div class="search-group-head">
+              <h2 id="search-topics-title">Learning paths</h2>
+              <span>{{ counts.topics }}</span>
+            </div>
+            <div class="search-result-list">
+              {% for topic in topics %}
+                <a class="search-result" href="{{ topic.get_absolute_url }}">
+                  <span class="search-result-kind">Path</span>
+                  <span class="search-result-body">
+                    <strong>{{ topic.name }}</strong>
+                    <span>{{ topic.tagline }}</span>
+                  </span>
+                  <span class="search-result-meta">{{ topic.question_count }} questions · {{ topic.flashcard_count }} cards</span>
+                  <span class="search-result-arrow" aria-hidden="true">→</span>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if counts.questions %}
+          <section class="search-group" aria-labelledby="search-questions-title">
+            <div class="search-group-head">
+              <h2 id="search-questions-title">Questions</h2>
+              <span>{{ counts.questions }}</span>
+            </div>
+            <div class="search-result-list">
+              {% for question in questions %}
+                <a class="search-result" href="{% url 'dojo:quiz_setup' %}?topic={{ question.topic.slug }}">
+                  <span class="search-result-kind">Question</span>
+                  <span class="search-result-body">
+                    <strong>{{ question.prompt|truncatechars:140 }}</strong>
+                    <span>{{ question.topic.name }} · {{ question.get_difficulty_display }}</span>
+                  </span>
+                  <span class="search-result-arrow" aria-hidden="true">→</span>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if counts.cards %}
+          <section class="search-group" aria-labelledby="search-cards-title">
+            <div class="search-group-head">
+              <h2 id="search-cards-title">Flashcards</h2>
+              <span>{{ counts.cards }}</span>
+            </div>
+            <div class="search-result-list">
+              {% for card in cards %}
+                <a class="search-result" href="{{ card.get_absolute_url }}">
+                  <span class="search-result-kind">Card</span>
+                  <span class="search-result-body">
+                    <strong>{{ card.front|truncatechars:140 }}</strong>
+                    <span>{{ card.topic.name }} · {{ card.get_difficulty_display }}</span>
+                  </span>
+                  <span class="search-result-arrow" aria-hidden="true">→</span>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if counts.recipes %}
+          <section class="search-group" aria-labelledby="search-recipes-title">
+            <div class="search-group-head">
+              <h2 id="search-recipes-title">Recipes</h2>
+              <span>{{ counts.recipes }}</span>
+            </div>
+            <div class="search-result-list">
+              {% for recipe in recipes %}
+                <a class="search-result" href="{{ recipe.get_absolute_url }}">
+                  <span class="search-result-kind">Recipe</span>
+                  <span class="search-result-body">
+                    <strong>{{ recipe.title }}</strong>
+                    <span>{{ recipe.category }} · {{ recipe.summary|truncatechars:130 }}</span>
+                  </span>
+                  <span class="search-result-arrow" aria-hidden="true">↗</span>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if counts.blueprints %}
+          <section class="search-group" aria-labelledby="search-blueprints-title">
+            <div class="search-group-head">
+              <h2 id="search-blueprints-title">Blueprints</h2>
+              <span>{{ counts.blueprints }}</span>
+            </div>
+            <div class="search-result-list">
+              {% for blueprint in blueprints %}
+                <a class="search-result" href="{{ blueprint.get_absolute_url }}">
+                  <span class="search-result-kind">Blueprint</span>
+                  <span class="search-result-body">
+                    <strong>{{ blueprint.name }}</strong>
+                    <span>{{ blueprint.tagline }}</span>
+                  </span>
+                  <span class="search-result-arrow" aria-hidden="true">↗</span>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if counts.cases %}
+          <section class="search-group" aria-labelledby="search-cases-title">
+            <div class="search-group-head">
+              <h2 id="search-cases-title">Architecture labs</h2>
+              <span>{{ counts.cases }}</span>
+            </div>
+            <div class="search-result-list">
+              {% for case in cases %}
+                <a class="search-result" href="{{ case.get_absolute_url }}">
+                  <span class="search-result-kind">Lab</span>
+                  <span class="search-result-body">
+                    <strong>{{ case.name }}</strong>
+                    <span>{{ case.tagline }}</span>
+                  </span>
+                  <span class="search-result-arrow" aria-hidden="true">↗</span>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if counts.releases %}
+          <section class="search-group" aria-labelledby="search-releases-title">
+            <div class="search-group-head">
+              <h2 id="search-releases-title">Release notes</h2>
+              <span>{{ counts.releases }}</span>
+            </div>
+            <div class="search-result-list">
+              {% for note in releases %}
+                <a class="search-result" href="{% url 'dojo:release_radar' %}#release-{{ note.version|slugify }}">
+                  <span class="search-result-kind">Release</span>
+                  <span class="search-result-body">
+                    <strong>Django {{ note.version }} · {{ note.headline }}</strong>
+                    <span>{{ note.released_on|date:"j M Y" }} · {{ note.get_kind_display }}</span>
+                  </span>
+                  <span class="search-result-arrow" aria-hidden="true">↗</span>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+      </div>
+    {% else %}
+      <section class="search-empty">
+        <span class="empty-mark" aria-hidden="true">0</span>
+        <h2>Nothing matched “{{ query }}”.</h2>
+        <p>Try a shorter term, a Django API name, or one of the shelves above. Search covers question prompts, card text, recipe code, and release summaries.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}">Take a quiz run</a>
+          <a class="btn btn-ghost-dark" href="{% url 'dojo:cheatsheets' %}">Browse recipes</a>
+        </div>
+      </section>
+    {% endif %}
+  {% else %}
+    <div class="search-idle-grid">
+      <a class="search-idle-card" href="{% url 'dojo:quiz_setup' %}">
+        <span class="search-idle-mark">?</span>
+        <strong>Quiz runs</strong>
+        <span>{{ topic_total }} paths, 15 questions each, explanations on every answer.</span>
+      </a>
+      <a class="search-idle-card" href="{% url 'dojo:flashcards' %}">
+        <span class="search-idle-mark">▣</span>
+        <strong>Fiszki</strong>
+        <span>Open questions with spaced repetition and four recall ratings.</span>
+      </a>
+      <a class="search-idle-card" href="{% url 'dojo:cheatsheets' %}">
+        <span class="search-idle-mark">✎</span>
+        <strong>Field guide</strong>
+        <span>Recipes, blueprints, architecture labs, and a release radar.</span>
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

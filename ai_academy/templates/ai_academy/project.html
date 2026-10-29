@@ -1,0 +1,121 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}{{ project.title }} · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <div class="ai-breadcrumb">
+    <a href="{% url 'ai_academy:projects' %}">← Projects</a>
+    <span>/</span>
+    <a href="{{ project.module.get_absolute_url }}">{{ project.module.title }}</a>
+  </div>
+
+  <header class="ai-project-hero">
+    <div>
+      <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> Project brief · {{ project.get_difficulty_display }}</p>
+      <h1>{{ project.title }}</h1>
+      <p class="ai-page-lead">{{ project.tagline }}</p>
+      <div class="ai-project-hero-meta">
+        <span>{{ project.duration_hours }} hours</span>
+        <span>{{ project.module.title }}</span>
+        {% if progress.completed %}<span class="tag tag-ai">Shipped ✓</span>{% else %}<span class="tag tag-ai-soft">Not shipped</span>{% endif %}
+      </div>
+    </div>
+    <aside class="ai-project-rubric-card">
+      <p class="eyebrow eyebrow-ai-dark">Definition of done</p>
+      <ul class="ai-check-list">
+        {% for item in project.deliverable_list %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    </aside>
+  </header>
+
+  <div class="ai-project-layout">
+    <div class="ai-project-main">
+      <section class="ai-panel">
+        <p class="eyebrow eyebrow-ai-dark">The scenario</p>
+        <h2>What you are walking into</h2>
+        <p>{{ project.scenario }}</p>
+      </section>
+
+      <section class="ai-panel">
+        <p class="eyebrow eyebrow-ai-dark">The build</p>
+        <h2>What to ship</h2>
+        <p>{{ project.build }}</p>
+        <div class="ai-skill-pills">
+          {% for skill in project.skill_list %}<span>{{ skill }}</span>{% endfor %}
+        </div>
+      </section>
+
+      <section class="ai-panel">
+        <p class="eyebrow eyebrow-ai-dark">Execution</p>
+        <h2>Milestones</h2>
+        <ol class="ai-milestone-list">
+          {% for item in project.milestone_list %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ item }}</li>{% endfor %}
+        </ol>
+      </section>
+
+      <section class="ai-panel">
+        <p class="eyebrow eyebrow-ai-dark">Judgment</p>
+        <h2>Rubric</h2>
+        <ul class="ai-check-list">
+          {% for item in project.rubric_list %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+      </section>
+
+      <section class="ai-panel">
+        <p class="eyebrow eyebrow-ai-dark">Go further</p>
+        <h2>Stretch goals</h2>
+        <ul class="ai-check-list">
+          {% for item in project.stretch_list %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+      </section>
+
+      {% if project.portfolio_note %}
+        <div class="ai-callout ai-callout-project">
+          <strong>Portfolio note:</strong> {{ project.portfolio_note }}
+        </div>
+      {% endif %}
+    </div>
+
+    <aside class="ai-project-rail">
+      <div class="ai-rail-card ai-project-status-card {% if progress.completed %}is-shipped{% endif %}">
+        <p class="eyebrow eyebrow-ai-dark">Status</p>
+        <h2>{% if progress.completed %}Shipped{% else %}In progress{% endif %}</h2>
+        {% if progress.completed %}
+          <p>Completed {{ progress.completion.completed_at|date:"j M Y" }}. Keep the links current so your portfolio does not rot.</p>
+          <div class="ai-project-links">
+            {% if progress.completion.repo_url %}<a href="{{ progress.completion.repo_url }}" target="_blank" rel="noopener">Repository ↗</a>{% endif %}
+            {% if progress.completion.demo_url %}<a href="{{ progress.completion.demo_url }}" target="_blank" rel="noopener">Demo ↗</a>{% endif %}
+          </div>
+        {% else %}
+          <p>Mark it shipped when the deliverables exist and the README explains the evaluation and limitations.</p>
+        {% endif %}
+        <form class="ai-project-form" method="post" action="{% url 'ai_academy:project_complete' project.slug %}">
+          {% csrf_token %}
+          <label for="repo_url">Repository URL</label>
+          <input id="repo_url" name="repo_url" type="url" value="{{ progress.completion.repo_url|default:'' }}" placeholder="https://github.com/...">
+          <label for="demo_url">Demo URL</label>
+          <input id="demo_url" name="demo_url" type="url" value="{{ progress.completion.demo_url|default:'' }}" placeholder="https://...">
+          <label for="notes">What did you learn?</label>
+          <textarea id="notes" name="notes" rows="3" placeholder="One honest limitation or next step.">{{ progress.completion.notes|default:'' }}</textarea>
+          <button class="btn btn-ai btn-ai-wide" type="submit">{% if progress.completed %}Update project{% else %}Mark as shipped{% endif %} <span aria-hidden="true">✓</span></button>
+        </form>
+      </div>
+
+      <div class="ai-rail-card">
+        <p class="eyebrow eyebrow-ai-dark">Test it locally</p>
+        <h2>Download test pack</h2>
+        <p>Starter module, pytest acceptance tests, requirements and a short README. Run it in your own environment; the tests are the contract, not the solution.</p>
+        <a class="btn btn-ai-ghost btn-ai-wide" href="{% url 'ai_academy:project_test_pack' project.slug %}">Download .zip <span aria-hidden="true">↓</span></a>
+        <p class="ai-rail-meta">pip install -r requirements.txt &amp;&amp; pytest -q</p>
+      </div>
+
+      <div class="ai-rail-card">
+        <p class="eyebrow eyebrow-ai-dark">Next step</p>
+        <p>If this project exposed a gap, return to the module lessons or the concept cards before starting the next one.</p>
+        <a class="btn btn-ai-ghost btn-ai-wide" href="{{ project.module.get_absolute_url }}">Back to module <span aria-hidden="true">→</span></a>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

@@ -4,32 +4,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="{% if request.resolver_match.namespace == 'js_academy' %}#10131a{% else %}#0d1b24{% endif %}">
+  <meta name="theme-color" content="{% if request.resolver_match.namespace == 'js_academy' %}#10131a{% elif request.resolver_match.namespace == 'ai_academy' %}#0b1020{% else %}#0d1b24{% endif %}">
   <meta name="description" content="{% block meta_description %}A local-first Django quiz and flashcard dojo for learning Python and Django from beginner to advanced.{% endblock %}">
   <title>{% block title %}Django Quest{% endblock %} · {% block product_name %}Django Quest{% endblock %}</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22{% if request.resolver_match.namespace == 'js_academy' %}%23f7df1e{% else %}%23f6c451{% endif %}%22/><text x=%2232%22 y=%2244%22 text-anchor=%22middle%22 font-size=%2234%22 font-family=%22monospace%22 font-weight=%22bold%22 fill=%22%230d1b24%22>{% if request.resolver_match.namespace == 'js_academy' %}JS{% else %}DQ{% endif %}</text></svg>">
-  <link rel="stylesheet" href="{% static 'dojo/app.css' %}?v=20261029f">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22{% if request.resolver_match.namespace == 'js_academy' %}%23f7df1e{% elif request.resolver_match.namespace == 'ai_academy' %}%238B5CF6{% else %}%23f6c451{% endif %}%22/><text x=%2232%22 y=%2244%22 text-anchor=%22middle%22 font-size=%2234%22 font-family=%22monospace%22 font-weight=%22bold%22 fill=%22%230d1b24%22>{% if request.resolver_match.namespace == 'js_academy' %}JS{% elif request.resolver_match.namespace == 'ai_academy' %}AI{% else %}DQ{% endif %}</text></svg>">
+  <link rel="stylesheet" href="{% static 'dojo/app.css' %}?v=20261029l">
   {% block extra_css %}{% endblock %}
-  <script defer src="{% static 'dojo/app.js' %}?v=20261029f"></script>
+  <script defer src="{% static 'dojo/app.js' %}?v=20261029l"></script>
 </head>
-<body class="{% block body_class %}{% endblock %} {% if request.resolver_match.namespace == 'js_academy' %}platform-js{% endif %}">
+<body class="{% block body_class %}{% endblock %} {% if request.resolver_match.namespace == 'js_academy' %}platform-js{% elif request.resolver_match.namespace == 'ai_academy' %}platform-ai{% endif %}">
   <a class="skip-link" href="#main-content">{% if request.resolver_match.namespace == 'js_academy' %}Przejdź do treści{% else %}Skip to content{% endif %}</a>
   <div class="app-shell">
     <aside class="sidebar">
-      <a class="brand" href="{% url 'dojo:home' %}" aria-label="Django Quest home">
-        <span class="brand-mark">{% if request.resolver_match.namespace == 'js_academy' %}JS{% else %}DQ{% endif %}</span>
+      <a class="brand" href="{% if request.resolver_match.namespace == 'ai_academy' %}{% url 'ai_academy:home' %}{% else %}{% url 'dojo:home' %}{% endif %}" aria-label="{% if request.resolver_match.namespace == 'ai_academy' %}AI Academy home{% else %}Django Quest home{% endif %}">
+        <span class="brand-mark">{% if request.resolver_match.namespace == 'js_academy' %}JS{% elif request.resolver_match.namespace == 'ai_academy' %}AI{% else %}DQ{% endif %}</span>
         <span class="brand-copy">
-          <strong>Django Quest</strong>
-          <span>{% if request.resolver_match.namespace == 'js_academy' %}JS Akademia · PL{% else %}learn by doing{% endif %}</span>
+          <strong>{% if request.resolver_match.namespace == 'ai_academy' %}AI Academy{% else %}Django Quest{% endif %}</strong>
+          <span>{% if request.resolver_match.namespace == 'js_academy' %}JS Akademia · PL{% elif request.resolver_match.namespace == 'ai_academy' %}applied AI · EN{% else %}learn by doing{% endif %}</span>
         </span>
       </a>
 
-      <div class="track-switch" role="group" aria-label="Wybierz platformę">
-        <a class="{% if request.resolver_match.namespace != 'js_academy' %}is-active{% endif %}" href="{% url 'dojo:home' %}">
+      <div class="track-switch" role="group" aria-label="Choose a learning platform">
+        <a class="track-django {% if request.resolver_match.namespace != 'js_academy' and request.resolver_match.namespace != 'ai_academy' %}is-active{% endif %}" href="{% url 'dojo:home' %}">
           <span class="track-dot track-dot-django" aria-hidden="true"></span> Django
         </a>
-        <a class="{% if request.resolver_match.namespace == 'js_academy' %}is-active{% endif %}" href="{% url 'js_academy:home' %}">
+        <a class="track-js {% if request.resolver_match.namespace == 'js_academy' %}is-active{% endif %}" href="{% url 'js_academy:home' %}">
           <span class="track-dot track-dot-js" aria-hidden="true"></span> JavaScript
+        </a>
+        <a class="track-ai {% if request.resolver_match.namespace == 'ai_academy' %}is-active{% endif %}" href="{% url 'ai_academy:home' %}">
+          <span class="track-dot track-dot-ai" aria-hidden="true"></span> AI
         </a>
       </div>
 
@@ -73,6 +76,46 @@
             <span>Postępy</span>
           </a>
         </nav>
+      {% elif request.resolver_match.namespace == 'ai_academy' %}
+        <nav class="main-nav" aria-label="AI Academy navigation">
+          <a class="nav-link {% if active_nav == 'ai_home' %}is-active{% endif %}" href="{% url 'ai_academy:home' %}">
+            <span class="nav-glyph" aria-hidden="true">⌂</span>
+            <span>Start</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'ai_path' %}is-active{% endif %}" href="{% url 'ai_academy:path' %}">
+            <span class="nav-glyph" aria-hidden="true">▤</span>
+            <span>Path</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'ai_projects' %}is-active{% endif %}" href="{% url 'ai_academy:projects' %}">
+            <span class="nav-glyph" aria-hidden="true">◫</span>
+            <span>Projects</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'ai_cards' %}is-active{% endif %}" href="{% url 'ai_academy:flashcards_index' %}">
+            <span class="nav-glyph" aria-hidden="true">▣</span>
+            <span>Concept cards</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'ai_career' %}is-active{% endif %}" href="{% url 'ai_academy:career' %}">
+            <span class="nav-glyph" aria-hidden="true">✦</span>
+            <span>Career</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'ai_glossary' %}is-active{% endif %}" href="{% url 'ai_academy:glossary' %}">
+            <span class="nav-glyph" aria-hidden="true">A</span>
+            <span>Glossary</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'ai_search' %}is-active{% endif %}" href="{% url 'ai_academy:search' %}">
+            <span class="nav-glyph" aria-hidden="true">⌕</span>
+            <span>Search</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'ai_progress' %}is-active{% endif %}" href="{% url 'ai_academy:progress' %}">
+            <span class="nav-glyph" aria-hidden="true">↗</span>
+            <span>Progress</span>
+          </a>
+        </nav>
+        <form class="ai-nav-search" action="{% url 'ai_academy:search' %}" method="get">
+          <label class="sr-only" for="ai-nav-q">Search AI Academy</label>
+          <input id="ai-nav-q" name="q" type="search" value="{{ request.GET.q|default:'' }}" placeholder="Search AI Academy…">
+          <button type="submit" aria-label="Search">⌕</button>
+        </form>
       {% else %}
         <nav class="main-nav" aria-label="Main navigation">
           <a class="nav-link {% if active_nav == 'home' %}is-active{% endif %}" href="{% url 'dojo:home' %}">
@@ -99,7 +142,16 @@
             <span class="nav-glyph" aria-hidden="true">↗</span>
             <span>Progress</span>
           </a>
+          <a class="nav-link {% if active_nav == 'search' %}is-active{% endif %}" href="{% url 'dojo:search' %}">
+            <span class="nav-glyph" aria-hidden="true">⌕</span>
+            <span>Search</span>
+          </a>
         </nav>
+        <form class="dojo-nav-search" action="{% url 'dojo:search' %}" method="get">
+          <label class="sr-only" for="dojo-nav-q">Search Django Quest</label>
+          <input id="dojo-nav-q" name="q" type="search" value="{{ request.GET.q|default:'' }}" placeholder="Search the dojo…">
+          <button type="submit" aria-label="Search">⌕</button>
+        </form>
       {% endif %}
 
       <div class="sidebar-rule" aria-hidden="true"></div>
@@ -113,6 +165,16 @@
           <span>JavaScript → React</span>
           <span class="sidebar-foot-dot" aria-hidden="true"></span>
           <span>React Native</span>
+        </div>
+      {% elif request.resolver_match.namespace == 'ai_academy' %}
+        <div class="sidebar-note">
+          <span class="tag tag-ai">100% local</span>
+          <p>Your progress lives in a SQLite file on this machine. No account, no cloud.</p>
+        </div>
+        <div class="sidebar-foot">
+          <span>Python → ML → LLMs</span>
+          <span class="sidebar-foot-dot" aria-hidden="true"></span>
+          <span>Path</span>
         </div>
       {% else %}
         <div class="sidebar-note">
@@ -141,6 +203,10 @@
           <span>JS Akademia</span>
           <span>JavaScript · TypeScript · React · React Native</span>
           <a href="{% url 'js_academy:progress' %}">Twoje postępy ↗</a>
+        {% elif request.resolver_match.namespace == 'ai_academy' %}
+          <span>AI Academy</span>
+          <span>Foundations → ML → LLMs → production</span>
+          <a href="{% url 'ai_academy:progress' %}">Your readiness ↗</a>
         {% else %}
           <span>Django Quest</span>
           <span>Built for curious humans. No streaks were harmed.</span>

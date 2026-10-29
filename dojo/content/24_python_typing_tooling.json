@@ -1,0 +1,258 @@
+{
+  "topic": {
+    "slug": "python-typing-tooling",
+    "name": "Python Typing, Packaging & Tooling",
+    "tagline": "Type hints, mypy, Ruff, pytest, and a reproducible developer workflow.",
+    "description": "Modern Django work is more than syntax. Learn how type hints behave at runtime, how mypy and django-stubs catch ORM mistakes, how Ruff and pre-commit keep a codebase consistent, how pyproject.toml and lockfiles make installs reproducible, and how to test the seams.",
+    "glyph": "py",
+    "accent": "#A7F3D0"
+  },
+  "questions": [
+    {
+      "key": "typing-b1",
+      "difficulty": "beginner",
+      "prompt": "Are Python type hints enforced at runtime?",
+      "choices": [
+        "Yes; passing a str where int is declared raises TypeError.",
+        "No; they are metadata for static analysis, IDEs, and documentation unless you add runtime validation.",
+        "Only inside Django models.",
+        "Only when mypy runs as part of the process."
+      ],
+      "answer": 1,
+      "explanation": "Python does not check annotations when calling a function. Tools like mypy and pyright analyze them; libraries such as Pydantic validate at runtime. Type hints reduce bugs but are not a runtime guarantee."
+    },
+    {
+      "key": "typing-b2",
+      "difficulty": "beginner",
+      "prompt": "What does list[str] describe?",
+      "choices": [
+        "A list containing exactly one string.",
+        "A list whose elements are strings.",
+        "A string that contains a list.",
+        "A list of any type."
+      ],
+      "answer": 1,
+      "explanation": "list[str] is a generic type: a list of str elements. It says nothing about length; tuple[str, ...] would describe a variable-length tuple of strings."
+    },
+    {
+      "key": "typing-b3",
+      "difficulty": "beginner",
+      "prompt": "What does str | None mean?",
+      "choices": [
+        "A string that is never empty.",
+        "Either a string or None.",
+        "A string or an integer.",
+        "A required string with a default of None."
+      ],
+      "answer": 1,
+      "explanation": "The | operator builds a union type. str | None is the modern spelling of Optional[str]. It means the value may be a string or None, so callers should handle both."
+    },
+    {
+      "key": "typing-b4",
+      "difficulty": "beginner",
+      "prompt": "What is pyproject.toml used for in a Python project?",
+      "choices": [
+        "Only for Django database settings.",
+        "Standard project metadata and tool configuration: build system, dependencies, Ruff, pytest, mypy, and more.",
+        "A replacement for requirements.txt that Django reads at startup.",
+        "A binary lockfile."
+      ],
+      "answer": 1,
+      "explanation": "PEP 621 defines project metadata in pyproject.toml, and most modern tools read their config from it. It is not a runtime settings file and does not replace a lockfile."
+    },
+    {
+      "key": "typing-b5",
+      "difficulty": "beginner",
+      "prompt": "Why use a virtual environment per project?",
+      "choices": [
+        "To make Python run faster.",
+        "To isolate the project's interpreter and installed packages from other projects.",
+        "To encrypt the database.",
+        "To avoid writing tests."
+      ],
+      "answer": 1,
+      "explanation": "A venv keeps dependencies and the interpreter environment separate, so upgrading one project cannot break another. The venv itself should not be committed; the lockfile should."
+    },
+    {
+      "key": "typing-i1",
+      "difficulty": "intermediate",
+      "prompt": "What does `from __future__ import annotations` change?",
+      "choices": [
+        "It makes annotations evaluated eagerly at import time.",
+        "It postpones annotation evaluation and stores them as strings, which helps forward references and import cycles.",
+        "It disables type checking.",
+        "It converts all hints to comments."
+      ],
+      "answer": 1,
+      "explanation": "This future import enables postponed evaluation. Annotations are not evaluated when the function or class is defined, so you can refer to names defined later and avoid some runtime imports. Tools still resolve them statically."
+    },
+    {
+      "key": "typing-i2",
+      "difficulty": "intermediate",
+      "prompt": "What is the key difference between Protocol and a traditional ABC?",
+      "choices": [
+        "Protocol requires explicit inheritance; ABC does not.",
+        "Protocol uses structural typing: a class satisfies it by having the right methods, without inheriting from it.",
+        "Protocol only works with Django models.",
+        "ABCs cannot have methods."
+      ],
+      "answer": 1,
+      "explanation": "typing.Protocol describes a shape. A class is compatible if it provides the required attributes and methods, even without inheriting. ABCs use nominal inheritance and can share implementation."
+    },
+    {
+      "key": "typing-i3",
+      "difficulty": "intermediate",
+      "prompt": "Why install django-stubs together with mypy?",
+      "choices": [
+        "To generate database migrations.",
+        "To give mypy Django-aware types for models, managers, QuerySets, and settings, including the ORM plugin.",
+        "To replace Django's test runner.",
+        "To compile templates."
+      ],
+      "answer": 1,
+      "explanation": "django-stubs provides type stubs for Django, and the mypy plugin understands the ORM's dynamic API, such as filter() return types and model fields. Without it, mypy sees many Django calls as Any."
+    },
+    {
+      "key": "typing-i4",
+      "difficulty": "intermediate",
+      "prompt": "What is Ruff?",
+      "choices": [
+        "A database migration tool.",
+        "A fast Python linter and formatter, configured in pyproject.toml, that can replace several separate tools.",
+        "A Django template engine.",
+        "A runtime type checker."
+      ],
+      "answer": 1,
+      "explanation": "Ruff is written in Rust and combines linting, including pyflakes, pycodestyle, isort, and more, with formatting. It reads pyproject.toml and runs quickly enough for pre-commit and CI."
+    },
+    {
+      "key": "typing-i5",
+      "difficulty": "intermediate",
+      "prompt": "What does pytest-django's @pytest.mark.django_db do?",
+      "choices": [
+        "Creates a production database.",
+        "Gives the test access to the database and wraps it in a transaction that is rolled back.",
+        "Marks a test as slow.",
+        "Runs migrations only once for the whole session."
+      ],
+      "answer": 1,
+      "explanation": "The marker enables database access for that test and uses transactional rollback by default, keeping tests isolated. Use --reuse-db or fixtures to control setup cost."
+    },
+    {
+      "key": "typing-a1",
+      "difficulty": "advanced",
+      "prompt": "What is the point of a TypeVar in `def first(items: list[T]) -> T`?",
+      "choices": [
+        "It allows any return type unrelated to the input.",
+        "It preserves the relationship between the input element type and the return type for the type checker.",
+        "It makes the function run faster.",
+        "It validates the list at runtime."
+      ],
+      "answer": 1,
+      "explanation": "T is bound by the call: first([1, 2]) returns int, first([\"a\"]) returns str. TypeVar expresses that the output type depends on the input type instead of falling back to Any."
+    },
+    {
+      "key": "typing-a2",
+      "difficulty": "advanced",
+      "prompt": "What does ParamSpec help you type?",
+      "choices": [
+        "A decorator that preserves the wrapped function's parameter list and return type.",
+        "A Django URL parameter.",
+        "A database column type.",
+        "A pytest fixture scope."
+      ],
+      "answer": 0,
+      "explanation": "ParamSpec captures the parameters of the wrapped callable so a decorator can be typed as returning a function with the same signature. It is the modern way to avoid losing type information in decorators."
+    },
+    {
+      "key": "typing-a3",
+      "difficulty": "advanced",
+      "prompt": "Why put an import behind `if TYPE_CHECKING:`?",
+      "choices": [
+        "To import it only for type checkers, avoiding a runtime import or circular dependency.",
+        "To make the import run faster at runtime.",
+        "To force the module to load before Django.",
+        "To disable the import in tests."
+      ],
+      "answer": 0,
+      "explanation": "The block is False at runtime, so the import is only visible to static analysis. Use string annotations or `from __future__ import annotations` when the name is needed in hints but not at runtime."
+    },
+    {
+      "key": "typing-a4",
+      "difficulty": "advanced",
+      "prompt": "Which setup gives the most reproducible installs?",
+      "choices": [
+        "pip install with unpinned versions and a committed .venv",
+        "A lockfile with pinned versions and hashes, generated from pyproject or requirements and installed in CI",
+        "Copying site-packages between machines",
+        "Always installing the latest release"
+      ],
+      "answer": 1,
+      "explanation": "Pinning exact versions and hashes makes the resolved dependency graph reproducible. Commit the lockfile, not the virtual environment; regenerate deliberately and test upgrades."
+    },
+    {
+      "key": "typing-a5",
+      "difficulty": "advanced",
+      "prompt": "What is the risk of using typing.cast(MyModel, value)?",
+      "choices": [
+        "It performs a full runtime validation.",
+        "It is only a static assertion; it does not check the value at runtime, so a wrong cast can hide a bug.",
+        "It converts the object to a different class.",
+        "It disables mypy for the whole project."
+      ],
+      "answer": 1,
+      "explanation": "cast tells the type checker to trust you; it emits no runtime check. Validate untrusted input at the boundary with forms, serializers, or isinstance, and reserve cast for cases you can prove."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "typing-f1",
+      "difficulty": "beginner",
+      "front": "Do Python type hints change runtime behavior?",
+      "back": "Generally no. Annotations are stored as metadata and are not enforced on calls. mypy or pyright checks them statically; Pydantic and similar libraries add runtime validation. Hints are a contract for tools and humans, not a runtime guarantee.",
+      "front_code": "def add(a: int, b: int) -> int:\n    return a + b\n\nadd(\"1\", \"2\")  # no TypeError from the hints"
+    },
+    {
+      "key": "typing-f2",
+      "difficulty": "beginner",
+      "front": "When should you use Optional, | None, or a sentinel?",
+      "back": "Optional[str] and str | None mean a real value or None. Use them when None is part of the domain. A sentinel object is better when None is valid data and you need to distinguish \"missing\" from \"explicitly null\".",
+      "front_code": "def find_user(email: str) -> User | None: ..."
+    },
+    {
+      "key": "typing-f3",
+      "difficulty": "intermediate",
+      "front": "Protocol vs ABC: when do you choose which?",
+      "back": "Choose Protocol for structural seams: test doubles, adapters, and third-party objects that only need to match a shape. Choose ABC when you own the hierarchy and want shared implementation or explicit registration.",
+      "front_code": "class Notifier(Protocol):\n    def send(self, message: str) -> None: ..."
+    },
+    {
+      "key": "typing-f4",
+      "difficulty": "intermediate",
+      "front": "What does django-stubs add to mypy?",
+      "back": "Stubs for Django's dynamic APIs plus a mypy plugin. It types model fields, managers, QuerySets, and settings, so calls like Model.objects.filter(...) are checked instead of degrading to Any. Configure django_settings_module in pyproject or mypy.ini.",
+      "front_code": "[tool.mypy]\nplugins = [\"mypy_django_plugin.main\"]\n\n[tool.django-stubs]\ndjango_settings_module = \"config.settings\""
+    },
+    {
+      "key": "typing-f5",
+      "difficulty": "advanced",
+      "front": "Why use if TYPE_CHECKING?",
+      "back": "It imports names only for static analysis. At runtime the block is False, so you avoid a circular import or a heavy dependency while still giving the type checker the class it needs. Pair it with string annotations or postponed evaluation.",
+      "front_code": "from typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from accounts.models import User\n\ndef owner_name(owner: \"User\") -> str: ..."
+    },
+    {
+      "key": "typing-f6",
+      "difficulty": "advanced",
+      "front": "What are TypeVar and ParamSpec for?",
+      "back": "TypeVar expresses a relationship between input and output types, as in first(list[T]) -> T. ParamSpec captures a callable's parameter list so decorators preserve the wrapped signature. Both keep precise types instead of collapsing to Any.",
+      "front_code": "P = ParamSpec(\"P\")\nR = TypeVar(\"R\")\n\ndef logged(fn: Callable[P, R]) -> Callable[P, R]: ..."
+    },
+    {
+      "key": "typing-f7",
+      "difficulty": "intermediate",
+      "front": "What belongs in a reproducible Python toolchain?",
+      "back": "pyproject.toml for project metadata and tool config, a lockfile with pinned versions and hashes, Ruff for linting and formatting, mypy plus django-stubs for types, pytest-django for tests, and pre-commit or CI to run the same commands locally and remotely.",
+      "front_code": "[tool.ruff]\nline-length = 100\ntarget-version = \"py312\"\n\n[tool.pytest.ini_options]\nDJANGO_SETTINGS_MODULE = \"config.settings\""
+    }
+  ]
+}

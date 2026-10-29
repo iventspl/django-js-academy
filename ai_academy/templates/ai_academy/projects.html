@@ -1,0 +1,58 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}Projects · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <header class="ai-page-header">
+    <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> Portfolio work</p>
+    <h1>Eight projects.<br><em>One hiring story.</em></h1>
+    <p class="ai-page-lead">Each project has a scenario, deliverables, milestones, a rubric and a stretch goal. The goal is evidence: a repository, a demo, an evaluation, and a short case study you can defend in an interview.</p>
+    <div class="ai-page-actions">
+      <a class="btn btn-ai" href="{% url 'ai_academy:path' %}">See the 12-month path <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ai-ghost" href="{% url 'ai_academy:career' %}">Career map <span aria-hidden="true">✦</span></a>
+    </div>
+  </header>
+
+  <div class="ai-project-summary">
+    <div><strong>{{ stats.projects_shipped }}/{{ stats.project_total }}</strong><span>shipped</span></div>
+    <div><strong>{{ stats.readiness }}%</strong><span>job readiness</span></div>
+    <div><strong>3</strong><span>portfolio projects to lead with</span></div>
+    <div><strong>1</strong><span>capstone</span></div>
+  </div>
+
+  <div class="ai-project-grid">
+    {% for row in rows %}
+      <article class="ai-project-card {% if row.completed %}is-shipped{% endif %}">
+        <div class="ai-project-card-top">
+          <span class="ai-project-number">{{ forloop.counter|stringformat:"02d" }}</span>
+          <span class="tag tag-ai-soft">{{ row.project.get_difficulty_display }}</span>
+          {% if row.completed %}<span class="tag tag-ai">Shipped</span>{% endif %}
+        </div>
+        <p class="ai-project-module">{{ row.project.module.title|default:"AI project" }}</p>
+        <h2><a href="{{ row.project.get_absolute_url }}">{{ row.project.title }}</a></h2>
+        <p>{{ row.project.tagline }}</p>
+        <div class="ai-project-tags">
+          <span>{{ row.project.duration_hours }} hours</span>
+          <span>{{ row.project.skill_list|length }} skills</span>
+          <span>{{ row.project.deliverable_list|length }} deliverables</span>
+        </div>
+        <div class="ai-project-card-foot">
+          <a href="{{ row.project.get_absolute_url }}">{% if row.completed %}Review project{% else %}Open brief{% endif %} <span aria-hidden="true">→</span></a>
+          <a href="{% url 'ai_academy:project_test_pack' row.project.slug %}">Test pack <span aria-hidden="true">↓</span></a>
+          {% if row.completed %}<span class="ai-shipped-mark">✓</span>{% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+
+  <section class="ai-cta-band">
+    <div>
+      <p class="eyebrow eyebrow-ai-light">The rule</p>
+      <h2>Three deep projects beat ten tutorials.</h2>
+      <p>Ship the first project before starting the second. Write the README, record the demo, and add one honest limitation. That is what makes it portfolio evidence.</p>
+    </div>
+    <a class="btn btn-ai" href="{% url 'ai_academy:path' %}">Open the path <span aria-hidden="true">→</span></a>
+  </section>
+</div>
+{% endblock %}

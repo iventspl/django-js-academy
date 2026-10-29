@@ -206,6 +206,7 @@ def main() -> None:
     run_manage(python, "migrate", "--noinput")
     run_manage(python, "seed_content", "--if-changed")
     run_manage(python, "seed_js", "--if-changed")
+    run_manage(python, "seed_ai", "--if-changed")
     print("[setup] Content is ready.")
 
     if args.setup_only:

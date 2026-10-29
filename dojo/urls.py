@@ -6,9 +6,16 @@ app_name = "dojo"
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("search/", views.search, name="search"),
     path("quiz/", views.quiz_setup, name="quiz_setup"),
     path("quiz/<int:attempt_id>/", views.quiz_question, name="quiz_question"),
     path("quiz/<int:attempt_id>/results/", views.quiz_results, name="quiz_results"),
+    path(
+        "quiz/<int:attempt_id>/retry/",
+        views.retry_missed,
+        name="retry_missed",
+    ),
+    path("quiz/weak-spots/", views.weak_spots_practice, name="weak_spots"),
     path("flashcards/", views.flashcards_index, name="flashcards"),
     path("flashcards/review/", views.flashcards_review_all, name="flashcards_review_all"),
     path(

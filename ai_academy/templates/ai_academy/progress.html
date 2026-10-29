@@ -1,0 +1,91 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}Progress · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <header class="ai-progress-hero">
+    <div>
+      <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> The evidence</p>
+      <h1>A longer view<br>of <em>becoming employable.</em></h1>
+      <p class="ai-page-lead">Readiness is a blend of lessons, quiz scores, concept recall and shipped projects. It is a compass, not a certificate.</p>
+    </div>
+    <aside class="ai-readiness-card ai-readiness-card-large">
+      <div class="ai-readiness-head">
+        <div><p class="eyebrow eyebrow-ai-dark">Job readiness</p><h2>{{ stats.readiness }}<span>%</span></h2></div>
+        <span class="tag tag-ai">{{ stats.level_name }}</span>
+      </div>
+      <div class="ai-readiness-track"><span style="--bar: {{ stats.readiness }}%;"></span></div>
+      <p class="ai-readiness-note">{{ stats.xp }} XP · {% if stats.next_level_xp %}{{ stats.next_level_xp }} XP to next level{% else %}Top level reached{% endif %}</p>
+    </aside>
+  </header>
+
+  <div class="ai-stat-band">
+    <div><strong>{{ stats.completed_lessons }}/{{ stats.lesson_total }}</strong><span>lessons</span></div>
+    <div><strong>{{ stats.projects_shipped }}/{{ stats.project_total }}</strong><span>projects</span></div>
+    <div><strong>{{ stats.quiz_average }}%</strong><span>quiz average</span></div>
+    <div><strong>{{ stats.card_percent }}%</strong><span>cards met</span></div>
+    <div><strong>{{ stats.streak }}</strong><span>day streak</span></div>
+  </div>
+
+  <section class="ai-section" aria-labelledby="mastery-title">
+    <div class="ai-section-head">
+      <div><p class="eyebrow eyebrow-ai-dark">Module map</p><h2 id="mastery-title">Where the knowledge lives.</h2></div>
+      <p class="ai-section-aside">Completion is lessons finished. Quiz score is your best run. Cards met is recall coverage.</p>
+    </div>
+    <div class="ai-mastery-list">
+      {% for row in stats.module_rows %}
+        <div class="ai-mastery-row" style="--accent: {{ row.module.accent }};">
+          <span class="ai-module-glyph">{{ row.module.glyph }}</span>
+          <div class="ai-mastery-name"><strong>{{ row.module.title }}</strong><span>{{ row.completed_lessons }}/{{ row.lesson_total }} lessons · {{ row.reviewed_cards }}/{{ row.card_total }} cards</span></div>
+          <div class="ai-mastery-bars">
+            <div class="progress-track progress-track-dark"><span style="--bar: {{ row.lesson_percent }}%;"></span></div>
+            <span>{{ row.lesson_percent }}% lessons · {{ row.best_score }}% quiz</span>
+          </div>
+          <a href="{{ row.module.get_absolute_url }}">Open →</a>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ai-section" aria-labelledby="projects-title">
+    <div class="ai-section-head">
+      <div><p class="eyebrow eyebrow-ai-dark">Portfolio</p><h2 id="projects-title">What you can show.</h2></div>
+      <a class="ai-text-link" href="{% url 'ai_academy:projects' %}">All projects →</a>
+    </div>
+    <div class="ai-project-strip">
+      {% for row in projects %}
+        <a class="ai-project-mini {% if row.completed %}is-shipped{% endif %}" href="{{ row.project.get_absolute_url }}">
+          <span class="ai-project-mini-top"><span class="tag tag-ai-soft">{{ row.project.get_difficulty_display }}</span><span>{% if row.completed %}Shipped ✓{% else %}Open{% endif %}</span></span>
+          <h3>{{ row.project.title }}</h3>
+          <p>{{ row.project.tagline }}</p>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if recent_attempts %}
+    <section class="ai-section" aria-labelledby="history-title">
+      <div class="ai-section-head">
+        <div><p class="eyebrow eyebrow-ai-dark">Quiz log</p><h2 id="history-title">Recent checkpoints.</h2></div>
+        <a class="ai-text-link" href="{% url 'ai_academy:path' %}">Continue the path →</a>
+      </div>
+      <div class="ai-history-list">
+        {% for attempt in recent_attempts %}
+          <a href="{% url 'ai_academy:quiz_results' attempt.pk %}">
+            <span>{{ attempt.module.title }}</span>
+            <span>{{ attempt.completed_at|date:"j M Y" }}</span>
+            <strong>{{ attempt.score_percent }}%</strong>
+            <span>{{ attempt.correct_count }}/{{ attempt.length }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="ai-cta-band">
+    <div><p class="eyebrow eyebrow-ai-light">Next milestone</p><h2>Ship one project this month.</h2><p>A finished project with a README and an evaluation is worth more than three half-started modules.</p></div>
+    <a class="btn btn-ai" href="{% url 'ai_academy:projects' %}">Choose a project <span aria-hidden="true">→</span></a>
+  </section>
+</div>
+{% endblock %}

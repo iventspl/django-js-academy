@@ -1,0 +1,180 @@
+{
+  "module": {
+    "slug": "agents-evaluation",
+    "title": "Agents, Tools & Evaluation",
+    "subtitle": "Tool use, workflow design, guardrails, and the evaluation that makes AI systems trustworthy.",
+    "description": "Move beyond a single prompt. Learn how function calling and agent loops work, when a deterministic workflow is better, and how to evaluate trajectories, cost, latency and safety before shipping.",
+    "stage": "llm",
+    "difficulty": "advanced",
+    "glyph": "06",
+    "accent": "#A855F7",
+    "duration_weeks": 6,
+    "outcomes": [
+      "Design typed tools and an agent loop with clear stop conditions and approvals.",
+      "Choose a deterministic workflow over an agent when the task does not need autonomy.",
+      "Build an evaluation suite and trace failures across retrieval, tools and generation."
+    ],
+    "skills": [
+      "Function calling",
+      "Tool schemas",
+      "Agent loops",
+      "Workflow orchestration",
+      "Guardrails",
+      "Trajectory evaluation",
+      "Observability"
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "tool-use",
+      "title": "Tools and the agent loop",
+      "summary": "Schemas, observations, stop conditions, permissions, and the failure modes of autonomous loops.",
+      "minutes": 18,
+      "body_html": "<p>An agent is a loop: the model chooses an action, your code executes it, and the observation is fed back. Tool use makes the model useful beyond text, but it also gives it a way to cause real effects.</p>\n<h2>Tools are typed contracts</h2>\n<pre><code>{\n  \"name\": \"search_notes\",\n  \"description\": \"Search the user's notes. Read-only.\",\n  \"parameters\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"query\": {\"type\": \"string\"},\n      \"limit\": {\"type\": \"integer\", \"minimum\": 1, \"maximum\": 10}\n    },\n    \"required\": [\"query\"]\n  }\n}</code></pre>\n<p>A good tool has a narrow purpose, a validated schema, a timeout, and a predictable error shape. The model should not have to guess what arguments are allowed.</p>\n<h2>The loop</h2>\n<pre><code>for step in range(max_steps):\n    action = model.choose_action(messages, tools)\n    if action.type == \"final\":\n        return action.answer\n    result = execute_tool(action.name, action.arguments)\n    messages.append(tool_result(result))</code></pre>\n<p>Always cap steps, tokens, time, and cost. Provide a final-answer path and a graceful “I could not complete this” path. An unbounded loop is an incident waiting to happen.</p>\n<h2>Read vs write</h2>\n<p>Read-only tools are safer. Writing, sending, deleting, purchasing, or deploying should require explicit human approval or a scoped, reversible operation. Never let model-generated text be the only authorization for a destructive action.</p>\n<h2>Observability</h2>\n<p>Log the chosen tool, arguments, result status, latency, token usage, and final answer. When an agent fails, you need the trajectory, not just the last message.</p>\n<div class=\"ai-callout\"><strong>Guardrail:</strong> if the task can be solved with a fixed sequence of steps, use a workflow. Autonomy is a cost, not a feature.</div>",
+      "takeaways": [
+        "Tools are typed contracts with narrow permissions.",
+        "Agent loops need caps, stop conditions and approvals for writes.",
+        "Trace every tool call and result so failures are debuggable."
+      ],
+      "practice": "Define three tools (read, calculate, write) with schemas, then write five adversarial requests. Success: the write tool is blocked without approval and every attempt is logged."
+    },
+    {
+      "slug": "workflows-vs-agents",
+      "title": "Agents vs workflows",
+      "summary": "Deterministic pipelines, routing, state machines, retries, and when autonomy is the wrong tool.",
+      "minutes": 18,
+      "body_html": "<p>Most production AI features are workflows, not agents. A workflow has explicit steps, known tools, and predictable failure handling. An agent decides its own path at runtime. Use autonomy only when the path genuinely cannot be enumerated.</p>\n<h2>A simple workflow</h2>\n<pre><code>extract → validate → retrieve → draft → check citations → approve → send</code></pre>\n<p>Each step is testable. If extraction fails, you do not need to debug a planner. If retrieval finds nothing, you can return a controlled message. The system is easier to secure and observe.</p>\n<h2>Routing</h2>\n<p>A router classifies the request and sends it to a specialized path: billing question, technical bug, account deletion, or human handoff. Routing is often a small classifier or a structured LLM call. It is more reliable than asking one prompt to do everything.</p>\n<h2>State and retries</h2>\n<p>Persist workflow state. Make writes idempotent with a request key. Retry only safe operations, with backoff and a cap. If a tool times out after a write, a blind retry can duplicate the side effect.</p>\n<h2>Human in the loop</h2>\n<p>Approval is a product feature, not a failure. Put a human before irreversible actions, ambiguous high-value decisions, and anything that affects money, access, or safety. Show the evidence and the proposed action, not just a yes/no button.</p>\n<div class=\"ai-callout\"><strong>Decision test:</strong> if you cannot draw the flowchart, an agent will not fix the ambiguity. Define the workflow first, then automate the uncertain step.</div>",
+      "takeaways": [
+        "Most production AI features are deterministic workflows, not autonomous agents.",
+        "Persist state, make writes idempotent, and retry only safe operations.",
+        "Put a human before irreversible or high-impact actions."
+      ],
+      "practice": "Draw a flowchart for a support-triage feature and mark each step as deterministic, LLM, or human. Success: there is no unbounded loop and the write path has an approval gate."
+    },
+    {
+      "slug": "evaluation-observability",
+      "title": "Evaluation is the job",
+      "summary": "Golden sets, trajectory tests, rubric grading, LLM-as-judge caveats, tracing, and release gates.",
+      "minutes": 18,
+      "body_html": "<p>You cannot improve an AI system you cannot measure. Evaluation is not a final report; it is the loop that tells you whether a prompt, model, retriever, or tool change helped.</p>\n<h2>Build a golden set</h2>\n<p>Collect real inputs with known-good outcomes and edge cases: ambiguous requests, missing evidence, adversarial text, empty results, and high-cost paths. Keep a held-out set that you do not tune on. Version the set with the product.</p>\n<h2>Evaluate the whole trajectory</h2>\n<p>For an agent, the final answer can be right for the wrong reason. Check whether it selected the right tool, passed valid arguments, respected permissions, stopped at the right time, and cited real evidence. Trajectory evaluation catches failures that final-answer grading misses.</p>\n<h2>LLM-as-judge, carefully</h2>\n<p>A judge model can scale rubric grading, but it has biases: verbosity, position, self-preference, and sensitivity to phrasing. Calibrate it against human labels, randomize order, use explicit rubrics, and keep a human-reviewed sample. A judge is a measurement instrument, not the truth.</p>\n<h2>Tracing and release gates</h2>\n<pre><code>trace_id, user_input, prompt_version, model, retrieved_ids,\ntool_calls, latency_ms, input_tokens, output_tokens, cost,\nfinal_answer, safety_flags, user_feedback</code></pre>\n<p>Ship only when the golden set passes, unsafe cases are blocked, latency and cost are within budget, and rollback is possible. Compare against the previous version, not against zero.</p>\n<div class=\"ai-callout\"><strong>Interview signal:</strong> strong AI engineers talk about failure modes and evaluation before they talk about the model. “It demoed well” is not evidence.</div>",
+      "takeaways": [
+        "A golden set with edge cases is the backbone of AI quality.",
+        "Evaluate trajectories, not only final answers.",
+        "LLM judges are biased instruments; calibrate them against human labels."
+      ],
+      "practice": "Create ten eval cases including two unanswerable and two adversarial inputs. Define pass criteria and the trace fields you need. Success: the suite can run after every prompt or model change."
+    }
+  ],
+  "questions": [
+    {
+      "key": "ai-agent-b1",
+      "difficulty": "beginner",
+      "prompt": "What is a tool in an LLM application?",
+      "choices": [
+        "A prompt template.",
+        "A typed function the model can request, with validated arguments and a controlled result.",
+        "A database migration.",
+        "A fine-tuned model."
+      ],
+      "answer": 1,
+      "explanation": "Tools expose narrow capabilities with schemas. The model proposes an action; your code validates and executes it. The tool schema is part of the safety boundary."
+    },
+    {
+      "key": "ai-agent-b2",
+      "difficulty": "beginner",
+      "prompt": "What does an agent loop do?",
+      "choices": [
+        "Trains a model from scratch.",
+        "Repeatedly chooses an action, executes a tool, observes the result, and continues until a stop condition.",
+        "Only generates one answer with no tools.",
+        "Stores embeddings."
+      ],
+      "answer": 1,
+      "explanation": "The loop alternates model decisions and tool observations. Production loops need caps, approvals, and explicit stop conditions."
+    },
+    {
+      "key": "ai-agent-i1",
+      "difficulty": "intermediate",
+      "prompt": "When is a deterministic workflow better than an agent?",
+      "choices": [
+        "When the steps are known and the task can be expressed as a fixed pipeline with clear failure paths.",
+        "When you want the model to decide everything.",
+        "When no evaluation exists.",
+        "When the task requires unbounded exploration."
+      ],
+      "answer": 0,
+      "explanation": "Workflows are easier to test, secure, and debug. Use an agent only when the path must be discovered at runtime and the uncertainty is worth the cost."
+    },
+    {
+      "key": "ai-agent-i2",
+      "difficulty": "intermediate",
+      "prompt": "Which action should require explicit human approval?",
+      "choices": [
+        "Searching a read-only knowledge base.",
+        "Sending money, deleting data, changing permissions, or deploying to production.",
+        "Formatting a response.",
+        "Computing a sum."
+      ],
+      "answer": 1,
+      "explanation": "Irreversible or high-impact actions need human control. Read-only tools can be more autonomous; write tools should be scoped, reversible, or approved."
+    },
+    {
+      "key": "ai-agent-a1",
+      "difficulty": "advanced",
+      "prompt": "Why is final-answer accuracy insufficient for evaluating an agent?",
+      "choices": [
+        "Final answers are never important.",
+        "An answer can be correct despite unsafe tool calls, invalid arguments, or a broken trajectory.",
+        "Agents do not have final answers.",
+        "Only latency matters."
+      ],
+      "answer": 1,
+      "explanation": "Trajectory quality matters: tool choice, arguments, permissions, stop conditions, and evidence. A lucky final answer can hide a dangerous process."
+    },
+    {
+      "key": "ai-agent-a2",
+      "difficulty": "advanced",
+      "prompt": "What is a key risk of using an LLM as a judge?",
+      "choices": [
+        "It is always slower than a human.",
+        "It can have position, verbosity and self-preference biases, so it must be calibrated against human labels.",
+        "It cannot read text.",
+        "It removes the need for a golden set."
+      ],
+      "answer": 1,
+      "explanation": "LLM judges scale evaluation but are biased measurement instruments. Randomize order, use rubrics, calibrate on human labels, and keep a human-reviewed sample."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "ai-agent-f1",
+      "difficulty": "beginner",
+      "front": "What makes a good tool schema?",
+      "back": "A narrow purpose, clear description, typed parameters with constraints, predictable errors, a timeout, and least-privilege access. The model should not have to guess."
+    },
+    {
+      "key": "ai-agent-f2",
+      "difficulty": "beginner",
+      "front": "Agent vs workflow?",
+      "back": "A workflow has explicit steps and known paths. An agent chooses actions at runtime. Prefer workflows; use agents only when the path cannot be enumerated."
+    },
+    {
+      "key": "ai-agent-f3",
+      "difficulty": "intermediate",
+      "front": "Why cap agent steps and cost?",
+      "back": "Loops can repeat, drift, or call expensive tools indefinitely. Caps plus explicit stop and failure paths prevent runaway latency, spend, and side effects."
+    },
+    {
+      "key": "ai-agent-f4",
+      "difficulty": "intermediate",
+      "front": "What is trajectory evaluation?",
+      "back": "Evaluating the sequence of decisions and tool calls, not only the final text: tool choice, arguments, permissions, evidence, stop conditions, and recovery."
+    },
+    {
+      "key": "ai-agent-f5",
+      "difficulty": "advanced",
+      "front": "What belongs in an AI trace?",
+      "back": "Input, prompt/model versions, retrieved IDs, tool calls and arguments, latency, tokens, cost, output, safety flags, feedback, and a trace id for debugging."
+    }
+  ]
+}

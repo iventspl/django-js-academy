@@ -28,6 +28,12 @@
       </p>
       <div class="result-actions">
         <a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}?topic={{ attempt.topic.slug|default:'' }}&amp;difficulty={{ attempt.difficulty }}&amp;length={{ attempt.length }}">Run it again <span aria-hidden="true">↻</span></a>
+        {% if missed_count %}
+          <form method="post" action="{% url 'dojo:retry_missed' attempt.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-ghost-light" type="submit">Retry {{ missed_count }} missed <span aria-hidden="true">↺</span></button>
+          </form>
+        {% endif %}
         <a class="btn btn-ghost-light" href="{% url 'dojo:flashcards' %}">Review fiszki <span aria-hidden="true">▣</span></a>
       </div>
     </div>
@@ -51,7 +57,7 @@
     <div class="result-stat">
       <span>Difficulty</span>
       <strong class="result-stat-text">{{ attempt.difficulty_label }}</strong>
-      <small>{{ attempt.topic.name|default:"All eight paths" }}</small>
+      <small>{{ attempt.topic.name|default:"All paths" }}</small>
     </div>
   </div>
 

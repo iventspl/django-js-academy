@@ -1,0 +1,179 @@
+{
+  "module": {
+    "slug": "ai-foundations",
+    "title": "AI Foundations & Python",
+    "subtitle": "The mental model, the Python you need, and your first honest model.",
+    "description": "Start with the map before the tools. You will learn how AI, machine learning, deep learning and LLMs relate, the Python habits that make AI code maintainable, and the four questions that turn a vague idea into a measurable first model.",
+    "stage": "foundation",
+    "difficulty": "beginner",
+    "glyph": "01",
+    "accent": "#8B5CF6",
+    "duration_weeks": 4,
+    "outcomes": [
+      "Explain the difference between AI, ML, DL and generative AI without hand-waving.",
+      "Write small, testable Python scripts that call APIs without leaking secrets.",
+      "Frame a model with a task, dataset, metric and baseline before choosing an algorithm."
+    ],
+    "skills": [
+      "AI literacy",
+      "Python scripting",
+      "API calls and environment variables",
+      "Train/test split",
+      "Baseline models"
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "ai-mental-model",
+      "title": "The AI map: from rules to LLMs",
+      "summary": "A durable mental model of the field, and where your work as an AI engineer actually sits.",
+      "minutes": 18,
+      "body_html": "<p>AI is the broad goal of making machines do tasks that normally need human intelligence. Machine learning is one way to get there: instead of writing every rule by hand, you show examples and let a program infer a pattern.</p>\n<h2>Four labels, one stack</h2>\n<ul>\n<li><strong>Artificial intelligence (AI)</strong> — the umbrella. Search, planning, robotics, language, vision, and more.</li>\n<li><strong>Machine learning (ML)</strong> — models learn a mapping from data instead of following hand-written rules.</li>\n<li><strong>Deep learning (DL)</strong> — ML with neural networks that learn layered representations. It powers modern vision, speech, and language models.</li>\n<li><strong>Generative AI / LLMs</strong> — models that generate text, images, audio, or code. A large language model (LLM) is a deep network trained to predict the next token.</li>\n</ul>\n<pre><code>problem → data → model → evaluation → product → feedback\n              ↑                         ↓\n              └──── iteration ──────────┘</code></pre>\n<h2>Three ways models learn</h2>\n<p><strong>Supervised learning</strong> learns from labelled examples: this email is spam, this customer churned, this image contains a cat. <strong>Unsupervised learning</strong> looks for structure without labels: clusters, anomalies, embeddings. <strong>Reinforcement learning</strong> learns from rewards and consequences, which is useful for games, control, and some agent training.</p>\n<p>Most beginner AI projects are supervised learning or LLM applications. Both still need data, evaluation, and a product decision.</p>\n<h2>Training is not inference</h2>\n<p><strong>Training</strong> changes model weights by showing examples. <strong>Inference</strong> uses a trained model to answer a new input. Training is expensive and batch-oriented; inference is what your users feel in latency and cost. When you call an LLM API, you are doing inference. When you fine-tune a model, you are training.</p>\n<h2>What you will actually do</h2>\n<p>An applied AI engineer spends less time inventing architectures than you might expect. The work is usually: clarify the decision, inspect the data, build a baseline, measure the right thing, improve the failure modes, and ship a system people can trust. A simple model with clean evaluation often beats a clever model with no baseline.</p>\n<div class=\"ai-callout\"><strong>Beginner trap:</strong> starting with fine-tuning or an agent framework. Start with the problem, the metric, and a baseline. Fine-tuning is a tool you reach for after the simple version has a measured weakness.</div>\n<h2>What this path is — and is not</h2>\n<p>This is an applied AI engineering path. You will build products, evaluate them, and learn enough theory to reason about failure. It is not a research degree: you will not derive every backpropagation equation or train a foundation model from scratch. You will learn how to use, adapt, evaluate, and ship modern AI systems.</p>",
+      "takeaways": [
+        "AI is the umbrella; machine learning learns from data; deep learning uses neural networks; LLMs predict tokens.",
+        "Applied AI work is mostly framing, data, evaluation and product judgment — not inventing architectures.",
+        "Start with a problem, metric and baseline before choosing a model or framework."
+      ],
+      "practice": "Write one paragraph describing a task you want to build, the decision it supports, the metric you would use, and the dumbest baseline you can imagine. Success: you can name the data you need and one reason the project might not be worth building."
+    },
+    {
+      "slug": "python-for-ai",
+      "title": "Python that AI work actually uses",
+      "summary": "Environments, small scripts, APIs, secrets, and tests — the unglamorous habits that make AI code reliable.",
+      "minutes": 18,
+      "body_html": "<p>Notebooks are excellent for exploration, but production AI code lives in small, testable modules. The goal is not to know every Python feature. The goal is to make your work reproducible and debuggable.</p>\n<h2>Use an environment, every time</h2>\n<pre><code>python -m venv .venv\nsource .venv/bin/activate      # Windows: .venv\\Scripts\\activate\npip install requests\npython -m pip freeze &gt; requirements.txt</code></pre>\n<p>Pin dependencies. Record the Python version. A notebook that worked six months ago because of an unpinned library is not a reproducible experiment.</p>\n<h2>Small functions beat one giant cell</h2>\n<pre><code>from dataclasses import dataclass\n\n@dataclass\nclass Chunk:\n    text: str\n    source: str\n    page: int\n\ndef chunk_text(text: str, size: int = 800) -&gt; list[Chunk]:\n    chunks = []\n    for start in range(0, len(text), size):\n        chunks.append(Chunk(text[start:start + size], \"notes\", start // size + 1))\n    return chunks</code></pre>\n<p>A function with typed inputs and outputs can be tested without a notebook, imported into a CLI, and reused in an API. That is the unit of AI engineering.</p>\n<h2>Call an LLM without leaking the key</h2>\n<pre><code>import os\nimport requests\n\ndef ask_llm(prompt: str) -&gt; str:\n    base = os.environ[\"LLM_BASE_URL\"].rstrip(\"/\")\n    key = os.environ[\"LLM_API_KEY\"]\n    model = os.environ.get(\"LLM_MODEL\", \"your-model\")\n    response = requests.post(\n        f\"{base}/chat/completions\",\n        headers={\"Authorization\": f\"Bearer {key}\"},\n        json={\n            \"model\": model,\n            \"messages\": [{\"role\": \"user\", \"content\": prompt}],\n            \"temperature\": 0,\n        },\n        timeout=30,\n    )\n    response.raise_for_status()\n    return response.json()[\"choices\"][0][\"message\"][\"content\"]</code></pre>\n<p>Never hard-code a key. Keep it in an environment variable or a local secret manager. Add a timeout, check the status code, and decide what happens when the provider is slow or unavailable.</p>\n<h2>Notebooks vs scripts</h2>\n<p>Use a notebook to explore data and test an idea. Move the code that matters into a module with tests. If a cell takes ten minutes and no one knows which order to run the cells in, it is not a pipeline.</p>\n<div class=\"ai-callout\"><strong>Habit:</strong> every project should have a README, a lockfile or pinned requirements, a sample environment file with placeholder keys, and at least one test for the part that must not silently break.</div>",
+      "takeaways": [
+        "Notebooks are for exploration; reusable functions and scripts are for shipping.",
+        "Keep secrets in environment variables, set timeouts, and handle provider errors explicitly.",
+        "Pin dependencies and test the small part of the pipeline that must not silently break."
+      ],
+      "practice": "Turn one notebook cell into a typed function, add one test for it, and call an LLM with a timeout plus a no-key fallback. Success: the test passes offline and the missing-key path returns a useful message instead of crashing."
+    },
+    {
+      "slug": "first-model",
+      "title": "Your first model and the four questions",
+      "summary": "Task, data, metric, baseline. A small scikit-learn example that teaches more than a bigger model would.",
+      "minutes": 18,
+      "body_html": "<p>Before touching an algorithm, answer four questions:</p>\n<ul>\n<li><strong>Task:</strong> what decision or output do we need?</li>\n<li><strong>Data:</strong> what examples do we have, and what will be available at prediction time?</li>\n<li><strong>Metric:</strong> how will we know whether the system is useful?</li>\n<li><strong>Baseline:</strong> what is the simplest thing that could work?</li>\n</ul>\n<p>If you cannot answer these, a bigger model will only produce a more expensive confusion.</p>\n<h2>A tiny honest baseline</h2>\n<pre><code>import pandas as pd\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import accuracy_score, confusion_matrix\n\ndf = pd.read_csv(\"customers.csv\")\nX = df[[\"tenure_months\", \"monthly_spend\", \"support_tickets\"]]\ny = df[\"churned\"]\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42, stratify=y\n)\n\nmodel = LogisticRegression(max_iter=1000)\nmodel.fit(X_train, y_train)\npred = model.predict(X_test)\n\nprint(\"accuracy:\", accuracy_score(y_test, pred))\nprint(confusion_matrix(y_test, pred))\nprint(\"baseline:\", max(y_test.mean(), 1 - y_test.mean()))</code></pre>\n<p>Always compare against a baseline. For a binary classifier, predicting the majority class is a baseline. For a recommender, popularity is a baseline. For an LLM task, a handwritten prompt and a simple keyword search are baselines.</p>\n<h2>What the confusion matrix tells you</h2>\n<p>Accuracy hides the cost of mistakes. The matrix shows true positives, false positives, true negatives, and false negatives. If missing a churner is expensive, false negatives matter more than overall accuracy. That decision belongs to the product, not to scikit-learn.</p>\n<h2>Leakage and overfitting</h2>\n<p><strong>Leakage</strong> means the model saw information it will not have at prediction time — for example, a cancellation reason recorded after the customer churned. <strong>Overfitting</strong> means the model memorized the training data and fails on new data. A separate test set and simple cross-validation catch both more often than intuition does.</p>\n<div class=\"ai-callout\"><strong>Rule:</strong> the first model should be boring, measurable, and easy to explain. Complexity is earned by a measured failure, not by ambition.</div>",
+      "takeaways": [
+        "Task, data, metric and baseline are the four questions that prevent expensive confusion.",
+        "A test set is a proxy for future data; protect it from tuning.",
+        "Leakage and overfitting are more common than model-choice mistakes."
+      ],
+      "practice": "Load any small CSV, build a majority-class baseline, then fit a logistic regression. Report accuracy, a confusion matrix and the baseline. Success: you can explain whether the model actually beat the baseline."
+    }
+  ],
+  "questions": [
+    {
+      "key": "ai-found-b1",
+      "difficulty": "beginner",
+      "prompt": "Which statement best describes the relationship between AI, machine learning, and deep learning?",
+      "choices": [
+        "They are three names for the same technique.",
+        "AI is the broad goal; ML is a family of learning methods; deep learning is a subset of ML using neural networks.",
+        "Deep learning is a subset of AI that does not use data.",
+        "Machine learning is only for chatbots."
+      ],
+      "answer": 1,
+      "explanation": "AI is the umbrella. ML learns patterns from data. Deep learning is a subset of ML based on multilayer neural networks. LLMs are deep learning models trained on text."
+    },
+    {
+      "key": "ai-found-b2",
+      "difficulty": "beginner",
+      "prompt": "What is the difference between training and inference?",
+      "choices": [
+        "Training happens in the browser; inference happens on the server.",
+        "Training adjusts model weights from examples; inference uses the trained model on new input.",
+        "Inference is always more expensive than training.",
+        "They are the same operation with different names."
+      ],
+      "answer": 1,
+      "explanation": "Training learns parameters from data and is usually a batch process. Inference applies the trained model to a new request, where latency and cost matter to users."
+    },
+    {
+      "key": "ai-found-i1",
+      "difficulty": "intermediate",
+      "prompt": "Where should an LLM API key live in a local project?",
+      "choices": [
+        "Hard-coded in the notebook so it is easy to find.",
+        "In an environment variable or local secret store, with the public repo containing only a placeholder.",
+        "In the README so collaborators can copy it.",
+        "In the model prompt."
+      ],
+      "answer": 1,
+      "explanation": "Secrets belong outside version control. Use environment variables or a secret manager, commit an example env file with placeholders, and rotate any key that leaks."
+    },
+    {
+      "key": "ai-found-i2",
+      "difficulty": "intermediate",
+      "prompt": "Why do we keep a test set that the model never sees during training?",
+      "choices": [
+        "To make training faster.",
+        "To estimate how the model behaves on new, unseen data.",
+        "To increase the number of features.",
+        "To avoid writing unit tests."
+      ],
+      "answer": 1,
+      "explanation": "The test set is a proxy for future data. If you tune on it repeatedly, it becomes a validation set and your estimate becomes optimistic."
+    },
+    {
+      "key": "ai-found-a1",
+      "difficulty": "advanced",
+      "prompt": "A churn model reports 92% accuracy, but only 8% of customers churn. What should you check first?",
+      "choices": [
+        "Whether the model can be made deeper.",
+        "Whether the accuracy is just the majority-class baseline, and what precision/recall the product actually needs.",
+        "Whether the CSV has more columns.",
+        "Whether the model runs on a GPU."
+      ],
+      "answer": 1,
+      "explanation": "With 8% positive cases, predicting 'no churn' every time gives 92% accuracy. The metric must reflect the cost of missed churners and false alarms, not just overall accuracy."
+    },
+    {
+      "key": "ai-found-a2",
+      "difficulty": "advanced",
+      "prompt": "Which situation is data leakage?",
+      "choices": [
+        "Using a validation split to tune hyperparameters.",
+        "Including a 'cancellation_reason' field that is only recorded after the customer cancels when predicting churn.",
+        "Scaling features inside a pipeline.",
+        "Using cross-validation instead of a single split."
+      ],
+      "answer": 1,
+      "explanation": "Cancellation reason is future information at prediction time. The model would learn from a signal unavailable when the decision must be made. Encode the prediction moment explicitly."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "ai-found-f1",
+      "difficulty": "beginner",
+      "front": "AI vs ML vs deep learning vs LLM?",
+      "back": "AI is the broad goal. ML learns patterns from data. Deep learning is ML with multilayer neural networks. LLMs are deep learning models trained on large text corpora to predict and generate tokens."
+    },
+    {
+      "key": "ai-found-f2",
+      "difficulty": "beginner",
+      "front": "Supervised vs unsupervised learning?",
+      "back": "Supervised learning uses labelled examples to learn an input→output mapping. Unsupervised learning looks for structure without labels, such as clusters, anomalies, or embeddings."
+    },
+    {
+      "key": "ai-found-f3",
+      "difficulty": "intermediate",
+      "front": "What is a baseline and why does it matter?",
+      "back": "A baseline is the simplest reasonable predictor: majority class, popularity, keyword search, or a basic prompt. It tells you whether the complex model actually adds value."
+    },
+    {
+      "key": "ai-found-f4",
+      "difficulty": "intermediate",
+      "front": "What is data leakage?",
+      "back": "Leakage is when training features contain information that will not be available at prediction time, or information derived from the target. It produces impressive offline scores and poor production behavior.",
+      "hint": "Ask: was this field known before the decision?"
+    },
+    {
+      "key": "ai-found-f5",
+      "difficulty": "advanced",
+      "front": "Why is accuracy often a bad metric for imbalanced data?",
+      "back": "A majority-class predictor can score high accuracy while never detecting the rare class. Use precision, recall, F1, PR-AUC, or a cost-weighted metric that matches the product decision."
+    }
+  ]
+}

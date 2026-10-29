@@ -35,21 +35,28 @@ class JsContentTests(SeededJsTestCase):
     def test_content_counts(self):
         self.assertEqual(len(load_bundles()), 21)
         self.assertEqual(JsModule.objects.count(), 21)
-        self.assertEqual(JsLesson.objects.count(), 64)
-        self.assertEqual(JsQuestion.objects.count(), 137)
-        self.assertEqual(JsFlashcard.objects.count(), 126)
+        self.assertEqual(JsLesson.objects.count(), 68)
+        self.assertEqual(JsQuestion.objects.count(), 144)
+        self.assertEqual(JsFlashcard.objects.count(), 132)
         self.assertEqual(JsComponent.objects.count(), 13)
 
     def test_every_module_has_expected_lessons_questions_and_cards(self):
         for module in JsModule.objects.prefetch_related(
             "lessons", "questions", "flashcards"
         ):
-            self.assertEqual(
-                module.lessons.count(), 4 if module.slug == "mvc-w-js" else 3, module.slug
-            )
+            if module.slug == "fundamenty-js":
+                expected_lessons = 7
+            elif module.slug == "mvc-w-js":
+                expected_lessons = 4
+            else:
+                expected_lessons = 3
+            self.assertEqual(module.lessons.count(), expected_lessons, module.slug)
             if module.slug == "mistrzostwo-js":
                 self.assertEqual(module.questions.count(), 15, module.slug)
                 self.assertEqual(module.flashcards.count(), 25, module.slug)
+            elif module.slug == "fundamenty-js":
+                self.assertEqual(module.questions.count(), 13, module.slug)
+                self.assertEqual(module.flashcards.count(), 11, module.slug)
             elif module.slug == "mvc-w-js":
                 self.assertEqual(module.questions.count(), 8, module.slug)
                 self.assertEqual(module.flashcards.count(), 6, module.slug)
@@ -66,7 +73,7 @@ class JsContentTests(SeededJsTestCase):
 
     def test_live_demos_are_attached_and_sandboxed(self):
         demo_lessons = JsLesson.objects.exclude(live_demo_html="")
-        self.assertEqual(demo_lessons.count(), 12)
+        self.assertEqual(demo_lessons.count(), 13)
         for lesson in demo_lessons:
             self.assertTrue(lesson.demo_title)
             self.assertTrue(lesson.demo_description)
@@ -81,7 +88,7 @@ class JsContentTests(SeededJsTestCase):
         lesson = JsLesson.objects.first()
         call_command("seed_js", verbosity=0)
         self.assertEqual(JsModule.objects.count(), 21)
-        self.assertEqual(JsLesson.objects.count(), 64)
+        self.assertEqual(JsLesson.objects.count(), 68)
         self.assertEqual(JsLesson.objects.get(pk=lesson.pk).title, lesson.title)
 
     def test_lessons_are_in_curriculum_order(self):
@@ -187,21 +194,21 @@ class JsQuizTests(SeededJsTestCase):
         self.assertEqual(response.status_code, 302)
         return JsAttempt.objects.latest("id")
 
-    def test_start_creates_six_question_attempt(self):
+    def test_start_creates_attempt_for_all_module_questions(self):
         attempt = self._start()
-        self.assertEqual(attempt.length, 6)
-        self.assertEqual(attempt.attempt_questions.count(), 6)
+        self.assertEqual(attempt.length, attempt.module.questions.count())
+        self.assertEqual(attempt.attempt_questions.count(), attempt.length)
 
     def test_complete_quiz_and_results(self):
         attempt = self._start()
         url = attempt.get_absolute_url()
-        for index in range(6):
+        for index in range(attempt.length):
             attempt.refresh_from_db()
             aq = attempt.current_attempt_question()
             correct = aq.question.choices.get(is_correct=True)
             self.client.post(url, {"action": "answer", "choice": correct.pk})
             response = self.client.post(url, {"action": "next"})
-            if index < 5:
+            if index < attempt.length - 1:
                 self.assertEqual(response.status_code, 302)
         attempt.refresh_from_db()
         self.assertIsNotNone(attempt.completed_at)

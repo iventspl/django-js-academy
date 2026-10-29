@@ -1,0 +1,59 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}Quiz · {{ attempt.module.title }}{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap ai-quiz-wrap">
+  <div class="ai-quiz-top">
+    <a class="ai-text-link" href="{{ attempt.module.get_absolute_url }}">← {{ attempt.module.title }}</a>
+    <span>Question {{ question_number }} / {{ attempt.length }}</span>
+    <span class="tag tag-ai-soft">{{ attempt.module.get_stage_display }}</span>
+  </div>
+  <div class="progress-track progress-track-dark ai-quiz-progress"><span style="--bar: {{ progress_percent }}%;"></span></div>
+
+  <article class="ai-question-card">
+    <div class="ai-question-meta">
+      <span class="tag tag-ai-soft">{{ question.module.title }}</span>
+      <span class="ai-difficulty ai-difficulty-{{ question.difficulty }}">{{ question.get_difficulty_display }}</span>
+    </div>
+    <h1>{{ question.prompt }}</h1>
+    {% if question.code %}<pre class="ai-code"><code>{{ question.code }}</code></pre>{% endif %}
+
+    {% if answered %}
+      <div class="ai-answer-list is-locked">
+        {% for choice in choices %}
+          <div class="ai-answer {% if choice.is_correct %}is-correct{% elif selected == choice %}is-wrong{% else %}is-muted{% endif %}">
+            <span class="ai-answer-key">{{ forloop.counter }}</span>
+            <span>{{ choice.text }}</span>
+            <span class="ai-answer-state">{% if choice.is_correct %}Correct{% elif selected == choice %}Your answer{% endif %}</span>
+          </div>
+        {% endfor %}
+      </div>
+      <section class="ai-feedback {% if is_correct %}is-correct{% else %}is-wrong{% endif %}">
+        <div class="ai-feedback-head"><strong>{% if is_correct %}Correct.{% else %}Not quite.{% endif %}</strong><span>{% if is_correct %}Locked in.{% else %}Read the why, then continue.{% endif %}</span></div>
+        <p>{{ question.explanation|linebreaks }}</p>
+        {% if question.explanation_code %}<pre class="ai-code"><code>{{ question.explanation_code }}</code></pre>{% endif %}
+        <form method="post">
+          {% csrf_token %}
+          <button class="btn btn-ai" type="submit" name="action" value="next">{% if question_number == attempt.length %}See results{% else %}Next question{% endif %} <span aria-hidden="true">→</span></button>
+        </form>
+      </section>
+    {% else %}
+      <form method="post" class="ai-answer-form">
+        {% csrf_token %}
+        <div class="ai-answer-list">
+          {% for choice in choices %}
+            <label class="ai-answer ai-answer-input">
+              <input type="radio" name="choice" value="{{ choice.pk }}">
+              <span class="ai-answer-key">{{ forloop.counter }}</span>
+              <span>{{ choice.text }}</span>
+              <span class="ai-answer-check" aria-hidden="true"></span>
+            </label>
+          {% endfor %}
+        </div>
+        <button class="btn btn-ai" type="submit" name="action" value="answer">Lock in answer <span aria-hidden="true">→</span></button>
+      </form>
+    {% endif %}
+  </article>
+</div>
+{% endblock %}

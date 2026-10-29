@@ -1,0 +1,178 @@
+{
+  "module": {
+    "slug": "data-math-evaluation",
+    "title": "Data, Math & Evaluation",
+    "subtitle": "The part that decides whether the model is worth anything.",
+    "description": "Models are downstream of data and metrics. Learn how to audit a dataset, build intuition for the math behind embeddings and gradients, and choose evaluation metrics that match the real cost of mistakes.",
+    "stage": "foundation",
+    "difficulty": "beginner",
+    "glyph": "02",
+    "accent": "#06B6D4",
+    "duration_weeks": 4,
+    "outcomes": [
+      "Audit a tabular dataset for schema, missingness, duplicates and leakage.",
+      "Explain vectors, dot products, probability, loss and gradient descent in plain language.",
+      "Choose a metric and threshold from the cost of false positives and false negatives."
+    ],
+    "skills": [
+      "Exploratory data analysis",
+      "Data leakage detection",
+      "Linear algebra intuition",
+      "Probability and loss",
+      "Classification metrics"
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "data-quality",
+      "title": "Data is the product",
+      "summary": "A dataset audit that catches the failures models cannot fix later.",
+      "minutes": 18,
+      "body_html": "<p>A model cannot recover from a dataset that answers the wrong question. Before modelling, write a short data contract: what one row represents, what the target means, when each feature is known, and which rows are out of scope.</p>\n<h2>The first audit</h2>\n<pre><code>import pandas as pd\n\ndf = pd.read_csv(\"customers.csv\")\nprint(df.shape)\nprint(df.dtypes)\nprint(df.isna().mean().sort_values(ascending=False).head(10))\nprint(\"duplicate rows:\", df.duplicated().sum())\nprint(df[\"churned\"].value_counts(normalize=True))</code></pre>\n<p>Look for missing values, impossible ranges, duplicate IDs, inconsistent categories, and timestamps that reveal when data was recorded. Missingness itself can be a signal, but only if it is known at prediction time.</p>\n<h2>Leakage is a design bug</h2>\n<p>Leakage appears when a feature is created after the outcome. Examples: a cancellation reason when predicting cancellation, a refund flag when predicting fraud, or a customer segment assigned by a human after reviewing the case. The fix is not a better model; it is removing the field or reconstructing the data as it existed at decision time.</p>\n<h2>Split by time, not just randomly</h2>\n<p>If the product predicts next month from this month, a random split can put future rows in training. Use a temporal split: train on older data, validate on newer data. For grouped data (one customer, many rows), split by group so the same customer does not appear on both sides.</p>\n<pre><code>train = df[df[\"month\"] &lt; \"2026-07\"]\nvalid = df[df[\"month\"] &gt;= \"2026-07\"]</code></pre>\n<h2>Privacy and provenance</h2>\n<p>Remove direct identifiers unless they are essential. Document where the data came from, who approved its use, how long you may keep it, and whether it contains personal or regulated information. A model trained on data you cannot legally use is a liability, not an asset.</p>\n<div class=\"ai-callout\"><strong>Audit output:</strong> one page with row count, target rate, missingness, leakage risks, split strategy, and known limitations. This page is often more valuable than the model itself.</div>",
+      "takeaways": [
+        "Define what one row means and when each feature is known.",
+        "Leakage is usually a design bug, not a model bug.",
+        "Use temporal or grouped splits when the deployment setting requires them."
+      ],
+      "practice": "Take a dataset you can access and write a one-page data contract: row meaning, target, prediction moment, missingness, split strategy and three leakage risks. Success: every field is labelled as known or unknown at prediction time."
+    },
+    {
+      "slug": "math-intuition",
+      "title": "The math you need, in pictures",
+      "summary": "Vectors, dot products, probability, loss, and gradients — enough intuition to reason about models.",
+      "minutes": 18,
+      "body_html": "<p>You do not need to derive every equation to be an effective AI engineer. You do need to understand what the model is optimizing and why distance, probability, and gradients show up everywhere.</p>\n<h2>Vectors are points with meaning</h2>\n<p>A vector is an ordered list of numbers. An embedding is a vector where nearby points mean similar things. A 1,536-dimensional embedding is hard to visualize, but the geometry still works: similarity is often measured with a dot product or cosine similarity.</p>\n<pre><code>cosine(a, b) = (a · b) / (||a|| ||b||)</code></pre>\n<p>Cosine similarity ignores magnitude and compares direction. That is useful for text embeddings, where the length of a document should not dominate similarity.</p>\n<h2>Matrices are transformations</h2>\n<p>A matrix maps a vector to another vector. A neural network layer is essentially a learned matrix plus a bias and a non-linear activation. Matrix multiplication is how batches of examples move through the network efficiently.</p>\n<h2>Probability turns scores into decisions</h2>\n<p>A classifier often outputs a score. A sigmoid maps a score to a probability between 0 and 1. A threshold turns that probability into a label. The threshold is a product decision: lowering it catches more positives but creates more false alarms.</p>\n<h2>Loss is the thing being minimized</h2>\n<p>Cross-entropy penalizes confident wrong answers. Mean squared error penalizes distance for regression. The optimizer changes parameters to reduce the loss on training data, while validation data tells you whether that progress generalizes.</p>\n<h2>Gradient descent in one sentence</h2>\n<p>A gradient points uphill; the optimizer steps downhill. The learning rate controls the step size. Too large and training diverges; too small and it crawls.</p>\n<pre><code>parameters ← parameters - learning_rate × gradient</code></pre>\n<p>Backpropagation is the efficient way to compute those gradients through a network. You will use frameworks that do it for you, but knowing the shape of the idea helps you debug exploding losses and silent non-learning.</p>\n<div class=\"ai-callout\"><strong>Intuition check:</strong> if someone asks why two embeddings are similar, you should be able to say “their directions align, measured by cosine similarity” without reaching for a research paper.</div>",
+      "takeaways": [
+        "Embeddings are vectors; cosine similarity compares their direction.",
+        "A neural network layer is a learned matrix plus a non-linearity.",
+        "Loss defines what the model optimizes; the gradient points toward worse loss."
+      ],
+      "practice": "Explain cosine similarity, loss and gradient descent to a non-ML friend in 150 words. Success: no unexplained jargon, and you can give one example of each."
+    },
+    {
+      "slug": "metrics",
+      "title": "Metrics that match the decision",
+      "summary": "Accuracy is a starting point, not a decision. Learn precision, recall, PR-AUC, calibration, and regression errors.",
+      "minutes": 18,
+      "body_html": "<p>Every metric encodes a value judgment. Choose it by asking what a false positive costs, what a false negative costs, and what volume of alerts a human can actually handle.</p>\n<h2>The confusion matrix</h2>\n<pre><code>                 predicted positive   predicted negative\nactual positive       true positive        false negative\nactual negative       false positive       true negative</code></pre>\n<p><strong>Precision</strong> = TP / (TP + FP): when the model says positive, how often is it right? <strong>Recall</strong> = TP / (TP + FN): of all real positives, how many did it catch? <strong>F1</strong> balances the two when both matter.</p>\n<h2>Thresholds and ranking</h2>\n<p>Most classifiers output a score. ROC-AUC measures ranking across all thresholds; PR-AUC is often more informative when positives are rare. Neither tells you the exact threshold to ship. Pick the threshold from the cost of errors and the capacity of the downstream process.</p>\n<pre><code>from sklearn.metrics import classification_report, precision_recall_curve\n\nprint(classification_report(y_test, pred))\nprecision, recall, thresholds = precision_recall_curve(y_test, scores)</code></pre>\n<h2>Calibration</h2>\n<p>A model is calibrated when a predicted 0.8 really means roughly 80% positive. Tree ensembles can be miscalibrated. If a human uses the probability directly, calibration matters as much as ranking.</p>\n<h2>Regression metrics</h2>\n<ul>\n<li><strong>MAE</strong> — average absolute error, easy to explain in the target unit.</li>\n<li><strong>RMSE</strong> — penalizes large errors more heavily.</li>\n<li><strong>MAPE</strong> — percentage error, unstable when the true value is near zero.</li>\n</ul>\n<p>Report a baseline and a slice analysis. Overall RMSE can hide a model that is excellent for large customers and useless for new ones.</p>\n<div class=\"ai-callout\"><strong>Metric brief:</strong> write one sentence for each error type — what happens to the user, the business, and the system — then choose the metric and threshold. “High accuracy” is not a metric brief.</div>",
+      "takeaways": [
+        "Every metric encodes a value judgment about false positives and false negatives.",
+        "Precision and recall describe different failures; thresholds turn scores into decisions.",
+        "Calibration and slice analysis matter when the number drives a real action."
+      ],
+      "practice": "For a fraud detector, write the cost of a false positive and a false negative, choose a metric and a threshold, and name one customer slice you would inspect. Success: another person can defend the decision from your note."
+    }
+  ],
+  "questions": [
+    {
+      "key": "ai-data-b1",
+      "difficulty": "beginner",
+      "prompt": "What does one row in a training table usually represent?",
+      "choices": [
+        "One model parameter.",
+        "One example or entity at a specific point in time.",
+        "One evaluation metric.",
+        "One API request."
+      ],
+      "answer": 1,
+      "explanation": "The row is the unit of learning. Defining it precisely (customer-month, order, session) prevents double counting, leakage, and ambiguous labels."
+    },
+    {
+      "key": "ai-data-b2",
+      "difficulty": "beginner",
+      "prompt": "Why is a temporal split often better than a random split for product data?",
+      "choices": [
+        "It makes the dataset smaller.",
+        "It mimics predicting the future from the past and reduces leakage.",
+        "It guarantees a higher accuracy.",
+        "It removes the need for a baseline."
+      ],
+      "answer": 1,
+      "explanation": "A random split can put future information in training. A time-based split better matches the deployment setting: train on the past, evaluate on later data."
+    },
+    {
+      "key": "ai-data-i1",
+      "difficulty": "intermediate",
+      "prompt": "A feature has 40% missing values. What is the best first step?",
+      "choices": [
+        "Fill every missing value with zero.",
+        "Understand why it is missing and whether missingness is known at prediction time.",
+        "Drop the column immediately.",
+        "Ignore it; tree models handle everything."
+      ],
+      "answer": 1,
+      "explanation": "Missingness can be informative or can encode leakage. Understand the mechanism before choosing imputation, a missing indicator, or removal."
+    },
+    {
+      "key": "ai-data-i2",
+      "difficulty": "intermediate",
+      "prompt": "What does a cosine similarity of 0.95 between two text embeddings mean?",
+      "choices": [
+        "The texts are exactly identical.",
+        "Their embedding directions are very similar, which usually suggests semantic similarity.",
+        "The texts have 95 words in common.",
+        "The model is 95% accurate."
+      ],
+      "answer": 1,
+      "explanation": "Cosine measures the angle between vectors, not exact equality. High similarity often means related meaning, but it must be validated for your model and domain."
+    },
+    {
+      "key": "ai-data-a1",
+      "difficulty": "advanced",
+      "prompt": "A fraud model has high ROC-AUC but the team still misses most fraud. What is a likely explanation?",
+      "choices": [
+        "ROC-AUC is always wrong.",
+        "The operating threshold is too high for the recall the team needs, or the class imbalance makes ROC-AUC look better than the deployed precision/recall trade-off.",
+        "The model needs more layers.",
+        "The test set was too large."
+      ],
+      "answer": 1,
+      "explanation": "ROC-AUC summarizes ranking across thresholds, not the threshold you chose. Inspect the precision-recall curve at the operating point and the cost of missed fraud."
+    },
+    {
+      "key": "ai-data-a2",
+      "difficulty": "advanced",
+      "prompt": "When is a model's calibration more important than its ranking?",
+      "choices": [
+        "When the model only ranks items and no human sees the score.",
+        "When a human or another system uses the predicted probability as a real probability, for example to price risk or decide whether to escalate.",
+        "When the dataset is small.",
+        "When using a random forest."
+      ],
+      "answer": 1,
+      "explanation": "Ranking only needs order. Calibration matters when the numeric probability drives a decision: expected loss, pricing, triage, or an automatic threshold."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "ai-data-f1",
+      "difficulty": "beginner",
+      "front": "What is data leakage?",
+      "back": "Information in training that will not be available at prediction time, or that is derived from the target. It creates optimistic offline scores and poor production behavior."
+    },
+    {
+      "key": "ai-data-f2",
+      "difficulty": "beginner",
+      "front": "Precision vs recall?",
+      "back": "Precision: of the predicted positives, how many were correct. Recall: of the actual positives, how many were found. The right balance depends on the cost of false alarms versus misses."
+    },
+    {
+      "key": "ai-data-f3",
+      "difficulty": "intermediate",
+      "front": "Why use a temporal split?",
+      "back": "It mimics the real deployment setting: train on older data, evaluate on newer data. It also prevents future rows from leaking into training."
+    },
+    {
+      "key": "ai-data-f4",
+      "difficulty": "intermediate",
+      "front": "What does cosine similarity measure?",
+      "back": "The cosine of the angle between two vectors. It compares direction rather than magnitude, which is useful for text embeddings."
+    },
+    {
+      "key": "ai-data-f5",
+      "difficulty": "advanced",
+      "front": "What is model calibration?",
+      "back": "Calibration means predicted probabilities match observed frequencies: among cases scored 0.8, about 80% should be positive. It matters when the number itself drives a decision."
+    }
+  ]
+}

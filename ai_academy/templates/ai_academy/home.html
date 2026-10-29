@@ -1,0 +1,182 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}AI Academy · applied AI engineer path{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <section class="ai-hero">
+    <div class="ai-hero-copy">
+      <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> AI Academy · applied path</p>
+      <h1>From curious beginner<br>to <em>AI engineer.</em></h1>
+      <p class="ai-hero-lead">A structured 12-month route through Python, machine learning, deep learning and LLMs — with eight real projects, evaluation habits, deployment, and a job-search plan. No hype, no hand-waving.</p>
+      <div class="ai-hero-actions">
+        {% if next %}
+          <a class="btn btn-ai" href="{{ next.lesson.get_absolute_url }}">Continue: {{ next.lesson.title }} <span aria-hidden="true">→</span></a>
+        {% else %}
+          <a class="btn btn-ai" href="{% url 'ai_academy:path' %}">Open the path <span aria-hidden="true">→</span></a>
+        {% endif %}
+        <a class="btn btn-ai-ghost" href="{% url 'ai_academy:projects' %}">See the projects <span aria-hidden="true">◫</span></a>
+        <a class="btn btn-ai-ghost" href="{% url 'ai_academy:career' %}">Career map <span aria-hidden="true">✦</span></a>
+      </div>
+      <div class="ai-role-line">
+        <span>Target role</span>
+        <strong>Applied AI Engineer · LLM / GenAI</strong>
+        <span class="ai-role-sep" aria-hidden="true">·</span>
+        <span>Beginner-friendly</span>
+      </div>
+    </div>
+
+    <aside class="ai-readiness-card" aria-label="Job readiness">
+      <div class="ai-readiness-head">
+        <div>
+          <p class="eyebrow eyebrow-ai-dark">Job readiness</p>
+          <h2>{{ stats.readiness }}<span>%</span></h2>
+        </div>
+        <span class="tag tag-ai">{{ stats.level_name }}</span>
+      </div>
+      <div class="ai-readiness-track"><span style="--bar: {{ stats.readiness }}%;"></span></div>
+      <p class="ai-readiness-note">A blend of lessons, quiz scores, concept recall and shipped projects — not a vanity streak.</p>
+      <dl class="ai-readiness-grid">
+        <div><dt>Lessons</dt><dd>{{ stats.completed_lessons }}/{{ stats.lesson_total }}</dd></div>
+        <div><dt>Projects</dt><dd>{{ stats.projects_shipped }}/{{ stats.project_total }}</dd></div>
+        <div><dt>Quiz avg</dt><dd>{{ stats.quiz_average }}%</dd></div>
+        <div><dt>Cards met</dt><dd>{{ stats.reviewed_cards }}/{{ stats.card_total }}</dd></div>
+      </dl>
+      <a class="ai-readiness-link" href="{% url 'ai_academy:progress' %}">Open the readiness notebook <span aria-hidden="true">↗</span></a>
+    </aside>
+  </section>
+
+  <section class="ai-stat-band" aria-label="Path overview">
+    <div><strong>{{ stats.module_total }}</strong><span>modules</span></div>
+    <div><strong>{{ stats.lesson_total }}</strong><span>lessons</span></div>
+    <div><strong>{{ stats.project_total }}</strong><span>real projects</span></div>
+    <div><strong>12</strong><span>months, part-time</span></div>
+    <div><strong>{{ stats.streak }}</strong><span>day streak</span></div>
+  </section>
+
+  {% if next %}
+    <section class="ai-next-band" aria-labelledby="next-title">
+      <div>
+        <p class="eyebrow eyebrow-ai-dark">Next move</p>
+        <h2 id="next-title">{{ next.lesson.title }}</h2>
+        <p>{{ next.module.title }} · {{ next.lesson.summary }}</p>
+      </div>
+      <div class="ai-next-actions">
+        <span class="ai-next-time">{{ next.lesson.minutes }} min</span>
+        <a class="btn btn-ai" href="{{ next.lesson.get_absolute_url }}">Open lesson <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="ai-section" aria-labelledby="stages-title">
+    <div class="ai-section-head">
+      <div>
+        <p class="eyebrow eyebrow-ai-dark">The route</p>
+        <h2 id="stages-title">Four stages. One employable stack.</h2>
+      </div>
+      <p class="ai-section-aside">Each stage builds on the previous one. Projects are not optional extras; they are how you prove the skills.</p>
+    </div>
+
+    <div class="ai-stage-grid">
+      {% for stage in stages %}
+        <article class="ai-stage-card ai-stage-{{ stage.key }}">
+          <div class="ai-stage-head">
+            <span class="ai-stage-index">{{ forloop.counter|stringformat:"02d" }}</span>
+            <span class="tag tag-ai-soft">{{ stage.label }}</span>
+          </div>
+          <h3>{{ stage.label }}</h3>
+          <p>{{ stage.completed }} of {{ stage.lesson_total }} lessons complete · {{ stage.weeks }} weeks</p>
+          <div class="ai-stage-progress">
+            <div class="progress-track progress-track-dark"><span style="--bar: {% widthratio stage.completed stage.lesson_total 100 %}%;"></span></div>
+          </div>
+          <div class="ai-stage-modules">
+            {% for row in stage.rows %}
+              <a href="{{ row.module.get_absolute_url }}">
+                <span class="ai-stage-glyph" style="--accent: {{ row.module.accent }};">{{ row.module.glyph }}</span>
+                <span>{{ row.module.title }}</span>
+                <span class="ai-stage-pct">{{ row.lesson_percent }}%</span>
+              </a>
+            {% endfor %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ai-section" aria-labelledby="projects-title">
+    <div class="ai-section-head">
+      <div>
+        <p class="eyebrow eyebrow-ai-dark">Portfolio first</p>
+        <h2 id="projects-title">Build things a hiring manager can inspect.</h2>
+      </div>
+      <a class="ai-text-link" href="{% url 'ai_academy:projects' %}">All {{ stats.project_total }} projects <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="ai-project-strip">
+      {% for row in featured_projects %}
+        <a class="ai-project-mini" href="{{ row.project.get_absolute_url }}">
+          <span class="ai-project-mini-top">
+            <span class="tag tag-ai-soft">{{ row.project.get_difficulty_display }}</span>
+            <span>{{ row.project.duration_hours }} h</span>
+          </span>
+          <h3>{{ row.project.title }}</h3>
+          <p>{{ row.project.tagline }}</p>
+          <span class="ai-project-mini-foot">
+            {% if row.completed %}Shipped ✓{% else %}Open brief →{% endif %}
+          </span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ai-section ai-role-section" aria-labelledby="roles-title">
+    <div class="ai-section-head">
+      <div>
+        <p class="eyebrow eyebrow-ai-dark">Where it can lead</p>
+        <h2 id="roles-title">One core. Three adjacent destinations.</h2>
+      </div>
+      <a class="ai-text-link" href="{% url 'ai_academy:career' %}">Open the career map <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="ai-role-grid">
+      {% for role in role_paths %}
+        <article class="ai-role-card">
+          <span class="tag tag-ai-soft">{{ role.title }}</span>
+          <h3>{{ role.tagline }}</h3>
+          <p>{{ role.focus }}</p>
+          <span class="ai-role-modules">{{ role.modules }}</span>
+          <span class="ai-role-fit">{{ role.fit }}</span>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if recent_attempts %}
+    <section class="ai-section" aria-labelledby="recent-title">
+      <div class="ai-section-head">
+        <div>
+          <p class="eyebrow eyebrow-ai-dark">Recent runs</p>
+          <h2 id="recent-title">Pick up a thread.</h2>
+        </div>
+        <a class="ai-text-link" href="{% url 'ai_academy:progress' %}">Full history →</a>
+      </div>
+      <div class="ai-recent-grid">
+        {% for attempt in recent_attempts %}
+          <a class="ai-recent-card" href="{% url 'ai_academy:quiz_results' attempt.pk %}">
+            <span>{{ attempt.module.title }}</span>
+            <strong>{{ attempt.score_percent }}%</strong>
+            <span>{{ attempt.correct_count }} of {{ attempt.length }} correct</span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="ai-cta-band">
+    <div>
+      <p class="eyebrow eyebrow-ai-light">Start small, ship consistently</p>
+      <h2>You do not need permission to begin.</h2>
+      <p>Open the first lesson, write one baseline, and put it in a repository. The path is designed to be finished one honest project at a time.</p>
+    </div>
+    <a class="btn btn-ai" href="{% url 'ai_academy:path' %}">See the full 12-month plan <span aria-hidden="true">→</span></a>
+  </section>
+</div>
+{% endblock %}

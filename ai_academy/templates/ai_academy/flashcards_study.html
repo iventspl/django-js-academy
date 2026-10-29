@@ -1,0 +1,74 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}Concept cards{% if module %} · {{ module.title }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <div class="ai-breadcrumb">
+    <a href="{% url 'ai_academy:flashcards_index' %}">← All decks</a>
+    {% if module %}<span>/</span><a href="{{ module.get_absolute_url }}">{{ module.title }}</a>{% endif %}
+  </div>
+
+  {% if card %}
+    <header class="ai-study-header">
+      <div>
+        <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> {% if module %}Deck{% else %}Mixed review{% endif %} · {{ card.get_difficulty_display }}</p>
+        <h1>{% if module %}{{ module.title }}{% else %}All due cards{% endif %}</h1>
+      </div>
+      <div class="ai-study-queue"><strong>{{ queue_remaining }}</strong><span>in queue</span></div>
+    </header>
+
+    <div class="progress-track progress-track-dark ai-study-progress"><span style="--bar: {{ progress.percent }}%;"></span></div>
+
+    <article class="ai-fiszka-card">
+      <div class="ai-fiszka-top">
+        <span class="tag tag-ai-soft">{{ card.module.title }}</span>
+        <span>{% if reveal %}Answer{% else %}Prompt{% endif %}</span>
+      </div>
+      <div class="ai-fiszka-body">
+        <p class="eyebrow eyebrow-ai-dark">{% if reveal %}The answer{% else %}Answer this out loud{% endif %}</p>
+        <h2>{% if reveal %}{{ card.back|linebreaksbr }}{% else %}{{ card.front }}{% endif %}</h2>
+        {% if reveal and card.back_code %}
+          <pre class="ai-code"><code>{{ card.back_code }}</code></pre>
+        {% elif not reveal and card.front_code %}
+          <pre class="ai-code"><code>{{ card.front_code }}</code></pre>
+        {% endif %}
+        {% if not reveal and card.hint %}
+          <details class="ai-hint"><summary>Need a nudge?</summary><p>{{ card.hint }}</p></details>
+        {% endif %}
+      </div>
+      <div class="ai-fiszka-foot">
+        {% if reveal %}
+          <span>{{ progress.reviewed }} of {{ progress.total }} cards met</span>
+        {% else %}
+          <a class="btn btn-ai" href="?reveal=1">Reveal the answer <span aria-hidden="true">↻</span></a>
+        {% endif %}
+      </div>
+    </article>
+
+    {% if reveal %}
+      <form class="ai-rating-form" method="post" action="{% if module %}{% url 'ai_academy:flashcards_rate' module.slug card.pk %}{% else %}{% url 'ai_academy:flashcards_rate_all' card.pk %}{% endif %}">
+        {% csrf_token %}
+        <p>How well did you recall it?</p>
+        <div class="ai-rating-buttons">
+          <button type="submit" name="rating" value="again"><strong>Again</strong><span>tomorrow</span></button>
+          <button type="submit" name="rating" value="hard"><strong>Hard</strong><span>stretch</span></button>
+          <button type="submit" name="rating" value="good"><strong>Good</strong><span>grow</span></button>
+          <button type="submit" name="rating" value="easy"><strong>Easy</strong><span>give room</span></button>
+        </div>
+      </form>
+    {% endif %}
+  {% else %}
+    <section class="ai-empty">
+      <span class="ai-empty-mark">✓</span>
+      <p class="eyebrow eyebrow-ai-dark">{% if module %}Deck complete{% else %}All caught up{% endif %}</p>
+      <h1>Nothing is due.<br><em>That is a good thing.</em></h1>
+      <p>You have met {{ progress.reviewed }} of {{ progress.total }} cards in this scope.</p>
+      <div class="ai-page-actions">
+        <a class="btn btn-ai" href="{% url 'ai_academy:flashcards_index' %}">Back to decks <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ai-ghost" href="{% url 'ai_academy:path' %}">Back to path <span aria-hidden="true">▤</span></a>
+      </div>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

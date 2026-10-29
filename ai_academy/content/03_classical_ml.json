@@ -1,0 +1,179 @@
+{
+  "module": {
+    "slug": "classical-ml",
+    "title": "Classical Machine Learning",
+    "subtitle": "Linear models, trees, ensembles, and validation you can trust.",
+    "description": "Classical ML is still the right first answer for most tabular problems. Learn how linear models and tree ensembles actually work, then build leak-free pipelines with cross-validation and model cards.",
+    "stage": "core",
+    "difficulty": "intermediate",
+    "glyph": "03",
+    "accent": "#22C55E",
+    "duration_weeks": 6,
+    "outcomes": [
+      "Explain when a regularized linear model is a strong, interpretable choice.",
+      "Compare random forests and gradient boosting without treating feature importance as truth.",
+      "Build preprocessing and model selection inside a pipeline that prevents leakage."
+    ],
+    "skills": [
+      "Logistic regression",
+      "Regularization",
+      "Tree ensembles",
+      "Feature engineering",
+      "Cross-validation",
+      "Model cards"
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "linear-models",
+      "title": "Linear and logistic regression",
+      "summary": "The interpretable workhorses: coefficients, regularization, and when a simple model wins.",
+      "minutes": 18,
+      "body_html": "<p>Linear regression predicts a continuous value as a weighted sum of features. Logistic regression predicts the probability of a binary outcome by passing that weighted sum through a sigmoid. Both are fast, interpretable, and surprisingly hard to beat on many tabular datasets.</p>\n<h2>What the coefficients mean</h2>\n<p>A positive coefficient pushes the prediction up; a negative one pushes it down. The magnitude depends on the feature scale, so standardize features before comparing coefficients. Correlation between features makes individual coefficients unstable even when predictions are fine.</p>\n<h2>Regularization</h2>\n<p>L2 regularization (ridge) shrinks coefficients and stabilizes correlated features. L1 regularization (lasso) can push some coefficients to exactly zero, producing a sparse model. Elastic net combines both.</p>\n<pre><code>from sklearn.linear_model import LogisticRegression\n\nmodel = LogisticRegression(\n    penalty=\"l2\",\n    C=1.0,          # smaller C = stronger regularization\n    max_iter=2000,\n    class_weight=\"balanced\",\n)\nmodel.fit(X_train_scaled, y_train)</code></pre>\n<h2>When linear models win</h2>\n<ul>\n<li>Small or medium tabular data with meaningful features.</li>\n<li>The team needs to explain the direction of each feature.</li>\n<li>You need a fast, stable baseline before trying a larger model.</li>\n<li>The signal is mostly additive rather than full of complex interactions.</li>\n</ul>\n<p>They fail when the relationship is strongly non-linear, when interactions dominate, or when raw high-dimensional inputs (pixels, audio) need representation learning.</p>\n<div class=\"ai-callout\"><strong>Practice:</strong> fit a regularized logistic regression, inspect coefficients after standardization, then compare its PR-AUC with a tree ensemble. Do not skip the baseline.</div>",
+      "takeaways": [
+        "Regularized linear models are strong, fast baselines for tabular data.",
+        "Standardize features before comparing coefficient magnitudes.",
+        "Complexity is justified by measured errors, not by novelty."
+      ],
+      "practice": "Fit a logistic regression with and without L2 regularization on the same split. Compare coefficients and PR-AUC. Success: you can explain why the coefficients changed."
+    },
+    {
+      "slug": "trees-ensembles",
+      "title": "Trees, forests, and boosting",
+      "summary": "How decision trees split, why ensembles help, and how to read feature importance honestly.",
+      "minutes": 18,
+      "body_html": "<p>A decision tree asks a sequence of yes/no questions. It is easy to explain but prone to memorizing noise. Ensembles fix that by combining many trees.</p>\n<h2>Random forests</h2>\n<p>A random forest trains many deep trees on bootstrap samples and random feature subsets, then averages their predictions. It reduces variance and is a strong default for tabular data. It is less interpretable than one tree, but feature importance and partial dependence can still help.</p>\n<h2>Gradient boosting</h2>\n<p>Gradient boosting builds trees sequentially, each one correcting the errors of the current ensemble. Modern implementations (XGBoost, LightGBM, CatBoost) are often the best tabular performers. They need careful learning rates, depth, and early stopping to avoid overfitting.</p>\n<pre><code>from sklearn.ensemble import HistGradientBoostingClassifier\n\nmodel = HistGradientBoostingClassifier(\n    learning_rate=0.05,\n    max_iter=400,\n    early_stopping=True,\n    validation_fraction=0.15,\n    random_state=42,\n)\nmodel.fit(X_train, y_train)</code></pre>\n<h2>Feature importance is not causality</h2>\n<p>Impurity-based importance can inflate high-cardinality and correlated features. Permutation importance on validation data is usually more honest. Neither tells you what happens if you intervene and change a feature.</p>\n<h2>Choosing between them</h2>\n<p>Start with a regularized linear model and a random forest. If the forest clearly wins, try gradient boosting. Compare with the same split, the same metric, and a confidence interval or repeated cross-validation. A 0.3% improvement may be noise.</p>\n<div class=\"ai-callout\"><strong>Model card:</strong> record data source, intended use, features, metric, threshold, known failure slices, and who should not use it. This is portfolio evidence, not bureaucracy.</div>",
+      "takeaways": [
+        "Random forests average many trees to reduce variance; boosting corrects errors sequentially.",
+        "Feature importance describes model behaviour, not causality.",
+        "Compare models on the same split, metric and validation protocol."
+      ],
+      "practice": "Train a random forest and a gradient-boosting model, compare cross-validation mean and standard deviation, then inspect permutation importance for the top three features. Success: your comparison is not based on a single lucky score."
+    },
+    {
+      "slug": "pipelines-validation",
+      "title": "Pipelines and honest validation",
+      "summary": "Put preprocessing inside the pipeline, tune with cross-validation, and keep the test set sacred.",
+      "minutes": 18,
+      "body_html": "<p>Most “model bugs” are validation bugs. If you scale, impute, or select features before splitting, information from the validation fold leaks into training.</p>\n<h2>One pipeline for preprocessing and model</h2>\n<pre><code>from sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.ensemble import RandomForestClassifier\n\nnumeric = [\"tenure_months\", \"monthly_spend\", \"support_tickets\"]\ncategorical = [\"plan\", \"country\"]\n\npreprocess = ColumnTransformer([\n    (\"num\", Pipeline([\n        (\"impute\", SimpleImputer(strategy=\"median\")),\n        (\"scale\", StandardScaler()),\n    ]), numeric),\n    (\"cat\", Pipeline([\n        (\"impute\", SimpleImputer(strategy=\"most_frequent\")),\n        (\"encode\", OneHotEncoder(handle_unknown=\"ignore\")),\n    ]), categorical),\n])\n\nmodel = Pipeline([\n    (\"preprocess\", preprocess),\n    (\"classifier\", RandomForestClassifier(\n        n_estimators=400, min_samples_leaf=3, random_state=42\n    )),\n])</code></pre>\n<h2>Cross-validation</h2>\n<pre><code>from sklearn.model_selection import cross_val_score, StratifiedKFold\n\ncv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\nscores = cross_val_score(model, X_train, y_train, cv=cv, scoring=\"average_precision\")\nprint(scores.mean(), scores.std())</code></pre>\n<p>Use stratified folds for classification, grouped folds when rows share a customer, and time-series splits for temporal data. Report variance, not just the mean.</p>\n<h2>Tuning without fooling yourself</h2>\n<p>Grid search on the training set with cross-validation. Keep the test set untouched until the final evaluation. If you tune on the test set repeatedly, it stops being an estimate of future performance.</p>\n<div class=\"ai-callout\"><strong>Checklist:</strong> split first, preprocess inside the pipeline, tune with CV, evaluate once on test, analyze slices, write the model card.</div>",
+      "takeaways": [
+        "Split first; fit every preprocessing step inside the training fold.",
+        "Use stratified, grouped or time-based CV to match the data structure.",
+        "Tune on validation, evaluate once on the held-out test set."
+      ],
+      "practice": "Build a ColumnTransformer plus Pipeline, run five-fold cross-validation, then evaluate once on the test set. Report mean and standard deviation. Success: no preprocessing happens outside the pipeline."
+    }
+  ],
+  "questions": [
+    {
+      "key": "ai-ml-b1",
+      "difficulty": "beginner",
+      "prompt": "What does logistic regression output before a threshold is applied?",
+      "choices": [
+        "A class label only.",
+        "A probability between 0 and 1.",
+        "A decision tree.",
+        "An embedding."
+      ],
+      "answer": 1,
+      "explanation": "Logistic regression applies a sigmoid to a weighted sum, producing a probability. The threshold converts that probability into a class prediction."
+    },
+    {
+      "key": "ai-ml-b2",
+      "difficulty": "beginner",
+      "prompt": "Why is a random forest usually more stable than a single decision tree?",
+      "choices": [
+        "It uses a larger learning rate.",
+        "It averages many trees trained on different samples and feature subsets, reducing variance.",
+        "It never overfits.",
+        "It removes the need for validation data."
+      ],
+      "answer": 1,
+      "explanation": "A single tree is high-variance. Bagging many trees and averaging their predictions smooths out idiosyncratic splits. Random forests can still overfit, but are usually more robust."
+    },
+    {
+      "key": "ai-ml-i1",
+      "difficulty": "intermediate",
+      "prompt": "What does stronger L2 regularization do?",
+      "choices": [
+        "It forces every coefficient to zero.",
+        "It shrinks coefficients toward zero, trading some training fit for stability.",
+        "It adds more features.",
+        "It increases the learning rate."
+      ],
+      "answer": 1,
+      "explanation": "L2 penalizes large coefficients. In scikit-learn, smaller C means stronger regularization. It can improve generalization when features are correlated or data is limited."
+    },
+    {
+      "key": "ai-ml-i2",
+      "difficulty": "intermediate",
+      "prompt": "Why must imputation and scaling happen inside a cross-validation pipeline?",
+      "choices": [
+        "To make the code shorter.",
+        "So statistics are learned only from each training fold, preventing validation leakage.",
+        "Because scikit-learn requires it for all models.",
+        "To improve GPU utilization."
+      ],
+      "answer": 1,
+      "explanation": "If you impute with the full dataset mean before splitting, the validation fold influences training. The pipeline fits preprocessing on each training fold only."
+    },
+    {
+      "key": "ai-ml-a1",
+      "difficulty": "advanced",
+      "prompt": "Feature importance from a random forest is high for a feature. What can you conclude?",
+      "choices": [
+        "Changing that feature will cause the outcome.",
+        "The feature was useful for this model's predictions, but importance is not causal and can be distorted by correlation.",
+        "The feature is definitely safe to use in production.",
+        "The model is calibrated."
+      ],
+      "answer": 1,
+      "explanation": "Importance is model- and data-dependent. Correlated features can split importance, and high-cardinality features can be favored. Use permutation importance on held-out data and domain reasoning."
+    },
+    {
+      "key": "ai-ml-a2",
+      "difficulty": "advanced",
+      "prompt": "Your gradient boosting model improves PR-AUC by 0.2% over a logistic baseline. What is the most reasonable next step?",
+      "choices": [
+        "Ship the boosted model immediately.",
+        "Check whether the difference is stable across folds and whether the added complexity is justified by the product.",
+        "Remove the baseline from the report.",
+        "Add more trees until the gap is 10%."
+      ],
+      "answer": 1,
+      "explanation": "Small offline gains can be noise. Use repeated CV, confidence intervals, and a clear decision rule. Complexity must earn its operational and explainability cost."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "ai-ml-f1",
+      "difficulty": "beginner",
+      "front": "When is a linear model a strong choice?",
+      "back": "When the signal is mostly additive, the dataset is small or medium, interpretability matters, or you need a fast baseline. Standardize features before comparing coefficients."
+    },
+    {
+      "key": "ai-ml-f2",
+      "difficulty": "beginner",
+      "front": "Random forest vs gradient boosting?",
+      "back": "Random forests average many independent trees and are robust defaults. Gradient boosting builds trees sequentially to correct errors and often wins on tabular data, with more tuning risk."
+    },
+    {
+      "key": "ai-ml-f3",
+      "difficulty": "intermediate",
+      "front": "Why put preprocessing inside a Pipeline?",
+      "back": "It ensures imputation, scaling, and encoding are fit only on each training fold, preventing leakage during cross-validation and keeping training and inference consistent."
+    },
+    {
+      "key": "ai-ml-f4",
+      "difficulty": "intermediate",
+      "front": "What does L1 regularization do?",
+      "back": "It adds a penalty on absolute coefficient size and can drive some coefficients exactly to zero, producing a sparse model. L2 shrinks coefficients more smoothly."
+    },
+    {
+      "key": "ai-ml-f5",
+      "difficulty": "advanced",
+      "front": "Why is feature importance not causality?",
+      "back": "It describes how a model used a feature, not what happens under intervention. Correlated features and model quirks distort importance; causal claims need experimental or causal-inference evidence."
+    }
+  ]
+}

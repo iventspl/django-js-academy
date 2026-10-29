@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "dojo",
     "js_academy",
+    "ai_academy",
 ]
 
 MIDDLEWARE = [

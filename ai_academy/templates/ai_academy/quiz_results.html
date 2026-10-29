@@ -1,0 +1,57 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}Quiz result · {{ attempt.module.title }}{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <section class="ai-result-hero">
+    <div class="ai-result-score"><strong>{{ attempt.score_percent }}<span>%</span></strong><span>{{ attempt.correct_count }} of {{ attempt.length }}</span></div>
+    <div>
+      <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> Checkpoint complete</p>
+      <h1>{% if attempt.score_percent == 100 %}A clean sweep.{% elif attempt.score_percent >= 80 %}Strong signal.{% elif attempt.score_percent >= 50 %}A solid start.{% else %}Useful data.{% endif %}</h1>
+      <p class="ai-page-lead">The explanation is the lesson. Review the misses, then return to the module project while the ideas are fresh.</p>
+      <div class="ai-page-actions">
+        <a class="btn btn-ai" href="{{ attempt.module.get_absolute_url }}">Back to module <span aria-hidden="true">→</span></a>
+        <form method="post" action="{% url 'ai_academy:quiz_start' attempt.module.slug %}">
+          {% csrf_token %}
+          <button class="btn btn-ai-ghost" type="submit">Run it again <span aria-hidden="true">↻</span></button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <div class="ai-result-stats">
+    <div><strong>{{ attempt.correct_count }}/{{ attempt.length }}</strong><span>correct</span></div>
+    <div><strong>{{ missed|length }}</strong><span>to review</span></div>
+    <div><strong>{{ attempt.module.duration_weeks }}</strong><span>week module</span></div>
+  </div>
+
+  <section class="ai-section" aria-labelledby="review-title">
+    <div class="ai-section-head">
+      <div>
+        <p class="eyebrow eyebrow-ai-dark">The useful part</p>
+        <h2 id="review-title">Every answer, explained.</h2>
+      </div>
+      <p class="ai-section-aside">Open a row to revisit the reasoning. The misses matter more than the wins.</p>
+    </div>
+    <div class="ai-review-list">
+      {% for row in rows %}
+        <details class="ai-review-item {% if row.is_correct %}is-correct{% else %}is-wrong{% endif %}" {% if not row.is_correct and forloop.first %}open{% endif %}>
+          <summary>
+            <span class="ai-review-mark">{% if row.is_correct %}✓{% else %}×{% endif %}</span>
+            <span>{{ row.question.prompt }}</span>
+            <span class="ai-review-diff">{{ row.question.get_difficulty_display }}</span>
+            <span class="ai-review-toggle">+</span>
+          </summary>
+          <div class="ai-review-body">
+            <p><strong>Your answer:</strong> {{ row.selected.text|default:"No answer" }}</p>
+            {% if not row.is_correct %}<p><strong>Correct answer:</strong> {{ row.question.correct_choice.text }}</p>{% endif %}
+            <p>{{ row.question.explanation|linebreaks }}</p>
+            {% if row.question.explanation_code %}<pre class="ai-code"><code>{{ row.question.explanation_code }}</code></pre>{% endif %}
+          </div>
+        </details>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

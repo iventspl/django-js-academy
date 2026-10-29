@@ -1,0 +1,52 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}AI glossary · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <header class="ai-page-header">
+    <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> The vocabulary</p>
+    <h1>AI glossary.<br><em>Plain language only.</em></h1>
+    <p class="ai-page-lead">{{ term_total }} terms you will meet in lessons, projects and interviews. Search by name or definition, or filter by category. Every term links back to the module where it matters.</p>
+    <form class="ai-search-big" method="get" role="search">
+      <label class="sr-only" for="glossary-q">Search the glossary</label>
+      <input id="glossary-q" name="q" type="search" value="{{ query }}" placeholder="Search: RAG, embedding, leakage, calibration…">
+      <button class="btn btn-ai" type="submit">Search</button>
+    </form>
+  </header>
+
+  <nav class="ai-category-chips" aria-label="Glossary categories">
+    <a class="ai-chip {% if not active_category %}is-active{% endif %}" href="{% url 'ai_academy:glossary' %}{% if query %}?q={{ query|urlencode }}{% endif %}">All</a>
+    {% for category in categories %}
+      <a class="ai-chip {% if active_category == category %}is-active{% endif %}" href="{% url 'ai_academy:glossary' %}?category={{ category|urlencode }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}">{{ category }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="ai-result-count">
+    <strong>{{ result_count }}</strong> term{{ result_count|pluralize }} in view
+    {% if query %} · matching “{{ query }}”{% endif %}
+    {% if active_category %} · in {{ active_category }}{% endif %}
+  </div>
+
+  <div class="ai-glossary-grid">
+    {% for term in terms %}
+      <article class="ai-glossary-card">
+        <div class="ai-glossary-top">
+          <span class="tag tag-ai-soft">{{ term.category }}</span>
+          {% if term.module %}<a href="{{ term.module.get_absolute_url }}">{{ term.module.title }} →</a>{% endif %}
+        </div>
+        <h2>{{ term.term }}</h2>
+        <p>{{ term.definition }}</p>
+        {% if term.example %}<p class="ai-glossary-example">{{ term.example }}</p>{% endif %}
+      </article>
+    {% empty %}
+      <div class="ai-empty ai-glossary-empty">
+        <span class="ai-empty-mark">0</span>
+        <h2>No term matches that.</h2>
+        <p>Try a shorter phrase or clear the category filter.</p>
+        <a class="btn btn-ai" href="{% url 'ai_academy:glossary' %}">Reset the glossary</a>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

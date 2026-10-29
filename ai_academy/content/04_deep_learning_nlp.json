@@ -1,0 +1,178 @@
+{
+  "module": {
+    "slug": "deep-learning-nlp",
+    "title": "Deep Learning & NLP",
+    "subtitle": "Neural networks, a PyTorch loop, and how transformers changed language work.",
+    "description": "Build the bridge from classical ML to modern language models. Learn what a neural network optimizes, write a training loop you can debug, and understand tokenization, embeddings and attention well enough to choose the right tool.",
+    "stage": "core",
+    "difficulty": "intermediate",
+    "glyph": "04",
+    "accent": "#F59E0B",
+    "duration_weeks": 6,
+    "outcomes": [
+      "Explain layers, activations, loss, backpropagation and overfitting without hiding behind frameworks.",
+      "Write and debug a PyTorch training loop with train/validation separation.",
+      "Choose between classical text models, fine-tuned transformers and prompted LLMs for a task."
+    ],
+    "skills": [
+      "Neural network fundamentals",
+      "PyTorch training loops",
+      "Tokenization and embeddings",
+      "Transfer learning",
+      "NLP evaluation"
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "neural-networks",
+      "title": "Neural networks from one neuron to backprop",
+      "summary": "What a network actually learns, why non-linearity matters, and how training goes wrong.",
+      "minutes": 18,
+      "body_html": "<p>A neural network is a stack of learned transformations. Each layer takes a vector, multiplies it by a weight matrix, adds a bias, and applies a non-linear activation. Stack enough layers and the network can represent complex functions.</p>\n<h2>One neuron</h2>\n<pre><code>output = activation(w1*x1 + w2*x2 + ... + b)</code></pre>\n<p>Without a non-linear activation, stacked layers collapse into one linear transformation. ReLU is a common default: it returns the input if positive and zero otherwise. It is cheap and helps gradients flow.</p>\n<h2>Loss and learning</h2>\n<p>The loss measures how wrong the output is. Cross-entropy is standard for classification; mean squared error for regression. Backpropagation computes how each weight contributed to the loss, and an optimizer such as Adam or SGD updates the weights.</p>\n<pre><code>for epoch in range(epochs):\n    for xb, yb in train_loader:\n        optimizer.zero_grad()\n        logits = model(xb)\n        loss = loss_fn(logits, yb)\n        loss.backward()\n        optimizer.step()</code></pre>\n<h2>Epochs, batches, and learning rate</h2>\n<p>An <strong>epoch</strong> is one pass over the training set. A <strong>batch</strong> is a small group of examples processed together. The <strong>learning rate</strong> controls step size. Too high and the loss explodes; too low and training never converges. These are the first knobs to inspect.</p>\n<h2>Overfitting</h2>\n<p>Training loss going down while validation loss goes up is the classic overfitting signal. Early stopping, weight decay, dropout, data augmentation, and simpler models are the usual responses. More epochs are not automatically better.</p>\n<div class=\"ai-callout\"><strong>When not to use deep learning:</strong> small tabular datasets with strong features often favor gradient boosting or linear models. Deep learning earns its cost with large data, unstructured inputs, or transfer learning from a pretrained model.</div>",
+      "takeaways": [
+        "Non-linear activations are what let stacked layers represent complex functions.",
+        "Training minimizes a loss through backpropagation and an optimizer.",
+        "Training loss falling while validation loss rises is the overfitting signal."
+      ],
+      "practice": "Sketch a two-layer network for a tabular input and label the shapes at every step. Success: you can explain why removing the activation collapses the model into a linear function."
+    },
+    {
+      "slug": "pytorch-loop",
+      "title": "A PyTorch training loop you can trust",
+      "summary": "Datasets, loaders, train and eval modes, metrics, checkpoints, and the checks that catch silent bugs.",
+      "minutes": 18,
+      "body_html": "<p>A training loop is a small state machine. Keep it boring, explicit, and instrumented. If you cannot tell whether the model is learning after one epoch, the loop is hiding something.</p>\n<h2>Dataset and DataLoader</h2>\n<pre><code>from torch.utils.data import Dataset, DataLoader\n\nclass TicketDataset(Dataset):\n    def __init__(self, texts, labels, tokenizer, max_length=256):\n        self.encodings = tokenizer(\n            texts, truncation=True, max_length=max_length, padding=True\n        )\n        self.labels = labels\n\n    def __len__(self):\n        return len(self.labels)\n\n    def __getitem__(self, index):\n        item = {key: value[index] for key, value in self.encodings.items()}\n        item[\"labels\"] = self.labels[index]\n        return item\n\nloader = DataLoader(dataset, batch_size=16, shuffle=True)</code></pre>\n<p>The DataLoader handles batching and shuffling. For text, the tokenizer turns strings into token IDs and attention masks. Keep padding and truncation policy explicit.</p>\n<h2>The loop</h2>\n<pre><code>model.train()\nfor batch in train_loader:\n    batch = {k: v.to(device) for k, v in batch.items()}\n    optimizer.zero_grad()\n    outputs = model(**batch)\n    loss = outputs.loss\n    loss.backward()\n    optimizer.step()</code></pre>\n<p>Then evaluate:</p>\n<pre><code>model.eval()\nwith torch.no_grad():\n    for batch in valid_loader:\n        outputs = model(**batch)\n        predictions = outputs.logits.argmax(dim=-1)</code></pre>\n<p><code>model.eval()</code> changes dropout and batch-normalization behavior. Forgetting it makes validation noisy and misleading.</p>\n<h2>Check the silent bugs</h2>\n<ul>\n<li>Print the loss for the first few batches. Is it near the expected random baseline?</li>\n<li>Overfit a tiny subset on purpose. If the model cannot memorize ten examples, the loop or labels are wrong.</li>\n<li>Compare label distribution and prediction distribution. A model that predicts one class is not learning.</li>\n<li>Save the checkpoint and reload it before trusting a score.</li>\n</ul>\n<div class=\"ai-callout\"><strong>Habit:</strong> a training script without a fixed seed, a validation split, and saved metrics is an anecdote, not an experiment.</div>",
+      "takeaways": [
+        "Dataset and DataLoader separate data handling from the training loop.",
+        "model.train() and model.eval() change dropout and batch-normalization behaviour.",
+        "Overfit a tiny batch on purpose to prove the loop and labels work."
+      ],
+      "practice": "Write a training loop, overfit ten examples to near-zero loss, then evaluate on a validation split. Success: you can show the memorization curve and the generalization gap."
+    },
+    {
+      "slug": "nlp-transformers",
+      "title": "From words to transformers",
+      "summary": "Tokenization, embeddings, attention, and the decision between classical NLP, fine-tuning and prompting.",
+      "minutes": 18,
+      "body_html": "<p>Language models do not see words; they see tokens. A tokenizer splits text into subword units, maps them to integer IDs, and the model learns a vector for each ID. Common words may be one token; rare words split into pieces.</p>\n<h2>Embeddings</h2>\n<p>An embedding maps a token to a dense vector. During pretraining, tokens that appear in similar contexts end up with similar vectors. Sentence embeddings extend the idea to whole passages and power semantic search.</p>\n<h2>Attention</h2>\n<p>Self-attention lets each token weigh information from other tokens. The model learns which parts of the context matter for the current prediction. Stacked attention layers and feed-forward blocks produce contextual representations.</p>\n<pre><code>“The bank raised its rates.”\n“We sat by the river bank.”</code></pre>\n<p>The token “bank” gets different contextual representations because attention incorporates the surrounding words.</p>\n<h2>Three levels of reuse</h2>\n<ul>\n<li><strong>Classical NLP</strong> — TF-IDF, logistic regression, gradient boosting. Fast, strong baselines for small labelled datasets.</li>\n<li><strong>Fine-tuning</strong> — adapt a pretrained transformer to your labelled task. More compute and data than a baseline, often excellent for classification and extraction.</li>\n<li><strong>Prompting an LLM</strong> — no task-specific training; best when the task is open-ended, labelled data is scarce, or you need generation and reasoning.</li>\n</ul>\n<h2>Choosing</h2>\n<p>Start with a cheap baseline, then fine-tune if the error analysis shows a representation problem. Use an LLM when the task needs language understanding or generation that a small supervised model cannot provide, and you can evaluate the output. “We used a transformer” is not a rationale.</p>\n<div class=\"ai-callout\"><strong>Evaluation:</strong> for classification, use per-class precision and recall, not just accuracy. For generation, evaluate task-specific qualities and safety, not only fluency.</div>",
+      "takeaways": [
+        "Tokenization turns text into IDs; embeddings and attention build context.",
+        "Classical NLP, fine-tuning and prompting are different cost/data trade-offs.",
+        "Evaluate the task, not fluency alone."
+      ],
+      "practice": "Take 20 support tickets, label them manually, and compare a keyword baseline with an LLM prompt. Success: you can name the per-class errors and which approach you would ship."
+    }
+  ],
+  "questions": [
+    {
+      "key": "ai-dl-b1",
+      "difficulty": "beginner",
+      "prompt": "What does a single artificial neuron compute?",
+      "choices": [
+        "A random number independent of the input.",
+        "A weighted sum of inputs plus a bias, passed through an activation function.",
+        "A database query.",
+        "A tokenizer."
+      ],
+      "answer": 1,
+      "explanation": "The neuron computes a linear combination and applies a non-linearity. Stacking these creates the representational power of a neural network."
+    },
+    {
+      "key": "ai-dl-b2",
+      "difficulty": "beginner",
+      "prompt": "Why call model.eval() before validation?",
+      "choices": [
+        "It makes the model train faster.",
+        "It disables training-specific behavior such as dropout and changes batch-normalization behavior.",
+        "It increases the learning rate.",
+        "It converts the model to a different language."
+      ],
+      "answer": 1,
+      "explanation": "Dropout is active in training mode and would make validation noisy. Eval mode gives deterministic, deployment-like behavior."
+    },
+    {
+      "key": "ai-dl-i1",
+      "difficulty": "intermediate",
+      "prompt": "What is the main job of a DataLoader?",
+      "choices": [
+        "To train the model.",
+        "To batch, shuffle and feed examples efficiently to the training loop.",
+        "To compute the loss.",
+        "To tokenize text."
+      ],
+      "answer": 1,
+      "explanation": "The DataLoader wraps a Dataset and handles batching, shuffling, and loading. Tokenization belongs in the Dataset or preprocessing step."
+    },
+    {
+      "key": "ai-dl-i2",
+      "difficulty": "intermediate",
+      "prompt": "What does self-attention let a transformer do?",
+      "choices": [
+        "Compress the model to one layer.",
+        "Weigh information from different tokens in the context when building each token's representation.",
+        "Avoid tokenization entirely.",
+        "Guarantee factual correctness."
+      ],
+      "answer": 1,
+      "explanation": "Attention learns which context positions matter for each token. It is why the same word can have different representations in different sentences."
+    },
+    {
+      "key": "ai-dl-a1",
+      "difficulty": "advanced",
+      "prompt": "Training loss falls while validation loss rises. What is the best interpretation?",
+      "choices": [
+        "The model is underfitting.",
+        "The model is overfitting; it is memorizing training data rather than generalizing.",
+        "The validation set is always wrong.",
+        "The learning rate is too low."
+      ],
+      "answer": 1,
+      "explanation": "Diverging losses are the signature of overfitting. Use early stopping, regularization, more data, or a simpler model, and check for leakage."
+    },
+    {
+      "key": "ai-dl-a2",
+      "difficulty": "advanced",
+      "prompt": "You have 2,000 labelled support tickets and need a category classifier. What is the most sensible first experiment?",
+      "choices": [
+        "Train a large language model from scratch.",
+        "Build a TF-IDF + linear baseline, then compare a fine-tuned small transformer if the baseline's errors justify it.",
+        "Skip evaluation and ship the first transformer.",
+        "Use an agent framework."
+      ],
+      "answer": 1,
+      "explanation": "With modest labelled data, a classical baseline is fast and strong. Fine-tuning is justified by measured errors, not by novelty."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "ai-dl-f1",
+      "difficulty": "beginner",
+      "front": "Why do neural networks need non-linear activations?",
+      "back": "Without them, stacked linear layers collapse into a single linear transformation. Non-linearities let the network represent complex relationships."
+    },
+    {
+      "key": "ai-dl-f2",
+      "difficulty": "beginner",
+      "front": "What do model.train() and model.eval() change?",
+      "back": "They switch training-specific layers such as dropout and batch normalization. Always evaluate in eval mode with gradients disabled."
+    },
+    {
+      "key": "ai-dl-f3",
+      "difficulty": "intermediate",
+      "front": "What is a token?",
+      "back": "A unit produced by a tokenizer — often a word piece. The model maps tokens to IDs and learns embeddings for them. Token counts drive context limits and API cost."
+    },
+    {
+      "key": "ai-dl-f4",
+      "difficulty": "intermediate",
+      "front": "Fine-tuning vs prompting?",
+      "back": "Fine-tuning updates model weights on labelled examples for a specific task. Prompting uses a frozen model with instructions and context. Start with prompting when labels are scarce; fine-tune when you need consistent task behavior and have data."
+    },
+    {
+      "key": "ai-dl-f5",
+      "difficulty": "advanced",
+      "front": "How do you detect overfitting in a training loop?",
+      "back": "Track training and validation loss each epoch. If validation loss rises while training loss falls, the model is memorizing. Use early stopping, regularization, augmentation, or more data."
+    }
+  ]
+}

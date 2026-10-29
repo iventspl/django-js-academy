@@ -1,0 +1,47 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}Concept cards · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <header class="ai-page-header">
+    <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> Active recall</p>
+    <h1>Concept cards.<br><em>No multiple choice.</em></h1>
+    <p class="ai-page-lead">Read the prompt, say the answer out loud, then reveal. Rate your recall and the schedule decides when the card returns. This is where definitions become usable knowledge.</p>
+    <div class="ai-page-actions">
+      {% if stats.due_cards %}
+        <a class="btn btn-ai" href="{% url 'ai_academy:flashcards_review' %}">Review {{ stats.due_cards }} due cards <span aria-hidden="true">→</span></a>
+      {% else %}
+        <span class="btn btn-ai-ghost btn-ai-disabled">Schedule clear ✓</span>
+      {% endif %}
+      <a class="btn btn-ai-ghost" href="{% url 'ai_academy:path' %}">Open the path <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  <div class="ai-card-summary">
+    <div><strong>{{ stats.reviewed_cards }}/{{ stats.card_total }}</strong><span>cards met</span></div>
+    <div><strong>{{ stats.card_percent }}%</strong><span>deck coverage</span></div>
+    <div><strong>{{ stats.due_cards }}</strong><span>due now</span></div>
+    <div><strong>{{ stats.streak }}</strong><span>day streak</span></div>
+  </div>
+
+  <div class="ai-deck-grid">
+    {% for deck in decks %}
+      <article class="ai-deck-card" style="--accent: {{ deck.module.accent }};">
+        <div class="ai-deck-top">
+          <span class="ai-module-glyph">{{ deck.module.glyph }}</span>
+          {% if deck.due %}<span class="tag tag-ai">{{ deck.due }} due</span>{% else %}<span class="tag tag-ai-soft">clear</span>{% endif %}
+        </div>
+        <h2><a href="{{ deck.module.get_absolute_url }}">{{ deck.module.title }}</a></h2>
+        <p>{{ deck.module.subtitle }}</p>
+        <div class="progress-label"><span>{{ deck.reviewed }} of {{ deck.total }} met</span><strong>{{ deck.percent }}%</strong></div>
+        <div class="progress-track progress-track-dark"><span style="--bar: {{ deck.percent }}%;"></span></div>
+        <div class="ai-deck-foot">
+          <a href="{% url 'ai_academy:flashcards' deck.module.slug %}">{% if deck.due %}Study {{ deck.due }} due{% else %}View deck{% endif %} <span aria-hidden="true">→</span></a>
+          <a href="{% url 'ai_academy:module' deck.module.slug %}">Module</a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
