@@ -2,7 +2,7 @@
 
 A local-first learning game for Python, Django, JavaScript and applied AI. It mixes multiple-choice quiz runs, open flashcards (fiszki), spaced repetition, explanations, coding challenges and a progress notebook — with a deliberately polished interface that runs the same way on macOS and Windows.
 
-No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.13 Python for AI module, the 4.12 practice update, the 4.11 launch, and the earlier search and adaptive-practice releases.
+No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.14 AI examples and Python cheat sheet, the 4.13 Python module, the 4.12 practice update, the 4.11 launch, and the earlier search and adaptive-practice releases.
 
 ## What is inside
 
@@ -12,7 +12,7 @@ No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHAN
 - **6 application blueprints** for SaaS, marketplace, booking, CMS, support desk, and mobile API products — with data models, starter code, build order, and production traps.
 - **8 Architecture Studio labs** for AI document assistants, tool-using agents, multi-tenant SaaS, webhook platforms, marketplace ledgers, real-time fan-out, analytics pipelines, and legacy modernization.
 - **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 21 modules, 68 lessons, 144 quiz questions, 132 flashcards, 13 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 50-term glossary, 30 interview questions, and XP/streaks.
-- **AI Academy** — a 12-month applied AI engineering path with 8 modules, 25 lessons, 48 quiz questions, 40 concept cards, 55 glossary terms, 8 real projects and a career map.
+- **AI Academy** — a 12-month applied AI engineering path with 8 modules, 26 lessons, 48 quiz questions, 40 concept cards, 55 glossary terms, 8 real projects and a career map.
 - **Release radar** with current Django versions, LTS windows, CVE summaries, and source links to the official release notes.
 - **Spaced repetition** for every card with four recall ratings: Again, Hard, Good, Easy.
 - **Explanations for every quiz answer**, often with a code sample, so a wrong answer still teaches something.
@@ -273,7 +273,7 @@ Use the **AI** switch in the sidebar to enter **AI Academy**, an English-languag
 
 | Stage | Module | Lessons | Project |
 | --- | --- | ---: | --- |
-| Foundation | Python for AI | 4 | Notes-to-Dataset Pipeline |
+| Foundation | Python for AI | 5 | Notes-to-Dataset Pipeline |
 | Foundation | AI Foundations & Python | 3 | Study Buddy CLI |
 | Foundation | Data, Math & Evaluation | 3 | Churn Dataset Audit |
 | Core ML | Classical Machine Learning | 3 | Default-Risk Predictor |
@@ -282,7 +282,7 @@ Use the **AI** switch in the sidebar to enter **AI Academy**, an English-languag
 | LLM Engineering | Agents, Tools & Evaluation | 3 | Research Copilot |
 | Production & Career | Production, MLOps & Career | 3 | AI Product Capstone |
 
-Most modules have **three lessons**; **Python for AI** has four. Every module has **six quiz questions**, **five concept cards** and a substantial project brief with scenario, deliverables, milestones, rubric and stretch goals. The path totals **25 lessons, 48 questions, 40 cards and 8 projects**.
+Most modules have **three lessons**; **Python for AI** has five. Every module has **six quiz questions**, **five concept cards** and a substantial project brief with scenario, deliverables, milestones, rubric and stretch goals. The path totals **26 lessons, 48 questions, 40 cards and 8 projects**.
 
 ### What makes it useful
 
@@ -294,6 +294,7 @@ Most modules have **three lessons**; **Python for AI** has four. Every module ha
 - **Concept cards** — spaced-repetition prompts for definitions, trade-offs and failure modes, separate from multiple-choice recognition.
 - **Lesson takeaways and “Do this now” exercises** — every lesson ends with three durable ideas and one small exercise with a success criterion, so reading turns into practice.
 - **Searchable 55-term glossary and course search** — find a term, lesson, project or module by name, definition or concept; the glossary links each term back to the module where it matters.
+- **Python for AI cheat sheet** at `/ai/python-for-ai/cheatsheet/` — records, JSON, pandas, NumPy, API and pytest patterns in one copyable page.
 - **Downloadable project test packs** — every project page serves a zip with `starter.py`, a pytest acceptance suite, `requirements.txt` and a README, so learners can run the contract in their own environment.
 - **No external services required** — the curriculum, projects and progress tracker run locally in the same SQLite database.
 
@@ -365,7 +366,7 @@ The scheduler is intentionally small and transparent, inspired by SM-2. It is no
 │   ├── services.py              # progress, readiness, scheduling, stats
 │   ├── content.py               # validation and seeding
 │   ├── career.py                # role maps, 12-month plan, interview topics
-│   ├── content/*.json           # 8 modules, 25 lessons
+│   ├── content/*.json           # 8 modules, 26 lessons
 │   ├── content/projects.json    # 8 real project briefs
 │   ├── content/glossary.json    # 55 plain-language AI terms
 │   ├── project_tests/           # downloadable pytest starter packs
@@ -531,7 +532,7 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **119 tests** in total.
+The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **120 tests** in total.
 
 You can also run Django's deployment check before hosting anything:
 

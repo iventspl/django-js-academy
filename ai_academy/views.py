@@ -620,6 +620,18 @@ def search(request: HttpRequest) -> HttpResponse:
 
 
 @require_GET
+def python_cheatsheet(request: HttpRequest) -> HttpResponse:
+    return render(
+        request,
+        "ai_academy/python_cheatsheet.html",
+        {
+            "active_nav": "ai_path",
+            "page_title": "Python for AI cheat sheet",
+        },
+    )
+
+
+@require_GET
 def career(request: HttpRequest) -> HttpResponse:
     return render(
         request,

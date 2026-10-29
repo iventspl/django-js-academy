@@ -95,6 +95,14 @@
     </div>
 
     <aside class="ai-module-rail">
+      {% if module.slug == 'python-for-ai' %}
+        <div class="ai-rail-card">
+          <p class="eyebrow eyebrow-ai-dark">Reference</p>
+          <h2>Python cheat sheet</h2>
+          <p>The patterns from this module in one copyable page: records, JSON, pandas, NumPy, APIs and tests.</p>
+          <a class="btn btn-ai-ghost btn-ai-wide" href="{% url 'ai_academy:python_cheatsheet' %}">Open cheat sheet <span aria-hidden="true">→</span></a>
+        </div>
+      {% endif %}
       <div class="ai-rail-card">
         <p class="eyebrow eyebrow-ai-dark">Checkpoint</p>
         <h2>Quiz this module</h2>

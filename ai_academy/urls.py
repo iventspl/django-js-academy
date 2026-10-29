@@ -34,6 +34,11 @@ urlpatterns = [
     path("glossary/", views.glossary, name="glossary"),
     path("search/", views.search, name="search"),
     path("career/", views.career, name="career"),
+    path(
+        "python-for-ai/cheatsheet/",
+        views.python_cheatsheet,
+        name="python_cheatsheet",
+    ),
     path("<slug:module_slug>/quiz/start/", views.quiz_start, name="quiz_start"),
     path("<slug:module_slug>/", views.module_detail, name="module"),
     path("<slug:module_slug>/<slug:lesson_slug>/", views.lesson_detail, name="lesson"),

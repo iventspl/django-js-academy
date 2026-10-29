@@ -33,13 +33,13 @@ class AiContentTests(AiSeededTestCase):
     def test_content_counts_and_shape(self):
         self.assertEqual(len(load_bundles()), 8)
         self.assertEqual(AiModule.objects.count(), 8)
-        self.assertEqual(AiLesson.objects.count(), 25)
+        self.assertEqual(AiLesson.objects.count(), 26)
         self.assertEqual(AiQuestion.objects.count(), 48)
         self.assertEqual(AiFlashcard.objects.count(), 40)
         self.assertEqual(AiProject.objects.count(), 8)
         self.assertEqual(AiTerm.objects.count(), 55)
         for module in AiModule.objects.prefetch_related("lessons", "questions", "flashcards"):
-            expected_lessons = 4 if module.slug == "python-for-ai" else 3
+            expected_lessons = 5 if module.slug == "python-for-ai" else 3
             self.assertEqual(module.lessons.count(), expected_lessons, module.slug)
             self.assertEqual(module.questions.count(), 6, module.slug)
             self.assertEqual(module.flashcards.count(), 5, module.slug)
@@ -61,7 +61,7 @@ class AiContentTests(AiSeededTestCase):
         lesson = AiLesson.objects.first()
         call_command("seed_ai", verbosity=0)
         self.assertEqual(AiModule.objects.count(), 8)
-        self.assertEqual(AiLesson.objects.count(), 25)
+        self.assertEqual(AiLesson.objects.count(), 26)
         self.assertEqual(AiTerm.objects.count(), 55)
         self.assertEqual(AiLesson.objects.get(pk=lesson.pk).title, lesson.title)
 
@@ -113,12 +113,23 @@ class AiPageTests(AiSeededTestCase):
     def test_python_for_ai_is_the_first_module_and_has_four_lessons(self):
         module = AiModule.objects.get(slug="python-for-ai")
         self.assertEqual(module.order, 0)
-        self.assertEqual(module.lessons.count(), 4)
+        self.assertEqual(module.lessons.count(), 5)
         response = self.client.get(module.get_absolute_url())
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Python for AI")
         self.assertContains(response, "The Python data toolkit for AI")
         self.assertContains(response, "Notes-to-Dataset Pipeline")
+
+    def test_python_cheatsheet_and_module_link(self):
+        response = self.client.get(reverse("ai_academy:python_cheatsheet"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Python for AI")
+        self.assertContains(response, "pandas")
+        self.assertContains(response, "pytest")
+
+        module = AiModule.objects.get(slug="python-for-ai")
+        response = self.client.get(module.get_absolute_url())
+        self.assertContains(response, "Python cheat sheet")
 
     def test_projects_index_and_detail(self):
         response = self.client.get(reverse("ai_academy:projects"))

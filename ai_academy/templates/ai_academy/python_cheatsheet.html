@@ -1,0 +1,167 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}Python for AI cheat sheet · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <div class="ai-breadcrumb">
+    <a href="{% url 'ai_academy:module' 'python-for-ai' %}">← Python for AI</a>
+    <span>/</span>
+    <span>Cheat sheet</span>
+  </div>
+
+  <header class="ai-page-header">
+    <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> Reference</p>
+    <h1>Python for AI<br><em>cheat sheet.</em></h1>
+    <p class="ai-page-lead">The patterns you will actually reuse: records, JSON, typed functions, pandas, NumPy, API calls and tests. Keep this open while building the Notes-to-Dataset Pipeline.</p>
+    <div class="ai-page-actions">
+      <a class="btn btn-ai" href="{% url 'ai_academy:module' 'python-for-ai' %}">Back to the module <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ai-ghost" href="{% url 'ai_academy:projects' %}">Open the project <span aria-hidden="true">◫</span></a>
+    </div>
+  </header>
+
+  <div class="ai-cheat-grid">
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">01 · Records</p>
+      <h2>Lists, dicts and sets</h2>
+      <pre class="ai-code"><code>record = {"text": "reset password", "label": "account"}
+records = [record, {"text": "charged twice", "label": "billing"}]
+texts = [r["text"].lower() for r in records]
+labels = {r["label"] for r in records}
+lookup = {r["text"]: r for r in records}</code></pre>
+      <p>Use a dict for one record, a list for a batch, a set for uniqueness and a dict comprehension for lookup.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">02 · Files</p>
+      <h2>JSON and JSONL</h2>
+      <pre class="ai-code"><code>import json
+
+with open("data.json", encoding="utf-8") as f:
+    payload = json.load(f)
+
+with open("data.jsonl", encoding="utf-8") as f:
+    rows = [json.loads(line) for line in f if line.strip()]
+
+with open("out.jsonl", "w", encoding="utf-8") as f:
+    for row in rows:
+        f.write(json.dumps(row, ensure_ascii=False) + "\n")</code></pre>
+      <p>JSON arrays are easy; JSONL streams better for large exports. Always pass an encoding.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">03 · Functions</p>
+      <h2>Typed functions and defaults</h2>
+      <pre class="ai-code"><code>from dataclasses import dataclass
+
+@dataclass
+class Note:
+    text: str
+    label: str = "unlabelled"
+
+def clean(text: str) -&gt; str:
+    return " ".join(text.strip().lower().split())
+
+def chunk(text: str, size: int = 500, overlap: int = 50) -&gt; list[str]:
+    if size &lt;= overlap:
+        raise ValueError("size must exceed overlap")
+    step = size - overlap
+    return [text[i:i + size] for i in range(0, len(text), step)]</code></pre>
+      <p>Hints do not enforce types at runtime; they make the contract visible to tests, editors and mypy.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">04 · Pandas</p>
+      <h2>Load, inspect, clean, split</h2>
+      <pre class="ai-code"><code>import pandas as pd
+
+df = pd.read_csv("notes.csv")
+df = df.drop_duplicates(subset=["text"]).copy()
+df["text"] = df["text"].str.strip().str.lower()
+df["label"] = df["label"].fillna("unlabelled")
+
+summary = df.groupby("label").agg(
+    rows=("text", "size"),
+    avg_length=("text", lambda s: s.str.len().mean()),
+)
+
+print(df.isna().mean().sort_values(ascending=False).head())</code></pre>
+      <p>Audit shape, types, duplicates and missingness before modelling. Use <code>.copy()</code> when modifying a filtered frame.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">05 · NumPy</p>
+      <h2>Vectorise, don't loop</h2>
+      <pre class="ai-code"><code>import numpy as np
+
+scores = np.array([0.2, 0.8, 0.6, 0.4])
+labels = scores &gt;= 0.5
+positive_rate = labels.mean()
+
+# Broadcasting: normalise every row to zero mean, unit variance.
+matrix = np.array([[1.0, 2.0], [3.0, 4.0]])
+normalised = (matrix - matrix.mean(axis=0)) / matrix.std(axis=0)</code></pre>
+      <p>Prefer array operations over Python loops. Verify shapes; broadcasting errors usually mean two dimensions do not align.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">06 · APIs</p>
+      <h2>Secrets, timeout, failure</h2>
+      <pre class="ai-code"><code>import os, requests
+
+def ask(prompt: str) -&gt; str:
+    key = os.environ["LLM_API_KEY"]
+    response = requests.post(
+        "https://api.example.com/v1/chat",
+        headers={"Authorization": f"Bearer {key}"},
+        json={"prompt": prompt},
+        timeout=20,
+    )
+    response.raise_for_status()
+    return response.json()["choices"][0]["message"]["content"]</code></pre>
+      <p>Never hard-code keys. Add a timeout and handle provider errors; retry only transient, idempotent calls.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">07 · Tests</p>
+      <h2>pytest basics</h2>
+      <pre class="ai-code"><code>def test_clean_collapses_whitespace():
+    assert clean("  Reset   Password ") == "reset password"
+
+def test_chunk_rejects_bad_overlap():
+    with pytest.raises(ValueError):
+        chunk("abc", size=10, overlap=10)</code></pre>
+      <p>Test behaviour, edge cases and failure paths. Mock external providers so the suite is fast and offline.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">08 · Layout</p>
+      <h2>A project that survives</h2>
+      <pre class="ai-code"><code>notes_ai/
+  pyproject.toml
+  requirements.txt
+  src/notes_ai/
+    data.py
+    pipeline.py
+    cli.py
+  tests/
+    test_pipeline.py
+  README.md</code></pre>
+      <pre class="ai-code"><code>python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pytest -q</code></pre>
+      <p>Keep notebooks for exploration and put the reproducible pipeline in <code>src/</code> with tests.</p>
+    </section>
+  </div>
+
+  <section class="ai-cta-band">
+    <div>
+      <p class="eyebrow eyebrow-ai-light">Next step</p>
+      <h2>Build the pipeline.</h2>
+      <p>Use the Notes-to-Dataset project and its downloadable test pack to turn these snippets into a working, tested tool.</p>
+    </div>
+    <a class="btn btn-ai" href="{% url 'ai_academy:project' 'notes-dataset-pipeline' %}">Open the project <span aria-hidden="true">→</span></a>
+  </section>
+</div>
+{% endblock %}

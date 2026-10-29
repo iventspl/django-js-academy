@@ -1,5 +1,20 @@
 # Changelog
 
+## 4.14 — 2026-10-29
+
+### AI Academy: more worked examples and a Python cheat sheet
+
+- Expanded all four core Python for AI lessons with worked examples and common-mistake sections:
+  - records from nested API responses, sets for deduplication and JSONL;
+  - typed settings, pytest fakes and project structure;
+  - a five-minute pandas audit, safe filtering/merging and split checks;
+  - a safe provider client, async fan-out and failure-path tests.
+- Added a fifth lesson, **“Put it together: the notes pipeline”**, with a complete load → clean → split → artifact pipeline and tests.
+- Added a **Python for AI cheat sheet** page at `/ai/python-for-ai/cheatsheet/` with copyable records, JSON, pandas, NumPy, API and pytest patterns.
+- Added the cheat-sheet link to the Python for AI module.
+- Total AI content is now **8 modules, 26 lessons, 48 questions, 40 cards, 8 projects and 55 glossary terms**.
+- The suite now has **120 tests**.
+
 ## 4.13 — 2026-10-29
 
 ### AI Academy: Python for AI prerequisite module
