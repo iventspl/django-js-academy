@@ -41,7 +41,15 @@
         "Add a data-quality report with duplicate and outlier counts.",
         "Package the pipeline as a small CLI with a --dry-run flag."
       ],
-      "portfolio_note": "This is the least glamorous project and one of the most useful. It proves you can make data work reproducible before touching a model."
+      "portfolio_note": "This is the least glamorous project and one of the most useful. It proves you can make data work reproducible before touching a model.",
+      "hints": [
+        "Start by defining one record shape: text and label. Everything else is a transformation of that shape.",
+        "Normalise whitespace and case before deduplicating, otherwise 'Reset' and 'reset' survive as different records.",
+        "Use a set for seen texts, but keep a list for output order.",
+        "Seed the shuffle and split by an index so two runs produce identical files.",
+        "Test empty input, duplicate records and a malformed JSON line before adding polish."
+      ],
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, failure analysis and demo required by the brief.</p><pre><code>from collections import Counter\nimport json\nimport random\n\n\ndef load_records(paths):\n    records = []\n    for path in paths:\n        with open(path, encoding=&quot;utf-8&quot;) as handle:\n            rows = json.load(handle)\n        if not isinstance(rows, list):\n            raise ValueError(f&quot;{path}: expected a JSON array&quot;)\n        for row in rows:\n            if not isinstance(row, dict):\n                raise ValueError(f&quot;{path}: each record must be an object&quot;)\n            records.append(row)\n    return records\n\n\ndef clean_records(records):\n    cleaned = []\n    seen = set()\n    for raw in records:\n        text = &quot; &quot;.join(str(raw.get(&quot;text&quot;, &quot;&quot;)).strip().lower().split())\n        label = str(raw.get(&quot;label&quot;) or &quot;unlabelled&quot;).strip().lower()\n        if not text or text in seen:\n            continue\n        seen.add(text)\n        cleaned.append({&quot;text&quot;: text, &quot;label&quot;: label})\n    return cleaned\n\n\ndef split_records(records, test_size=0.2, seed=42):\n    if not 0 &lt; test_size &lt; 1:\n        raise ValueError(&quot;test_size must be between 0 and 1&quot;)\n    shuffled = list(records)\n    random.Random(seed).shuffle(shuffled)\n    cutoff = max(1, int(len(shuffled) * test_size)) if shuffled else 0\n    return shuffled[cutoff:], shuffled[:cutoff]\n\n\ndef summarize(records):\n    return {\n        &quot;rows&quot;: len(records),\n        &quot;label_counts&quot;: dict(Counter(record[&quot;label&quot;] for record in records)),\n        &quot;missing_text&quot;: sum(1 for record in records if not record[&quot;text&quot;]),\n        &quot;unique_texts&quot;: len({record[&quot;text&quot;] for record in records}),\n    }</code></pre>"
     },
     {
       "slug": "study-buddy-cli",
@@ -83,7 +91,15 @@
         "Support multiple notes files and a topic filter.",
         "Add a streaming output mode with a cancel key."
       ],
-      "portfolio_note": "This is your first proof that you can build a small AI product around a model rather than a notebook. Keep the README honest about the mock path."
+      "portfolio_note": "This is your first proof that you can build a small AI product around a model rather than a notebook. Keep the README honest about the mock path.",
+      "hints": [
+        "The offline generator can split notes into sentences and turn a sentence into a fill-in-the-blank question.",
+        "Keep the provider behind a function so the CLI can work with no API key.",
+        "Score answers case-insensitively and handle a missing answer without crashing.",
+        "Write the session log as JSON with score, total, timestamp and topics.",
+        "Test the scoring function separately from the CLI."
+      ],
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, failure analysis and demo required by the brief.</p><pre><code>import re\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass QuizQuestion:\n    question: str\n    answer: str\n\n\ndef generate_quiz(notes, count=5):\n    sentences = [\n        part.strip()\n        for part in re.split(r&quot;(?&lt;=[.!?])\\s+|\\n+&quot;, notes)\n        if part.strip()\n    ]\n    if not sentences:\n        raise ValueError(&quot;notes are empty&quot;)\n    questions = []\n    for sentence in sentences[:count]:\n        words = sentence.rstrip(&quot;.&quot;).split()\n        if len(words) &lt; 2:\n            continue\n        questions.append(\n            QuizQuestion(\n                question=&quot;Fill in the blank: &quot; + &quot; &quot;.join(words[:-1]) + &quot; ____&quot;,\n                answer=words[-1],\n            )\n        )\n    return questions\n\n\ndef score_answers(questions, answers):\n    correct = 0\n    for index, question in enumerate(questions):\n        if index &lt; len(answers):\n            if answers[index].strip().lower() == question.answer.strip().lower():\n                correct += 1\n    total = len(questions)\n    return {\n        &quot;correct&quot;: correct,\n        &quot;total&quot;: total,\n        &quot;percent&quot;: round(100 * correct / total) if total else 0,\n    }</code></pre>"
     },
     {
       "slug": "churn-audit",
@@ -124,7 +140,15 @@
         "Compare PR-AUC with ROC-AUC and explain the difference.",
         "Estimate the campaign cost and break-even threshold."
       ],
-      "portfolio_note": "Data audits are underrated portfolio pieces. This project shows judgment before modelling, which is exactly what junior AI roles need."
+      "portfolio_note": "Data audits are underrated portfolio pieces. This project shows judgment before modelling, which is exactly what junior AI roles need.",
+      "hints": [
+        "Write the prediction moment in one sentence before choosing features.",
+        "A temporal split uses rows before the cutoff for training and rows on/after it for validation.",
+        "Check duplicate rows and missingness by column before modelling.",
+        "If the positive class is rare, accuracy alone is misleading; report precision and recall.",
+        "Explain why every feature would be available at prediction time."
+      ],
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, failure analysis and demo required by the brief.</p><pre><code>import pandas as pd\n\n\ndef temporal_split(df, date_column, cutoff):\n    train = df[df[date_column] &lt; cutoff].copy()\n    valid = df[df[date_column] &gt;= cutoff].copy()\n    return train, valid\n\n\ndef audit_data(df, target_column):\n    return {\n        &quot;rows&quot;: len(df),\n        &quot;target_rate&quot;: float(df[target_column].mean()),\n        &quot;missing&quot;: {\n            column: float(fraction)\n            for column, fraction in df.isna().mean().items()\n        },\n        &quot;duplicate_rows&quot;: int(df.duplicated().sum()),\n        &quot;leakage_risks&quot;: [\n            &quot;Confirm every feature is known at the prediction moment.&quot;,\n            &quot;Check for outcome fields recorded after the decision.&quot;,\n        ],\n    }\n\n\ndef classification_metrics(y_true, y_pred):\n    tp = sum(1 for truth, pred in zip(y_true, y_pred) if truth == 1 and pred == 1)\n    fp = sum(1 for truth, pred in zip(y_true, y_pred) if truth == 0 and pred == 1)\n    fn = sum(1 for truth, pred in zip(y_true, y_pred) if truth == 1 and pred == 0)\n    tn = sum(1 for truth, pred in zip(y_true, y_pred) if truth == 0 and pred == 0)\n    precision = tp / (tp + fp) if tp + fp else 0.0\n    recall = tp / (tp + fn) if tp + fn else 0.0\n    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0\n    return {\n        &quot;accuracy&quot;: (tp + tn) / len(y_true) if y_true else 0.0,\n        &quot;precision&quot;: precision,\n        &quot;recall&quot;: recall,\n        &quot;f1&quot;: f1,\n    }</code></pre>"
     },
     {
       "slug": "default-risk-predictor",
@@ -167,7 +191,15 @@
         "Add SHAP or permutation explanations for the top drivers.",
         "Add a drift report comparing train and holdout distributions."
       ],
-      "portfolio_note": "This is the classic ML engineer project. The model card and threshold rationale are what make it credible."
+      "portfolio_note": "This is the classic ML engineer project. The model card and threshold rationale are what make it credible.",
+      "hints": [
+        "Put imputation, scaling and encoding inside a scikit-learn Pipeline.",
+        "Use ColumnTransformer to route numeric and categorical columns to different preprocessing.",
+        "Choose the threshold from a cost matrix, not from a default of 0.5.",
+        "Report repeated cross-validation mean and standard deviation.",
+        "Save the fitted pipeline and its metadata so the service can load it later."
+      ],
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, failure analysis and demo required by the brief.</p><pre><code>from sklearn.compose import ColumnTransformer\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\n\n\ndef build_pipeline(numeric_features, categorical_features):\n    numeric = Pipeline([\n        (&quot;impute&quot;, SimpleImputer(strategy=&quot;median&quot;)),\n        (&quot;scale&quot;, StandardScaler()),\n    ])\n    categorical = Pipeline([\n        (&quot;impute&quot;, SimpleImputer(strategy=&quot;most_frequent&quot;)),\n        (&quot;encode&quot;, OneHotEncoder(handle_unknown=&quot;ignore&quot;)),\n    ])\n    return Pipeline([\n        (&quot;preprocess&quot;, ColumnTransformer([\n            (&quot;numeric&quot;, numeric, numeric_features),\n            (&quot;categorical&quot;, categorical, categorical_features),\n        ])),\n        (&quot;classifier&quot;, LogisticRegression(max_iter=2000)),\n    ])\n\n\ndef choose_threshold(\n    y_true, y_scores, cost_false_positive=1.0, cost_false_negative=5.0\n):\n    candidates = sorted({0.0, 1.0, *(float(score) for score in y_scores)})\n    best_threshold = 0.5\n    best_cost = float(&quot;inf&quot;)\n    for threshold in candidates:\n        cost = 0.0\n        for truth, score in zip(y_true, y_scores):\n            predicted = 1 if score &gt;= threshold else 0\n            if predicted == 1 and truth == 0:\n                cost += cost_false_positive\n            elif predicted == 0 and truth == 1:\n                cost += cost_false_negative\n        if cost &lt; best_cost:\n            best_cost = cost\n            best_threshold = threshold\n    return best_threshold</code></pre>"
     },
     {
       "slug": "support-ticket-classifier",
@@ -210,7 +242,15 @@
         "Compare a prompted LLM with the fine-tuned model on a small eval set.",
         "Add active learning: choose the most uncertain tickets for labelling."
       ],
-      "portfolio_note": "The interesting story is not “I fine-tuned BERT”; it is why the baseline was or was not enough and how uncertain cases reach a human."
+      "portfolio_note": "The interesting story is not “I fine-tuned BERT”; it is why the baseline was or was not enough and how uncertain cases reach a human.",
+      "hints": [
+        "Start with TF-IDF plus logistic regression; it is a strong, fast baseline.",
+        "Use predict_proba to get the confidence for the selected label.",
+        "Route low-confidence tickets to a human instead of forcing a class.",
+        "Evaluate per-class precision and recall, not only overall accuracy.",
+        "Inspect at least 20 mistakes before trying a larger model."
+      ],
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, failure analysis and demo required by the brief.</p><pre><code>from sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.pipeline import Pipeline\n\n\ndef train_baseline(texts, labels):\n    model = Pipeline([\n        (&quot;tfidf&quot;, TfidfVectorizer(ngram_range=(1, 2), min_df=1)),\n        (&quot;classifier&quot;, LogisticRegression(max_iter=2000)),\n    ])\n    model.fit(texts, labels)\n    return model\n\n\ndef predict_with_confidence(model, texts):\n    probabilities = model.predict_proba(texts)\n    results = []\n    for row in probabilities:\n        index = int(row.argmax())\n        results.append((model.classes_[index], float(row[index])))\n    return results\n\n\ndef route_low_confidence(predictions, threshold=0.6):\n    return [\n        label if confidence &gt;= threshold else &quot;human&quot;\n        for label, confidence in predictions\n    ]</code></pre>"
     },
     {
       "slug": "docs-answer-engine",
@@ -253,7 +293,15 @@
         "Add a reranker and measure the latency/quality trade-off.",
         "Add incremental index updates when a document changes."
       ],
-      "portfolio_note": "This is the core LLM engineering project. A clear evaluation table and honest failure analysis matter more than a polished chat UI."
+      "portfolio_note": "This is the core LLM engineering project. A clear evaluation table and honest failure analysis matter more than a polished chat UI.",
+      "hints": [
+        "Chunk by document structure and keep a source id and position for every chunk.",
+        "Measure retrieval recall@k before changing the generation prompt.",
+        "Return citations as indexes into the retrieved evidence and validate them.",
+        "Return an empty answer or an explicit 'I don't know' when no evidence matches.",
+        "Keep unanswerable questions in the evaluation set."
+      ],
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, failure analysis and demo required by the brief.</p><pre><code>from dataclasses import dataclass\n\n\n@dataclass\nclass Chunk:\n    text: str\n    source: str\n    index: int\n\n\ndef chunk_document(text, source, size=200, overlap=40):\n    if size &lt;= overlap:\n        raise ValueError(&quot;size must be greater than overlap&quot;)\n    step = size - overlap\n    chunks = []\n    for start in range(0, len(text), step):\n        piece = text[start:start + size]\n        if not piece.strip():\n            continue\n        chunks.append(Chunk(piece, source, len(chunks)))\n        if start + size &gt;= len(text):\n            break\n    return chunks\n\n\ndef retrieve(query, chunks, k=3):\n    words = set(query.lower().split())\n    ranked = []\n    for chunk in chunks:\n        score = len(words &amp; set(chunk.text.lower().split()))\n        if score:\n            ranked.append((score, chunk))\n    ranked.sort(key=lambda pair: pair[0], reverse=True)\n    return [chunk for _, chunk in ranked[:k]]\n\n\ndef validate_citations(citations, chunks):\n    return all(\n        isinstance(index, int) and 0 &lt;= index &lt; len(chunks)\n        for index in citations\n    )\n\n\ndef answer_with_citations(question, chunks, llm=None):\n    matches = retrieve(question, chunks, k=3)\n    if not matches:\n        return {&quot;answer&quot;: &quot;&quot;, &quot;citations&quot;: []}\n    best = matches[0]\n    return {\n        &quot;answer&quot;: best.text,\n        &quot;citations&quot;: [chunks.index(best)],\n    }</code></pre>"
     },
     {
       "slug": "research-copilot",
@@ -296,7 +344,15 @@
         "Add a deterministic workflow fallback for common requests.",
         "Run an adversarial prompt-injection suite against retrieved notes."
       ],
-      "portfolio_note": "This project proves you understand autonomy as a risk. The approval gate and eval harness are the interview talking points."
+      "portfolio_note": "This project proves you understand autonomy as a risk. The approval gate and eval harness are the interview talking points.",
+      "hints": [
+        "Define tools with narrow schemas and mark write tools explicitly.",
+        "Cap steps and cost before adding autonomy.",
+        "Require approval for writes and record approval attempts in the trace.",
+        "Test with a deterministic planner instead of a live model.",
+        "Evaluate the trajectory: tool choice, arguments, approvals and stop reason."
+      ],
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, failure analysis and demo required by the brief.</p><pre><code>from dataclasses import dataclass\n\n\n@dataclass\nclass Tool:\n    name: str\n    fn: callable\n    write: bool = False\n\n\nclass ToolRegistry:\n    def __init__(self):\n        self.tools = {}\n\n    def register(self, tool):\n        self.tools[tool.name] = tool\n\n    def call(self, name, arguments):\n        if name not in self.tools:\n            raise KeyError(f&quot;unknown tool: {name}&quot;)\n        return self.tools[name].fn(arguments)\n\n\ndef run_agent(question, registry, planner, *, max_steps=5, approve_write=False):\n    trace = []\n    observations = []\n    for step in range(max_steps):\n        action = planner({&quot;question&quot;: question, &quot;observations&quot;: observations})\n        if &quot;final&quot; in action:\n            return {&quot;answer&quot;: action[&quot;final&quot;], &quot;trace&quot;: trace, &quot;status&quot;: &quot;ok&quot;}\n        name = action[&quot;tool&quot;]\n        arguments = action.get(&quot;arguments&quot;, {})\n        tool = registry.tools.get(name)\n        entry = {&quot;step&quot;: step, &quot;tool&quot;: name, &quot;arguments&quot;: arguments}\n        trace.append(entry)\n        if tool is None:\n            entry[&quot;status&quot;] = &quot;unknown_tool&quot;\n            return {&quot;answer&quot;: &quot;&quot;, &quot;trace&quot;: trace, &quot;status&quot;: &quot;blocked&quot;}\n        if tool.write and not approve_write:\n            entry[&quot;status&quot;] = &quot;approval_required&quot;\n            return {&quot;answer&quot;: &quot;&quot;, &quot;trace&quot;: trace, &quot;status&quot;: &quot;blocked&quot;}\n        try:\n            result = registry.call(name, arguments)\n        except Exception as exc:\n            entry[&quot;status&quot;] = &quot;error&quot;\n            entry[&quot;error&quot;] = str(exc)\n            return {&quot;answer&quot;: &quot;&quot;, &quot;trace&quot;: trace, &quot;status&quot;: &quot;blocked&quot;}\n        entry[&quot;status&quot;] = &quot;ok&quot;\n        observations.append(result)\n    return {&quot;answer&quot;: &quot;&quot;, &quot;trace&quot;: trace, &quot;status&quot;: &quot;max_steps&quot;}</code></pre>"
     },
     {
       "slug": "ai-product-capstone",
@@ -339,7 +395,219 @@
         "Run a small red-team exercise and add regression cases.",
         "Compare two models or retrieval strategies with a cost/quality table."
       ],
-      "portfolio_note": "This is the project you lead with in interviews. It demonstrates end-to-end ownership and the judgment to operate an AI system."
+      "portfolio_note": "This is the project you lead with in interviews. It demonstrates end-to-end ownership and the judgment to operate an AI system.",
+      "hints": [
+        "Write the one-sentence problem and success metric before choosing a model.",
+        "Keep the API contract typed and return structured errors.",
+        "Add a timeout, a health endpoint and a kill/rollback path.",
+        "Log latency, token usage, cost and quality without logging secrets.",
+        "Lead the interview story with the baseline, evaluation and one failure."
+      ],
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, failure analysis and demo required by the brief.</p><pre><code>from fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\n\n\nclass AskRequest(BaseModel):\n    question: str\n\n\nclass AskResponse(BaseModel):\n    answer: str\n    citations: list[str]\n\n\napp = FastAPI(title=&quot;AI Product Capstone&quot;)\n\n\n@app.get(&quot;/health&quot;)\ndef health():\n    return {&quot;status&quot;: &quot;ok&quot;}\n\n\n@app.post(&quot;/ask&quot;, response_model=AskResponse)\ndef ask(request: AskRequest):\n    if not request.question.strip():\n        raise HTTPException(status_code=422, detail=&quot;question is required&quot;)\n    # Replace this with your grounded retrieval + generation pipeline.\n    return AskResponse(\n        answer=&quot;Reference implementation: connect your retriever here.&quot;,\n        citations=[],\n    )</code></pre>"
+    },
+    {
+      "slug": "support-email-triage",
+      "module": "llm-engineering",
+      "title": "Support Email Triage",
+      "tagline": "Turn messy inbound email into a category, urgency and routing decision.",
+      "scenario": "A support inbox receives billing questions, bug reports, account issues and vague messages. The team wants a first-pass triage that is fast, consistent and honest about uncertainty. Misrouting an urgent production issue is expensive; so is sending a routine request to a human.",
+      "build": "Build a triage function or small API that returns category, urgency, needs_human and a one-line rationale. Start with a deterministic keyword baseline, then add an optional LLM adapter. Validate the output schema and route uncertain cases to a human. Evaluate on a hand-labelled set of at least 30 emails, including ambiguous and adversarial examples.",
+      "difficulty": "intermediate",
+      "duration_hours": 10,
+      "skills": [
+        "Structured output",
+        "Text classification",
+        "Uncertainty routing",
+        "Evaluation sets",
+        "API design"
+      ],
+      "deliverables": [
+        "Triage function or /triage endpoint with a typed response",
+        "Deterministic baseline plus optional LLM adapter",
+        "30-email evaluation set with expected categories and urgencies",
+        "Confusion analysis and human-routing policy",
+        "README with cost, latency and failure modes"
+      ],
+      "milestones": [
+        "Define the label taxonomy and urgency policy.",
+        "Build the keyword baseline and a hand-labelled evaluation set.",
+        "Add the optional LLM adapter with schema validation.",
+        "Analyse mistakes, tune the routing rule and write the report."
+      ],
+      "rubric": [
+        "The response schema is validated and rejects malformed model output.",
+        "Urgent bug reports are not silently downgraded.",
+        "Vague messages route to a human with a reason.",
+        "Evaluation reports per-category precision/recall."
+      ],
+      "stretch": [
+        "Add a second language and measure the degradation.",
+        "Add prompt-injection cases in the email body.",
+        "Compare the baseline and LLM on cost per correct triage."
+      ],
+      "portfolio_note": "This is a realistic LLM product task: the interesting part is the routing policy and evaluation, not the prompt.",
+      "hints": [
+        "Write the category and urgency definitions before collecting examples.",
+        "A deterministic keyword baseline is a legitimate first system; measure it.",
+        "Make 'needs_human' a first-class output, not an afterthought.",
+        "Validate category and urgency against an allowlist before returning.",
+        "Include at least five vague or adversarial emails in the eval set."
+      ],
+      "order": 8,
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, threat model and demo required by the brief.</p><pre><code>import re\n\nCATEGORIES = {&quot;billing&quot;, &quot;bug&quot;, &quot;account&quot;, &quot;other&quot;}\nURGENCIES = {&quot;low&quot;, &quot;normal&quot;, &quot;high&quot;}\n\nBILLING = (&quot;refund&quot;, &quot;charged&quot;, &quot;invoice&quot;, &quot;payment&quot;, &quot;billing&quot;)\nBUG = (&quot;crash&quot;, &quot;error&quot;, &quot;broken&quot;, &quot;upload&quot;, &quot;production&quot;, &quot;down&quot;)\nACCOUNT = (&quot;login&quot;, &quot;password&quot;, &quot;account&quot;, &quot;email&quot;, &quot;access&quot;)\nURGENT = (&quot;urgent&quot;, &quot;asap&quot;, &quot;production&quot;, &quot;down&quot;, &quot;blocked&quot;)\n\n\ndef triage(text: str) -&gt; dict:\n    clean = re.sub(r&quot;\\s+&quot;, &quot; &quot;, text.strip().lower())\n    if not clean:\n        return {&quot;category&quot;: &quot;other&quot;, &quot;urgency&quot;: &quot;high&quot;, &quot;needs_human&quot;: True,\n                &quot;reason&quot;: &quot;empty message&quot;}\n\n    if any(word in clean for word in BILLING):\n        category = &quot;billing&quot;\n    elif any(word in clean for word in BUG):\n        category = &quot;bug&quot;\n    elif any(word in clean for word in ACCOUNT):\n        category = &quot;account&quot;\n    else:\n        category = &quot;other&quot;\n\n    urgency = &quot;high&quot; if any(word in clean for word in URGENT) else &quot;normal&quot;\n    needs_human = category == &quot;other&quot; or &quot;refund&quot; in clean or &quot;legal&quot; in clean\n    return {\n        &quot;category&quot;: category if category in CATEGORIES else &quot;other&quot;,\n        &quot;urgency&quot;: urgency if urgency in URGENCIES else &quot;normal&quot;,\n        &quot;needs_human&quot;: needs_human,\n        &quot;reason&quot;: f&quot;matched {category} signals&quot;,\n    }</code></pre>"
+    },
+    {
+      "slug": "meeting-action-extractor",
+      "module": "agents-evaluation",
+      "title": "Meeting Notes → Action Items",
+      "tagline": "Extract owners, tasks and deadlines from raw meeting notes, with a measurable contract.",
+      "scenario": "A team pastes meeting notes into a tool and expects a clean action list. The notes are inconsistent: some lines say 'Alice will…', others say 'Bob to…', and some have no owner. A wrong owner is worse than an unassigned item, so the extractor must be conservative.",
+      "build": "Build an extractor that returns a list of action items with owner, task and optional deadline. Cover the common sentence patterns, preserve source text, and route unowned or ambiguous items to an 'unassigned' list instead of guessing. Add an evaluation set of real-style notes and test precision/recall.",
+      "difficulty": "intermediate",
+      "duration_hours": 8,
+      "skills": [
+        "Information extraction",
+        "Regex and parsing",
+        "Schema validation",
+        "Evaluation",
+        "Conservative defaults"
+      ],
+      "deliverables": [
+        "Extractor returning owner, task and deadline",
+        "Fixture of at least 15 realistic note snippets",
+        "Precision/recall report against hand-labelled actions",
+        "Conservative handling of unowned items",
+        "README with supported patterns and limitations"
+      ],
+      "milestones": [
+        "Collect 15 snippets and label the expected actions.",
+        "Implement named-owner patterns and a fallback list.",
+        "Add deadline parsing without inventing dates.",
+        "Measure extraction quality and document unsupported patterns."
+      ],
+      "rubric": [
+        "The extractor never invents an owner that is not present.",
+        "Deadlines are optional and copied from the text, not guessed.",
+        "Unowned actions are surfaced separately.",
+        "The evaluation reports both missed and extra actions."
+      ],
+      "stretch": [
+        "Support relative dates with a supplied meeting date.",
+        "Add a confidence score per extracted action.",
+        "Compare regex with an LLM extraction prompt on the same fixtures."
+      ],
+      "portfolio_note": "This project demonstrates conservative information extraction and honest evaluation of a fuzzy task.",
+      "hints": [
+        "Start with two or three explicit patterns; do not attempt every phrasing at once.",
+        "A missing owner should become an unassigned item, not a guess.",
+        "Copy deadlines from the text; do not infer a calendar date unless the meeting date is supplied.",
+        "Measure extra actions as well as missed actions.",
+        "Keep the original sentence for traceability."
+      ],
+      "order": 9,
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, threat model and demo required by the brief.</p><pre><code>import re\n\nPATTERN = re.compile(\n    r&quot;(?P&lt;owner&gt;[A-Z][a-z]+)\\s+(?:will|to)\\s+&quot;\n    r&quot;(?P&lt;task&gt;.+?)&quot;\n    r&quot;(?:\\s+by\\s+(?P&lt;deadline&gt;[A-Z][a-z]+))?&quot;\n    r&quot;[.!]?\\s*$&quot;\n)\n\n\ndef extract_actions(text: str) -&gt; list[dict]:\n    actions = []\n    for line in text.splitlines():\n        line = line.strip(&quot; -\\t&quot;)\n        if not line:\n            continue\n        match = PATTERN.search(line)\n        if match:\n            task = match.group(&quot;task&quot;).strip().rstrip(&quot;.&quot;)\n            actions.append({\n                &quot;owner&quot;: match.group(&quot;owner&quot;),\n                &quot;task&quot;: task,\n                &quot;deadline&quot;: match.group(&quot;deadline&quot;),\n                &quot;source&quot;: line,\n            })\n        elif re.search(r&quot;\\b(should|need to|action)\\b&quot;, line, re.IGNORECASE):\n            actions.append({\n                &quot;owner&quot;: &quot;unassigned&quot;,\n                &quot;task&quot;: line.rstrip(&quot;.&quot;),\n                &quot;deadline&quot;: None,\n                &quot;source&quot;: line,\n            })\n    return actions</code></pre>"
+    },
+    {
+      "slug": "safe-sql-analyst",
+      "module": "agents-evaluation",
+      "title": "Safe Text-to-SQL Analyst",
+      "tagline": "Let a model propose SQL without giving it the keys to the database.",
+      "scenario": "Analysts want to ask questions in natural language and get read-only answers. A generated query can be useful or catastrophic. You need a validator, a read-only execution path, row limits and a clear refusal policy.",
+      "build": "Build a pipeline that turns a question plus a schema into a SQL candidate, validates it as a single read-only SELECT, enforces a row limit, and refuses writes, multiple statements and comments. Start with a deterministic template baseline, then add an optional LLM adapter. Test malicious and malformed SQL.",
+      "difficulty": "advanced",
+      "duration_hours": 12,
+      "skills": [
+        "SQL safety",
+        "Query validation",
+        "Text-to-SQL",
+        "Guardrails",
+        "Evaluation"
+      ],
+      "deliverables": [
+        "Schema-aware query builder or LLM adapter",
+        "Read-only SQL validator with explicit rejection reasons",
+        "Row-limit enforcement",
+        "Test suite with destructive and malformed queries",
+        "README with threat model and non-goals"
+      ],
+      "milestones": [
+        "Define the allowed SQL subset and refusal policy.",
+        "Implement validate_sql and enforce_limit.",
+        "Build a template baseline for three question types.",
+        "Add adversarial tests and an evaluation table."
+      ],
+      "rubric": [
+        "Only a single SELECT statement is accepted.",
+        "Comments, stacked statements and write keywords are rejected.",
+        "Every accepted query has a row limit.",
+        "The UI/API never exposes raw database errors."
+      ],
+      "stretch": [
+        "Add a read-only database role as a second layer of defence.",
+        "Support joins with an explicit allowlisted schema.",
+        "Compare a template baseline with an LLM on schema-valid queries."
+      ],
+      "portfolio_note": "The safety layer is the project. Explain the threat model and why validation is not the only defence.",
+      "hints": [
+        "Define the allowed subset before writing the validator.",
+        "Split on semicolons and reject multiple statements.",
+        "Reject comments before keyword checks; they can hide payloads.",
+        "Add a LIMIT if absent, but do not duplicate an existing one.",
+        "Use a read-only database role as defence in depth."
+      ],
+      "order": 10,
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, threat model and demo required by the brief.</p><pre><code>import re\n\nFORBIDDEN = re.compile(\n    r&quot;\\b(insert|update|delete|drop|alter|create|grant|revoke|truncate|copy|call|do)\\b&quot;,\n    re.IGNORECASE,\n)\n\n\ndef validate_sql(sql: str) -&gt; bool:\n    statement = sql.strip().rstrip(&quot;;&quot;).strip()\n    if not statement:\n        return False\n    if &quot;;&quot; in statement or &quot;--&quot; in statement or &quot;/*&quot; in statement:\n        return False\n    if not re.match(r&quot;^select\\b&quot;, statement, re.IGNORECASE):\n        return False\n    return not FORBIDDEN.search(statement)\n\n\ndef enforce_limit(sql: str, limit: int = 100) -&gt; str:\n    statement = sql.strip().rstrip(&quot;;&quot;).strip()\n    if re.search(r&quot;\\blimit\\b&quot;, statement, re.IGNORECASE):\n        return statement\n    return f&quot;{statement} LIMIT {limit}&quot;</code></pre>"
+    },
+    {
+      "slug": "pii-redaction",
+      "module": "production-career",
+      "title": "PII Redaction Pipeline",
+      "tagline": "Strip emails, phone numbers and card-like numbers before data reaches a model or a log.",
+      "scenario": "Prompts and logs often contain personal data. A redaction layer should remove obvious identifiers before storage or provider calls, while keeping the text useful. It must be tested on realistic formats and must not silently claim to remove every kind of PII.",
+      "build": "Build a redact(text) function that replaces emails, phone numbers and 13–16 digit card-like numbers with stable tokens. Preserve ordinary numbers, add a report of what was redacted, and document what the layer does not catch (names, addresses, free-form identifiers). Compare with a library-based approach if available.",
+      "difficulty": "intermediate",
+      "duration_hours": 8,
+      "skills": [
+        "Regex",
+        "Privacy engineering",
+        "Logging hygiene",
+        "Testing edge cases",
+        "Threat modelling"
+      ],
+      "deliverables": [
+        "Redaction function or pipeline stage",
+        "Token report with counts by category",
+        "Tests for common formats and false positives",
+        "Threat model listing unsupported PII",
+        "README with integration guidance"
+      ],
+      "milestones": [
+        "Define the PII categories and token format.",
+        "Implement email and phone redaction with tests.",
+        "Add card-like number detection with boundary checks.",
+        "Document false positives, gaps and residual risk."
+      ],
+      "rubric": [
+        "Common email and phone formats are redacted.",
+        "Ordinary short numbers are not redacted as cards.",
+        "The layer reports what it changed.",
+        "The README does not overclaim complete anonymization."
+      ],
+      "stretch": [
+        "Add configurable patterns for national ID formats.",
+        "Add a dry-run mode that reports matches without changing text.",
+        "Compare with a maintained PII library and document the trade-off."
+      ],
+      "portfolio_note": "Privacy work is judged by honesty about residual risk. Document what remains after redaction.",
+      "hints": [
+        "Start with explicit categories and token names.",
+        "Use word boundaries around phone and card patterns.",
+        "A 16-digit number can be a card, but a 4-digit year is not.",
+        "Return a report so the caller can audit changes.",
+        "Do not claim the output is fully anonymous."
+      ],
+      "order": 11,
+      "solution_html": "<p>Reference implementation for the acceptance-test contract. It is a starting point, not a complete production project: add the README, evaluation, threat model and demo required by the brief.</p><pre><code>import re\n\nEMAIL = re.compile(r&quot;\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b&quot;)\nPHONE = re.compile(r&quot;(?&lt;!\\d)(?:\\+?\\d[\\d\\s().-]{7,}\\d)(?!\\d)&quot;)\nCARD = re.compile(r&quot;(?&lt;!\\d)(?:\\d[ -]?){13,16}(?!\\d)&quot;)\n\n\ndef redact(text: str) -&gt; tuple[str, dict]:\n    counts = {&quot;email&quot;: 0, &quot;phone&quot;: 0, &quot;card&quot;: 0}\n\n    def replace(pattern, token, key):\n        nonlocal text\n        def _sub(match):\n            counts[key] += 1\n            return token\n        text = pattern.sub(_sub, text)\n\n    replace(CARD, &quot;[CARD]&quot;, &quot;card&quot;)\n    replace(EMAIL, &quot;[EMAIL]&quot;, &quot;email&quot;)\n    replace(PHONE, &quot;[PHONE]&quot;, &quot;phone&quot;)\n    return text, counts</code></pre>"
     }
   ]
 }

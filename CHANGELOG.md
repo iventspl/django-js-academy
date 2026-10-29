@@ -1,5 +1,27 @@
 # Changelog
 
+## 4.16 — 2026-10-29
+
+### More real-world AI projects and a code library
+
+- Added four projects with briefs, hints, reference solutions, test packs and project pages:
+  - Support Email Triage
+  - Meeting Notes → Action Items
+  - Safe Text-to-SQL Analyst
+  - PII Redaction Pipeline
+- Added a real-world **AI code library** at `/ai/code-library/` covering safe provider calls, structured output, retrieval with citations, evaluation harnesses, approval-aware tools, PII redaction, streaming endpoints and cost/latency logging.
+- AI Academy now has **12 projects**; the suite has **121 tests**.
+
+## 4.15 — 2026-10-29
+
+### AI Academy: applied deep dives and hidden solutions
+
+- Added an **applied deep-dive lesson to every AI module**: Study Buddy walkthrough, churn audit, served tabular model, text classifier, RAG engine, tool-using agent, shipped API and Python debugging/profiling.
+- Added **progressive hints** and a **reference solution** to every project. Both are collapsed by default on the project page, with a reminder to attempt the work first.
+- The reference solutions cover the downloadable acceptance-test contracts and explicitly note that the full project still needs README, evaluation and failure analysis.
+- AI Academy now has **8 modules, 34 lessons, 48 questions, 40 cards, 8 projects and 55 glossary terms**.
+- The suite still has **120 tests**.
+
 ## 4.14 — 2026-10-29
 
 ### AI Academy: more worked examples and a Python cheat sheet

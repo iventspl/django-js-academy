@@ -34,6 +34,7 @@ urlpatterns = [
     path("glossary/", views.glossary, name="glossary"),
     path("search/", views.search, name="search"),
     path("career/", views.career, name="career"),
+    path("code-library/", views.code_library, name="code_library"),
     path(
         "python-for-ai/cheatsheet/",
         views.python_cheatsheet,

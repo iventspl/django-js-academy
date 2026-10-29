@@ -620,6 +620,18 @@ def search(request: HttpRequest) -> HttpResponse:
 
 
 @require_GET
+def code_library(request: HttpRequest) -> HttpResponse:
+    return render(
+        request,
+        "ai_academy/code_library.html",
+        {
+            "active_nav": "ai_code",
+            "page_title": "AI code library",
+        },
+    )
+
+
+@require_GET
 def python_cheatsheet(request: HttpRequest) -> HttpResponse:
     return render(
         request,

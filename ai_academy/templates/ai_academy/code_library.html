@@ -1,0 +1,180 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}AI code library · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <header class="ai-page-header">
+    <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> Real-world patterns</p>
+    <h1>AI code library.<br><em>Steal these patterns.</em></h1>
+    <p class="ai-page-lead">Small, practical programs for the work that appears in every AI product: provider calls, structured output, retrieval, evaluation, tools, privacy, streaming and cost control. Each snippet is a starting point, not a complete product.</p>
+    <div class="ai-page-actions">
+      <a class="btn btn-ai" href="{% url 'ai_academy:projects' %}">Practice in a project <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ai-ghost" href="{% url 'ai_academy:glossary' %}">Look up a term <span aria-hidden="true">A</span></a>
+    </div>
+  </header>
+
+  <div class="ai-cheat-grid">
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">01 · Provider</p>
+      <h2>Safe LLM client</h2>
+      <pre class="ai-code"><code>import os, time, requests
+
+def ask(prompt, retries=2):
+    key = os.environ["LLM_API_KEY"]
+    for attempt in range(retries + 1):
+        try:
+            r = requests.post(
+                "https://api.example.com/v1/chat",
+                headers={"Authorization": f"Bearer {key}"},
+                json={"prompt": prompt},
+                timeout=20,
+            )
+            if r.status_code == 429 and attempt &lt; retries:
+                time.sleep(2 ** attempt)
+                continue
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"]
+        except requests.Timeout:
+            if attempt == retries:
+                raise
+    raise RuntimeError("provider failed")</code></pre>
+      <p>Secrets from env, timeout, bounded retry, explicit failure. Never log the authorization header.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">02 · Output</p>
+      <h2>Validate structured output</h2>
+      <pre class="ai-code"><code>import json
+from pydantic import BaseModel, ValidationError
+
+class Triage(BaseModel):
+    category: str
+    urgency: str
+    needs_human: bool
+
+def parse_triage(raw: str) -&gt; Triage:
+    try:
+        return Triage.model_validate(json.loads(raw))
+    except (json.JSONDecodeError, ValidationError) as exc:
+        raise ValueError("model returned invalid triage") from exc</code></pre>
+      <p>Do not trust “JSON mode” alone. Validate every field and treat malformed output as a normal failure path.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">03 · RAG</p>
+      <h2>Retrieve with citations</h2>
+      <pre class="ai-code"><code>def retrieve(question, chunks, k=5):
+    words = set(question.lower().split())
+    ranked = sorted(
+        chunks,
+        key=lambda c: len(words &amp; set(c["text"].lower().split())),
+        reverse=True,
+    )
+    return ranked[:k]
+
+def answer(question, chunks):
+    evidence = retrieve(question, chunks)
+    if not evidence:
+        return {"answer": "", "citations": []}
+    return {
+        "answer": evidence[0]["text"],
+        "citations": [chunks.index(evidence[0])],
+    }</code></pre>
+      <p>Measure retrieval recall before tuning the prompt. Validate that every citation points to real evidence.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">04 · Evaluation</p>
+      <h2>Golden-set harness</h2>
+      <pre class="ai-code"><code>def evaluate(run, cases):
+    results = []
+    for case in cases:
+        output = run(case["input"])
+        results.append({
+            "input": case["input"],
+            "passed": case["check"](output),
+            "output": output,
+        })
+    passed = sum(r["passed"] for r in results)
+    return {"passed": passed, "total": len(results), "results": results}</code></pre>
+      <p>Keep edge cases, unanswerable inputs and adversarial examples in the set. Run it on every prompt or model change.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">05 · Tools</p>
+      <h2>Approval-aware tool loop</h2>
+      <pre class="ai-code"><code>def run_tool(tool, arguments, approve_write=False):
+    if tool.write and not approve_write:
+        return {"status": "approval_required", "tool": tool.name}
+    return {"status": "ok", "result": tool.fn(arguments)}
+
+# The loop must also cap steps and record every attempt in a trace.
+for step in range(max_steps):
+    action = planner(state)
+    if "final" in action:
+        break
+    trace.append(run_tool(tools[action["tool"]],
+                          action["arguments"], approve_write))</code></pre>
+      <p>Write tools need explicit approval, a narrow schema and an audit trail. Autonomy is a cost, not a default.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">06 · Privacy</p>
+      <h2>Redact before logging</h2>
+      <pre class="ai-code"><code>import re
+
+EMAIL = re.compile(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b")
+CARD = re.compile(r"(?&lt;!\d)(?:\d[ -]?){13,16}(?!\d)")
+
+def redact(text):
+    text = CARD.sub("[CARD]", text)
+    return EMAIL.sub("[EMAIL]", text)</code></pre>
+      <p>Redaction reduces risk; it does not make text anonymous. Document what remains and never log secrets or full sensitive prompts.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">07 · Serving</p>
+      <h2>Streaming FastAPI endpoint</h2>
+      <pre class="ai-code"><code>from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+
+app = FastAPI()
+
+@app.get("/stream")
+def stream(question: str):
+    def events():
+        for token in provider.stream(question, timeout=30):
+            yield f"data: {token}\n\n"
+    return StreamingResponse(events(), media_type="text/event-stream")</code></pre>
+      <p>Streaming improves perceived latency, not total cost. Add cancellation, timeouts and a token budget.</p>
+    </section>
+
+    <section class="ai-cheat-card">
+      <p class="eyebrow eyebrow-ai-dark">08 · Cost</p>
+      <h2>Cost and latency logger</h2>
+      <pre class="ai-code"><code>import time
+from contextlib import contextmanager
+
+@contextmanager
+def traced(label, logger):
+    start = time.perf_counter()
+    try:
+        yield
+    finally:
+        logger.info("%s latency_ms=%d", label,
+                    (time.perf_counter() - start) * 1000)</code></pre>
+      <p>Track p50/p95 latency, tokens, cost per successful answer and error rate. A demo without operations is not a product.</p>
+    </section>
+  </div>
+
+  <section class="ai-cta-band">
+    <div>
+      <p class="eyebrow eyebrow-ai-light">Make it yours</p>
+      <h2>Patterns become skills through projects.</h2>
+      <p>Pick a project brief, adapt one snippet and write the test that proves it works in your environment.</p>
+    </div>
+    <a class="btn btn-ai" href="{% url 'ai_academy:projects' %}">Browse projects <span aria-hidden="true">◫</span></a>
+  </section>
+</div>
+{% endblock %}

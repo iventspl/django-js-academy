@@ -61,6 +61,19 @@
         "Evaluate the task, not fluency alone."
       ],
       "practice": "Take 20 support tickets, label them manually, and compare a keyword baseline with an LLM prompt. Success: you can name the per-class errors and which approach you would ship."
+    },
+    {
+      "slug": "text-classifier-end-to-end",
+      "title": "Applied deep dive: a text classifier from baseline to transformer",
+      "summary": "A complete comparison workflow: TF-IDF baseline, fine-tuning, confidence routing and error analysis.",
+      "body_html": "<p>Text classification is the best first deep-learning project because the baseline is cheap and the failure analysis is visible.</p>\n<h2>1. Baseline first</h2>\n<pre><code>from sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.pipeline import Pipeline\n\nbaseline = Pipeline([\n    (\"tfidf\", TfidfVectorizer(ngram_range=(1, 2), min_df=2)),\n    (\"model\", LogisticRegression(max_iter=2000, class_weight=\"balanced\")),\n])\nbaseline.fit(train_texts, train_labels)</code></pre>\n<p>Record per-class precision, recall and the confusion matrix. This is the number the transformer must beat to justify its cost.</p>\n<h2>2. Fine-tune a small transformer</h2>\n<pre><code>from transformers import AutoTokenizer, AutoModelForSequenceClassification\nimport torch\n\ntokenizer = AutoTokenizer.from_pretrained(\"distilbert-base-uncased\")\nmodel = AutoModelForSequenceClassification.from_pretrained(\n    \"distilbert-base-uncased\", num_labels=4\n)\n\nbatch = tokenizer(train_texts[:16], truncation=True, padding=True, return_tensors=\"pt\")\nlabels = torch.tensor(train_labels[:16])\noutputs = model(**batch, labels=labels)\nloss = outputs.loss\nloss.backward()  # after optimizer.zero_grad() in the real loop</code></pre>\n<p>Use a validation split, early stopping and a fixed seed. Keep the baseline evaluation script so the comparison is reproducible.</p>\n<h2>3. Confidence routing</h2>\n<pre><code>probabilities = torch.softmax(outputs.logits, dim=-1)\nconfidence, predicted = probabilities.max(dim=-1)\nroute = [\"human\" if c &lt; 0.6 else \"model\" for c in confidence.tolist()]</code></pre>\n<p>A confident wrong answer is worse than an uncertain one sent to a human. Measure coverage (how many tickets the model handles) against accuracy on the covered set.</p>\n<h2>4. Error analysis</h2>\n<p>Read at least 20 misclassified examples. Label the cause: ambiguous label, missing context, label noise, domain shift, or model limitation. If the labels are inconsistent, a bigger model will learn the noise.</p>\n<h2>5. Compare honestly</h2>\n<table>\n<tr><th>Approach</th><th>Cost</th><th>Strength</th><th>Failure</th></tr>\n<tr><td>TF-IDF + linear</td><td>Low</td><td>Fast, strong baseline, interpretable</td><td>Misses nuanced language</td></tr>\n<tr><td>Fine-tuned transformer</td><td>Medium</td><td>Better language understanding</td><td>Needs data, compute and care</td></tr>\n<tr><td>Prompted LLM</td><td>Per call</td><td>No training, flexible</td><td>Cost, latency, variability</td></tr>\n</table>\n<div class=\"ai-callout\"><strong>Portfolio proof:</strong> show the baseline and transformer side by side, with a cost/quality decision. “Transformer won by 0.4%” may mean the baseline should ship.</div>",
+      "takeaways": [
+        "A strong classical baseline makes the deep-learning decision honest.",
+        "Confidence routing is a product feature that turns uncertainty into a human workflow.",
+        "Error analysis on real mistakes is more valuable than another architecture."
+      ],
+      "practice": "Train a TF-IDF baseline on a small labelled set, inspect 10 errors, then decide whether fine-tuning is justified. Success: the decision cites a metric and a cost.",
+      "minutes": 25
     }
   ],
   "questions": [

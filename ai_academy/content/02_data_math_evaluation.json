@@ -61,6 +61,19 @@
         "Calibration and slice analysis matter when the number drives a real action."
       ],
       "practice": "For a fraud detector, write the cost of a false positive and a false negative, choose a metric and a threshold, and name one customer slice you would inspect. Success: another person can defend the decision from your note."
+    },
+    {
+      "slug": "churn-audit-walkthrough",
+      "title": "Applied deep dive: a churn audit from CSV to memo",
+      "summary": "A complete, reproducible audit: schema, leakage, temporal split, baseline, metrics and the decision memo.",
+      "body_html": "<p>A churn audit is a decision document disguised as an analysis. The model is only one paragraph; the split, metric and limitations are the rest.</p>\n<h2>1. State the prediction moment</h2>\n<p>Example: <em>On the first day of each month, predict whether a customer will cancel before the next billing date, using only data available on that day.</em> Every feature must pass that test.</p>\n<h2>2. Audit the frame</h2>\n<pre><code>import pandas as pd\n\ndf = pd.read_csv(\"customer_months.csv\")\nprint(df.shape)\nprint(df.dtypes)\nprint(df.isna().mean().sort_values(ascending=False).head(10))\nprint(df.duplicated(subset=[\"customer_id\", \"month\"]).sum())\nprint(df[\"churned\"].value_counts(normalize=True))</code></pre>\n<p>Look for duplicate customer-months, missing labels, impossible values and features recorded after cancellation.</p>\n<h2>3. Split by time</h2>\n<pre><code>train = df[df[\"month\"] &lt; \"2026-07\"].copy()\nvalid = df[df[\"month\"] &gt;= \"2026-07\"].copy()\nprint(train[\"month\"].max(), valid[\"month\"].min())</code></pre>\n<p>If the product predicts next month, a random split can train on the future. Check the boundary and the label rate in both splits.</p>\n<h2>4. Baseline, then model</h2>\n<pre><code>from sklearn.dummy import DummyClassifier\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import classification_report\n\nbaseline = DummyClassifier(strategy=\"most_frequent\").fit(train[features], train[\"churned\"])\nmodel = LogisticRegression(max_iter=2000).fit(train[features], train[\"churned\"])\n\nfor name, estimator in [(\"baseline\", baseline), (\"logistic\", model)]:\n    pred = estimator.predict(valid[features])\n    print(name)\n    print(classification_report(valid[\"churned\"], pred, zero_division=0))</code></pre>\n<p>The baseline tells you whether the model learned anything. The report shows whether the model is useful for the actual decision.</p>\n<h2>5. Choose a threshold and write the memo</h2>\n<p>Suppose a retention offer costs 10 and saves 80 of future revenue. A false positive wastes 10; a false negative loses 80. Choose the threshold that reflects that ratio, then report precision and recall at that threshold. The memo should contain:</p>\n<ul>\n<li>decision and prediction moment;</li>\n<li>row counts, label rate and split dates;</li>\n<li>leakage risks removed or unresolved;</li>\n<li>baseline and model metrics at the chosen threshold;</li>\n<li>slices (plan, tenure) and one explicit limitation.</li>\n</ul>\n<div class=\"ai-callout\"><strong>Interview story:</strong> “We did not ship the model because the baseline was already strong at the campaign capacity” is a valid, senior-sounding result.</div>",
+      "takeaways": [
+        "The prediction moment determines which features are legal.",
+        "A temporal split is part of the problem definition, not a preprocessing detail.",
+        "The audit memo is the deliverable; the model supports it."
+      ],
+      "practice": "Write the prediction moment, list three leakage risks and choose a cost-based threshold. Success: a reviewer can reproduce your split and explain the threshold without asking you.",
+      "minutes": 25
     }
   ],
   "questions": [

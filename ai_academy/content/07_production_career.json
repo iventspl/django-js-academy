@@ -64,6 +64,19 @@
         "Apply with evidence: repository, demo, evaluation and a clear case study."
       ],
       "practice": "Write a one-page 12-month plan with monthly outputs, weekly hours and ten target roles. Success: the plan fits a real calendar and includes time for applications."
+    },
+    {
+      "slug": "ship-ai-endpoint-walkthrough",
+      "title": "Applied deep dive: ship an AI endpoint end to end",
+      "summary": "From FastAPI contract to container, logging, CI, monitoring and rollback.",
+      "body_html": "<p>Shipping is a sequence of contracts. Each one protects the next: the request schema, the provider timeout, the logs, the deployment and the rollback.</p>\n<h2>1. Typed API</h2>\n<pre><code>from fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass AskRequest(BaseModel):\n    question: str\n\nclass AskResponse(BaseModel):\n    answer: str\n    citations: list[str]\n\n@app.post(\"/ask\", response_model=AskResponse)\ndef ask(request: AskRequest):\n    if not request.question.strip():\n        raise HTTPException(status_code=422, detail=\"question is required\")\n    result = answer_with_citations(request.question)\n    return AskResponse(answer=result.answer, citations=result.citations)</code></pre>\n<h2>2. Bound the provider call</h2>\n<pre><code>def answer_with_citations(question: str):\n    try:\n        return pipeline.answer(question, timeout=20)\n    except TimeoutError:\n        raise HTTPException(status_code=504, detail=\"provider timeout\")\n    except ProviderError:\n        raise HTTPException(status_code=502, detail=\"provider unavailable\")</code></pre>\n<p>Return structured errors. A stack trace is not an API response, and a hanging request ties up a worker.</p>\n<h2>3. Container</h2>\n<pre><code>FROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nUSER 1000\nCMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]</code></pre>\n<p>Pin dependencies, run as non-root, and keep secrets in the platform environment, never in the image.</p>\n<h2>4. Logs and metrics</h2>\n<pre><code>{\n  \"trace_id\": \"abc123\",\n  \"prompt_version\": \"rag-v4\",\n  \"model\": \"small-model\",\n  \"latency_ms\": 1840,\n  \"input_tokens\": 920,\n  \"output_tokens\": 180,\n  \"cost_usd\": 0.003,\n  \"status\": \"ok\"\n}</code></pre>\n<p>Log enough to debug quality, latency and cost, but redact prompts, secrets and personal data. Alert on error rate, p95 latency and cost per successful answer.</p>\n<h2>5. CI and rollback</h2>\n<p>CI should run unit tests, a small golden-set evaluation and a container build. Deploy to a staging environment, run a smoke test, then promote. Keep the previous image and a kill switch. If quality or safety regresses, roll back first and investigate second.</p>\n<div class=\"ai-callout\"><strong>Interview story:</strong> describe the contract, the failure path, the metric you monitored and the rollback. That is the difference between a demo and a product.</div>",
+      "takeaways": [
+        "Typed request/response models, timeouts and structured errors are the minimum contract.",
+        "Logs must support debugging without storing secrets or sensitive prompts.",
+        "A rollback path and kill switch are part of the feature."
+      ],
+      "practice": "Wrap an AI function in FastAPI, add a timeout, a structured error and one metric. Success: a provider timeout returns 504 rather than hanging or exposing a stack trace.",
+      "minutes": 25
     }
   ],
   "questions": [

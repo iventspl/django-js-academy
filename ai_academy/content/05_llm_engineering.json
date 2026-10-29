@@ -62,6 +62,19 @@
         "Citations and abstention are product requirements, not decoration."
       ],
       "practice": "Chunk five documents, build a lexical retriever, and measure recall@3 on ten questions. Success: you can separate retrieval misses from generation misses."
+    },
+    {
+      "slug": "rag-answer-engine-walkthrough",
+      "title": "Applied deep dive: build a RAG answer engine",
+      "summary": "A complete path from chunks and retrieval to citations, abstention and evaluation.",
+      "body_html": "<p>RAG is a search system plus a generation system. Build and evaluate the search half before you tune the prompt.</p>\n<h2>1. Chunk with provenance</h2>\n<pre><code>def chunk_text(text, source, size=800, overlap=100):\n    step = size - overlap\n    chunks = []\n    for start in range(0, len(text), step):\n        piece = text[start:start + size]\n        if piece.strip():\n            chunks.append({\"text\": piece, \"source\": source, \"start\": start})\n    return chunks</code></pre>\n<p>Keep the source and character offset. Citations need to point at evidence, not at a vague “the docs”.</p>\n<h2>2. Retrieve, then measure</h2>\n<pre><code>def retrieve(question, chunks, k=5):\n    words = set(question.lower().split())\n    ranked = sorted(\n        chunks,\n        key=lambda c: len(words &amp; set(c[\"text\"].lower().split())),\n        reverse=True,\n    )\n    return ranked[:k]</code></pre>\n<p>This lexical retriever is a baseline. Measure recall@k on a set of questions with known source chunks. If retrieval misses, the generator cannot recover.</p>\n<h2>3. Ground the answer</h2>\n<pre><code>def build_prompt(question, evidence):\n    numbered = \"\\n\\n\".join(\n        f\"[{i}] {item['text']}\" for i, item in enumerate(evidence, start=1)\n    )\n    return (\n        \"Answer only from the evidence. Cite sources as [n]. \"\n        \"If the evidence is insufficient, say you do not know.\\n\\n\"\n        f\"Evidence:\\n{numbered}\\n\\nQuestion: {question}\"\n    )</code></pre>\n<p>Require the citation format, then validate the numbers in code. A citation that points to a chunk that does not exist is a bug, not a stylistic issue.</p>\n<h2>4. Abstain</h2>\n<p>If retrieval returns nothing relevant, return an explicit “I don’t know” with no citations. Add unanswerable questions to the evaluation set; otherwise the system learns to guess.</p>\n<h2>5. Evaluate both halves</h2>\n<pre><code>{\n  \"retrieval_recall_at_5\": 0.84,\n  \"citation_validity\": 1.0,\n  \"answer_correctness\": 0.71,\n  \"abstention_on_unanswerable\": 0.90,\n  \"p95_latency_ms\": 2400,\n  \"cost_per_answer_usd\": 0.004\n}</code></pre>\n<p>When an answer is wrong, check retrieval first. If the right evidence was never retrieved, editing the prompt is wasted work.</p>\n<div class=\"ai-callout\"><strong>Portfolio proof:</strong> the evaluation table and a failure analysis are more convincing than a chat screenshot.</div>",
+      "takeaways": [
+        "RAG has two failure surfaces: retrieval and generation; measure them separately.",
+        "Citations must point to real retrieved evidence and be validated in code.",
+        "Abstention is a feature; test it with unanswerable questions."
+      ],
+      "practice": "Create 10 questions with known source passages, measure recall@3 and list two retrieval failures. Success: you can explain whether each wrong answer was a retrieval or generation failure.",
+      "minutes": 25
     }
   ],
   "questions": [

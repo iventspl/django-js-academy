@@ -98,6 +98,10 @@
             <span class="nav-glyph" aria-hidden="true">✦</span>
             <span>Career</span>
           </a>
+          <a class="nav-link {% if active_nav == 'ai_code' %}is-active{% endif %}" href="{% url 'ai_academy:code_library' %}">
+            <span class="nav-glyph" aria-hidden="true">⌘</span>
+            <span>Code library</span>
+          </a>
           <a class="nav-link {% if active_nav == 'ai_glossary' %}is-active{% endif %}" href="{% url 'ai_academy:glossary' %}">
             <span class="nav-glyph" aria-hidden="true">A</span>
             <span>Glossary</span>

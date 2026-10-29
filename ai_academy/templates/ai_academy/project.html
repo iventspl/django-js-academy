@@ -46,6 +46,30 @@
         </div>
       </section>
 
+      {% if project.hint_list or project.solution_html %}
+        <section class="ai-panel ai-support-panel" aria-labelledby="support-title">
+          <p class="eyebrow eyebrow-ai-dark">When you are stuck</p>
+          <h2 id="support-title">Hints and a reference solution</h2>
+          <p>Try the project first. Open a hint only when you have a concrete blocker; open the solution only after your own attempt or a failed test run.</p>
+
+          {% if project.hint_list %}
+            <details class="ai-reveal">
+              <summary>Need a hint? <span>{{ project.hint_list|length }} available</span></summary>
+              <ol class="ai-hint-list">
+                {% for hint in project.hint_list %}<li>{{ hint }}</li>{% endfor %}
+              </ol>
+            </details>
+          {% endif %}
+
+          {% if project.solution_html %}
+            <details class="ai-reveal ai-reveal-solution">
+              <summary>Show the reference solution <span>hidden by default</span></summary>
+              <div class="ai-solution">{{ project.solution_html|safe }}</div>
+            </details>
+          {% endif %}
+        </section>
+      {% endif %}
+
       <section class="ai-panel">
         <p class="eyebrow eyebrow-ai-dark">Execution</p>
         <h2>Milestones</h2>

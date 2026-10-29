@@ -33,13 +33,13 @@ class AiContentTests(AiSeededTestCase):
     def test_content_counts_and_shape(self):
         self.assertEqual(len(load_bundles()), 8)
         self.assertEqual(AiModule.objects.count(), 8)
-        self.assertEqual(AiLesson.objects.count(), 26)
+        self.assertEqual(AiLesson.objects.count(), 34)
         self.assertEqual(AiQuestion.objects.count(), 48)
         self.assertEqual(AiFlashcard.objects.count(), 40)
-        self.assertEqual(AiProject.objects.count(), 8)
+        self.assertEqual(AiProject.objects.count(), 12)
         self.assertEqual(AiTerm.objects.count(), 55)
         for module in AiModule.objects.prefetch_related("lessons", "questions", "flashcards"):
-            expected_lessons = 5 if module.slug == "python-for-ai" else 3
+            expected_lessons = 6 if module.slug == "python-for-ai" else 4
             self.assertEqual(module.lessons.count(), expected_lessons, module.slug)
             self.assertEqual(module.questions.count(), 6, module.slug)
             self.assertEqual(module.flashcards.count(), 5, module.slug)
@@ -61,7 +61,7 @@ class AiContentTests(AiSeededTestCase):
         lesson = AiLesson.objects.first()
         call_command("seed_ai", verbosity=0)
         self.assertEqual(AiModule.objects.count(), 8)
-        self.assertEqual(AiLesson.objects.count(), 26)
+        self.assertEqual(AiLesson.objects.count(), 34)
         self.assertEqual(AiTerm.objects.count(), 55)
         self.assertEqual(AiLesson.objects.get(pk=lesson.pk).title, lesson.title)
 
@@ -71,6 +71,8 @@ class AiContentTests(AiSeededTestCase):
             self.assertTrue(project.deliverable_list)
             self.assertTrue(project.milestone_list)
             self.assertTrue(project.rubric_list)
+            self.assertTrue(project.hint_list, project.slug)
+            self.assertIn("Reference implementation", project.solution_html)
 
 
 class AiPageTests(AiSeededTestCase):
@@ -84,6 +86,7 @@ class AiPageTests(AiSeededTestCase):
             reverse("ai_academy:career"),
             reverse("ai_academy:glossary"),
             reverse("ai_academy:search"),
+            reverse("ai_academy:code_library"),
         ):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200, url)
@@ -113,12 +116,20 @@ class AiPageTests(AiSeededTestCase):
     def test_python_for_ai_is_the_first_module_and_has_four_lessons(self):
         module = AiModule.objects.get(slug="python-for-ai")
         self.assertEqual(module.order, 0)
-        self.assertEqual(module.lessons.count(), 5)
+        self.assertEqual(module.lessons.count(), 6)
         response = self.client.get(module.get_absolute_url())
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Python for AI")
         self.assertContains(response, "The Python data toolkit for AI")
         self.assertContains(response, "Notes-to-Dataset Pipeline")
+
+    def test_code_library_examples(self):
+        response = self.client.get(reverse("ai_academy:code_library"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "AI code library")
+        self.assertContains(response, "Safe LLM client")
+        self.assertContains(response, "Retrieve with citations")
+        self.assertContains(response, "Redact before logging")
 
     def test_python_cheatsheet_and_module_link(self):
         response = self.client.get(reverse("ai_academy:python_cheatsheet"))
@@ -143,6 +154,8 @@ class AiPageTests(AiSeededTestCase):
         self.assertContains(response, "Definition of done")
         self.assertContains(response, "Mark as shipped")
         self.assertContains(response, "Download .zip")
+        self.assertContains(response, "Need a hint?")
+        self.assertContains(response, "Show the reference solution")
 
     def test_every_project_offers_a_downloadable_test_pack(self):
         for project in AiProject.objects.all():

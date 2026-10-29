@@ -374,6 +374,12 @@ class AiProject(models.Model):
     tagline = models.CharField(max_length=260)
     scenario = models.TextField()
     build = models.TextField()
+    hints = models.TextField(
+        blank=True, help_text="One progressive hint per line, hidden on the page."
+    )
+    solution_html = models.TextField(
+        blank=True, help_text="Trusted reference solution HTML, hidden by default."
+    )
     difficulty = models.CharField(
         max_length=20, choices=DIFFICULTY_CHOICES, default="beginner"
     )
@@ -397,6 +403,10 @@ class AiProject(models.Model):
 
     def _lines(self, value: str) -> list[str]:
         return [line.strip() for line in value.splitlines() if line.strip()]
+
+    @property
+    def hint_list(self) -> list[str]:
+        return self._lines(self.hints)
 
     @property
     def skill_list(self) -> list[str]:
