@@ -2,7 +2,7 @@
 
 A local-first learning game for Python, Django, JavaScript and applied AI. It mixes multiple-choice quiz runs, open flashcards (fiszki), spaced repetition, explanations, coding challenges and a progress notebook — with a deliberately polished interface that runs the same way on macOS and Windows.
 
-No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.18 lesson and code-library expansion, the 4.17 home cleanup, the 4.16 project library and code library, the 4.15 applied deep dives, the 4.14 examples and cheat sheet, the 4.13 Python module, the 4.12 practice update, the 4.11 launch, and the earlier search and adaptive-practice releases.
+No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.19 learner tools, the 4.18 lesson and code-library expansion, the 4.17 home cleanup, the 4.16 project library and code library, the 4.15 applied deep dives, the 4.14 examples and cheat sheet, the 4.13 Python module, the 4.12 practice update, the 4.11 launch, and the earlier search and adaptive-practice releases.
 
 ## What is inside
 
@@ -297,6 +297,8 @@ Every module now has a practical **applied deep-dive lesson** and an extra conce
 - **AI code library** at `/ai/code-library/` — 20 real-world patterns for provider calls, structured output, retrieval, evaluation, tools, privacy, streaming, cost logging, embeddings, drift, idempotency, model cards and evaluation reports.
 - **Python for AI cheat sheet** at `/ai/python-for-ai/cheatsheet/` — records, JSON, pandas, NumPy, API and pytest patterns in one copyable page.
 - **Hidden hints and reference solutions** — every project page has collapsible hints and a ready reference implementation, hidden by default so you can attempt the work first.
+- **Private notes, bookmarks and a progress export** — save notes on any lesson, bookmark it, revisit everything in the Notes page, and download a Markdown readiness report for your job search.
+- **Retry missed questions** — after an AI quiz, rebuild a run from only the questions you missed.
 - **Downloadable project test packs** — every project page serves a zip with `starter.py`, a pytest acceptance suite, `requirements.txt` and a README, so learners can run the contract in their own environment.
 - **No external services required** — the curriculum, projects and progress tracker run locally in the same SQLite database.
 
@@ -534,7 +536,7 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **121 tests** in total.
+The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **127 tests** in total.
 
 You can also run Django's deployment check before hosting anything:
 

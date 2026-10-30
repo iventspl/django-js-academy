@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import random
 
+from django.db import transaction
 from django.db.models import Prefetch
 from django.utils import timezone
 
@@ -11,9 +13,11 @@ from dojo.models import Learner
 
 from .models import (
     AiAttempt,
+    AiAttemptQuestion,
     AiFlashcard,
     AiFlashcardReview,
     AiLesson,
+    AiLessonNote,
     AiLessonProgress,
     AiModule,
     AiProject,
@@ -145,6 +149,45 @@ def streak_for(learner: Learner, today=None) -> int:
     return streak
 
 
+def create_attempt_from_questions(
+    learner: Learner,
+    question_ids: list[int],
+    *,
+    module: AiModule,
+    limit: int | None = None,
+) -> AiAttempt:
+    ids = list(dict.fromkeys(int(question_id) for question_id in question_ids))
+    if not ids:
+        raise ValueError("There are no questions to practise yet.")
+    random.shuffle(ids)
+    if limit is not None:
+        ids = ids[:limit]
+    with transaction.atomic():
+        attempt = AiAttempt.objects.create(
+            learner=learner, module=module, length=len(ids)
+        )
+        AiAttemptQuestion.objects.bulk_create(
+            [
+                AiAttemptQuestion(attempt=attempt, question_id=question_id, position=index)
+                for index, question_id in enumerate(ids)
+            ]
+        )
+    return attempt
+
+
+def create_retry_attempt(learner: Learner, attempt: AiAttempt) -> AiAttempt:
+    missed_ids = list(
+        attempt.attempt_questions.filter(
+            selected__isnull=False, is_correct=False
+        ).values_list("question_id", flat=True)
+    )
+    if not missed_ids:
+        raise ValueError("This run has no missed questions to retry.")
+    return create_attempt_from_questions(
+        learner, missed_ids, module=attempt.module
+    )
+
+
 def gamification(learner: Learner) -> dict:
     completed_lessons = AiLessonProgress.objects.filter(learner=learner).count()
     completed_attempts = AiAttempt.objects.filter(
@@ -235,6 +278,12 @@ def overall_stats(learner: Learner) -> dict:
         "level_percent": games["level_percent"],
         "streak": games["streak"],
         "active_days": games["active_days"],
+        "note_count": AiLessonNote.objects.filter(learner=learner).exclude(
+            body="", is_bookmarked=False
+        ).count(),
+        "bookmark_count": AiLessonNote.objects.filter(
+            learner=learner, is_bookmarked=True
+        ).count(),
     }
 
 

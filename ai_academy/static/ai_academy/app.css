@@ -3105,3 +3105,136 @@
   font-size: 0.62rem;
   text-transform: uppercase;
 }
+
+/* Private lesson notes and notes index */
+.ai-note-panel {
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 11px;
+  background: rgba(139, 92, 246, 0.06);
+}
+
+.ai-note-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-note-panel h2 {
+  margin: 3px 0 10px;
+  color: #142b25;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+.ai-note-panel textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  border: 1px solid rgba(13, 27, 36, 0.2);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #20332c;
+  font: inherit;
+  resize: vertical;
+}
+
+.ai-note-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 9px;
+}
+
+.ai-bookmark {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #4b5a52;
+  font-size: 0.72rem;
+}
+
+.ai-bookmark input {
+  accent-color: #8b5cf6;
+}
+
+.ai-note-panel > p {
+  margin: 10px 0 0;
+  color: #6b7a73;
+  font-size: 0.62rem;
+}
+
+.ai-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.ai-note-card {
+  padding: 18px;
+  border: 1px solid rgba(196, 181, 253, 0.16);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.ai-note-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-note-card h2 {
+  margin: 13px 0 6px;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.ai-note-card h2 a {
+  color: #fff;
+}
+
+.ai-note-card > p {
+  color: #b3c0c8;
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+
+.ai-note-empty {
+  color: #81929c !important;
+  font-style: italic;
+}
+
+.ai-note-card-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 13px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(196, 181, 253, 0.12);
+  color: #81929c;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+}
+
+.ai-note-card-foot a {
+  color: #c4b5fd;
+}
+
+@media (max-width: 760px) {
+  .ai-notes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-note-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

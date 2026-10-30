@@ -4,15 +4,18 @@ from zipfile import ZipFile
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from dojo.models import Learner
 
 from .content import load_bundles
 from .models import (
     AiAttempt,
+    AiAttemptQuestion,
     AiFlashcard,
     AiFlashcardReview,
     AiLesson,
+    AiLessonNote,
     AiLessonProgress,
     AiModule,
     AiProject,
@@ -87,6 +90,7 @@ class AiPageTests(AiSeededTestCase):
             reverse("ai_academy:glossary"),
             reverse("ai_academy:search"),
             reverse("ai_academy:code_library"),
+            reverse("ai_academy:notes"),
         ):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200, url)
@@ -347,3 +351,97 @@ class AiGlossarySearchTests(AiSeededTestCase):
         response = self.client.get(reverse("ai_academy:search"), {"q": "a"})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["searched"])
+
+
+class AiNotesTests(AiSeededTestCase):
+    def test_save_note_and_bookmark(self):
+        lesson = AiLesson.objects.first()
+        url = reverse(
+            "ai_academy:save_note", args=[lesson.module.slug, lesson.slug]
+        )
+        response = self.client.post(
+            url, {"note": "  My own explanation.  ", "bookmarked": "on"}
+        )
+        self.assertEqual(response.status_code, 302)
+        note = AiLessonNote.objects.get(lesson=lesson)
+        self.assertEqual(note.body, "My own explanation.")
+        self.assertTrue(note.is_bookmarked)
+
+        response = self.client.get(reverse("ai_academy:notes"))
+        self.assertContains(response, "My own explanation.")
+        self.assertContains(response, lesson.title)
+
+        response = self.client.get(reverse("ai_academy:notes") + "?bookmarked=1")
+        self.assertContains(response, lesson.title)
+
+    def test_clearing_note_and_bookmark_removes_it(self):
+        lesson = AiLesson.objects.first()
+        AiLessonNote.objects.create(learner=Learner.local(), lesson=lesson, body="x")
+        self.client.post(
+            reverse("ai_academy:save_note", args=[lesson.module.slug, lesson.slug]),
+            {"note": "", "bookmarked": ""},
+        )
+        self.assertFalse(AiLessonNote.objects.exists())
+
+    def test_lesson_page_contains_note_form(self):
+        lesson = AiLesson.objects.first()
+        response = self.client.get(lesson.get_absolute_url())
+        self.assertContains(response, "Capture the idea in your own words.")
+        self.assertContains(response, "Bookmark this lesson")
+
+
+class AiRetryTests(AiSeededTestCase):
+    def _completed_attempt(self, missed=True):
+        module = AiModule.objects.get(slug="ai-foundations")
+        questions = list(module.questions.all()[:2])
+        attempt = AiAttempt.objects.create(
+            learner=Learner.local(), module=module, length=len(questions)
+        )
+        attempt_questions = AiAttemptQuestion.objects.bulk_create(
+            [
+                AiAttemptQuestion(attempt=attempt, question=question, position=index)
+                for index, question in enumerate(questions)
+            ]
+        )
+        for index, attempt_question in enumerate(attempt_questions):
+            correct = attempt_question.question.choices.get(is_correct=True)
+            wrong = attempt_question.question.choices.filter(is_correct=False).first()
+            attempt_question.selected = wrong if (missed and index == 0) else correct
+            attempt_question.is_correct = not (missed and index == 0)
+            attempt_question.save(update_fields=["selected", "is_correct"])
+        attempt.completed_at = timezone.now()
+        attempt.save(update_fields=["completed_at"])
+        return attempt, questions
+
+    def test_retry_missed_creates_attempt_with_only_missed_question(self):
+        attempt, questions = self._completed_attempt(missed=True)
+        response = self.client.post(
+            reverse("ai_academy:retry_missed", args=[attempt.pk])
+        )
+        self.assertEqual(response.status_code, 302)
+        retry = AiAttempt.objects.latest("id")
+        self.assertEqual(
+            list(retry.attempt_questions.values_list("question_id", flat=True)),
+            [questions[0].pk],
+        )
+
+    def test_retry_perfect_attempt_is_rejected(self):
+        attempt, _ = self._completed_attempt(missed=False)
+        response = self.client.post(
+            reverse("ai_academy:retry_missed", args=[attempt.pk]), follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "no missed questions")
+        self.assertEqual(AiAttempt.objects.count(), 1)
+
+
+class AiExportTests(AiSeededTestCase):
+    def test_progress_report_download(self):
+        response = self.client.get(reverse("ai_academy:progress_export"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/markdown", response["Content-Type"])
+        self.assertIn("ai-academy-progress.md", response["Content-Disposition"])
+        body = response.content.decode()
+        self.assertIn("# AI Academy progress report", body)
+        self.assertIn("Readiness:", body)
+        self.assertIn("## Modules", body)

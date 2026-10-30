@@ -12,6 +12,12 @@
       <p class="ai-page-lead">The explanation is the lesson. Review the misses, then return to the module project while the ideas are fresh.</p>
       <div class="ai-page-actions">
         <a class="btn btn-ai" href="{{ attempt.module.get_absolute_url }}">Back to module <span aria-hidden="true">→</span></a>
+        {% if missed_count %}
+          <form method="post" action="{% url 'ai_academy:retry_missed' attempt.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-ai" type="submit">Retry {{ missed_count }} missed <span aria-hidden="true">↺</span></button>
+          </form>
+        {% endif %}
         <form method="post" action="{% url 'ai_academy:quiz_start' attempt.module.slug %}">
           {% csrf_token %}
           <button class="btn btn-ai-ghost" type="submit">Run it again <span aria-hidden="true">↻</span></button>

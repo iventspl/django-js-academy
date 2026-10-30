@@ -1,0 +1,51 @@
+{% extends "ai_academy/base_ai.html" %}
+
+{% block title %}My notes · AI Academy{% endblock %}
+
+{% block content %}
+<div class="page-wrap ai-wrap">
+  <header class="ai-page-header">
+    <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> Private notebook</p>
+    <h1>My AI notes.<br><em>Local and yours.</em></h1>
+    <p class="ai-page-lead">Notes and bookmarks are stored in this machine's SQLite database. The progress report does not include them.</p>
+    <div class="ai-page-actions">
+      <a class="btn btn-ai" href="{% url 'ai_academy:path' %}">Back to the path <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ai-ghost" href="{% url 'ai_academy:notes' %}?bookmarked=1">{% if bookmarked_only %}Show all notes{% else %}Show bookmarks only{% endif %} <span aria-hidden="true">✦</span></a>
+    </div>
+  </header>
+
+  <div class="ai-stat-band">
+    <div><strong>{{ stats.note_count }}</strong><span>notes</span></div>
+    <div><strong>{{ stats.bookmark_count }}</strong><span>bookmarks</span></div>
+    <div><strong>{{ stats.completed_lessons }}</strong><span>lessons complete</span></div>
+    <div><strong>{{ stats.readiness }}%</strong><span>readiness</span></div>
+    <div><a href="{% url 'ai_academy:progress' %}">Progress <span aria-hidden="true">↗</span></a><span>open notebook</span></div>
+  </div>
+
+  {% if notes %}
+    <div class="ai-notes-grid">
+      {% for note in notes %}
+        <article class="ai-note-card">
+          <div class="ai-note-card-top">
+            <span class="tag tag-ai-soft">{{ note.lesson.module.title }}</span>
+            {% if note.is_bookmarked %}<span class="tag tag-ai">Bookmark</span>{% endif %}
+          </div>
+          <h2><a href="{{ note.lesson.get_absolute_url }}">{{ note.lesson.title }}</a></h2>
+          {% if note.body %}<p>{{ note.body|linebreaksbr }}</p>{% else %}<p class="ai-note-empty">Bookmarked without a written note.</p>{% endif %}
+          <div class="ai-note-card-foot">
+            <span>Updated {{ note.updated_at|date:"j M Y, H:i" }}</span>
+            <a href="{{ note.lesson.get_absolute_url }}">Open lesson →</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <section class="ai-empty">
+      <span class="ai-empty-mark">✎</span>
+      <h2>{% if bookmarked_only %}No bookmarks yet.{% else %}No notes yet.{% endif %}</h2>
+      <p>Open any lesson, write one idea in your own words, and optionally bookmark it for later.</p>
+      <a class="btn btn-ai" href="{% url 'ai_academy:path' %}">Open the path</a>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

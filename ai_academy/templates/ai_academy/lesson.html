@@ -61,6 +61,26 @@
         </section>
       {% endif %}
 
+      <section class="ai-note-panel" aria-labelledby="notes-title">
+        <div class="ai-note-head">
+          <div>
+            <p class="eyebrow eyebrow-ai-dark">Private notes</p>
+            <h2 id="notes-title">Capture the idea in your own words.</h2>
+          </div>
+          {% if note and note.is_bookmarked %}<span class="tag tag-ai">Bookmarked</span>{% endif %}
+        </div>
+        <form method="post" action="{% url 'ai_academy:save_note' module.slug lesson.slug %}">
+          {% csrf_token %}
+          <label class="sr-only" for="lesson-note">Lesson note</label>
+          <textarea id="lesson-note" name="note" rows="4" placeholder="What clicked? What would you build with this?">{{ note.body|default:'' }}</textarea>
+          <div class="ai-note-actions">
+            <label class="ai-bookmark"><input type="checkbox" name="bookmarked" {% if note.is_bookmarked %}checked{% endif %}> Bookmark this lesson</label>
+            <button class="btn btn-ai" type="submit">Save note <span aria-hidden="true">✓</span></button>
+          </div>
+        </form>
+        <p>Saved only in the local SQLite database. Clear the note and uncheck the bookmark to remove it.</p>
+      </section>
+
       <div class="ai-lesson-complete">
         {% if completed %}
           <div class="ai-complete-state"><span aria-hidden="true">✓</span><div><strong>Lesson complete</strong><p>You can revisit it any time.</p></div></div>

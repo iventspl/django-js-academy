@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.19 — 2026-10-30
+
+### AI Academy learner tools
+
+- Added **private lesson notes and bookmarks**, stored in the local SQLite database and available from a new Notes page and the AI sidebar.
+- Added **retry missed** on AI quiz results: rebuild a run from only the questions answered incorrectly.
+- Added a downloadable **Markdown progress report** with readiness, module completion, quiz scores, cards and shipped projects — useful for a job-search log.
+- Added note, retry and export tests; the suite now has **127 tests**.
+
 ## 4.18 — 2026-10-29
 
 ### AI Academy: more lessons and a 20-example code library

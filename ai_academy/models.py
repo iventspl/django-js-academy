@@ -198,6 +198,29 @@ class AiLessonProgress(models.Model):
         return f"{self.learner_id}:{self.lesson_id}"
 
 
+class AiLessonNote(models.Model):
+    learner = models.ForeignKey(
+        "dojo.Learner", on_delete=models.CASCADE, related_name="ai_lesson_notes"
+    )
+    lesson = models.ForeignKey(
+        AiLesson, on_delete=models.CASCADE, related_name="notes"
+    )
+    body = models.TextField(blank=True)
+    is_bookmarked = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "lesson"], name="unique_ai_note_learner_lesson"
+            )
+        ]
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:
+        return f"{self.learner_id}:{self.lesson_id}"
+
+
 class AiAttempt(models.Model):
     learner = models.ForeignKey(
         "dojo.Learner", on_delete=models.CASCADE, related_name="ai_attempts"

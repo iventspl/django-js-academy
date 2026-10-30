@@ -21,6 +21,7 @@ from .models import (
     AiAttemptQuestion,
     AiFlashcard,
     AiLesson,
+    AiLessonNote,
     AiLessonProgress,
     AiModule,
     AiProject,
@@ -34,6 +35,7 @@ from .services import (
     flashcard_decks,
     flashcard_progress,
     module_progress,
+    create_retry_attempt,
     next_lesson,
     overall_stats,
     project_list,
@@ -163,6 +165,7 @@ def lesson_detail(
             learner=learner, lesson__module=module
         ).values_list("lesson_id", flat=True)
     )
+    note = AiLessonNote.objects.filter(learner=learner, lesson=lesson).first()
     return render(
         request,
         "ai_academy/lesson.html",
@@ -172,6 +175,7 @@ def lesson_detail(
             "lessons": lessons,
             "completed_ids": completed_ids,
             "completed": completed,
+            "note": note,
             "previous_lesson": lessons[index - 1] if index > 0 else None,
             "following_lesson": lessons[index + 1] if index + 1 < len(lessons) else None,
             "lesson_number": index + 1,
@@ -206,6 +210,52 @@ def complete_lesson(
                 lesson_slug=lessons[index + 1].slug,
             )
     return redirect("ai_academy:module", module_slug=module.slug)
+
+
+@require_POST
+def save_note(
+    request: HttpRequest, module_slug: str, lesson_slug: str
+) -> HttpResponse:
+    learner = _learner()
+    module = get_object_or_404(AiModule, slug=module_slug)
+    lesson = get_object_or_404(AiLesson, module=module, slug=lesson_slug)
+    body = request.POST.get("note", "").strip()
+    bookmarked = request.POST.get("bookmarked") == "on"
+    if not body and not bookmarked:
+        AiLessonNote.objects.filter(learner=learner, lesson=lesson).delete()
+        messages.info(request, "Note cleared.")
+    else:
+        AiLessonNote.objects.update_or_create(
+            learner=learner,
+            lesson=lesson,
+            defaults={"body": body, "is_bookmarked": bookmarked},
+        )
+        messages.success(request, "Note saved privately on this machine.")
+    return redirect(lesson.get_absolute_url())
+
+
+@require_GET
+def notes(request: HttpRequest) -> HttpResponse:
+    learner = _learner()
+    bookmarked_only = request.GET.get("bookmarked") == "1"
+    note_rows = AiLessonNote.objects.filter(learner=learner).select_related(
+        "lesson", "lesson__module"
+    )
+    if bookmarked_only:
+        note_rows = note_rows.filter(is_bookmarked=True)
+    else:
+        note_rows = note_rows.exclude(body="", is_bookmarked=False)
+    return render(
+        request,
+        "ai_academy/notes.html",
+        {
+            "notes": note_rows,
+            "bookmarked_only": bookmarked_only,
+            "stats": overall_stats(learner),
+            "active_nav": "ai_notes",
+            "page_title": "My notes",
+        },
+    )
 
 
 @require_POST
@@ -342,10 +392,28 @@ def quiz_results(request: HttpRequest, attempt_id: int) -> HttpResponse:
             "attempt": attempt,
             "rows": rows,
             "missed": missed,
+            "missed_count": len(missed),
             "active_nav": "ai_path",
             "page_title": f"Result · {attempt.module.title}",
         },
     )
+
+
+@require_POST
+def retry_missed(request: HttpRequest, attempt_id: int) -> HttpResponse:
+    learner = _learner()
+    attempt = get_object_or_404(
+        AiAttempt.objects.select_related("module"),
+        pk=attempt_id,
+        learner=learner,
+        completed_at__isnull=False,
+    )
+    try:
+        retry = create_retry_attempt(learner, attempt)
+    except ValueError as exc:
+        messages.info(request, str(exc))
+        return redirect("ai_academy:quiz_results", attempt_id=attempt.pk)
+    return redirect("ai_academy:quiz", attempt_id=retry.pk)
 
 
 @require_GET
@@ -641,6 +709,43 @@ def python_cheatsheet(request: HttpRequest) -> HttpResponse:
             "page_title": "Python for AI cheat sheet",
         },
     )
+
+
+@require_GET
+def progress_export(request: HttpRequest) -> HttpResponse:
+    learner = _learner()
+    stats = overall_stats(learner)
+    projects = project_list(learner)
+    lines = [
+        "# AI Academy progress report",
+        "",
+        f"Generated: {timezone.localdate().isoformat()}",
+        f"Readiness: {stats['readiness']}%",
+        f"Level: {stats['level_name']} ({stats['xp']} XP)",
+        f"Lessons: {stats['completed_lessons']}/{stats['lesson_total']}",
+        f"Projects shipped: {stats['projects_shipped']}/{stats['project_total']}",
+        f"Quiz average: {stats['quiz_average']}%",
+        f"Cards met: {stats['reviewed_cards']}/{stats['card_total']}",
+        "",
+        "## Modules",
+    ]
+    for row in stats["module_rows"]:
+        lines.append(
+            f"- {row['module'].title}: {row['completed_lessons']}/{row['lesson_total']} lessons, "
+            f"best quiz {row['best_score']}%"
+        )
+    lines.extend(["", "## Projects"])
+    for row in projects:
+        status = "shipped" if row["completed"] else "not shipped"
+        lines.append(f"- {row['project'].title}: {status}")
+    lines.extend(["", "Generated locally by AI Academy. Notes are not included."])
+    response = HttpResponse(
+        "\n".join(lines) + "\n", content_type="text/markdown; charset=utf-8"
+    )
+    response["Content-Disposition"] = (
+        'attachment; filename="ai-academy-progress.md"'
+    )
+    return response
 
 
 @require_GET

@@ -9,6 +9,10 @@
       <p class="eyebrow eyebrow-ai"><span class="pulse-dot" aria-hidden="true"></span> The evidence</p>
       <h1>A longer view<br>of <em>becoming employable.</em></h1>
       <p class="ai-page-lead">Readiness is a blend of lessons, quiz scores, concept recall and shipped projects. It is a compass, not a certificate.</p>
+      <div class="ai-page-actions">
+        <a class="btn btn-ai" href="{% url 'ai_academy:progress_export' %}">Download progress report <span aria-hidden="true">↓</span></a>
+        <a class="btn btn-ai-ghost" href="{% url 'ai_academy:notes' %}">My notes ({{ stats.note_count }}) <span aria-hidden="true">✎</span></a>
+      </div>
     </div>
     <aside class="ai-readiness-card ai-readiness-card-large">
       <div class="ai-readiness-head">
