@@ -44,6 +44,20 @@
       "summary": "Ciężka praca poza głównym wątkiem, dane kawałek po kawałku i uprawnienia.",
       "minutes": 16,
       "body_html": "<h2>Web Worker</h2>\n<p>Worker działa w osobnym wątku i nie ma dostępu do DOM. Komunikacja odbywa się przez <code>postMessage</code>. Używaj go do ciężkich obliczeń, parsowania dużych plików lub przetwarzania obrazów.</p>\n<pre><code>const worker = new Worker(\"worker.js\");\nworker.postMessage({ numbers: largeArray });\nworker.onmessage = (event) =&gt; console.log(event.data);</code></pre>\n<h2>Strumienie</h2>\n<p><code>ReadableStream</code> pozwala przetwarzać dane, zanim przyjdzie całość. To podstawa streamingu odpowiedzi LLM i dużych plików. Pamiętaj o anulowaniu i obsłudze błędów w połowie strumienia.</p>\n<h2>Powiadomienia</h2>\n<pre><code>const permission = await Notification.requestPermission();\nif (permission === \"granted\") {\n  new Notification(\"Gotowe\", { body: \"Raport został wygenerowany.\" });\n}</code></pre>\n<p>Proś o uprawnienie w kontekście, gdy użytkownik rozumie korzyść. Obsłuż odmowę i nie blokuj całej aplikacji.</p>\n<div class=\"lesson-callout\"><strong>Main thread:</strong> animacje i interakcje muszą pozostać responsywne. Jeśli obliczenie trwa dłużej niż kilkadziesiąt milisekund, przenieś je do workera lub podziel na kawałki.</div>"
+    },
+    {
+      "slug": "fetch-cache-storage",
+      "title": "Fetch, cache i storage",
+      "summary": "Trzy warstwy pamięci, które mają różne zadania.",
+      "minutes": "16",
+      "body_html": "<p>Nie każda pamięć jest taka sama. Cache w pamięci znika po odświeżeniu; localStorage zostaje; IndexedDB mieści więcej.</p>\n<h2>Cache w pamięci</h2>\n<pre><code>const cache = new Map();\nfunction getMovie(id) {\n  if (!cache.has(id)) cache.set(id, fetchMovie(id));\n  return cache.get(id);\n}</code></pre>\n<h2>localStorage</h2>\n<pre><code>localStorage.setItem(\"theme\", \"dark\");</code></pre>\n<p>Nie zapisuj tam tokenów ani dużych plików. To prosta pamięć, nie baza danych.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> odśwież stronę i sprawdź, które dane powinny zostać, a które mogą zniknąć.</div>"
+    },
+    {
+      "slug": "notifications-i-workers",
+      "title": "Powiadomienia i workery",
+      "summary": "Kiedy praca w tle ma sens, a kiedy tylko komplikuje aplikację.",
+      "minutes": "17",
+      "body_html": "<p>Web Worker nie jest magicznym przyspieszeniem. Przenosi ciężką pracę poza wątek interfejsu.</p>\n<h2>Worker</h2>\n<pre><code>const worker = new Worker(\"worker.js\");\nworker.postMessage({ type: \"parse\", text });\nworker.onmessage = (event) =&gt; console.log(event.data);</code></pre>\n<h2>Powiadomienia</h2>\n<pre><code>if (\"Notification\" in window) {\n  const permission = await Notification.requestPermission();\n}</code></pre>\n<p>Nie proś o powiadomienia przy pierwszym wejściu. Najpierw daj powód.</p>\n<div class=\"lesson-callout\"><strong>Pytanie:</strong> czy użytkownik zyska na pracy w tle, czy wystarczy zwykły przycisk?</div>"
     }
   ],
   "questions": [

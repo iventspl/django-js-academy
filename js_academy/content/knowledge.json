@@ -222,36 +222,36 @@
       "key": "hoisting",
       "category": "Język",
       "term": "Hoisting",
-      "definition": "Wynoszenie deklaracji na początek zakresu. var jest inicjalizowane undefined; let/const są w TDZ do momentu deklaracji.",
+      "definition": "JavaScript najpierw czyta deklaracje w danym zakresie. Dlatego var bywa widoczne przed linią, w której je zapisano. let i const też są znane, ale nie wolno ich użyć przed deklaracją.",
       "example": "console.log(x); var x = 1; // undefined"
     },
     {
       "key": "tdz",
       "category": "Język",
       "term": "TDZ",
-      "definition": "Temporal Dead Zone — okres, w którym let/const istnieje, ale nie można go odczytać przed inicjalizacją.",
+      "definition": "Okres, w którym let i const już istnieją, ale próba odczytu kończy się błędem. Trwa do wykonania deklaracji.",
       "example": "console.log(x); let x = 1; // ReferenceError"
     },
     {
       "key": "closure",
       "category": "Funkcje",
       "term": "Domknięcie",
-      "definition": "Funkcja pamiętająca zmienne z otaczającego zakresu po zakończeniu funkcji zewnętrznej.",
-      "example": "const add = (a) => (b) => a + b;"
+      "definition": "Funkcja, która pamięta zmienne z miejsca, w którym powstała, nawet po zakończeniu funkcji zewnętrznej.",
+      "example": "function counter() { let n = 0; return () => ++n; }"
     },
     {
       "key": "this",
       "category": "Funkcje",
       "term": "this",
-      "definition": "Kontekst wywołania. Zależy od sposobu wywołania, nie od miejsca definicji. Strzałki dziedziczą this.",
-      "example": "user.greet(); // this = user"
+      "definition": "Zmienna wskazująca obiekt, na którym wywołano funkcję. Zależy od sposobu wywołania; funkcje strzałkowe biorą this z otoczenia.",
+      "example": "user.sayName(); // this = user"
     },
     {
       "key": "prototype",
       "category": "Język",
       "term": "Prototyp",
-      "definition": "Obiekt, z którego inny obiekt dziedziczy właściwości. Klasy są oparte na prototypach.",
-      "example": "Object.getPrototypeOf([]) === Array.prototype"
+      "definition": "Wspólny zestaw właściwości i metod, z którego korzystają obiekty utworzone przez konstruktor.",
+      "example": "Array.prototype.map"
     },
     {
       "key": "pure-function",
@@ -271,8 +271,8 @@
       "key": "mutation",
       "category": "Język",
       "term": "Mutacja",
-      "definition": "Zmiana istniejącego obiektu lub tablicy w miejscu. W React utrudnia wykrycie zmian.",
-      "example": "items.push(x)"
+      "definition": "Zmiana istniejącej tablicy lub obiektu w miejscu. Często trudna do zauważenia; bezpieczniej tworzyć nową kopię.",
+      "example": "items.push(x); // mutates items"
     },
     {
       "key": "shallow-copy",
@@ -341,8 +341,8 @@
       "key": "event-loop",
       "category": "Asynchroniczność",
       "term": "Event loop",
-      "definition": "Mechanizm przetwarzania kolejki zadań po opróżnieniu stosu wywołań.",
-      "example": "setTimeout(() => {}, 0)"
+      "definition": "Mechanizm, który po kolei wykonuje kod, a potem zadania z kolejki. Dzięki temu JavaScript jest jednowątkowy, ale nie blokuje się na wszystkim.",
+      "example": "console.log(1); setTimeout(() => console.log(2)); console.log(3);"
     },
     {
       "key": "microtask",
@@ -362,22 +362,22 @@
       "key": "promise",
       "category": "Asynchroniczność",
       "term": "Promise",
-      "definition": "Obiekt przyszłego wyniku ze stanami pending/fulfilled/rejected.",
-      "example": "fetch(url).then(r => r.json())"
+      "definition": "Obiekt oznaczający wynik, który będzie później: oczekuje, spełniony albo odrzucony.",
+      "example": "fetch(\"/api\").then((r) => r.json())"
     },
     {
       "key": "async-await",
       "category": "Asynchroniczność",
       "term": "async/await",
-      "definition": "Składnia oparta na Promise, która pozwala pisać kod asynchroniczny liniowo.",
+      "definition": "Zapis pracy z Promise, który wygląda jak zwykły kod. await czeka na wynik, ale nie blokuje całej strony.",
       "example": "const data = await response.json();"
     },
     {
       "key": "abortcontroller",
       "category": "Asynchroniczność",
       "term": "AbortController",
-      "definition": "Mechanizm anulowania fetch, strumieni i listenerów przez signal.",
-      "example": "controller.abort()"
+      "definition": "Narzędzie do anulowania zapytania lub zadania, np. gdy użytkownik opuszcza widok.",
+      "example": "controller.abort();"
     },
     {
       "key": "map",
@@ -439,15 +439,15 @@
       "key": "debounce",
       "category": "Wydajność",
       "term": "Debounce",
-      "definition": "Opóźnia wykonanie do końca serii zdarzeń. Dobry do wyszukiwania podczas pisania.",
-      "example": "debounce(search, 300)"
+      "definition": "Opóźnienie akcji do chwili, gdy użytkownik przestanie pisać lub klikać. Zmniejsza liczbę wywołań.",
+      "example": "setTimeout(load, 300);"
     },
     {
       "key": "throttle",
       "category": "Wydajność",
       "term": "Throttle",
-      "definition": "Ogranicza wykonanie do maksymalnie raz na przedział czasu. Dobry do scrolla.",
-      "example": "throttle(onScroll, 100)"
+      "definition": "Ograniczenie, jak często funkcja może się wykonać, np. najwyżej raz na 200 ms.",
+      "example": "if (now - last < 200) return;"
     },
     {
       "key": "event-delegation",
@@ -474,8 +474,8 @@
       "key": "reconciliation",
       "category": "React",
       "term": "Reconciliation",
-      "definition": "Algorytm porównywania drzew i aktualizacji DOM. Key wspiera dopasowanie list.",
-      "example": "key={item.id}"
+      "definition": "Sposób, w jaki React porównuje stary i nowy widok i zmienia tylko potrzebne elementy.",
+      "example": "React aktualizuje tylko zmienione elementy."
     },
     {
       "key": "hook",
@@ -537,8 +537,8 @@
       "key": "hydration",
       "category": "Architektura",
       "term": "Hydratacja",
-      "definition": "Proces dołączania Reacta do HTML wygenerowanego na serwerze.",
-      "example": "hydrateRoot"
+      "definition": "Ożywienie HTML wygenerowanego na serwerze przez podłączenie do niego JavaScriptu.",
+      "example": "ReactDOM.hydrateRoot(root, <App />);"
     },
     {
       "key": "xss",
@@ -567,6 +567,104 @@
       "term": "JWT",
       "definition": "Podpisany token z claims. Nie jest szyfrowany; payload jest czytelny.",
       "example": "header.payload.signature"
+    },
+    {
+      "key": "function",
+      "category": "Podstawy",
+      "term": "Funkcja",
+      "definition": "Blok kodu z nazwą, który wykonuje jedno zadanie. Dzięki nazwie wiesz, co robi, bez czytania całego środka.",
+      "example": "function calculateTotal(items) { ... }"
+    },
+    {
+      "key": "argument",
+      "category": "Funkcje",
+      "term": "Argument i parametr",
+      "definition": "Parametr to nazwa w definicji funkcji. Argument to konkretna wartość przekazana przy wywołaniu.",
+      "example": "function greet(name) {}; greet(\"Ala\");"
+    },
+    {
+      "key": "array",
+      "category": "Dane",
+      "term": "Tablica",
+      "definition": "Uporządkowana lista wartości. Elementy mają indeksy od 0, a do pracy z nimi służą m.in. map, filter i reduce.",
+      "example": "const fruits = [\"apple\", \"plum\"];"
+    },
+    {
+      "key": "object",
+      "category": "Dane",
+      "term": "Obiekt",
+      "definition": "Zestaw par klucz–wartość. Opisuje jedną rzecz, np. użytkownika albo produkt.",
+      "example": "const user = { name: \"Ala\", age: 30 };"
+    },
+    {
+      "key": "json",
+      "category": "Dane i sieć",
+      "term": "JSON",
+      "definition": "Tekstowy format wymiany danych. Wygląda jak obiekt JavaScript, ale jest tylko tekstem — dlatego używa się JSON.parse i JSON.stringify.",
+      "example": "{\"name\": \"Ala\", \"age\": 30}"
+    },
+    {
+      "key": "api",
+      "category": "Dane i sieć",
+      "term": "API",
+      "definition": "Ustalony sposób, w jaki dwa programy rozmawiają ze sobą. Zamiast znać cały drugi program, znasz adres i kształt odpowiedzi.",
+      "example": "GET /api/movies?q=dune"
+    },
+    {
+      "key": "fetch",
+      "category": "Dane i sieć",
+      "term": "fetch",
+      "definition": "Wbudowana funkcja przeglądarki do wysyłania zapytań HTTP. Zwraca Promise, więc zwykle łączysz ją z await i try/catch.",
+      "example": "const res = await fetch(\"/api/tasks\");"
+    },
+    {
+      "key": "localstorage",
+      "category": "Przeglądarka",
+      "term": "localStorage",
+      "definition": "Mała pamięć w przeglądarce, która przeżywa odświeżenie strony. Nadaje się do ustawień i prostych danych, nie do sekretów.",
+      "example": "localStorage.setItem(\"theme\", \"dark\");"
+    },
+    {
+      "key": "validation",
+      "category": "Praktyka",
+      "term": "Walidacja",
+      "definition": "Sprawdzanie, czy dane mają sens, zanim coś z nimi zrobisz. Komunikat błędu powinien mówić, co poprawić.",
+      "example": "if (!email.includes(\"@\")) errors.email = \"Wpisz e-mail.\";"
+    },
+    {
+      "key": "loading-state",
+      "category": "Praktyka",
+      "term": "Stan ładowania",
+      "definition": "Informacja, że dane jeszcze się pobierają. Bez niej użytkownik widzi pusty ekran i nie wie, czy coś się dzieje.",
+      "example": "setStatus(\"loading\");"
+    },
+    {
+      "key": "empty-state",
+      "category": "Praktyka",
+      "term": "Pusty stan",
+      "definition": "Ekran, który mówi, że dane są poprawne, ale lista jest pusta. Powinien podpowiadać następny krok.",
+      "example": "Brak zadań. Dodaj pierwsze zadanie."
+    },
+    {
+      "key": "error-handling",
+      "category": "Praktyka",
+      "term": "Obsługa błędów",
+      "definition": "Przewidzenie, co zrobić, gdy coś się nie uda: pokaż komunikat, pozwól spróbować ponownie i nie zostawiaj aplikacji w połowie stanu.",
+      "example": "try { await load(); } catch (error) { showError(error); }"
+    },
+    {
+      "key": "module",
+      "category": "Organizacja",
+      "term": "Moduł",
+      "definition": "Osobny plik z kodem, który coś eksportuje. Importujesz tylko to, czego potrzebujesz, zamiast trzymać wszystko w jednym pliku.",
+      "example": "export function addTask() {}; import { addTask } from \"./tasks.js\";"
+    },
+    {
+      "key": "template-literal",
+      "category": "Język",
+      "term": "Template literal",
+      "definition": "Tekst w backtickach, w którym można wstawiać wartości przez ${...} i pisać w wielu liniach.",
+      "example": "`Cześć, ${user.name}!`"
     }
   ],
   "interview": [

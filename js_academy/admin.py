@@ -15,6 +15,7 @@ from .models import (
     JsLesson,
     JsLessonProgress,
     JsModule,
+    JsProjectStepProgress,
     JsQuestion,
 )
 
@@ -117,3 +118,10 @@ class JsComponentAdmin(admin.ModelAdmin):
     list_display = ("title", "category", "difficulty", "order")
     list_filter = ("category", "difficulty")
     search_fields = ("title", "description", "key")
+
+
+@admin.register(JsProjectStepProgress)
+class JsProjectStepProgressAdmin(admin.ModelAdmin):
+    list_display = ("project_slug", "step_slug", "learner", "completed_at")
+    list_filter = ("project_slug",)
+    search_fields = ("project_slug", "step_slug")

@@ -29,6 +29,8 @@
               {% for item in group.items %}
                 {% if group.kind == 'module' %}
                   <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.subtitle }}</span></a>
+                {% elif group.kind == 'project' %}
+                  <a href="{% url 'js_academy:project' item.slug %}"><strong>{{ item.title }}</strong><span>{{ item.subtitle }} · {{ item.steps|length }} kroków</span></a>
                 {% elif group.kind == 'lesson' %}
                   <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.module.title }} · {{ item.summary|truncatechars:120 }}</span></a>
                 {% elif group.kind == 'component' %}

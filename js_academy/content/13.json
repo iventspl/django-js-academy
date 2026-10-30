@@ -44,6 +44,20 @@
       "summary": "Wersje, EAS, aktualizacje OTA, staged rollout i crash reporting.",
       "minutes": 16,
       "body_html": "<p>Wydanie mobilne to nie jeden deploy. To build natywny, podpis, publikacja w sklepie, rollout i monitorowanie. Aktualizacja OTA może podmienić JavaScript, ale nie zmieni kodu natywnego ani uprawnień.</p>\n<pre><code>// app.json / eas.json — przykład koncepcyjny\n{\n  \"expo\": {\n    \"version\": \"1.4.0\",\n    \"ios\": { \"buildNumber\": \"42\" },\n    \"android\": { \"versionCode\": 42 }\n  }\n}</code></pre>\n<h2>Przed premierą</h2>\n<ul>\n<li>Testuj na prawdziwym urządzeniu, nie tylko symulatorze.</li>\n<li>Sprawdź uprawnienia, politykę prywatności i wiek treści.</li>\n<li>Dodaj crash reporting i metryki startu bez wrażliwych danych.</li>\n<li>Przygotuj plan rollbacku i staged rollout.</li>\n<li>Nie loguj tokenów, haseł ani pełnych danych osobowych.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>OTA:</strong> nawigacja, teksty i logika JS mogą być aktualizowane, ale nowa biblioteka natywna wymaga nowego builda. Wersjonowanie musi być spójne z tym, co jest w sklepie.</div>"
+    },
+    {
+      "slug": "wydajnosc-list-mobilnych",
+      "title": "Wydajność list mobilnych",
+      "summary": "FlatList, obrazy i pamięć na małym telefonie.",
+      "minutes": "16",
+      "body_html": "<p>Telefon ma mniej pamięci i wolniejsze rysowanie niż laptop. Lista stu obrazów może zabić płynność.</p>\n<h2>Leniwy obraz</h2>\n<pre><code>&lt;Image source={{ uri }} style={styles.thumb} resizeMode=\"cover\" /&gt;</code></pre>\n<h2>Klucz i typ elementu</h2>\n<pre><code>&lt;FlatList\n  data={items}\n  keyExtractor={(item) =&gt; item.id}\n  initialNumToRender={8}\n  windowSize={5}\n/&gt;</code></pre>\n<p>Nie renderuj wszystkiego z góry. Zmierz pamięć i płynność na realnym urządzeniu, nie tylko w emulatorze.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> przewiń listę szybko w dół i górę. Czy obrazki migają lub zostają stare?</div>"
+    },
+    {
+      "slug": "publikacja-i-aktualizacje",
+      "title": "Publikacja i aktualizacje aplikacji",
+      "summary": "Wersje, uprawnienia i plan na wycofanie zmiany.",
+      "minutes": "17",
+      "body_html": "<p>Aktualizacja mobilna nie jest natychmiastowa. Część użytkowników zostaje na starej wersji.</p>\n<h2>Wersja i numer builda</h2>\n<pre><code>\"version\": \"1.4.0\",\n\"android\": { \"versionCode\": 14 }</code></pre>\n<h2>Zgodność API</h2>\n<pre><code>if (response.status === 426) {\n  showUpdatePrompt();\n}</code></pre>\n<p>Serwer może poprosić o aktualizację, ale aplikacja musi umieć pokazać sensowny komunikat.</p>\n<div class=\"lesson-callout\"><strong>Checklista:</strong> uprawnienia, wersja, migracje danych i możliwość wycofania.</div>"
     }
   ],
   "questions": [

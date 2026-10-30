@@ -44,6 +44,20 @@
       "summary": "Dlaczego fetch nie rzuca błędu przy 404 i jak zbudować solidnego klienta API.",
       "minutes": 13,
       "body_html": "<p><code>fetch</code> odrzuca Promise głównie przy błędach sieciowych. Odpowiedź HTTP 404 lub 500 jest nadal „udanym” zakończeniem żądania — musisz sprawdzić <code>response.ok</code>.</p>\n<pre><code>async function getJson(url, options = {}) {\n  const response = await fetch(url, {\n    ...options,\n    headers: {\n      Accept: \"application/json\",\n      ...options.headers,\n    },\n  });\n\n  if (!response.ok) {\n    const body = await response.text();\n    throw new Error(`HTTP ${response.status}: ${body.slice(0, 200)}`);\n  }\n\n  return response.json();\n}</code></pre>\n<h2>Timeout i anulowanie</h2>\n<pre><code>const controller = new AbortController();\nconst timer = setTimeout(() =&gt; controller.abort(), 8000);\n\ntry {\n  const data = await getJson(\"/api/data\", { signal: controller.signal });\n} finally {\n  clearTimeout(timer);\n}</code></pre>\n<h2>Nie ufaj kształtowi danych</h2>\n<p>API może zwrócić inny typ, brak pola albo HTML z błędem. Waliduj dane na granicy systemu. W TypeScripcie możesz opisać oczekiwany kształt, ale typy nie sprawdzają danych w runtime.</p>\n<div class=\"lesson-callout\"><strong>Praktyka:</strong> osobny klient API powinien mieć jedną strategię błędów, nagłówków, base URL i timeoutów. Nie powtarzaj tego w każdym komponencie.</div>"
+    },
+    {
+      "slug": "nowe-skladniki-w-praktyce",
+      "title": "Nowe składniki w praktyce",
+      "summary": "Optional chaining, nullish i destrukturyzacja na danych z API.",
+      "minutes": "14",
+      "body_html": "<p>Nowoczesny JavaScript nie polega na pisaniu krótszego kodu za każdą cenę. Chodzi o kod, który nie wywraca się na brakującym polu.</p>\n<h2>Bezpieczny dostęp do danych</h2>\n<pre><code>const city = user?.address?.city ?? \"Brak miasta\";</code></pre>\n<p><code>?.</code> przerywa łańcuch, gdy coś jest <code>null</code> lub <code>undefined</code>. <code>??</code> działa tylko dla tych dwóch wartości — nie podstawia wartości za <code>0</code> ani pusty tekst.</p>\n<h2>Destrukturyzacja z domyślnymi</h2>\n<pre><code>const { name = \"Anonim\", role = \"guest\" } = user ?? {};</code></pre>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> przepisz trzy miejsca, w których używasz <code>&&</code> do sprawdzania obecności pola. Sprawdź, czy <code>??</code> nie zmienia zachowania dla zera.</div>"
+    },
+    {
+      "slug": "pulapki-nowoczesnego-js",
+      "title": "Pułapki nowoczesnego JS",
+      "summary": "Kopiowanie, this i pułapki, które wyglądają jak drobiazgi.",
+      "minutes": "15",
+      "body_html": "<p>Większość błędów w nowoczesnym JS nie wynika z braku składni. Wynika z tego, że dwie zmienne wskazują ten sam obiekt.</p>\n<h2>Płytka kopia</h2>\n<pre><code>const copy = { ...user };\ncopy.address.city = \"Kraków\"; // zmienia też user.address.city</code></pre>\n<p>Spread kopiuje tylko pierwszy poziom. Zagnieżdżony obiekt nadal jest wspólny. Do głębokiej kopii użyj świadomej funkcji albo <code>structuredClone</code>, gdy dane są proste.</p>\n<h2>this w metodzie</h2>\n<pre><code>const button = {\n  label: \"Zapisz\",\n  click() { console.log(this.label); }\n};\nconst click = button.click;\nclick(); // this nie wskazuje button</code></pre>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> gdy przekazujesz metodę jako callback, od razu zaplanuj, czym będzie <code>this</code>.</div>"
     }
   ],
   "questions": [
@@ -129,20 +143,16 @@
   "flashcards": [
     {
       "key": "js-modern-f1",
-      "difficulty": "beginner",
       "front": "Czym różni się eksport nazwany od domyślnego?",
       "back": "Eksport nazwany wymaga konkretnej nazwy przy imporcie i może być wiele takich eksportów. Domyślny jest jeden i można go zaimportować pod dowolną nazwą. Nazwane eksporty zwykle ułatwiają wyszukiwanie i refaktoryzację."
     },
     {
       "key": "js-modern-f2",
-      "difficulty": "intermediate",
       "front": "Promise.all czy Promise.allSettled?",
-      "back": "Promise.all odrzuca się przy pierwszym błędzie i traci pozostałe wyniki. Promise.allSettled czeka na wszystkie operacje i zwraca tablicę statusów fulfilled/rejected — dobre do raportów częściowych.",
-      "front_code": "const results = await Promise.allSettled(tasks);"
+      "back": "Promise.all odrzuca się przy pierwszym błędzie i traci pozostałe wyniki. Promise.allSettled czeka na wszystkie operacje i zwraca tablicę statusów fulfilled/rejected — dobre do raportów częściowych."
     },
     {
       "key": "js-modern-f3",
-      "difficulty": "intermediate",
       "front": "Dlaczego fetch nie wystarcza jako pełny klient API?",
       "back": "fetch to niskopoziomowe narzędzie. Nie narzuca timeoutu, nie sprawdza response.ok, nie waliduje JSON, nie dodaje nagłówków ani nie normalizuje błędów. Zbuduj jedną funkcję klienta z tymi zasadami."
     },

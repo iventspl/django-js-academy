@@ -44,6 +44,20 @@
       "summary": "LCP, INP, CLS, code splitting, obrazy i debounce bez zgadywania.",
       "minutes": 16,
       "body_html": "<p>Wydajność odczuwana przez użytkownika to nie rozmiar bundle'a. Mierzy się ją m.in. przez <strong>LCP</strong> (największy widoczny element), <strong>INP</strong> (responsywność interakcji) i <strong>CLS</strong> (przesunięcia layoutu).</p>\n<h2>Ładowanie</h2>\n<ul>\n<li>Dziel trasy i ciężkie komponenty przez dynamic import / lazy.</li>\n<li>Optymalizuj obrazy: właściwy rozmiar, format, lazy loading poza pierwszym ekranem.</li>\n<li>Nie blokuj głównego wątku długim JavaScriptem; dziel zadania.</li>\n<li>Rezerwuj miejsce na obrazy i reklamy, aby uniknąć CLS.</li>\n</ul>\n<h2>Debounce czy throttle?</h2>\n<pre><code>const debounced = debounce(search, 300); // po serii zdarzeń\nconst throttled = throttle(onScroll, 100); // maks. raz na 100 ms\n</code></pre>\n<p>Debounce czeka, aż użytkownik przestanie pisać. Throttle ogranicza częstotliwość, ale nie czeka na koniec.</p>\n<div class=\"lesson-callout\"><strong>Mierz przed i po.</strong> Lighthouse, WebPageTest i RUM dają różne spojrzenie. Optymalizacja bez pomiaru często przenosi koszt w inne miejsce.</div>"
+    },
+    {
+      "slug": "bezpieczenstwo-w-praktyce",
+      "title": "Bezpieczeństwo w praktyce",
+      "summary": "XSS, niebezpieczne HTML i dane, którym nie ufasz.",
+      "minutes": "16",
+      "body_html": "<p>Bezpieczeństwo zaczyna się od założenia: wszystko, co przyszło z zewnątrz, może być wrogie.</p>\n<h2>Nie wstawiaj HTML z danymi</h2>\n<pre><code>// unsafe\nelement.innerHTML = userComment;\n\n// safer\nelement.textContent = userComment;</code></pre>\n<h2>Adresy i uprawnienia</h2>\n<pre><code>if (!url.startsWith(\"https://\")) throw new Error(\"Nieprawidłowy adres\");</code></pre>\n<p>Sprawdzaj też, czy link prowadzi do znanej domeny. Samo „https” nie oznacza zaufanej strony.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> wpisz w komentarzu <code>&lt;img src=x onerror=alert(1)&gt;</code>. Jeśli się wykona, masz XSS.</div>"
+    },
+    {
+      "slug": "wydajnosc-bez-mikrooptymalizacji",
+      "title": "Wydajność bez mikrooptymalizacji",
+      "summary": "Mierz, zanim zmienisz kod. Najpierw sieć i obrazy, potem drobiazgi.",
+      "minutes": "17",
+      "body_html": "<p>Największe spowolnienia często nie są w pętli, tylko w zbyt dużym obrazie i zbyt wielu zapytaniach.</p>\n<h2>Zacznij od pomiaru</h2>\n<pre><code>performance.mark(\"start\");\nawait loadData();\nperformance.mark(\"end\");\nperformance.measure(\"load\", \"start\", \"end\");</code></pre>\n<h2>Obrazy</h2>\n<pre><code>&lt;img src=\"cover.webp\" width=\"640\" height=\"360\" loading=\"lazy\" alt=\"\"&gt;</code></pre>\n<p>Dopiero potem sprawdzaj bundle i renderowanie listy.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> nie optymalizuj kodu, którego użytkownik nawet nie uruchamia.</div>"
     }
   ],
   "questions": [

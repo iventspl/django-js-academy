@@ -44,6 +44,20 @@
       "summary": "Czytanie kodu, debugowanie, testy, bezpieczeństwo i portfolio — konkretny plan.",
       "minutes": 20,
       "body_html": "<p>Nie musisz udawać, że AI nie istnieje. Nie musisz też wierzyć, że jedna umiejętność zniknie. Najbardziej przenośne kompetencje to te, których nie da się sprowadzić do wygenerowania linijki kodu.</p>\n<h2>Co trenować</h2>\n<ul>\n<li><strong>Czytanie kodu</strong> — umiejętność oceny cudzego rozwiązania, także wygenerowanego.</li>\n<li><strong>Debugowanie</strong> — od objawu do hipotezy i testu, nie zgadywanie.</li>\n<li><strong>Testy</strong> — kontrakt, przypadki brzegowe, regresje.</li>\n<li><strong>Bezpieczeństwo</strong> — XSS, walidacja wejścia, uprawnienia, sekrety.</li>\n<li><strong>Architektura</strong> — granice, stan, zależności, kompromisy.</li>\n<li><strong>Komunikacja</strong> — opis problemu, decyzji i ryzyka.</li>\n</ul>\n<h2>Jak używać AI, żeby się uczyć</h2>\n<p>Nie proś tylko o rozwiązanie. Proś o <strong>testy, alternatywy, wyjaśnienie błędów i pytania kontrolne</strong>. Potem uruchom kod, przeczytaj go linia po linii i spróbuj wyjaśnić bez podpowiedzi. Jeśli nie potrafisz — to nie jest jeszcze Twoja umiejętność.</p>\n<h2>Portfolio w erze AI</h2>\n<p>Jedna działająca aplikacja z testami, README, decyzją architektoniczną i wdrożeniem mówi więcej niż dziesięć wygenerowanych snippetów. Pokaż, <strong>co sprawdziłeś i co odrzuciłeś</strong>. To dowód osądu, którego model nie zastąpi.</p>\n<div class=\"lesson-callout\"><strong>Fakt do zapamiętania:</strong> w badaniu Stack Overflow 2025 64% deweloperów nie postrzega AI jako zagrożenia dla swojej pracy. To deklaracja, nie gwarancja. Twoją przewagą jest umiejętność pracy z systemem, nie wiara w jedną prognozę.</div>"
+    },
+    {
+      "slug": "ai-w-codziennej-pracy",
+      "title": "AI w codziennej pracy programisty",
+      "summary": "Gdzie przyspiesza, a gdzie trzeba sprawdzić dwa razy.",
+      "minutes": "16",
+      "body_html": "<p>AI jest dobrym asystentem do szkiców i powtarzalnych fragmentów. Nie jest źródłem prawdy o Twoim systemie.</p>\n<h2>Dobry podział pracy</h2>\n<ul><li>AI: pierwsza wersja, lista przypadków, nazwy.</li><li>Ty: kontekst, decyzje, testy, bezpieczeństwo.</li></ul>\n<h2>Nie wklejaj bez zrozumienia</h2>\n<pre><code>// generated snippet\nconst data = await res.json();\n// check: res.ok? schema? error path?</code></pre>\n<p>Wygenerowany kod often pomija <code>res.ok</code> i obsługę błędów. To Twoja odpowiedzialność.</p>\n<div class=\"lesson-callout\"><strong>Nawyk:</strong> poproś AI o przypadki brzegowe i testy, nie tylko o rozwiązanie.</div>"
+    },
+    {
+      "slug": "portfolio-w-erze-ai",
+      "title": "Portfolio w erze AI",
+      "summary": "Co pokazać, gdy każdy potrafi wygenerować podobny kod.",
+      "minutes": "17",
+      "body_html": "<p>Portfolio nie wygrywa liczbą funkcji. Wygrywa dowodem, że rozumiesz problem i potrafisz utrzymać rozwiązanie.</p>\n<h2>Trzy rzeczy do pokazania</h2>\n<ol><li>Problem i ograniczenia.</li><li>Decyzje i odrzucone alternatywy.</li><li>Testy, pomiary i znane wady.</li></ol>\n<pre><code>README:\n- problem\n- uruchomienie\n- architektura\n- decyzje\n- testy\n- czego bym nie zrobił ponownie</code></pre>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> dodaj do projektu sekcję „ograniczenia”. Pokazuje dojrzałość lepiej niż lista technologii.</div>"
     }
   ],
   "questions": [

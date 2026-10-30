@@ -44,6 +44,20 @@
       "summary": "Props, useState, zdarzenia i children bez walki z typami.",
       "minutes": 14,
       "body_html": "<p>W React TypeScript najbardziej pomaga na granicach komponentów. Typuj propsy, stan i zdarzenia; nie typuj każdej zmiennej lokalnej.</p>\n<pre><code>type ButtonProps = {\n  label: string;\n  onClick: () =&gt; void;\n  disabled?: boolean;\n};\n\nfunction Button({ label, onClick, disabled = false }: ButtonProps) {\n  return (\n    &lt;button onClick={onClick} disabled={disabled}&gt;\n      {label}\n    &lt;/button&gt;\n  );\n}</code></pre>\n<h2>Stan i zdarzenia</h2>\n<pre><code>const [query, setQuery] = useState&lt;string&gt;(\"\");\n\nfunction handleChange(event: React.ChangeEvent&lt;HTMLInputElement&gt;) {\n  setQuery(event.target.value);\n}</code></pre>\n<p>Nie używaj <code>React.FC</code> bez potrzeby. Zwykła funkcja z jawnie typowanym argumentem jest czytelna i dobrze współpracuje z generykami.</p>\n<h2>children</h2>\n<pre><code>type CardProps = {\n  title: string;\n  children: React.ReactNode;\n};</code></pre>\n<div class=\"lesson-callout\"><strong>Praktyka:</strong> jeśli komponent przyjmuje zbyt wiele luźno powiązanych propsów, to sygnał, że jego granica jest źle zaprojektowana. Typy ujawniają problem wcześniej.</div>"
+    },
+    {
+      "slug": "typy-ktore-pomagaja",
+      "title": "Typy, które pomagają",
+      "summary": "Union types, narrowing i błędy, które TypeScript łapie przed uruchomieniem.",
+      "minutes": "15",
+      "body_html": "<p>TypeScript nie jest po to, żeby dopisywać typy wszędzie. Jest po to, żeby kompilator powiedział „tu może wybuchnąć”, zanim zobaczy to użytkownik.</p>\n<h2>Union i zawężanie</h2>\n<pre><code>type Status = \"loading\" | \"ready\" | \"error\";\n\nfunction message(status: Status) {\n  if (status === \"loading\") return \"Ładowanie…\";\n  if (status === \"error\") return \"Spróbuj ponownie.\";\n  return \"Gotowe.\";\n}</code></pre>\n<p>Typ <code>Status</code> nie pozwala literówki <code>\"readyy\"</code>. Zawężanie po <code>===</code> daje dostęp do właściwego przypadku.</p>\n<h2>Nie kłam typem</h2>\n<pre><code>type User = { name: string; email?: string };\nconst user: User = { name: \"Ala\" }; // email jest opcjonalny</code></pre>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> typ ma opisywać rzeczywistość, a nie ukrywać brakujące dane znakiem zapytania.</div>"
+    },
+    {
+      "slug": "typowanie-api",
+      "title": "Typowanie odpowiedzi API",
+      "summary": "Jak nie ufać danym z sieci i gdzie postawić granicę typów.",
+      "minutes": "16",
+      "body_html": "<p>API może zwrócić wszystko. Typ odpowiedzi to obietnica, którą trzeba sprawdzić przy wejściu do aplikacji.</p>\n<h2>Typ surowy i typ domenowy</h2>\n<pre><code>type ApiMovie = { id: number; title?: string; rating?: number };\ntype Movie = { id: string; title: string; rating: number };\n\nfunction toMovie(raw: ApiMovie): Movie {\n  return {\n    id: String(raw.id),\n    title: raw.title ?? \"Bez tytułu\",\n    rating: Number(raw.rating) || 0,\n  };\n}</code></pre>\n<p>Nie przepuszczaj surowego obiektu przez całą aplikację. Normalizuj go raz, na granicy.</p>\n<h2>Błąd jako wartość</h2>\n<pre><code>type Result&lt;T&gt; = { ok: true; data: T } | { ok: false; error: string };</code></pre>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> dodaj typ <code>Result&lt;Movie[]&gt;</code> i sprawdź, czy kompilator zmusza Cię do obsługi błędu.</div>"
     }
   ],
   "questions": [

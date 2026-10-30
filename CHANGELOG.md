@@ -1,5 +1,65 @@
 # Changelog
 
+## 4.25 — 2026-10-30
+
+### Extended JS modules
+
+- Expanded every short JS module from **3 to 5 lessons**; MVC now has **6**, and Przykłady z życia has **8**.
+- Added **42 new lessons** with practical examples, including modern syntax, forms, DOM performance, TypeScript unions and API typing, React lists/forms/effects/hooks, React Native lists and offline work, testing and releases, composition, array methods, Node CLI/debugging, AI prompts and sources, security, performance, interviews, patterns, Web APIs, workers and debugging.
+- Simplified Polish explanations and reduced unexplained jargon.
+- JS totals: **22 modules / 116 lessons / 152 questions / 140 flashcards / 64 glossary terms**.
+
+### Verification
+
+- **140 tests pass**.
+- Seeded content: 22 modules and 116 lessons.
+
+## 4.24 — 2026-10-30
+
+### Practical JavaScript examples and plain-language glossary
+
+- Added **Przykłady z życia** (`przyklady-z-zycia`), a six-lesson JS module:
+  - shopping cart with money in grosze,
+  - search with local filtering and delayed requests,
+  - accessible form validation and error focus,
+  - task list with ids, immutable updates and localStorage,
+  - data loading with loading/error/empty states and cancellation,
+  - readable code through names, early returns and small functions.
+- Added 8 quiz questions and 8 flashcards for the new module, with practical explanations.
+- Expanded the glossary from **50 to 64 terms** and rewrote the most technical definitions in plain Polish.
+- Added easy explanations and examples for: function, parameter/argument, array, object, JSON, API, fetch, localStorage, validation, loading state, empty state, error handling, module, template literal.
+- Updated the module table, counts and tests:
+  - **22 modules / 74 lessons / 152 questions / 140 flashcards / 64 glossary terms**.
+
+### Verification
+
+- **140 tests pass**.
+- Seeded content: 22 modules, 74 lessons, 152 questions, 140 cards, 64 terms.
+
+## 4.23 — 2026-10-30
+
+### Full MVC project walkthroughs
+
+- Added a **Projekty** section to JS Akademia with two complete application labs:
+  - **Sklep internetowy** — model danych, warstwa danych i filtry, stan i router, widok katalogu, koszyk, localStorage, kasa z walidacją i start aplikacji.
+  - **Movie HUB** — model filmu, warstwa API z limitem czasu, router, wyszukiwanie z opóźnieniem i ochroną przed wyścigiem zapytań, widoki katalogu i szczegółów, lista do obejrzenia, oceny, pamięć podręczna, ponawianie i start aplikacji.
+- Each project has **8–9 steps** with:
+  - a goal and architectural rationale,
+  - three tasks,
+  - two hidden hints,
+  - a hidden complete answer for that step,
+  - checkpoint questions and a step-completion toggle.
+- Added per-learner project progress, undo, reset support, project search and project CTAs on the home page and MVC guide.
+- Added target UI mockup screenshots for both projects, shown in the project page with a link to the full-size image.
+- Project UI is responsive; the starter HTML shell wraps cleanly when expanded; code blocks use the global copy button.
+- Replaced overly technical Polish in explanations with plainer language; code identifiers and comments stay English.
+
+### Verification
+
+- **140 tests pass**.
+- Project content, pages, completion toggles and search are covered by tests.
+- ZIP rebuilt and verified.
+
 ## 4.22 — 2026-10-30
 
 ### Mobile-first responsive repair

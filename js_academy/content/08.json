@@ -44,6 +44,20 @@
       "summary": "Buildy, wersjonowanie, OTA, sklepy, crash reporting i bezpieczeństwo premierowe.",
       "minutes": 15,
       "body_html": "<p>Publikacja to nie „wyślij build”. To proces: build, testy na urządzeniu, wersja, podpis, zgłoszenie do sklepu, rollout i monitoring.</p>\n<h2>Wersje i OTA</h2>\n<p>Aktualizacje OTA (np. Expo Updates, CodePush) mogą dostarczyć zmiany JavaScript bez nowej wersji w sklepie. Nie mogą jednak zmienić natywnego kodu, uprawnień ani konfiguracji wymagającej przebudowania aplikacji.</p>\n<pre><code>// package.json\n&quot;version&quot;: &quot;1.4.0&quot;,\n&quot;buildNumber&quot;: &quot;42&quot;</code></pre>\n<h2>Przed premierą</h2>\n<ul>\n<li>Testuj krytyczne ścieżki na prawdziwym urządzeniu, nie tylko symulatorze.</li>\n<li>Sprawdź uprawnienia, prywatność, politykę prywatności i wiek treści.</li>\n<li>Dodaj crash reporting i analitykę bez wrażliwych danych.</li>\n<li>Przygotuj plan rollbacku i komunikację dla użytkowników.</li>\n<li>Nie loguj tokenów, haseł ani pełnych danych osobowych.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Monitoring:</strong> crash rate, czas startu, błędy sieci i porzucenia to sygnały produktowe. Wypuszczaj stopniowo (staged rollout) i obserwuj, zanim zwiększysz zasięg.</div>"
+    },
+    {
+      "slug": "testy-ktore-lapia-bledy",
+      "title": "Testy, które łapią błędy",
+      "summary": "Przypadki brzegowe zamiast testowania tylko szczęśliwej ścieżki.",
+      "minutes": "15",
+      "body_html": "<p>Test, który sprawdza tylko poprawne dane, rzadko chroni przed regresją. Najwięcej błędów siedzi na brzegach.</p>\n<h2>Trzy pytania do funkcji</h2>\n<ul><li>Co się dzieje z pustą listą?</li><li>Co z brakującym polem?</li><li>Co z wartością ujemną?</li></ul>\n<pre><code>test(\"filter handles empty query\", () =&gt; {\n  assert.deepEqual(filterProducts(products, \"\"), products);\n});\n\ntest(\"filter handles no matches\", () =&gt; {\n  assert.deepEqual(filterProducts(products, \"zzz\"), []);\n});</code></pre>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> każdy naprawiony błąd powinien dostać test, który failował przed poprawką.</div>"
+    },
+    {
+      "slug": "publikacja-bez-niespodzianek",
+      "title": "Publikacja bez niespodzianek",
+      "summary": "Build, zmienne środowiskowe i szybka kontrola przed wdrożeniem.",
+      "minutes": "16",
+      "body_html": "<p>Publikacja to nie przycisk „deploy”. To lista rzeczy, które mogą zepsuć się tylko na produkcji.</p>\n<h2>Build lokalnie</h2>\n<pre><code>npm run build\nnpm run preview</code></pre>\n<p>Sprawdź build, nie tylko tryb developerski. Inny bundler, inne ścieżki i inne zmienne środowiskowe to klasyczne źródło błędów.</p>\n<h2>Checklista</h2>\n<ul><li>Czy brakuje sekretów w repozytorium?</li><li>Czy adres API jest właściwy?</li><li>Czy strona 404 działa?</li><li>Czy masz plan wycofania?</li></ul>\n<div class=\"lesson-callout\"><strong>Nawyk:</strong> zapisz checklistę w README. Następna osoba nie będzie zgadywać.</div>"
     }
   ],
   "questions": [

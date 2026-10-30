@@ -44,6 +44,20 @@
       "summary": "Pliki, proces, zmienne środowiskowe, strumienie i kody wyjścia.",
       "minutes": 14,
       "body_html": "<p>Node daje dostęp do systemu plików, procesu i sieci. To potężne, ale wymaga dyscypliny: waliduj argumenty, nie loguj sekretów i zwracaj poprawne kody wyjścia.</p>\n<pre><code>import { readFile } from \"node:fs/promises\";\n\nconst path = process.argv[2];\nif (!path) {\n  console.error(\"Użycie: node report.js &lt;plik.json&gt;\");\n  process.exitCode = 1;\n} else {\n  const raw = await readFile(path, \"utf8\");\n  const data = JSON.parse(raw);\n  console.log(data);\n}</code></pre>\n<h2>process.env</h2>\n<pre><code>const apiUrl = process.env.API_URL;\nif (!apiUrl) throw new Error(\"Brak API_URL\");\n</code></pre>\n<p>Zmienne środowiskowe są stringami. Nie wkładaj do nich sekretów w repozytorium; w produkcji używaj secret managera. Dla lokalnego developmentu użyj pliku <code>.env</code> objętego .gitignore.</p>\n<h2>Strumienie</h2>\n<p>Dla dużych plików czytaj strumieniowo zamiast ładować całość do pamięci. <code>createReadStream</code> i pipeline pozwalają przetwarzać dane kawałek po kawałku.</p>\n<div class=\"lesson-callout\"><strong>CLI:</strong> czytelny komunikat błędu i kod wyjścia to część UX. Skrypt, który zawsze kończy się kodem 0, kłamie automatyzacji.</div>"
+    },
+    {
+      "slug": "cli-i-pliki",
+      "title": "CLI i pliki w Node",
+      "summary": "Argumenty, odczyt plików i komunikaty, które da się zrozumieć.",
+      "minutes": "16",
+      "body_html": "<p>Małe CLI jest dobrym ćwiczeniem, bo od razu widzisz, czy komunikat pomaga, czy tylko brzmi technicznie.</p>\n<h2>Argumenty</h2>\n<pre><code>const [input, output] = process.argv.slice(2);\nif (!input) {\n  console.error(\"Podaj plik wejściowy, np. node report.js dane.csv\");\n  process.exit(1);\n}</code></pre>\n<h2>Odczyt i błąd</h2>\n<pre><code>try {\n  const text = await fs.readFile(input, \"utf8\");\n  await fs.writeFile(output ?? \"raport.txt\", text.toUpperCase());\n} catch (error) {\n  console.error(\"Nie udało się przetworzyć pliku:\", error.message);\n}</code></pre>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> CLI ma mówić, co wpisać, gdy argumentów brakuje — nie tylko kończyć się błędem.</div>"
+    },
+    {
+      "slug": "debugowanie-node",
+      "title": "Debugowanie Node bez chaosu",
+      "summary": "Logi, breakpointy i najczęstsze pułapki serwera.",
+      "minutes": "15",
+      "body_html": "<p>W Node logi są szybkie, ale zbyt wiele logów ukrywa przyczynę. Najpierw ustal, czego szukasz.</p>\n<h2>Log z kontekstem</h2>\n<pre><code>console.log(\"order failed\", { orderId, status, error: error.message });</code></pre>\n<h2>Breakpoint</h2>\n<pre><code>node --inspect-brk src/server.js</code></pre>\n<p>Otwórz <code>chrome://inspect</code>, ustaw breakpoint i sprawdź zmienne. To często szybsze niż dziesięć logów.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> odtwórz błąd lokalnie z tymi samymi danymi. Bez reprodukcji debugowanie jest zgadywaniem.</div>"
     }
   ],
   "questions": [

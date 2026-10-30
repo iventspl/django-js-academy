@@ -44,6 +44,20 @@
       "summary": "Safe area, uprawnienia, fetch, AsyncStorage i kod specyficzny dla iOS/Android.",
       "minutes": 17,
       "body_html": "<p>W aplikacji mobilnej nawigacja to stos ekranów, a nie adresy URL. Popularnym rozwiązaniem jest React Navigation, ale niezależnie od biblioteki ważne jest, gdzie trzymasz stan i jak przekazujesz identyfikatory.</p>\n<pre><code>navigation.navigate(\"TaskDetails\", { taskId: task.id });</code></pre>\n<p>Ekran szczegółów powinien pobrać dane po <code>taskId</code>, a nie polegać na całym obiekcie przekazanym w parametrach.</p>\n<h2>Safe area i platformy</h2>\n<pre><code>import { SafeAreaView } from \"react-native-safe-area-context\";\nimport { Platform } from \"react-native\";\n\nconst topPadding = Platform.select({ ios: 12, android: 8, default: 0 });</code></pre>\n<h2>Dane i uprawnienia</h2>\n<ul>\n<li>Do prostego klucz-wartość używaj AsyncStorage; do wrażliwych tokenów — SecureStore/Keychain.</li>\n<li>Uprawnienia (kamera, lokalizacja, powiadomienia) są przyznawane w runtime i mogą zostać odebrane.</li>\n<li>Zawsze obsługuj odmowę uprawnienia i stan „brak dostępu”.</li>\n<li>Nie zakładaj, że API sieciowe działa identycznie na obu platformach.</li>\n</ul>\n<div class=\"lesson-callout\"><strong>Testuj na obu platformach.</strong> Różnice w safe area, klawiaturze, back button, powiadomieniach i uprawnieniach są realne. Symulator to za mało przed premierą.</div>"
+    },
+    {
+      "slug": "listy-i-nawigacja",
+      "title": "Listy i nawigacja w React Native",
+      "summary": "FlatList, klucze i ekran szczegółów bez ciężkich list.",
+      "minutes": "16",
+      "body_html": "<p>Na telefonie lista może mieć setki elementów. Zwykły <code>map</code> w <code>ScrollView</code> renderuje wszystko naraz.</p>\n<h2>FlatList</h2>\n<pre><code>&lt;FlatList\n  data={tasks}\n  keyExtractor={(item) =&gt; item.id}\n  renderItem={({ item }) =&gt; &lt;TaskRow task={item} /&gt;}\n/&gt;</code></pre>\n<h2>Nawigacja z parametrem</h2>\n<pre><code>navigation.navigate(\"Details\", { id: task.id });</code></pre>\n<p>Ekran szczegółów powinien pobrać dane po id, a nie polegać na całym obiekcie przekazanym w parametrach.</p>\n<div class=\"lesson-callout\"><strong>Wskazówka:</strong> sprawdź listę na małym telefonie i przy powiększonym tekście systemowym.</div>"
+    },
+    {
+      "slug": "api-uprawnienia-offline",
+      "title": "API, uprawnienia i offline",
+      "summary": "Co zrobić, gdy telefon nie ma sieci albo użytkownik odmówi dostępu.",
+      "minutes": "17",
+      "body_html": "<p>Aplikacja mobilna żyje w świecie, w którym sieć znika, a uprawnienia można odebrać w każdej chwili.</p>\n<h2>Sprawdź uprawnienie</h2>\n<pre><code>const { status } = await Camera.requestCameraPermissionsAsync();\nif (status !== \"granted\") return showPermissionHelp();</code></pre>\n<h2>Kolejka offline</h2>\n<pre><code>await AsyncStorage.setItem(\"pending\", JSON.stringify(queue));\n// after reconnect: read queue and send items one by one</code></pre>\n<p>Nie udawaj, że zapis się udał, jeśli trafił tylko do kolejki. Pokaż stan „czeka na wysłanie”.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> włącz tryb samolotowy, dodaj zadanie i sprawdź, czy po powrocie sieci dane się wyślą.</div>"
     }
   ],
   "questions": [

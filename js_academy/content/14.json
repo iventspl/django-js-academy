@@ -44,6 +44,20 @@
       "summary": "Walidacja odpowiedzi, prompt injection, testy jakości i budżet tokenów.",
       "minutes": 16,
       "body_html": "<p>Model jest niedeterministyczny i może być manipulowany przez treść. Nie traktuj jego odpowiedzi jako zaufanego kodu ani decyzji biznesowej.</p>\n<h2>Walidacja</h2>\n<pre><code>const parsed = PlanSchema.safeParse(JSON.parse(raw));\nif (!parsed.success) {\n  return fallback(\"Nie udało się przetworzyć odpowiedzi\");\n}\n// Dopiero potem wykonuj akcję — i nadal sprawdź uprawnienia.\n</code></pre>\n<h2>Prompt injection</h2>\n<p>Treść dokumentu może zawierać instrukcję „zignoruj zasady”. Model nie odróżnia jej niezawodnie od polecenia systemowego. Ogranicz narzędzia, waliduj argumenty i wymagaj zatwierdzenia dla ryzykownych akcji.</p>\n<h2>Ewaluacja</h2>\n<p>Zbuduj zestaw przypadków: poprawne odpowiedzi, odmowy, próby injection, brak źródeł, zbyt długi kontekst. Mierz jakość, koszt i opóźnienie. Zmiana promptu to zmiana produkcyjna.</p>\n<div class=\"lesson-callout\"><strong>Budżet:</strong> ustaw limit tokenów na użytkownika/tenant, kadź odpowiedzi, ale nie kosztem bezpieczeństwa. Cięcie kontekstu może pogorszyć jakość.</div>"
+    },
+    {
+      "slug": "prompt-i-kontekst",
+      "title": "Prompt i kontekst bez magii",
+      "summary": "Jak zamienić niejasne pytanie w instrukcję, którą da się sprawdzić.",
+      "minutes": "16",
+      "body_html": "<p>Model nie czyta w myślach. Dobry prompt ma cel, dane wejściowe i oczekiwany format odpowiedzi.</p>\n<h2>Struktura</h2>\n<pre><code>Zadanie: streść tekst w 3 punktach.\nOdbiorca: osoba nietechniczna.\nOgraniczenie: nie dodawaj faktów spoza tekstu.\nFormat: lista 3 punktów, maks. 20 słów każdy.</code></pre>\n<h2>Sprawdzenie</h2>\n<p>Po odpowiedzi poproś o cytat źródłowy lub numer akapitu. To nie gwarantuje prawdy, ale ułatwia weryfikację.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> im większa stawka, tym mniej kreatywności, a więcej konkretnych ograniczeń.</div>"
+    },
+    {
+      "slug": "ai-bez-halucynacji",
+      "title": "AI w aplikacji bez halucynacji",
+      "summary": "Źródła, odmowa i granice odpowiedzi.",
+      "minutes": "17",
+      "body_html": "<p>Interfejs AI musi umieć powiedzieć „nie wiem”. Inaczej zamienia brak danych w pewną siebie opowieść.</p>\n<h2>Odpowiedź z źródłem</h2>\n<pre><code>{\n  \"answer\": \"Zwrot jest możliwy w 30 dni.\",\n  \"sources\": [\"regulamin.pdf#s.4\"],\n  \"confidence\": \"high\"\n}</code></pre>\n<h2>Brak źródła</h2>\n<pre><code>if (!sources.length) {\n  return \"Nie mam wystarczających danych, żeby odpowiedzieć.\";\n}</code></pre>\n<div class=\"lesson-callout\"><strong>Test:</strong> zadaj pytanie spoza dokumentacji. Czy aplikacja odmawia, czy zmyśla?</div>"
     }
   ],
   "questions": [

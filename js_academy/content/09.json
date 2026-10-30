@@ -44,6 +44,20 @@
       "summary": "Jak nie pokazać danych z poprzedniego zapytania i jak cofać optymistyczne zmiany.",
       "minutes": 16,
       "body_html": "<p>Żądania sieciowe są wolne i mogą wrócić w innej kolejności. Jeśli użytkownik wpisze „a”, potem „ab”, odpowiedź dla „a” może dotrzeć po odpowiedzi dla „ab”. Bez anulowania zobaczysz nieaktualne dane.</p>\n<h2>AbortController</h2>\n<pre><code>useEffect(() =&gt; {\n  const controller = new AbortController();\n\n  async function load() {\n    setState({ status: \"loading\" });\n    try {\n      const response = await fetch(`/api/products?q=${query}`, {\n        signal: controller.signal,\n      });\n      if (!response.ok) throw new Error(\"HTTP \" + response.status);\n      setState({ status: \"success\", data: await response.json() });\n    } catch (error) {\n      if (error.name !== \"AbortError\") {\n        setState({ status: \"error\", message: \"Spróbuj ponownie\" });\n      }\n    }\n  }\n\n  load();\n  return () =&gt; controller.abort();\n}, [query]);</code></pre>\n<h2>Optymistyczna aktualizacja</h2>\n<p>Możesz od razu pokazać zmianę, ale musisz mieć plan cofnięcia. Zapisz poprzedni stan, wyślij żądanie, a przy błędzie przywróć snapshot i pokaż komunikat. Nie zostawiaj użytkownika z UI, które kłamie.</p>\n<div class=\"lesson-callout\"><strong>Reguła:</strong> każdy stan powinien mieć jednoznaczne znaczenie. „Ładowanie” nie może oznaczać jednocześnie „mam stare dane i nie wiem, czy są aktualne”.</div>"
+    },
+    {
+      "slug": "kompozycja-zamiast-kopiowania",
+      "title": "Kompozycja zamiast kopiowania",
+      "summary": "Małe funkcje i moduły, które da się łączyć bez duplikacji.",
+      "minutes": "15",
+      "body_html": "<p>Duplikacja nie zawsze jest zła. Zła jest duplikacja reguły, która musi zmieniać się w wielu miejscach naraz.</p>\n<h2>Jedna odpowiedzialność</h2>\n<pre><code>function isValidEmail(value) { return value.includes(\"@\"); }\nfunction normalizeEmail(value) { return value.trim().toLowerCase(); }\nfunction prepareEmail(value) { return normalizeEmail(value); }</code></pre>\n<h2>Kompozycja</h2>\n<pre><code>const canSubmit = (form) =&gt;\n  isValidEmail(form.email) &amp;&amp; form.password.length &gt;= 8;</code></pre>\n<p>Każdy kawałek można sprawdzić osobno. Całość czyta się jak zdanie.</p>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> znajdź w projekcie dwie funkcje, które robią prawie to samo, i połącz je bez zwiększania liczby argumentów.</div>"
+    },
+    {
+      "slug": "granice-modulow",
+      "title": "Granice modułów",
+      "summary": "Kiedy podzielić plik i jak nie stworzyć dziesięciu zależności.",
+      "minutes": "15",
+      "body_html": "<p>Moduł powinien mieć powód, żeby istnieć. Jeśli dzielisz plik tylko dlatego, że ma 200 linii, możesz tylko przenieść problem.</p>\n<h2>Granica odpowiedzialności</h2>\n<pre><code>// api/movies.js\nexport async function fetchMovies(query) { /* HTTP */ }\n\n// movies/selectors.js\nexport function selectVisibleMovies(movies, state) { /* pure */ }</code></pre>\n<p>Warstwa API zna sieć. Selektory znają dane. Widok nie musi znać ani jednego, ani drugiego.</p>\n<h2>Import w jedną stronę</h2>\n<p>Ustal, kto może kogo importować. Jeśli dwa moduły importują się nawzajem, prawdopodobnie brakuje trzeciego, mniejszego modułu.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> czy możesz przetestować selektor bez uruchamiania sieci? Jeśli nie, granica jest za szeroka.</div>"
     }
   ],
   "questions": [

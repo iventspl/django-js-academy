@@ -1,0 +1,73 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Projekty{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-projects-page">
+  <header class="js-page-header js-projects-hero">
+    <p class="eyebrow eyebrow-js"><span class="pulse-dot" aria-hidden="true"></span> Projekty · pełne aplikacje</p>
+    <h1>Nie kolejny tutorial.<br><em>Działający produkt.</em></h1>
+    <p class="js-lead">Dwa projekty, osiem kroków każdy: sklep internetowy i Movie HUB. Najpierw próbujesz sam, potem odsłaniasz podpowiedź, a na końcu pełne rozwiązanie tylko tego kroku. Kod jest po angielsku, wyjaśnienia po polsku.</p>
+    <div class="hero-actions">
+      <a class="btn btn-js" href="#projekty">Wybierz projekt <span aria-hidden="true">↓</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'js_academy:mvc_guide' %}">Powtórz MVC <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  <div class="js-project-principles">
+    <div><strong>Najpierw próba</strong><p>Każdy krok ma zadania i sprawdzenie, zanim zobaczysz kod.</p></div>
+    <div><strong>Podpowiedź, nie rozwiązanie</strong><p>Dwie ukryte podpowiedzi pomagają ruszyć z miejsca.</p></div>
+    <div><strong>Pełny kod kroku</strong><p>Odpowiedź jest kompletna, ale celowo ograniczona do jednego etapu.</p></div>
+    <div><strong>Jeden stan</strong><p>currentView, currentSort i currentQuery ćwiczone w prawdziwym przepływie.</p></div>
+  </div>
+
+  <section class="js-projects-list" id="projekty" aria-labelledby="projects-title">
+    <div class="js-projects-list-head">
+      <div><p class="eyebrow eyebrow-js-dark">Do zbudowania</p><h2 id="projects-title">Wybierz jedną pętlę.</h2></div>
+      <p>Każdy projekt kończy się aplikacją, którą możesz uruchomić lokalnie, pokazać i obronić na rozmowie.</p>
+    </div>
+
+    <div class="js-project-grid">
+      {% for row in rows %}
+        <article class="js-project-card" style="--js-accent: {{ row.project.accent }};">
+          <div class="js-project-card-top">
+            <span class="js-project-glyph">{{ row.project.glyph }}</span>
+            <span class="tag tag-js-dark">{{ row.project.level }}</span>
+          </div>
+          <p class="eyebrow eyebrow-js-dark">{{ row.project.eyebrow }}</p>
+          <h2><a href="{% url 'js_academy:project' row.project.slug %}">{{ row.project.title }}</a></h2>
+          <p class="js-project-card-lead">{{ row.project.subtitle }}</p>
+
+          <ul class="js-project-feature-list">
+            {% for feature in row.project.features|slice:":4" %}<li>{{ feature }}</li>{% endfor %}
+          </ul>
+
+          <div class="js-project-card-meta">
+            <span>{{ row.step_count }} kroków</span>
+            <span>{{ row.project.duration }}</span>
+            <span>{{ row.project.stack|join:" · " }}</span>
+          </div>
+
+          <div class="js-project-card-progress">
+            <div class="js-project-card-progress-head"><span>Postęp</span><strong>{{ row.completed_count }}/{{ row.step_count }}</strong></div>
+            <div class="js-project-progress-track"><span style="--bar: {{ row.percent }}%;"></span></div>
+          </div>
+
+          <div class="js-project-card-foot">
+            {% if row.next_step %}
+              <a class="btn btn-js btn-small" href="{% url 'js_academy:project' row.project.slug %}#{{ row.next_step.anchor }}">{% if row.completed_count %}Kontynuuj{% else %}Zacznij projekt{% endif %} <span aria-hidden="true">→</span></a>
+            {% else %}
+              <a class="btn btn-js btn-small" href="{% url 'js_academy:project' row.project.slug %}">Projekt ukończony <span aria-hidden="true">✓</span></a>
+            {% endif %}
+            <a class="js-text-link" href="{% url 'js_academy:project' row.project.slug %}">Pełny opis →</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="js-project-finale">
+    <div><p class="eyebrow eyebrow-js-dark">Po projekcie</p><h2>Masz kod, decyzje i historię.</h2><p>Wrzuć projekt na GitHub z README, krótkim demo i listą ograniczeń. To jest portfolio: nie „zna JavaScript”, tylko „zbudował i umie wytłumaczyć”.</p></div>
+    <a class="btn btn-js" href="{% url 'js_academy:progress' %}">Zobacz postępy <span aria-hidden="true">↗</span></a>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,240 @@
+{
+  "module": {
+    "slug": "przyklady-z-zycia",
+    "title": "Przykłady z życia",
+    "subtitle": "Sześć małych aplikacji, które tłumaczą JavaScript bez żargonu.",
+    "description": "Koszyk, wyszukiwarka, formularz, lista zadań, pobieranie danych i czytelny kod. Każdy temat zaczyna się od zwykłej sytuacji, a kończy działającym przykładem i checklistą.",
+    "level": "core",
+    "glyph": "22",
+    "accent": "#34D399",
+    "duration_minutes": 90,
+    "outcomes": [
+      "Budujesz małe funkcje, które łatwo sprawdzić i zmienić.",
+      "Rozumiesz różnicę między danymi, stanem ekranu i zapisem w przeglądarce.",
+      "Obsługujesz ładowanie, błąd i pusty wynik bez zgadywania.",
+      "Piszesz komunikaty i nazwy zrozumiałe dla osoby, która nie zna kodu."
+    ],
+    "project_title": "Aplikacja nawyków",
+    "project_brief": "Zbuduj listę nawyków z dodawaniem, oznaczaniem dnia, usuwaniem i zapisem w przeglądarce. Zadbaj o pusty stan i czytelne komunikaty.",
+    "project_steps": [
+      "Zaprojektuj kształt jednego nawyku i listy.",
+      "Dodaj akcje: dodaj, oznacz, usuń.",
+      "Zapisz dane w localStorage i odtwórz je po odświeżeniu.",
+      "Dodaj pusty stan, walidację i testy funkcji."
+    ]
+  },
+  "lessons": [
+    {
+      "slug": "koszyk-zakupowy",
+      "title": "Koszyk zakupowy bez błędów",
+      "summary": "Jak dodać produkt, zmienić ilość i policzyć sumę, nie psując danych.",
+      "minutes": 16,
+      "body_html": "<p>Koszyk to dobre pierwsze ćwiczenie, bo łączy listę, liczby i stan ekranu. Zaczynamy od zwykłej sytuacji: ktoś klika „Dodaj” przy kawie.</p>\n<h2>Jeden produkt, jedna linia</h2>\n<p>Nie dodawaj drugiej linii, jeśli produkt już jest. Zwiększ ilość. Dzięki temu użytkownik nie widzi dwóch takich samych pozycji.</p>\n<pre><code>function addToCart(cart, product) {\n  const existing = cart.find((line) => line.id === product.id);\n  if (existing) {\n    return cart.map((line) =>\n      line.id === product.id\n        ? { ...line, quantity: line.quantity + 1 }\n        : line\n    );\n  }\n  return [...cart, { id: product.id, name: product.name, price: product.price, quantity: 1 }];\n}</code></pre>\n<h2>Pieniądze licz w groszach</h2>\n<p>Cena 19,99 zł to 1999 groszy. Dopiero na ekranie zamieniasz grosze na złote. Dzięki temu suma nie ma drobnych błędów po przecinku.</p>\n<pre><code>const total = cart.reduce((sum, line) => sum + line.price * line.quantity, 0);\nconst formatted = new Intl.NumberFormat(\"pl-PL\", {\n  style: \"currency\",\n  currency: \"PLN\",\n}).format(total / 100);</code></pre>\n<h2>Usuwanie przez zero</h2>\n<p>Najprostsza zasada: ilość zero usuwa linię. Jedna reguła zamiast trzech przycisków.</p>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> dodaj produkt, zwiększ ilość do trzech, usuń go i sprawdź, czy pusty koszyk nadal pokazuje sumę 0 zł.</div>"
+    },
+    {
+      "slug": "wyszukiwarka",
+      "title": "Wyszukiwarka, która nie zwalnia",
+      "summary": "Filtrowanie, sortowanie i opóźnienie, które nie wysyła zapytania po każdej literze.",
+      "minutes": 17,
+      "body_html": "<p>Wyszukiwarka powinna reagować szybko, ale nie może wysyłać dziesięciu zapytań, gdy ktoś pisze „javascript”.</p>\n<h2>Najpierw filtruj lokalnie</h2>\n<p>Jeśli masz już dane, filtruj je w pamięci. To natychmiastowe i nie wymaga sieci.</p>\n<pre><code>function searchProducts(products, query) {\n  const needle = query.trim().toLowerCase();\n  if (!needle) return products;\n  return products.filter((product) =>\n    `${product.name} ${product.description}`.toLowerCase().includes(needle)\n  );\n}</code></pre>\n<h2>Opóźnij request</h2>\n<p>Poczekaj około 300 ms po ostatnim znaku. Jeśli użytkownik pisze dalej, poprzedni timer jest anulowany.</p>\n<pre><code>let timer;\nfunction onSearch(query) {\n  clearTimeout(timer);\n  timer = setTimeout(() => {\n    loadResults(query);\n  }, 300);\n}</code></pre>\n<h2>Pokaż pusty wynik</h2>\n<p>Pusty ekran nie mówi, co się stało. Napisz: „Brak wyników dla frazy react. Wyczyść wyszukiwanie”.</p>\n<div class=\"lesson-callout\"><strong>Ważne:</strong> opóźnienie nie zastępuje anulowania starego zapytania. O tym, jak nie podmienić nowszego wyniku starszym, przeczytasz w projekcie Movie HUB.</div>"
+    },
+    {
+      "slug": "formularz",
+      "title": "Formularz, który tłumaczy błędy",
+      "summary": "Walidacja, komunikaty przy polach i focus na pierwszym błędzie.",
+      "minutes": 15,
+      "body_html": "<p>Dobry formularz nie mówi tylko „błąd”. Mówi, co poprawić i gdzie.</p>\n<h2>Zbierz błędy w jednym miejscu</h2>\n<pre><code>function validate(values) {\n  const errors = {};\n  if (!values.email.includes(\"@\")) {\n    errors.email = \"Wpisz adres e-mail, np. ala@example.com.\";\n  }\n  if (values.password.length < 8) {\n    errors.password = \"Hasło musi mieć co najmniej 8 znaków.\";\n  }\n  return errors;\n}</code></pre>\n<h2>Pokaż błąd przy polu</h2>\n<p>Komunikat powinien być blisko pola, powiązany przez <code>aria-describedby</code> i widoczny także bez koloru.</p>\n<pre><code>const error = document.createElement(\"p\");\nerror.id = \"email-error\";\nerror.textContent = errors.email;\ninput.setAttribute(\"aria-describedby\", \"email-error\");\nfield.append(error);</code></pre>\n<h2>Focus na pierwszym błędzie</h2>\n<p>Po kliknięciu „Zapisz” przenieś focus do pierwszego pola z błędem. Osoba korzystająca z klawiatury nie musi szukać komunikatu.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> walidacja to funkcja, a nie sto warunków w środku zdarzenia submit.</div>"
+    },
+    {
+      "slug": "lista-zadan",
+      "title": "Lista zadań, która pamięta",
+      "summary": "Dodawanie, oznaczanie i usuwanie zadań oraz bezpieczny zapis w localStorage.",
+      "minutes": 17,
+      "body_html": "<p>Lista zadań uczy trzech rzeczy naraz: identyfikatorów, aktualizacji listy i trwałego zapisu.</p>\n<h2>Nadaj każde zadaniu id</h2>\n<p>Nie używaj nazwy zadania jako identyfikatora. Dwa zadania mogą mieć tę samą nazwę.</p>\n<pre><code>const task = {\n  id: crypto.randomUUID(),\n  title: \"Przeczytać rozdział\",\n  done: false,\n};</code></pre>\n<h2>Aktualizuj przez nową listę</h2>\n<pre><code>function toggleTask(tasks, id) {\n  return tasks.map((task) =>\n    task.id === id ? { ...task, done: !task.done } : task\n  );\n}</code></pre>\n<h2>Zapis i odczyt</h2>\n<pre><code>localStorage.setItem(\"tasks\", JSON.stringify(tasks));\nconst saved = JSON.parse(localStorage.getItem(\"tasks\") || \"[]\");</code></pre>\n<p>Zapis może się nie udać, a dane mogą być uszkodzone. Zawsze owijaj odczyt w <code>try/catch</code> i miej pustą listę jako plan B.</p>\n<div class=\"lesson-callout\"><strong>Nawyk:</strong> zapisuj tylko dane, nie cały stan aplikacji. Łatwiej wtedy zmienić wygląd bez migracji.</div>"
+    },
+    {
+      "slug": "pobieranie-danych",
+      "title": "Pobieranie danych bez wiecznego spinnera",
+      "summary": "Fetch, await, błąd, pusty wynik i anulowanie zapytania.",
+      "minutes": 18,
+      "body_html": "<p>Sieć może być wolna, może zwrócić błąd, a użytkownik może zamknąć widok. Każdy z tych przypadków ma swoje miejsce w kodzie.</p>\n<h2>Trzy stany, nie jeden</h2>\n<p>Ekran powinien mieć stan ładowania, błędu i gotowych danych. „Pusto” to czwarty, osobny przypadek.</p>\n<pre><code>async function loadMovies() {\n  try {\n    setStatus(\"loading\");\n    const response = await fetch(\"/api/movies\");\n    if (!response.ok) throw new Error(\"Nie udało się pobrać filmów.\");\n    const data = await response.json();\n    setMovies(data);\n    setStatus(data.length ? \"ready\" : \"empty\");\n  } catch (error) {\n    setError(error.message);\n    setStatus(\"error\");\n  }\n}</code></pre>\n<h2>Anuluj, gdy widok znika</h2>\n<pre><code>const controller = new AbortController();\nfetch(\"/api/movies\", { signal: controller.signal });\n// when leaving the view:\ncontroller.abort();</code></pre>\n<h2>Nie pokazuj surowego błędu</h2>\n<p>Użytkownik nie potrzebuje nazwy wyjątku. Napisz, co może zrobić: „Spróbuj ponownie za chwilę”.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> wyłącz sieć w DevTools i sprawdź, czy widok pokazuje błąd, a nie pustą listę.</div>"
+    },
+    {
+      "slug": "czytelny-kod",
+      "title": "Czytelny kod w praktyce",
+      "summary": "Nazwy, wczesne wyjścia i małe funkcje, które da się sprawdzić.",
+      "minutes": 14,
+      "body_html": "<p>Czytelny kod nie jest krótszy. Jest łatwiejszy do sprawdzenia i zmiany.</p>\n<h2>Nazwa mówi, co robi funkcja</h2>\n<p>Zamiast <code>handle()</code> napisz <code>validateEmail()</code>. Zamiast <code>data2</code> napisz <code>activeTasks</code>.</p>\n<h2>Wczesne wyjście zamiast zagnieżdżania</h2>\n<pre><code>function canSubmit(form) {\n  if (!form.email) return false;\n  if (!form.password) return false;\n  if (form.password.length < 8) return false;\n  return true;\n}</code></pre>\n<h2>Jedna funkcja, jedna decyzja</h2>\n<pre><code>function isAdult(age) {\n  return age >= 18;\n}\n\nfunction canRegister(user) {\n  return isAdult(user.age) &amp;&amp; user.acceptedTerms;\n}</code></pre>\n<p>Takie funkcje łatwo przetestować bez przeglądarki. To najprostszy sposób, żeby kod przestał być zagadką.</p>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> weź jedną długą funkcję ze swojego projektu i podziel ją na dwie mniejsze. Nie zmieniaj zachowania.</div>"
+    },
+    {
+      "slug": "nawyki-model-i-zapis",
+      "title": "Nawyki: model i zapis",
+      "summary": "Od jednego obiektu do trwałej listy w przeglądarce.",
+      "minutes": "18",
+      "body_html": "<p>Zacznij od kształtu jednego nawyku. Reszta aplikacji będzie się do niego odwoływać.</p>\n<h2>Model</h2>\n<pre><code>const habit = {\n  id: crypto.randomUUID(),\n  name: \"10 minut czytania\",\n  days: [],\n};</code></pre>\n<h2>Zapis</h2>\n<pre><code>localStorage.setItem(\"habits\", JSON.stringify(habits));\nconst saved = JSON.parse(localStorage.getItem(\"habits\") || \"[]\");</code></pre>\n<p>Zapisuj tylko dane, nie cały stan widoku. Odczyt owij w <code>try/catch</code>.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> dodaj nawyk, odśwież stronę i sprawdź, czy nadal jest na liście.</div>"
+    },
+    {
+      "slug": "nawyki-formularz-i-dostepnosc",
+      "title": "Nawyki: formularz i dostępność",
+      "summary": "Dodawanie, oznaczanie dnia i czytelne komunikaty.",
+      "minutes": "17",
+      "body_html": "<p>Nawyk jest użyteczny tylko wtedy, gdy można go szybko oznaczyć. Formularz nie może przeszkadzać.</p>\n<h2>Oznaczanie dnia</h2>\n<pre><code>function toggleDay(habit, date) {\n  const done = habit.days.includes(date);\n  return {\n    ...habit,\n    days: done ? habit.days.filter((d) =&gt; d !== date) : [...habit.days, date],\n  };\n}</code></pre>\n<h2>Komunikat</h2>\n<pre><code>&lt;p role=\"status\"&gt;Zapisano: 10 minut czytania.&lt;/p&gt;</code></pre>\n<p>Status po akcji pomaga też osobom korzystającym z czytnika ekranu.</p>\n<div class=\"lesson-callout\"><strong>Checklista:</strong> pusty stan, walidacja nazwy, focus po dodaniu i możliwość usunięcia.</div>"
+    }
+  ],
+  "questions": [
+    {
+      "key": "js-practice-q1",
+      "difficulty": "beginner",
+      "prompt": "Dlaczego ceny w koszyku warto trzymać w groszach?",
+      "code": "",
+      "choices": [
+        "Żeby uniknąć błędów zaokrągleń przy ułamkach",
+        "Żeby kod był dłuższy",
+        "Żeby localStorage działał szybciej",
+        "Żeby uniknąć funkcji reduce"
+      ],
+      "answer": 0,
+      "explanation": "Grosze to liczby całkowite. Dzięki temu suma 19,99 + 19,99 nie daje 39,980000000000004."
+    },
+    {
+      "key": "js-practice-q2",
+      "difficulty": "beginner",
+      "prompt": "Co robi funkcja czysta?",
+      "code": "",
+      "choices": [
+        "Zwraca wynik na podstawie argumentów i nie zmienia niczego poza sobą",
+        "Zawsze zapisuje wynik w localStorage",
+        "Musi być asynchroniczna",
+        "Nie może przyjmować argumentów"
+      ],
+      "answer": 0,
+      "explanation": "Czysta funkcja ma przewidywalny wynik i nie zmienia danych wejściowych ani świata zewnętrznego."
+    },
+    {
+      "key": "js-practice-q3",
+      "difficulty": "intermediate",
+      "prompt": "Po co w wyszukiwarce opóźnienie 300 ms?",
+      "code": "",
+      "choices": [
+        "Żeby nie wysyłać zapytania po każdej literze",
+        "Żeby wyniki były zawsze starsze",
+        "Żeby wyłączyć filtrowanie",
+        "Żeby usunąć pusty stan"
+      ],
+      "answer": 0,
+      "explanation": "Opóźnienie czeka na koniec pisania. To ogranicza liczbę zapytań i obciążenie sieci."
+    },
+    {
+      "key": "js-practice-q4",
+      "difficulty": "intermediate",
+      "prompt": "Dlaczego lista zadań potrzebuje id?",
+      "code": "",
+      "choices": [
+        "Żeby odróżnić zadania o tej samej nazwie",
+        "Żeby każda nazwa była dłuższa",
+        "Żeby nie dało się usunąć zadania",
+        "Żeby zapis działał tylko w pamięci"
+      ],
+      "answer": 0,
+      "explanation": "Identyfikator pozwala trafić w konkretne zadanie, nawet jeśli dwa mają identyczną treść."
+    },
+    {
+      "key": "js-practice-q5",
+      "difficulty": "beginner",
+      "prompt": "Który zestaw stanów jest najbardziej uczciwy dla widoku z siecią?",
+      "code": "",
+      "choices": [
+        "ładowanie, błąd, gotowe, pusto",
+        "tylko gotowe",
+        "tylko błąd",
+        "ładowanie i gotowe, bez błędu"
+      ],
+      "answer": 0,
+      "explanation": "Użytkownik potrzebuje wiedzieć, czy dane się ładują, czy ich nie ma, czy wystąpił błąd."
+    },
+    {
+      "key": "js-practice-q6",
+      "difficulty": "intermediate",
+      "prompt": "Co daje wczesne wyjście z funkcji?",
+      "code": "",
+      "choices": [
+        "Zmniejsza zagnieżdżenie i ułatwia czytanie",
+        "Zawsze przyspiesza sieć",
+        "Usuwa potrzebę testów",
+        "Zastępuje walidację"
+      ],
+      "answer": 0,
+      "explanation": "Zamiast wielu poziomów if/else obsługujesz wyjątki na początku i kończysz funkcję wcześniej."
+    },
+    {
+      "key": "js-practice-q7",
+      "difficulty": "intermediate",
+      "prompt": "Co powinien zrobić formularz po błędzie wysyłki?",
+      "code": "",
+      "choices": [
+        "Pokazać komunikat przy polu i przenieść focus na pierwszy błąd",
+        "Usunąć wszystkie pola",
+        "Odświeżyć całą stronę",
+        "Ukryć komunikat"
+      ],
+      "answer": 0,
+      "explanation": "Komunikat przy polu i focus pomagają poprawić błąd, szczególnie osobom korzystającym z klawiatury."
+    },
+    {
+      "key": "js-practice-q8",
+      "difficulty": "advanced",
+      "prompt": "Dlaczego localStorage trzeba czytać w try/catch?",
+      "code": "",
+      "choices": [
+        "Bo dane mogą być uszkodzone albo pamięć może być zablokowana",
+        "Bo JSON nie obsługuje tekstu",
+        "Bo localStorage działa tylko w Node.js",
+        "Bo fetch wymaga try/catch"
+      ],
+      "answer": 0,
+      "explanation": "JSON.parse może rzucić wyjątkiem, a dostęp do storage może być zabroniony. Aplikacja powinna wtedy dalej działać."
+    }
+  ],
+  "flashcards": [
+    {
+      "key": "js-practice-f1",
+      "front": "Czym jest funkcja czysta?",
+      "back": "To funkcja, która dla tych samych argumentów zwraca ten sam wynik i nie zmienia danych wejściowych ani świata zewnętrznego."
+    },
+    {
+      "key": "js-practice-f2",
+      "front": "Po co trzymać ceny w groszach?",
+      "back": "Grosze to liczby całkowite, więc suma nie ma błędów zaokrągleń. Na złote zamieniasz je dopiero przy wyświetlaniu."
+    },
+    {
+      "key": "js-practice-f3",
+      "front": "Co robi debounce w wyszukiwarce?",
+      "back": "Czeka chwilę po ostatnim znaku i dopiero wtedy wysyła zapytanie. Dzięki temu nie wysyłasz requestu po każdej literze."
+    },
+    {
+      "key": "js-practice-f4",
+      "front": "Po co zadaniu własne id?",
+      "back": "Żeby odróżnić dwa zadania o tej samej nazwie i precyzyjnie je oznaczyć lub usunąć."
+    },
+    {
+      "key": "js-practice-f5",
+      "front": "Jakie stany powinien mieć widok pobierający dane?",
+      "back": "Ładowanie, błąd, gotowe dane i pusty wynik. Każdy z nich wymaga innego komunikatu."
+    },
+    {
+      "key": "js-practice-f6",
+      "front": "Co daje wczesne wyjście z funkcji?",
+      "back": "Mniej zagnieżdżonych ifów i łatwiejsze czytanie. Najpierw obsługujesz warunki brzegowe, potem główną ścieżkę."
+    },
+    {
+      "key": "js-practice-f7",
+      "front": "Jak pokazać błąd formularza?",
+      "back": "Blisko pola, tekstem, z aria-describedby, bez polegania tylko na kolorze. Po wysyłce przenieś focus na pierwszy błąd."
+    },
+    {
+      "key": "js-practice-f8",
+      "front": "Dlaczego localStorage może rzucić wyjątkiem?",
+      "back": "Dane mogą być uszkodzone, a dostęp do pamięci może być zablokowany. Czytaj i zapisuj w try/catch, z pustą listą jako plan B."
+    }
+  ]
+}

@@ -21,6 +21,7 @@ from .models import (
     JsLessonNote,
     JsLessonProgress,
     JsModule,
+    JsProjectStepProgress,
     JsQuestion,
     percent,
 )
@@ -85,6 +86,7 @@ def reset_progress(learner: Learner) -> None:
     JsFlashcardReview.objects.filter(learner=learner).delete()
     JsLessonProgress.objects.filter(learner=learner).delete()
     JsChallengeCompletion.objects.filter(learner=learner).delete()
+    JsProjectStepProgress.objects.filter(learner=learner).delete()
 
 
 def module_progress(learner: Learner, module: JsModule) -> dict:

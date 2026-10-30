@@ -44,6 +44,20 @@
       "summary": "reduce, Map, stabilne sortowanie i niemutowalne przetwarzanie danych.",
       "minutes": 15,
       "body_html": "<p>Grupowanie to klasyczne zadanie: z listy obiektów zrób obiekt lub Mapę sum według kategorii. <code>reduce</code> pozwala zrobić to w jednym przejściu.</p>\n<pre><code>const totals = expenses.reduce((acc, expense) =&gt; {\n  const current = acc.get(expense.category) ?? 0;\n  acc.set(expense.category, current + expense.amount);\n  return acc;\n}, new Map());\n\nconst ranking = [...totals.entries()]\n  .sort((a, b) =&gt; b[1] - a[1]);</code></pre>\n<h2>Sortowanie</h2>\n<p>Domyślne sortowanie zamienia elementy na stringi, więc liczby mogą wyjść dziwnie: <code>[10, 2, 1].sort()</code> da <code>[1, 10, 2]</code>. Zawsze podawaj comparator dla liczb i złożonych obiektów.</p>\n<p>Sortowanie w nowoczesnym JS jest stabilne, ale nie zakładaj tego w każdym środowisku bez sprawdzenia. Jeśli kolejność równych elementów ma znaczenie, dodaj tie-breaker.</p>\n<div class=\"lesson-callout\"><strong>Niemutowalność:</strong> <code>sort()</code> mutuje tablicę. Zrób kopię: <code>[...items].sort(...)</code>, jeśli oryginał ma pozostać bez zmian.</div>"
+    },
+    {
+      "slug": "map-filter-reduce",
+      "title": "map, filter i reduce bez magii",
+      "summary": "Trzy operacje na tablicach, które wystarczą w większości przypadków.",
+      "minutes": "16",
+      "body_html": "<p>Te metody nie są sztuczkami. Każda odpowiada jednemu pytaniu: jak przekształcić, co zostawić, jak połączyć w jedną wartość.</p>\n<h2>map — nowa lista</h2>\n<pre><code>const names = products.map((p) =&gt; p.name);</code></pre>\n<h2>filter — wybór</h2>\n<pre><code>const cheap = products.filter((p) =&gt; p.price &lt; 5000);</code></pre>\n<h2>reduce — suma</h2>\n<pre><code>const total = products.reduce((sum, p) =&gt; sum + p.price, 0);</code></pre>\n<p>Zawsze podaj wartość początkową <code>reduce</code>. Pusta tablica bez niej rzuci błędem.</p>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> napisz trzy wersje tej samej operacji i wybierz tę, którą najłatwiej przeczytać na głos.</div>"
+    },
+    {
+      "slug": "kolejki-i-zlozonosc",
+      "title": "Kolejki i złożoność bez akademickiego żargonu",
+      "summary": "Dlaczego jedna pętla w pętli potrafi zamrozić stronę.",
+      "minutes": "17",
+      "body_html": "<p>Złożoność to odpowiedź na pytanie: co się stanie, gdy danych będzie sto razy więcej?</p>\n<h2>Para w parze</h2>\n<pre><code>for (const a of users) {\n  for (const b of users) {\n    if (a.id === b.friendId) { /* ... */ }\n  }\n}</code></pre>\n<p>Dla 100 użytkowników to 10 000 porównań. Dla 10 000 — sto milionów.</p>\n<h2>Mapa zamiast szukania</h2>\n<pre><code>const byId = new Map(users.map((u) =&gt; [u.id, u]));\nconst friend = byId.get(user.friendId);</code></pre>\n<p>Jedno przejście po danych zamiast wielokrotnego szukania.</p>\n<div class=\"lesson-callout\"><strong>Pytanie:</strong> czy Twoja funkcja robi coś wielokrotnie, co można przygotować raz?</div>"
     }
   ],
   "questions": [

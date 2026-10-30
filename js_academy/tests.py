@@ -8,6 +8,7 @@ from django.utils import timezone
 from dojo.models import Learner
 
 from .content import load_bundles
+from .projects import PROJECTS
 from .models import (
     JsChallenge,
     JsChallengeCompletion,
@@ -22,6 +23,7 @@ from .models import (
     JsLessonNote,
     JsLessonProgress,
     JsModule,
+    JsProjectStepProgress,
     JsQuestion,
 )
 
@@ -34,11 +36,11 @@ class SeededJsTestCase(TestCase):
 
 class JsContentTests(SeededJsTestCase):
     def test_content_counts(self):
-        self.assertEqual(len(load_bundles()), 21)
-        self.assertEqual(JsModule.objects.count(), 21)
-        self.assertEqual(JsLesson.objects.count(), 68)
-        self.assertEqual(JsQuestion.objects.count(), 144)
-        self.assertEqual(JsFlashcard.objects.count(), 132)
+        self.assertEqual(len(load_bundles()), 22)
+        self.assertEqual(JsModule.objects.count(), 22)
+        self.assertEqual(JsLesson.objects.count(), 116)
+        self.assertEqual(JsQuestion.objects.count(), 152)
+        self.assertEqual(JsFlashcard.objects.count(), 140)
         self.assertEqual(JsComponent.objects.count(), 13)
 
     def test_every_module_has_expected_lessons_questions_and_cards(self):
@@ -48,13 +50,18 @@ class JsContentTests(SeededJsTestCase):
             if module.slug == "fundamenty-js":
                 expected_lessons = 7
             elif module.slug == "mvc-w-js":
-                expected_lessons = 4
+                expected_lessons = 6
+            elif module.slug == "przyklady-z-zycia":
+                expected_lessons = 8
             else:
-                expected_lessons = 3
+                expected_lessons = 5
             self.assertEqual(module.lessons.count(), expected_lessons, module.slug)
             if module.slug == "mistrzostwo-js":
                 self.assertEqual(module.questions.count(), 15, module.slug)
                 self.assertEqual(module.flashcards.count(), 25, module.slug)
+            elif module.slug == "przyklady-z-zycia":
+                self.assertEqual(module.questions.count(), 8, module.slug)
+                self.assertEqual(module.flashcards.count(), 8, module.slug)
             elif module.slug == "fundamenty-js":
                 self.assertEqual(module.questions.count(), 13, module.slug)
                 self.assertEqual(module.flashcards.count(), 11, module.slug)
@@ -88,8 +95,8 @@ class JsContentTests(SeededJsTestCase):
     def test_seed_is_idempotent(self):
         lesson = JsLesson.objects.first()
         call_command("seed_js", verbosity=0)
-        self.assertEqual(JsModule.objects.count(), 21)
-        self.assertEqual(JsLesson.objects.count(), 68)
+        self.assertEqual(JsModule.objects.count(), 22)
+        self.assertEqual(JsLesson.objects.count(), 116)
         self.assertEqual(JsLesson.objects.get(pk=lesson.pk).title, lesson.title)
 
     def test_lessons_are_in_curriculum_order(self):
@@ -118,6 +125,7 @@ class JsContentTests(SeededJsTestCase):
                 "wzorce-projektowe",
                 "web-api",
                 "debugging",
+                "przyklady-z-zycia",
             ],
         )
 
@@ -157,6 +165,24 @@ class JsPageTests(SeededJsTestCase):
         ):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200, url)
+
+    def test_practical_module_and_plain_glossary(self):
+        response = self.client.get(
+            reverse("js_academy:module", args=["przyklady-z-zycia"])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Koszyk zakupowy bez błędów")
+        self.assertContains(response, "Aplikacja nawyków")
+        lesson = self.client.get(
+            reverse(
+                "js_academy:lesson",
+                args=["przyklady-z-zycia", "koszyk-zakupowy"],
+            )
+        )
+        self.assertContains(lesson, "addToCart")
+        response = self.client.get(reverse("js_academy:glossary"))
+        self.assertContains(response, "localStorage")
+        self.assertContains(response, "Mała pamięć w przeglądarce")
 
     def test_unknown_module_returns_404(self):
         response = self.client.get("/js/nie-ma-takiego-modulu/")
@@ -315,7 +341,7 @@ class JsChallengeTests(SeededJsTestCase):
 class JsKnowledgeTests(SeededJsTestCase):
     def test_knowledge_counts_and_pages(self):
         self.assertEqual(JsFact.objects.count(), 36)
-        self.assertEqual(JsTerm.objects.count(), 50)
+        self.assertEqual(JsTerm.objects.count(), 64)
         self.assertEqual(JsInterviewQuestion.objects.count(), 30)
         for url in (
             reverse("js_academy:knowledge"),
@@ -480,6 +506,62 @@ class JsAiCareerTests(SeededJsTestCase):
             self.assertTrue(source["url"].startswith("https://"), source["label"])
 
 
+class JsProjectWalkthroughTests(SeededJsTestCase):
+    def test_two_projects_have_eight_steps_with_hints_and_answers(self):
+        self.assertEqual(len(PROJECTS), 2)
+        for project in PROJECTS:
+            self.assertGreaterEqual(len(project["steps"]), 8)
+            self.assertGreaterEqual(len(project["files"]), 8)
+            self.assertIn("data-app", project["shell"])
+            self.assertTrue(project["preview"].endswith(".png"))
+            for step in project["steps"]:
+                self.assertGreaterEqual(len(step["hints"]), 2)
+                self.assertTrue(step["answer"].strip())
+                self.assertTrue(step["filename"])
+                self.assertIn("//", step["answer"])
+
+    def test_project_index_and_detail_render_hidden_hints_and_answers(self):
+        response = self.client.get(reverse("js_academy:projects"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Sklep internetowy")
+        self.assertContains(response, "Movie HUB")
+        response = self.client.get(
+            reverse("js_academy:project", args=["sklep-internetowy"])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Podpowiedź 1")
+        self.assertContains(response, "Pełne rozwiązanie tego kroku")
+        self.assertContains(response, "js-project-answer")
+        self.assertContains(response, "Tak będzie wyglądać aplikacja")
+        self.assertContains(response, "shop-preview.png")
+        self.assertNotContains(response, "innerHTML =")
+
+    def test_project_step_completion_toggles(self):
+        url = reverse(
+            "js_academy:project_step_complete",
+            args=["movie-hub", "model-filmu"],
+        )
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            JsProjectStepProgress.objects.filter(
+                project_slug="movie-hub", step_slug="model-filmu"
+            ).exists()
+        )
+        self.client.post(url)
+        self.assertFalse(
+            JsProjectStepProgress.objects.filter(
+                project_slug="movie-hub", step_slug="model-filmu"
+            ).exists()
+        )
+
+    def test_project_is_searchable(self):
+        response = self.client.get(reverse("js_academy:search"), {"q": "Movie HUB"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Projekty")
+        self.assertContains(response, "Movie HUB")
+
+
 class JsLearnerToolsTests(SeededJsTestCase):
     def test_save_and_clear_note(self):
         lesson = JsLesson.objects.first()
@@ -527,9 +609,13 @@ class JsLearnerToolsTests(SeededJsTestCase):
     def test_progress_reset_clears_learning_progress(self):
         module = JsModule.objects.get(slug="fundamenty-js")
         self.client.post(reverse("js_academy:quiz_start", args=[module.slug]))
+        JsProjectStepProgress.objects.create(
+            learner=Learner.local(), project_slug="movie-hub", step_slug="model-filmu"
+        )
         self.client.post(reverse("js_academy:progress_reset"))
         self.assertEqual(JsAttempt.objects.count(), 0)
         self.assertEqual(JsLessonProgress.objects.count(), 0)
+        self.assertEqual(JsProjectStepProgress.objects.count(), 0)
 
 
 class JsAdminAndCommandsTests(SeededJsTestCase):

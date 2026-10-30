@@ -454,6 +454,27 @@ class JsLessonNote(models.Model):
         return f"{self.learner_id}:{self.lesson_id}"
 
 
+class JsProjectStepProgress(models.Model):
+    learner = models.ForeignKey(
+        "dojo.Learner", on_delete=models.CASCADE, related_name="js_project_steps"
+    )
+    project_slug = models.SlugField(max_length=100)
+    step_slug = models.SlugField(max_length=120)
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["project_slug", "step_slug"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "project_slug", "step_slug"],
+                name="unique_js_project_step",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.project_slug}/{self.step_slug}"
+
+
 class JsComponent(models.Model):
     """Gotowy komponent HTML/CSS/JS z podglądem i kodem do skopiowania."""
 

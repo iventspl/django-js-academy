@@ -1,0 +1,198 @@
+{% extends "js_academy/base_js.html" %}
+{% load static %}
+{% block title %}{{ project.title }} · projekt{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-project-page" style="--js-accent: {{ project.accent }};">
+  <div class="js-breadcrumb">
+    <a href="{% url 'js_academy:projects' %}"><span aria-hidden="true">←</span> Projekty</a>
+    <span>/</span>
+    <span>{{ project.title }}</span>
+  </div>
+
+  <header class="js-project-hero">
+    <div class="js-project-hero-main">
+      <div class="js-project-hero-top">
+        <span class="js-project-glyph js-project-glyph-large">{{ project.glyph }}</span>
+        <span class="tag tag-js-dark">{{ project.level }}</span>
+        <span class="tag tag-js-soft">{{ project.duration }}</span>
+      </div>
+      <p class="eyebrow eyebrow-js">{{ project.eyebrow }}</p>
+      <h1>{{ project.title }}</h1>
+      <p class="js-lead">{{ project.subtitle }}</p>
+      <p class="js-project-brief">{{ project.brief }}</p>
+      <div class="hero-actions">
+        {% if next_step %}
+          <a class="btn btn-js" href="#{{ next_step.anchor }}">{% if completed_count %}Kontynuuj krok {{ next_step.number }}{% else %}Zacznij krok 1{% endif %} <span aria-hidden="true">→</span></a>
+        {% else %}
+          <a class="btn btn-js" href="#{{ steps.0.anchor }}">Wróć do początku <span aria-hidden="true">↑</span></a>
+        {% endif %}
+        <a class="btn btn-ghost-dark" href="{% url 'js_academy:projects' %}">Wszystkie projekty <span aria-hidden="true">←</span></a>
+      </div>
+    </div>
+
+    <aside class="js-project-summary-card">
+      <p class="eyebrow eyebrow-js-dark">Twój postęp</p>
+      <div class="js-project-summary-number">{{ completed_count }}<span>/{{ step_count }}</span></div>
+      <div class="js-project-progress-track"><span style="--bar: {{ percent }}%;"></span></div>
+      <p>{{ percent }}% projektu. Ukończ krok, żeby odhaczyć go w planie.</p>
+      <div class="js-project-stack">
+        {% for item in project.stack %}<span>{{ item }}</span>{% endfor %}
+      </div>
+      <div class="js-project-summary-links">
+        <a href="{% url 'js_academy:mvc_guide' %}">MVC w praktyce →</a>
+        <a href="{% url 'js_academy:progress' %}">Postępy →</a>
+      </div>
+    </aside>
+  </header>
+
+  <div class="js-project-facts">
+    <div><strong>{{ step_count }}</strong><span>kroków</span></div>
+    <div><strong>{{ project.duration }}</strong><span>realny czas</span></div>
+    <div><strong>{{ completed_count }}</strong><span>ukończone</span></div>
+    <div><strong>{{ percent }}%</strong><span>projektu</span></div>
+  </div>
+
+  <section class="js-project-overview">
+    <div class="js-project-overview-main">
+      <p class="eyebrow eyebrow-js-dark">Co zbudujesz</p>
+      <h2>Efekt, nie lista lekcji.</h2>
+      <p>{{ project.outcome }}</p>
+      <ul class="js-project-check-list">
+        {% for feature in project.features %}<li><span aria-hidden="true">✓</span>{{ feature }}</li>{% endfor %}
+      </ul>
+    </div>
+    <aside class="js-project-constraints">
+      <p class="eyebrow eyebrow-js-dark">Zasady projektu</p>
+      <ul>{% for item in project.constraints %}<li>{{ item }}</li>{% endfor %}</ul>
+      <p class="js-project-constraints-note">Te ograniczenia są celowe. Dzięki nim uczysz się architektury, a nie klikania w framework.</p>
+    </aside>
+  </section>
+
+  <aside class="js-project-glossary">
+    <p class="eyebrow eyebrow-js-dark">Mówimy po ludzku</p>
+    <p><strong>Warstwa danych</strong> — kod, który pobiera i porządkuje dane.</p>
+    <p><strong>Funkcje filtrujące</strong> — czyste funkcje, które decydują, co pokazać na ekranie.</p>
+    <p><strong>Stan aplikacji</strong> — jeden obiekt z tym, co aktualnie widzi użytkownik.</p>
+    <p><strong>Start aplikacji</strong> — miejsce, które łączy moduły i uruchamia pierwszy widok.</p>
+  </aside>
+
+  <section class="js-project-preview" aria-labelledby="preview-title">
+    <div class="js-project-preview-head">
+      <div><p class="eyebrow eyebrow-js-dark">Docelowy wygląd</p><h2 id="preview-title">Tak będzie wyglądać aplikacja.</h2></div>
+      <p>To statyczny mockup interfejsu, który zbudujesz. Nie jest to jeszcze działający kod projektu — jest punktem odniesienia dla widoków i hierarchii.</p>
+    </div>
+    <a class="js-project-preview-frame" href="{% static project.preview %}" target="_blank" rel="noopener">
+      <img src="{% static project.preview %}" alt="Docelowy wygląd projektu {{ project.title }}" loading="lazy">
+      <span>Otwórz podgląd w pełnym rozmiarze <span aria-hidden="true">↗</span></span>
+    </a>
+  </section>
+
+  <section class="js-project-structure">
+    <div class="js-project-structure-copy">
+      <p class="eyebrow eyebrow-js-dark">Punkt startowy</p>
+      <h2>Pliki, które naprawdę powstają.</h2>
+      <p>Nie zaczynasz od pustej kartki. Poniżej jest minimalny szkielet HTML i lista plików, które będziemy dodawać krok po kroku.</p>
+    </div>
+    <div class="js-project-files">
+      <ul>{% for file in project.files %}<li><code>{{ file }}</code></li>{% endfor %}</ul>
+      <details class="js-project-details">
+        <summary>Szkielet HTML startowy <span aria-hidden="true">+</span></summary>
+        <div class="js-project-shell"><pre><code>{{ project.shell }}</code></pre></div>
+      </details>
+    </div>
+  </section>
+
+  <div class="js-project-layout">
+    <aside class="js-project-nav" aria-label="Plan projektu">
+      <p class="eyebrow eyebrow-js-dark">Plan</p>
+      <ol>
+        {% for item in steps %}
+          <li class="{% if item.completed %}is-done{% endif %}">
+            <a href="#{{ item.anchor }}">
+              <span>{{ item.number|stringformat:"02d" }}</span>
+              <strong>{{ item.title }}</strong>
+              {% if item.completed %}<i aria-label="Ukończony">✓</i>{% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ol>
+      <p class="js-project-nav-note">Najpierw zadania. Dopiero potem podpowiedzi i pełny kod.</p>
+    </aside>
+
+    <div class="js-project-steps">
+      {% for item in steps %}
+        <article class="js-project-step {% if item.completed %}is-done{% endif %}" id="{{ item.anchor }}">
+          <header class="js-project-step-head">
+            <div>
+              <p class="eyebrow eyebrow-js-dark">Krok {{ item.number|stringformat:"02d" }}</p>
+              <h2>{{ item.title }}</h2>
+            </div>
+            <div class="js-project-step-meta">
+              <span>{{ item.filename }}</span>
+              <span>{{ item.minutes }} min</span>
+              {% if item.completed %}<span class="tag tag-mint">✓ ukończony</span>{% endif %}
+            </div>
+          </header>
+
+          <p class="js-project-goal">{{ item.goal }}</p>
+
+          <div class="js-project-why">
+            <p class="eyebrow eyebrow-js-dark">Dlaczego to ma znaczenie</p>
+            <p>{{ item.why }}</p>
+          </div>
+
+          <div class="js-project-block">
+            <h3>Zadania</h3>
+            <ol class="js-project-task-list">{% for task in item.tasks %}<li>{{ task }}</li>{% endfor %}</ol>
+          </div>
+
+          <div class="js-project-hints">
+            <p class="eyebrow eyebrow-js-dark">Podpowiedzi — otwieraj po próbie</p>
+            {% for hint in item.hints %}
+              <details class="js-project-details js-project-hint">
+                <summary>Podpowiedź {{ forloop.counter }} <span aria-hidden="true">+</span></summary>
+                <p>{{ hint }}</p>
+              </details>
+            {% endfor %}
+          </div>
+
+          <details class="js-project-details js-project-answer">
+            <summary><span>Pełne rozwiązanie tego kroku</span><span class="js-project-answer-meta">{{ item.filename }} · {{ item.minutes }} min</span></summary>
+            <div class="js-project-answer-body">
+              <p class="js-project-answer-note">To kompletny kod tylko dla tego etapu — nie cały projekt. Przeczytaj go po własnej próbie i porównaj decyzje, nie tylko składnię.</p>
+              <pre><code>{{ item.answer }}</code></pre>
+              <p class="js-project-explain">{{ item.explain }}</p>
+            </div>
+          </details>
+
+          <div class="js-project-checkpoint">
+            <h3>Sprawdź, zanim przejdziesz dalej</h3>
+            <ul>{% for point in item.checkpoint %}<li>{{ point }}</li>{% endfor %}</ul>
+          </div>
+
+          <form class="js-project-complete" method="post" action="{% url 'js_academy:project_step_complete' project.slug item.slug %}">
+            {% csrf_token %}
+            {% if item.completed %}
+              <p><span aria-hidden="true">✓</span> Ten krok jest odhaczony. Możesz wrócić do niego w każdej chwili.</p>
+              <button class="btn btn-ghost-dark btn-small" type="submit">Cofnij ukończenie</button>
+            {% else %}
+              <p>Odhacz po wykonaniu zadań i sprawdzeniu punktów kontrolnych.</p>
+              <button class="btn btn-js btn-small" type="submit">Oznacz krok jako ukończony <span aria-hidden="true">✓</span></button>
+            {% endif %}
+          </form>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="js-project-final-cta">
+    <div>
+      <p class="eyebrow eyebrow-js-dark">Następny ruch</p>
+      <h2>Zbuduj wersję 2, nie kolejny tutorial.</h2>
+      <p>Dodaj jedno realne ograniczenie: prawdziwe API, koszyk po stronie serwera, testy E2E albo obsługę offline. Potem opisz decyzję w README.</p>
+    </div>
+    <a class="btn btn-js" href="{% url 'js_academy:projects' %}">Wybierz kolejny projekt <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+{% endblock %}

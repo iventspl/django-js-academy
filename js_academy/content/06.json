@@ -44,6 +44,20 @@
       "summary": "Podnoszenie stanu, dzieci jako kompozycja oraz kiedy naprawdę potrzebujesz memo.",
       "minutes": 15,
       "body_html": "<p>React zachęca do kompozycji: przekazujesz JSX jako <code>children</code>, zamiast tworzyć dziesiątki propsów-konfiguracji.</p>\n<pre><code>function Card({ title, children }: { title: string; children: React.ReactNode }) {\n  return (\n    &lt;section className=\"card\"&gt;\n      &lt;h2&gt;{title}&lt;/h2&gt;\n      {children}\n    &lt;/section&gt;\n  );\n}</code></pre>\n<h2>Gdzie trzymać stan?</h2>\n<p>Stan trzymaj najniżej, jak się da, ale wystarczająco wysoko, aby wszystkie potrzebujące komponenty miały do niego dostęp. Jeśli dwa komponenty muszą być zsynchronizowane, wspólny rodzic jest zwykle lepszy niż globalny store.</p>\n<h2>memo, useMemo, useCallback</h2>\n<pre><code>const Row = memo(function Row({ item }: { item: Item }) {\n  return &lt;li&gt;{item.name}&lt;/li&gt;;\n});\n\nconst handleSelect = useCallback((id: string) =&gt; {\n  setSelectedId(id);\n}, []);</code></pre>\n<p><code>memo</code> porównuje propsy płytko. <code>useMemo</code> zapamiętuje wartość, a <code>useCallback</code> funkcję. Każde z nich ma koszt. Najpierw zmierz, potem optymalizuj. Często lepszym rozwiązaniem jest mniejszy komponent lub przesunięcie stanu niżej.</p>\n<div class=\"lesson-callout\"><strong>Antywzorzec:</strong> owijanie wszystkiego w memo „na wszelki wypadek”. To zwiększa złożoność i rzadko rozwiązuje rzeczywisty bottleneck.</div>"
+    },
+    {
+      "slug": "useeffect-bez-petli",
+      "title": "useEffect bez pętli",
+      "summary": "Zależności, cleanup i efekty, które naprawdę coś robią.",
+      "minutes": "16",
+      "body_html": "<p><code>useEffect</code> nie jest miejscem na obliczanie danych, które wynikają ze stanu. Do tego wystarczy zwykła zmienna.</p>\n<h2>Efekt dla świata zewnętrznego</h2>\n<pre><code>useEffect(() =&gt; {\n  const controller = new AbortController();\n  loadMovie(id, { signal: controller.signal });\n  return () =&gt; controller.abort();\n}, [id]);</code></pre>\n<p>Efekt uruchamia się ponownie tylko przy zmianie <code>id</code>. Cleanup anuluje stare zapytanie.</p>\n<h2>Nie dodawaj obiektów bez potrzeby</h2>\n<pre><code>// new object every render:\nuseEffect(() =&gt; {}, [{ id, title }]);</code></pre>\n<p>To często powoduje pętlę. Zależności powinny być stabilne albo rozbite na pola.</p>\n<div class=\"lesson-callout\"><strong>Pytanie kontrolne:</strong> czy ten efekt można usunąć, przenosząc obliczenie do renderu?</div>"
+    },
+    {
+      "slug": "custom-hook",
+      "title": "Własny hook, który da się przetestować",
+      "summary": "Jak wyciągnąć logikę z komponentu bez ukrywania jej w magii.",
+      "minutes": "15",
+      "body_html": "<p>Własny hook to funkcja zaczynająca się od <code>use</code>. Nie jest nowym API — to sposób na wspólny kawałek logiki.</p>\n<h2>Hook do licznika</h2>\n<pre><code>function useCounter(start = 0) {\n  const [value, setValue] = useState(start);\n  const increment = () =&gt; setValue((n) =&gt; n + 1);\n  return { value, increment };\n}</code></pre>\n<h2>Hook do zapytań</h2>\n<pre><code>function useMovie(id) {\n  const [state, setState] = useState({ status: \"loading\", data: null });\n  useEffect(() =&gt; { /* fetch + cleanup */ }, [id]);\n  return state;\n}</code></pre>\n<p>Hook powinien zwracać proste dane i akcje. Jeśli ma dziesięć pól, może ukrywać zbyt wiele.</p>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> wyciągnij z komponentu logikę ładowania i zostaw w nim tylko renderowanie.</div>"
     }
   ],
   "questions": [

@@ -44,6 +44,20 @@
       "summary": "Doprecyzuj problem, pokaż alternatywy, uzasadnij koszty i przyznaj się do niepewności.",
       "minutes": 15,
       "body_html": "<p>Rozmowa techniczna nie sprawdza, czy pamiętasz każdą metodę tablicy. Sprawdza, jak myślisz, komunikujesz się i reagujesz na ograniczenia.</p>\n<h2>Schemat odpowiedzi</h2>\n<ol>\n<li>Doprecyzuj: „Jaki jest ruch, skala i wymagania dotyczące świeżości danych?”</li>\n<li>Podaj model: stan, dane, przepływ, odpowiedzialności.</li>\n<li>Wskaż alternatywy i koszty.</li>\n<li>Powiedz, jak to przetestujesz i zmierzysz.</li>\n<li>Wskaż, co zmieniłbyś przy większej skali.</li>\n</ol>\n<h2>Przykład: wybór stanu</h2>\n<p>„Na tym etapie użyłbym lokalnego useState, bo formularz ma jednego właściciela. Gdy te same dane zaczną być potrzebne w dwóch drzewach, przeniósłbym je do wspólnego rodzica lub contextu. Redux rozważyłbym dopiero przy złożonych, współdzielonych przepływach i potrzebie narzędzi developerskich.”</p>\n<p>To odpowiedź pokazująca decyzję, nie walkę o bibliotekę.</p>\n<div class=\"lesson-callout\"><strong>Niepewność:</strong> „Nie znam dokładnej semantyki tej funkcji w tej wersji, ale sprawdziłbym dokumentację i napisał test” jest lepsze niż pewna, błędna odpowiedź.</div>"
+    },
+    {
+      "slug": "powtorka-jezyka",
+      "title": "Powtórka języka przed rozmową",
+      "summary": "Krótka mapa pojęć, które najczęściej wracają na rozmowach.",
+      "minutes": "18",
+      "body_html": "<p>Powtórka nie polega na czytaniu wszystkiego od nowa. Polega na znalezieniu miejsc, w których odpowiedź jest niepewna.</p>\n<h2>Mapa</h2>\n<ul><li>zakres i domknięcia,</li><li>this i prototypy,</li><li>Promise i event loop,</li><li>kopie i mutacje,</li><li>DOM i zdarzenia.</li></ul>\n<h2>Jedno pytanie dziennie</h2>\n<pre><code>for (var i = 0; i &lt; 3; i++) setTimeout(() =&gt; console.log(i));\n// 3 3 3 — var ma jeden wspólny zakres</code></pre>\n<p>Umiej wyjaśnić wynik, nie tylko go zapamiętać.</p>\n<div class=\"lesson-callout\"><strong>Metoda:</strong> nagraj sobie 60-sekundową odpowiedź. Jeśli się gubisz, temat wymaga powtórki.</div>"
+    },
+    {
+      "slug": "rozmowa-o-architekturze",
+      "title": "Rozmowa o architekturze",
+      "summary": "Jak opowiadać o decyzjach bez recytowania definicji.",
+      "minutes": "18",
+      "body_html": "<p>Na rozmowie ważne jest nie „znasz MVC”, tylko „umiesz uzasadnić, dlaczego podzieliłeś kod właśnie tak”.</p>\n<h2>Odpowiedź w trzech częściach</h2>\n<ol><li>Sytuacja i ograniczenie.</li><li>Decyzja i alternatywa.</li><li>Koszt i sposób sprawdzenia.</li></ol>\n<pre><code>„Rozdzieliłem dane i widok, bo testy selektorów nie potrzebują DOM.\nAlternatywą był jeden duży komponent, ale trudniej go testować.\nKoszt: więcej plików; sprawdziłem to testami i czasem zmian.”</code></pre>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> opisz jeden projekt w 90 sekundach bez nazw bibliotek. Skup się na problemie i decyzjach.</div>"
     }
   ],
   "questions": [

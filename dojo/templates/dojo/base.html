@@ -58,6 +58,10 @@
             <span class="nav-glyph" aria-hidden="true">▤</span>
             <span>Ścieżka</span>
           </a>
+          <a class="nav-link {% if active_nav == 'js_projects' %}is-active{% endif %}" href="{% url 'js_academy:projects' %}">
+            <span class="nav-glyph" aria-hidden="true">▦</span>
+            <span>Projekty</span>
+          </a>
           <a class="nav-link {% if active_nav == 'js_challenges' %}is-active{% endif %}" href="{% url 'js_academy:challenges' %}">
             <span class="nav-glyph" aria-hidden="true">⌘</span>
             <span>Wyzwania</span>

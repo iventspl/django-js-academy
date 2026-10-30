@@ -44,6 +44,20 @@
       "summary": "Globalne handlery, source maps, logi bez sekretów i test regresyjny.",
       "minutes": 15,
       "body_html": "<p>W produkcji nie masz breakpointa. Masz logi, monitoring i umiejętność odtworzenia scenariusza.</p>\n<h2>Globalne błędy</h2>\n<pre><code>window.addEventListener(\"error\", (event) =&gt; {\n  report({ message: event.message, source: event.filename });\n});\n\nwindow.addEventListener(\"unhandledrejection\", (event) =&gt; {\n  report({ reason: String(event.reason) });\n});</code></pre>\n<h2>Source maps</h2>\n<p>Minifikacja zmienia nazwy i linie. Source map pozwala odtworzyć oryginalny stos. Nie publikuj map z sekretami; kontroluj dostęp.</p>\n<h2>Co logować</h2>\n<p>Loguj identyfikator żądania, wersję aplikacji, typ operacji i stan, który prowadzi do błędu. Nie loguj haseł, tokenów ani pełnych danych osobowych.</p>\n<div class=\"lesson-callout\"><strong>Po naprawie:</strong> dodaj test regresyjny. Błąd, który nie ma testu, lubi wrócić przy następnym refaktorze.</div>"
+    },
+    {
+      "slug": "hipoteza-i-breakpoint",
+      "title": "Hipoteza i breakpoint",
+      "summary": "Jak przejść od objawu do przyczyny bez losowego komentowania kodu.",
+      "minutes": "16",
+      "body_html": "<p>Debugowanie to nie klikanie. To stawianie hipotezy i sprawdzanie jej jednym narzędziem.</p>\n<h2>Hipoteza</h2>\n<pre><code>// objaw: koszyk pokazuje starą sumę\n// hipoteza: render czyta poprzedni stan</code></pre>\n<h2>Breakpoint warunkowy</h2>\n<pre><code>if (cart.length === 0) debugger;</code></pre>\n<p>Zatrzymuj się tylko wtedy, gdy warunek jest spełniony. Sprawdź scope i stos wywołań.</p>\n<div class=\"lesson-callout\"><strong>Nawyk:</strong> zapisz hipotezę przed zmianą kodu. Po naprawie dodaj test regresyjny.</div>"
+    },
+    {
+      "slug": "network-i-wydajnosc",
+      "title": "Network i wydajność",
+      "summary": "Jak czytać zakładkę Network i nie gubić się w liczbach.",
+      "minutes": "17",
+      "body_html": "<p>Network pokazuje, co naprawdę poszło przez sieć. To często wyjaśnia „wolne ładowanie” lepiej niż przeglądanie kodu.</p>\n<h2>Najpierw sortuj po czasie</h2>\n<pre><code>// check: status, size, time, initiator</code></pre>\n<h2>Waterfall</h2>\n<p>Długi pasek może oznaczać wolny serwer, duży plik albo oczekiwanie na inne zapytanie. Sprawdź, czy nie ma niepotrzebnych requestów.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> ustaw wolne 3G i sprawdź, czy widok nadal jest używalny, czy tylko wygląda dobrze lokalnie.</div>"
     }
   ],
   "questions": [

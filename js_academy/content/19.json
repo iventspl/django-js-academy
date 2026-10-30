@@ -44,6 +44,20 @@
       "summary": "Trzy wzorce, które naprawdę upraszczają kod — gdy użyte w dobrym miejscu.",
       "minutes": 17,
       "body_html": "<h2>Fabryka</h2>\n<p>Fabryka ukrywa decyzję o tym, jaki obiekt utworzyć. Przydaje się, gdy typ zależy od konfiguracji, a reszta kodu nie powinna znać wszystkich konstruktorów.</p>\n<pre><code>function createNotifier(type) {\n  if (type === \"email\") return { send: sendEmail };\n  if (type === \"sms\") return { send: sendSms };\n  throw new Error(\"Nieznany kanał\");\n}</code></pre>\n<h2>Strategia</h2>\n<p>Strategia to wymienny algorytm. Zamiast łańcucha <code>if/else</code> przekazujesz funkcję lub obiekt z metodą.</p>\n<pre><code>const shipping = {\n  courier: (weight) =&gt; 15 + weight * 2,\n  pickup: () =&gt; 0,\n};\n\nconst cost = shipping[method](weight);</code></pre>\n<h2>Komenda</h2>\n<p>Komenda zamyka akcję w obiekcie: <code>execute</code>, <code>undo</code>, dane. Dobre do cofania, kolejek i historii operacji.</p>\n<pre><code>const addItem = {\n  execute: () =&gt; cart.add(product),\n  undo: () =&gt; cart.remove(product),\n};</code></pre>\n<p>Nie każda akcja potrzebuje komendy. Jeśli nie potrzebujesz cofania ani kolejki, zwykła funkcja jest prostsza.</p>\n<div class=\"lesson-callout\"><strong>Reguła:</strong> wzorzec ma usunąć konkretny ból. Jeśli bólu nie ma, dodajesz złożoność za darmo.</div>"
+    },
+    {
+      "slug": "wzorce-w-praktyce",
+      "title": "Wzorce w praktyce",
+      "summary": "Kiedy fabryka, obserwator i strategia naprawdę pomagają.",
+      "minutes": "16",
+      "body_html": "<p>Wzorzec to nazwa dla powtarzalnego rozwiązania. Jeśli nie masz problemu, wzorzec tylko dodaje warstwę.</p>\n<h2>Strategia</h2>\n<pre><code>const shipping = {\n  courier: (order) =&gt; order.weight * 2,\n  pickup: () =&gt; 0,\n};\nconst cost = shipping[order.method](order);</code></pre>\n<h2>Obserwator</h2>\n<pre><code>function createStore(initial) {\n  const listeners = new Set();\n  let state = initial;\n  return {\n    get: () =&gt; state,\n    set(next) { state = next; listeners.forEach((fn) =&gt; fn(state)); },\n    subscribe(fn) { listeners.add(fn); return () =&gt; listeners.delete(fn); },\n  };\n}</code></pre>\n<div class=\"lesson-callout\"><strong>Pytanie:</strong> czy wzorzec usuwa duplikację, czy tylko przenosi ją do nowego pliku?</div>"
+    },
+    {
+      "slug": "kiedy-wzorzec-szkodzi",
+      "title": "Kiedy wzorzec szkodzi",
+      "summary": "Prostota, koszt abstrakcji i refaktor, którego nie warto robić.",
+      "minutes": "15",
+      "body_html": "<p>Abstrakcja ma koszt: więcej plików, więcej nazw i więcej miejsc, w których można się zgubić.</p>\n<h2>Trzy pytania przed refaktorem</h2>\n<ol><li>Czy problem występuje więcej niż raz?</li><li>Czy zmiana będzie częstsza niż odczyt?</li><li>Czy da się to sprawdzić testem?</li></ol>\n<pre><code>// before: one clear function\nfunction total(items) { return items.reduce((sum, i) =&gt; sum + i.price, 0); }\n// do not wrap it in a factory just because a book says so</code></pre>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> najpierw działający, czytelny kod. Wzorzec dopiero gdy pojawia się realna potrzeba.</div>"
     }
   ],
   "questions": [

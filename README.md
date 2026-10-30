@@ -2,7 +2,7 @@
 
 A local-first learning game for Python, Django, JavaScript and applied AI. It mixes multiple-choice quiz runs, open flashcards (fiszki), spaced repetition, explanations, coding challenges and a progress notebook — with a deliberately polished interface that runs the same way on macOS and Windows.
 
-No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.22 mobile layout, the 4.21 cross-platform learner tools, the 4.20 local Wi-Fi mode and earlier releases.
+No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.25 extended JavaScript modules, the 4.24 practical examples and plain-language glossary, the 4.23 full MVC project walkthroughs, the 4.22 mobile layout, the 4.21 cross-platform learner tools, the 4.20 local Wi-Fi mode and earlier releases.
 
 ## What is inside
 
@@ -11,7 +11,7 @@ No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHAN
 - **34 real-world cheatsheets** covering permissions, uploads, private storage, email, webhooks, N+1 queries, search, migrations, deployment, LLM gateways, RAG, evals, prompt injection, ADRs, HTMX, typing, and tooling.
 - **6 application blueprints** for SaaS, marketplace, booking, CMS, support desk, and mobile API products — with data models, starter code, build order, and production traps.
 - **8 Architecture Studio labs** for AI document assistants, tool-using agents, multi-tenant SaaS, webhook platforms, marketplace ledgers, real-time fan-out, analytics pipelines, and legacy modernization.
-- **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 21 modules, 68 lessons, 144 quiz questions, 132 flashcards, 13 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 50-term glossary, 30 interview questions, and XP/streaks.
+- **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 22 modules, 116 lessons, 152 quiz questions, 140 flashcards, 2 full project walkthroughs (17 steps), 13 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 64-term glossary, 30 interview questions, and XP/streaks.
 - **AI Academy** — a 12-month applied AI engineering path with 8 modules, 42 lessons, 48 quiz questions, 40 concept cards, 55 glossary terms, 12 real projects and a career map.
 - **Release radar** with current Django versions, LTS windows, CVE summaries, and source links to the official release notes.
 - **Spaced repetition** for every card with four recall ratings: Again, Hard, Good, Easy.
@@ -239,6 +239,25 @@ All three study surfaces — **Django**, **JavaScript** and **AI** — now expos
 
 Notes are stored locally per platform; the progress export deliberately does not include note bodies.
 
+## Full project walkthroughs
+
+JS Akademia now includes two complete MVC project labs:
+
+- **Sklep internetowy** — katalog, filtry, koszyk, ilości, localStorage, kasa, walidacja i start aplikacji.
+- **Movie HUB** — warstwa API, wyszukiwanie z opóźnieniem, wyścig zapytań, szczegóły filmu, lista do obejrzenia, oceny, pamięć podręczna i ponawianie.
+
+Each project has **eight or nine steps**, a starter HTML shell, a file map and a **target UI mockup screenshot** so you can see the finished direction before writing code.
+
+Every step contains:
+
+1. a concrete goal and “why it matters”,
+2. three implementation tasks,
+3. two hidden hints,
+4. a hidden **complete answer for that step only**,
+5. a checkpoint before marking it done.
+
+Progress is stored per learner, survives across pages, can be undone, and is cleared by the normal progress reset. Code and identifiers are English; explanations and UI are Polish.
+
 ## JS Akademia — Polish JavaScript → React Native platform
 
 Use the **Django / JavaScript / AI** switch in the sidebar to enter **JS Akademia**, a fully Polish-language learning path:
@@ -246,38 +265,39 @@ Use the **Django / JavaScript / AI** switch in the sidebar to enter **JS Akademi
 | Module | Lessons | Quiz | Fiszki | Projekt |
 | --- | ---: | ---: | ---: | --- |
 | Fundamenty JavaScript | 7 | 13 | 11 | Kalkulator budżetu |
-| Nowoczesny JavaScript | 3 | 6 | 5 | Klient API z błędami |
-| DOM, formularze i przeglądarka | 3 | 6 | 5 | Lista zadań w JS |
-| TypeScript w praktyce | 3 | 6 | 5 | Typowany koszyk |
-| React — podstawy | 3 | 6 | 5 | Lista zadań React |
-| React — hooki i architektura | 3 | 6 | 5 | Mini sklep |
-| React Native | 3 | 6 | 5 | Mobilna lista zadań |
-| Testy, jakość i publikacja | 3 | 6 | 5 | Wydanie aplikacji |
-| Wzorce i architektura frontendu | 3 | 6 | 5 | Kreator zamówienia |
-| Struktury danych i algorytmy | 3 | 6 | 5 | Analizator wydatków |
-| Node.js i narzędzia | 3 | 6 | 5 | CLI do raportu |
-| React w praktyce | 3 | 6 | 5 | Panel produktów |
-| React Native w produkcji | 3 | 6 | 5 | Notes offline-first |
-| JavaScript + AI | 3 | 6 | 5 | Asystent z cytowaniami |
-| Bezpieczeństwo i wydajność frontendu | 3 | 6 | 5 | Audyt aplikacji |
-| Mistrzostwo JS: powtórka i rozmowa | 3 | 15 | 25 | Obrona decyzji projektowej |
-| AI a praca programisty | 3 | 6 | 5 | Audyt kodu wygenerowanego przez AI |
-| MVC w JavaScript | 4 | 8 | 6 | Lista produktów MVC |
-| Wzorce projektowe w JS | 3 | 6 | 5 | Mini store z obserwatorem |
-| Web APIs w praktyce | 3 | 6 | 5 | Cache offline |
-| Debugging i DevTools | 3 | 6 | 5 | Polowanie na błąd |
+| Nowoczesny JavaScript | 5 | 6 | 5 | Klient API z błędami |
+| DOM, formularze i przeglądarka | 5 | 6 | 5 | Lista zadań w JS |
+| TypeScript w praktyce | 5 | 6 | 5 | Typowany koszyk |
+| React — podstawy | 5 | 6 | 5 | Lista zadań React |
+| React — hooki i architektura | 5 | 6 | 5 | Mini sklep |
+| React Native | 5 | 6 | 5 | Mobilna lista zadań |
+| Testy, jakość i publikacja | 5 | 6 | 5 | Wydanie aplikacji |
+| Wzorce i architektura frontendu | 5 | 6 | 5 | Kreator zamówienia |
+| Struktury danych i algorytmy | 5 | 6 | 5 | Analizator wydatków |
+| Node.js i narzędzia | 5 | 6 | 5 | CLI do raportu |
+| React w praktyce | 5 | 6 | 5 | Panel produktów |
+| React Native w produkcji | 5 | 6 | 5 | Notes offline-first |
+| JavaScript + AI | 5 | 6 | 5 | Asystent z cytowaniami |
+| Bezpieczeństwo i wydajność frontendu | 5 | 6 | 5 | Audyt aplikacji |
+| Mistrzostwo JS: powtórka i rozmowa | 5 | 15 | 25 | Obrona decyzji projektowej |
+| AI a praca programisty | 5 | 6 | 5 | Audyt kodu wygenerowanego przez AI |
+| MVC w JavaScript | 6 | 8 | 6 | Lista produktów MVC |
+| Wzorce projektowe w JS | 5 | 6 | 5 | Mini store z obserwatorem |
+| Web APIs w praktyce | 5 | 6 | 5 | Cache offline |
+| Debugging i DevTools | 5 | 6 | 5 | Polowanie na błąd |
+| Przykłady z życia | 8 | 8 | 8 | Aplikacja nawyków |
 
 The platform includes:
 
-- **21 modules / 68 lessons** with Polish explanations, code and practical warnings.
-- **144 quiz questions** with detailed explanations.
-- **132 open flashcards** with spaced repetition.
+- **22 modules / 116 lessons** with Polish explanations, code and practical warnings.
+- **152 quiz questions** with detailed explanations.
+- **140 open flashcards** with spaced repetition.
 - **13 live iframe demos** — real interactive HTML/JS examples embedded directly in lessons.
 - **31 coding challenges** with an in-browser editor and automatic tests.
 - **13 ready-made components** with live preview, full HTML/CSS/JS and copyable code.
-- **36 curiosities**, a **50-term glossary**, and **30 interview questions with model answers**.
+- **36 curiosities**, a **64-term glossary**, and **30 interview questions with model answers**.
 - **XP, levels and daily streaks** based on real completed work.
-- **21 module projects** with a concrete build checklist.
+- **22 module projects** with a concrete build checklist.
 - Full Polish interface, `lang="pl"`, and a separate yellow JS visual identity.
 
 ### Practice and knowledge
@@ -316,7 +336,7 @@ The suite includes tests for search results, empty search, achievements and the 
 The **Wiedza** tab contains:
 
 - **Ciekawostki** — 36 short, factual notes about the language, browser, React, security and AI.
-- **Słownik** — 50 terms with a Polish definition and a practical snippet.
+- **Słownik** — 64 terms with a plain Polish definition and a practical snippet.
 - **Wywiad** — 30 interview questions with model answers and follow-up questions.
 
 ### AI and careers
@@ -434,7 +454,7 @@ The scheduler is intentionally small and transparent, inspired by SM-2. It is no
 │   ├── services.py              # postęp i harmonogram fiszek
 │   ├── content.py               # walidacja i seed treści
 │   ├── runner.py                # edytor wyzwań w sandbox iframe
-│   ├── content/*.json           # 21 modułów: JS → TS → React → RN
+│   ├── content/*.json           # 22 moduły: JS → TS → React → RN
 │   ├── content/demos.json       # 12 dem iframe
 │   ├── content/knowledge.json   # ciekawostki, słownik, wywiad
 │   ├── content/challenges.json  # 31 wyzwań z testami
@@ -612,7 +632,7 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **135 tests** in total.
+The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **140 tests** in total.
 
 You can also run Django's deployment check before hosting anything:
 

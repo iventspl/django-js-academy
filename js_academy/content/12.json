@@ -44,6 +44,20 @@
       "summary": "Fetch w praktyce: ładowanie, puste dane, błąd, anulowanie i error boundary.",
       "minutes": 15,
       "body_html": "<p>Ekran danych ma zwykle kilka stanów: loading, success, empty, error. Modeluj je jawnie, zamiast trzymać kilka niezależnych booleanów.</p>\n<pre><code>type ViewState&lt;T&gt; =\n  | { status: \"loading\" }\n  | { status: \"empty\" }\n  | { status: \"success\"; data: T }\n  | { status: \"error\"; message: string };</code></pre>\n<h2>Anulowanie</h2>\n<p>Przy zmianie filtra lub odmontowaniu komponentu anuluj żądanie. Inaczej stara odpowiedź może nadpisać nową. Użyj <code>AbortController</code> i sprawdzaj <code>error.name === \"AbortError\"</code>.</p>\n<h2>Error boundary</h2>\n<pre><code>class ErrorBoundary extends React.Component {\n  state = { hasError: false };\n  static getDerivedStateFromError() {\n    return { hasError: true };\n  }\n  render() {\n    if (this.state.hasError) return &lt;ErrorScreen /&gt;;\n    return this.props.children;\n  }\n}</code></pre>\n<p>Error boundary łapie błędy renderowania komponentów poniżej. Nie łapie błędów w event handlerach ani asynchronicznych — te obsłuż lokalnie.</p>\n<div class=\"lesson-callout\"><strong>Puste dane to nie błąd.</strong> „Brak wyników” i „nie udało się pobrać” wymagają różnych komunikatów i różnych akcji.</div>"
+    },
+    {
+      "slug": "struktura-projektu-react",
+      "title": "Struktura projektu React",
+      "summary": "Gdzie trzymać komponenty, dane i logikę, żeby projekt się nie rozpadł.",
+      "minutes": "16",
+      "body_html": "<p>Struktura folderów nie jest celem sama w sobie. Ma pomagać znaleźć miejsce, w którym coś się dzieje.</p>\n<h2>Według funkcji, nie typu pliku</h2>\n<pre><code>features/tasks/\n  TasksPage.jsx\n  TaskList.jsx\n  useTasks.js\n  tasksApi.js</code></pre>\n<p>Wszystko o zadaniach jest obok siebie. Nie skaczesz między pięcioma katalogami.</p>\n<h2>Granica danych</h2>\n<pre><code>// tasksApi.js\nexport const fetchTasks = () =&gt; fetch(\"/api/tasks\").then((r) =&gt; r.json());</code></pre>\n<p>Komponent nie zna adresu API. To ułatwia testy i zmianę backendu.</p>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> przenieś jeden komponent do folderu funkcji i sprawdź, czy importy stały się prostsze.</div>"
+    },
+    {
+      "slug": "dane-i-formularze-react",
+      "title": "Dane i formularze w projekcie",
+      "summary": "Lista, szczegóły i formularz bez duplikowania stanu.",
+      "minutes": "17",
+      "body_html": "<p>Najczęstszy problem projektu React to ten sam stan w trzech miejscach. Wybierz jedno źródło i przekazuj tylko to, czego potrzebuje widok.</p>\n<h2>Stan listy</h2>\n<pre><code>const [tasks, setTasks] = useState([]);</code></pre>\n<h2>Formularz jako osobny komponent</h2>\n<pre><code>&lt;TaskForm onAdd={(title) =&gt; setTasks((items) =&gt; [...items, makeTask(title)])} /&gt;</code></pre>\n<p>Formularz nie musi znać całej listy. Dostaje akcję i zwraca nowy element.</p>\n<div class=\"lesson-callout\"><strong>Pytanie:</strong> ile komponentów musi się zmienić, gdy zmienisz kształt jednego zadania?</div>"
     }
   ],
   "questions": [

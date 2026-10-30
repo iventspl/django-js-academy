@@ -28,8 +28,11 @@ from .models import (
     JsLessonNote,
     JsLessonProgress,
     JsModule,
+    JsProjectStepProgress,
     JsTerm,
+    percent,
 )
+from .projects import PROJECTS, get_project, get_step
 from .runner import build_challenge_runner
 from .services import (
     achievements,
@@ -540,6 +543,7 @@ def glossary(request: HttpRequest) -> HttpResponse:
         "js_academy/glossary.html",
         {
             "terms": items,
+            "term_total": JsTerm.objects.count(),
             "query": query,
             "category": category,
             "categories": JsTerm.objects.order_by("category")
@@ -674,6 +678,16 @@ def search(request: HttpRequest) -> HttpResponse:
             | Q(subtitle__icontains=query)
             | Q(description__icontains=query)
         )[:8]
+        project_matches = [
+            project
+            for project in PROJECTS
+            if query.lower()
+            in " ".join(
+                [project["title"], project["subtitle"], project["summary"]]
+                + project["features"]
+                + [step["title"] for step in project["steps"]]
+            ).lower()
+        ][:4]
         lessons = JsLesson.objects.select_related("module").filter(
             Q(title__icontains=query)
             | Q(summary__icontains=query)
@@ -696,6 +710,7 @@ def search(request: HttpRequest) -> HttpResponse:
         )[:8]
         context["groups"] = [
             {"label": "Moduły", "kind": "module", "items": modules},
+            {"label": "Projekty", "kind": "project", "items": project_matches},
             {"label": "Lekcje", "kind": "lesson", "items": lessons},
             {"label": "Komponenty", "kind": "component", "items": components},
             {"label": "Wyzwania", "kind": "challenge", "items": challenges},
@@ -812,3 +827,83 @@ def progress_reset(request: HttpRequest) -> HttpResponse:
     reset_progress(_learner())
     messages.success(request, "Postępy JS Akademii zostały wyczyszczone.")
     return redirect("js_academy:progress")
+
+
+def _project_summary(learner: Learner, project: dict) -> dict:
+    completed = set(
+        JsProjectStepProgress.objects.filter(
+            learner=learner, project_slug=project["slug"]
+        ).values_list("step_slug", flat=True)
+    )
+    steps = []
+    for index, step in enumerate(project["steps"], start=1):
+        steps.append(
+            {
+                **step,
+                "number": index,
+                "completed": step["slug"] in completed,
+                "anchor": step["slug"],
+            }
+        )
+    next_step = next((step for step in steps if not step["completed"]), None)
+    return {
+        "project": project,
+        "steps": steps,
+        "completed_count": len(completed),
+        "step_count": len(steps),
+        "percent": percent(len(completed), len(steps)),
+        "next_step": next_step,
+    }
+
+
+@require_GET
+def projects(request: HttpRequest) -> HttpResponse:
+    learner = _learner()
+    rows = [_project_summary(learner, project) for project in PROJECTS]
+    return render(
+        request,
+        "js_academy/projects_index.html",
+        {
+            "rows": rows,
+            "active_nav": "js_projects",
+            "page_title": "Projekty",
+        },
+    )
+
+
+@require_GET
+def project_detail(request: HttpRequest, slug: str) -> HttpResponse:
+    project = get_project(slug)
+    if not project:
+        raise Http404("Nie znaleziono projektu.")
+    learner = _learner()
+    summary = _project_summary(learner, project)
+    return render(
+        request,
+        "js_academy/project.html",
+        {
+            **summary,
+            "active_nav": "js_projects",
+            "page_title": project["title"],
+        },
+    )
+
+
+@require_POST
+def project_step_complete(request: HttpRequest, slug: str, step_slug: str) -> HttpResponse:
+    project = get_project(slug)
+    step = get_step(project, step_slug) if project else None
+    if not project or not step:
+        raise Http404("Nie znaleziono kroku projektu.")
+    learner = _learner()
+    row, created = JsProjectStepProgress.objects.get_or_create(
+        learner=learner,
+        project_slug=project["slug"],
+        step_slug=step["slug"],
+    )
+    if created:
+        messages.success(request, f"Krok ukończony: {step['title']}.")
+    else:
+        row.delete()
+        messages.info(request, f"Cofnięto ukończenie: {step['title']}.")
+    return redirect(f"{reverse('js_academy:project', args=[project['slug']])}#{step['slug']}")

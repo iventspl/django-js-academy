@@ -44,6 +44,20 @@
       "summary": "Klucze, renderowanie warunkowe, useEffect i pobieranie danych z API.",
       "minutes": 18,
       "body_html": "<p>Listy renderujesz przez <code>map</code>, ale każdy element potrzebuje stabilnego <code>key</code>. Klucz pomaga Reactowi dopasować elementy między renderami.</p>\n<pre><code>function TodoList({ items }: { items: Todo[] }) {\n  return (\n    &lt;ul&gt;\n      {items.map((item) =&gt; (\n        &lt;li key={item.id}&gt;{item.title}&lt;/li&gt;\n      ))}\n    &lt;/ul&gt;\n  );\n}</code></pre>\n<p>Nie używaj indeksu tablicy jako klucza, jeśli lista może się zmieniać kolejnością. Stabilne id jest bezpieczniejsze.</p>\n<h2>useEffect</h2>\n<pre><code>useEffect(() =&gt; {\n  const controller = new AbortController();\n\n  async function load() {\n    try {\n      const response = await fetch(`/api/todos?q=${query}`, {\n        signal: controller.signal,\n      });\n      if (!response.ok) throw new Error(\"Błąd HTTP\");\n      setItems(await response.json());\n    } catch (error) {\n      if (error.name !== \"AbortError\") setError(\"Nie udało się pobrać danych\");\n    }\n  }\n\n  load();\n  return () =&gt; controller.abort();\n}, [query]);</code></pre>\n<p>Efekt uruchamia się po renderze. Tablica zależności mówi, kiedy ma się powtórzyć. Funkcja czyszcząca anuluje poprzednie żądanie, gdy zapytanie się zmieni.</p>\n<div class=\"lesson-callout\"><strong>Pytanie kontrolne:</strong> czy ten efekt naprawdę jest potrzebny? Jeśli wartość można policzyć z props/stanu podczas renderu, nie potrzebujesz efektu ani dodatkowego stanu.</div>"
+    },
+    {
+      "slug": "stan-i-lista-w-react",
+      "title": "Stan i lista w React",
+      "summary": "Dodawanie, usuwanie i aktualizacja listy bez mutowania stanu.",
+      "minutes": "16",
+      "body_html": "<p>Lista w React psuje się najczęściej wtedy, gdy zmieniasz tablicę w miejscu. React nie widzi wtedy nowej wartości.</p>\n<h2>Nowa tablica, nie push</h2>\n<pre><code>setTasks((tasks) =&gt; [\n  ...tasks,\n  { id: crypto.randomUUID(), title, done: false },\n]);</code></pre>\n<h2>Stabilny key</h2>\n<p>Jako <code>key</code> używaj id, nie indeksu. Po usunięciu pierwsze elementy zmieniają indeksy i React może pomylić wiersze.</p>\n<pre><code>{tasks.map((task) =&gt; (\n  &lt;TaskRow key={task.id} task={task} /&gt;\n))}</code></pre>\n<div class=\"lesson-callout\"><strong>Test:</strong> dodaj trzy zadania, usuń środkowe i sprawdź, czy focus oraz checkbox zostają przy właściwym wierszu.</div>"
+    },
+    {
+      "slug": "formularze-w-react",
+      "title": "Formularze w React",
+      "summary": "Kontrolowane pola, walidacja i czytelne komunikaty błędów.",
+      "minutes": "15",
+      "body_html": "<p>Pole kontrolowane ma jedną wartość prawdy: stan Reacta. Dzięki temu możesz je walidować i czyścić bez walki z DOM.</p>\n<h2>Jedno źródło wartości</h2>\n<pre><code>const [email, setEmail] = useState(\"\");\n&lt;input value={email} onChange={(e) =&gt; setEmail(e.target.value)} /&gt;</code></pre>\n<h2>Błąd przy polu</h2>\n<pre><code>{errors.email &amp;&amp; &lt;p role=\"alert\"&gt;{errors.email}&lt;/p&gt;}</code></pre>\n<p>Komunikat powinien być powiązany z polem przez <code>aria-describedby</code>. Sam czerwony border nie wystarczy.</p>\n<div class=\"lesson-callout\"><strong>Nawyk:</strong> waliduj przy submit i przy opuszczeniu pola, ale nie krzycz o błędzie, zanim użytkownik zacznie pisać.</div>"
     }
   ],
   "questions": [
