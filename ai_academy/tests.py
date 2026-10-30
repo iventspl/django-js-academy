@@ -23,7 +23,13 @@ from .models import (
     AiQuestion,
     AiTerm,
 )
-from .services import overall_stats, project_list
+from .services import (
+    create_attempt_from_questions,
+    overall_stats,
+    project_list,
+    reset_progress,
+    weak_spot_count,
+)
 
 
 class AiSeededTestCase(TestCase):
@@ -445,3 +451,40 @@ class AiExportTests(AiSeededTestCase):
         self.assertIn("# AI Academy progress report", body)
         self.assertIn("Readiness:", body)
         self.assertIn("## Modules", body)
+
+
+class AiWeakSpotResetTests(AiSeededTestCase):
+    def test_weak_spot_attempt_and_reset(self):
+        learner = Learner.local()
+        module = AiModule.objects.first()
+        questions = list(module.questions.all()[:2])
+        attempt = create_attempt_from_questions(
+            learner, [question.pk for question in questions], module=module
+        )
+        first, second = attempt.attempt_questions.select_related("question").all()
+        first.selected = first.question.choices.first()
+        first.is_correct = False
+        first.save(update_fields=["selected", "is_correct"])
+        second.selected = second.question.choices.first()
+        second.is_correct = True
+        second.save(update_fields=["selected", "is_correct"])
+        self.assertEqual(weak_spot_count(learner), 1)
+        response = self.client.post(reverse("ai_academy:weak_spots"))
+        self.assertEqual(response.status_code, 302)
+        retry = AiAttempt.objects.latest("id")
+        self.assertEqual(retry.length, 1)
+
+        AiLessonProgress.objects.create(learner=learner, lesson=module.lessons.first())
+        AiFlashcardReview.objects.create(
+            learner=learner, flashcard=AiFlashcard.objects.first()
+        )
+        AiProjectCompletion.objects.create(
+            learner=learner, project=AiProject.objects.first()
+        )
+        reset_progress(learner)
+        self.assertEqual(AiAttempt.objects.filter(learner=learner).count(), 0)
+        self.assertEqual(AiLessonProgress.objects.filter(learner=learner).count(), 0)
+        self.assertEqual(AiFlashcardReview.objects.filter(learner=learner).count(), 0)
+        self.assertEqual(AiProjectCompletion.objects.filter(learner=learner).count(), 0)
+        response = self.client.post(reverse("ai_academy:progress_reset"))
+        self.assertEqual(response.status_code, 302)

@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .field_guide import load_releases
@@ -23,6 +24,7 @@ from .models import (
     Question,
     ReleaseNote,
     ReleaseSeries,
+    StudyNote,
     Topic,
 )
 from .services import (
@@ -632,3 +634,74 @@ def progress_reset(request: HttpRequest) -> HttpResponse:
     reset_progress(learner)
     messages.success(request, "Progress cleared. A clean notebook awaits.")
     return redirect("dojo:progress")
+
+
+@require_http_methods(["GET", "POST"])
+def notes(request: HttpRequest) -> HttpResponse:
+    learner = Learner.local()
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        body = request.POST.get("body", "").strip()
+        topic_id = request.POST.get("topic") or None
+        bookmarked = request.POST.get("bookmarked") == "on"
+        if not title:
+            messages.error(request, "Give the note a title.")
+        else:
+            topic = Topic.objects.filter(pk=topic_id).first() if topic_id else None
+            StudyNote.objects.update_or_create(
+                learner=learner,
+                title=title,
+                defaults={"body": body, "topic": topic, "is_bookmarked": bookmarked},
+            )
+            messages.success(request, "Note saved locally.")
+        return redirect("dojo:notes")
+    bookmarked_only = request.GET.get("bookmarked") == "1"
+    rows = StudyNote.objects.filter(learner=learner).select_related("topic")
+    if bookmarked_only:
+        rows = rows.filter(is_bookmarked=True)
+    return render(
+        request,
+        "dojo/notes.html",
+        {
+            "notes": rows,
+            "topics": Topic.objects.all(),
+            "bookmarked_only": bookmarked_only,
+            "active_nav": "notes",
+            "page_title": "Notes",
+        },
+    )
+
+
+@require_POST
+def delete_note(request: HttpRequest, note_id: int) -> HttpResponse:
+    note = get_object_or_404(StudyNote, pk=note_id, learner=Learner.local())
+    note.delete()
+    messages.info(request, "Note deleted.")
+    return redirect("dojo:notes")
+
+
+@require_GET
+def progress_export(request: HttpRequest) -> HttpResponse:
+    learner = Learner.local()
+    stats = dashboard_stats(learner)
+    lines = [
+        "# Django Quest progress",
+        "",
+        f"Generated: {timezone.localdate().isoformat()}",
+        f"XP: {stats['xp']} · Level {stats['level']['number']} ({stats['level']['title']})",
+        f"Streak: {stats['streak']} days",
+        f"Quizzes completed: {stats['completed_attempts']} · accuracy {stats['accuracy']}%",
+        f"Cards reviewed: {stats['reviewed_cards']}/{stats['total_cards']}",
+        "",
+        "## Topics",
+    ]
+    for row in stats["topics"]:
+        lines.append(
+            f"- {row['topic'].name}: {row['seen']}/{row['question_total']} seen, {row['accuracy']}% accuracy"
+        )
+    lines.extend(["", "Generated locally by Django Quest."])
+    response = HttpResponse(
+        "\n".join(lines) + "\n", content_type="text/markdown; charset=utf-8"
+    )
+    response["Content-Disposition"] = 'attachment; filename="django-quest-progress.md"'
+    return response

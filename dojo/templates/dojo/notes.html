@@ -1,0 +1,60 @@
+{% extends "dojo/base.html" %}
+{% block title %}Notes · Django Quest{% endblock %}
+{% block body_class %}page-notes{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <header class="page-header">
+    <p class="eyebrow eyebrow-dark">Private notebook</p>
+    <h1>Notes for the<br><em>long game.</em></h1>
+    <p class="page-lead">Write one idea in your own words, attach it to a topic and bookmark it for later. Notes stay in this machine's SQLite database.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:progress' %}">Back to progress <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost" href="{% url 'dojo:notes' %}?bookmarked=1">{% if bookmarked_only %}All notes{% else %}Bookmarks only{% endif %} <span aria-hidden="true">✦</span></a>
+    </div>
+  </header>
+
+  <section class="notes-layout">
+    <form class="notes-form" method="post" action="{% url 'dojo:notes' %}">
+      {% csrf_token %}
+      <p class="eyebrow eyebrow-dark">Add a note</p>
+      <label for="note-title">Title</label>
+      <input id="note-title" name="title" required maxlength="200" placeholder="e.g. Select related vs prefetch">
+      <label for="note-topic">Topic</label>
+      <select id="note-topic" name="topic">
+        <option value="">General</option>
+        {% for topic in topics %}<option value="{{ topic.pk }}">{{ topic.title }}</option>{% endfor %}
+      </select>
+      <label for="note-body">Note</label>
+      <textarea id="note-body" name="body" rows="6" placeholder="What will you remember? How would you explain it?"></textarea>
+      <label class="note-check"><input type="checkbox" name="bookmarked"> Bookmark this note</label>
+      <button class="btn btn-primary" type="submit">Save note</button>
+    </form>
+
+    <div class="notes-list">
+      {% for note in notes %}
+        <article class="note-card">
+          <div class="note-card-top">
+            {% if note.topic %}<span class="tag">{{ note.topic.title }}</span>{% else %}<span class="tag">General</span>{% endif %}
+            {% if note.is_bookmarked %}<span class="tag tag-mint">Bookmark</span>{% endif %}
+          </div>
+          <h2>{{ note.title }}</h2>
+          {% if note.body %}<p>{{ note.body|linebreaksbr }}</p>{% else %}<p class="note-empty">Bookmarked without a written note.</p>{% endif %}
+          <div class="note-card-foot">
+            <span>{{ note.updated_at|date:"j M Y, H:i" }}</span>
+            <form method="post" action="{% url 'dojo:delete_note' note.pk %}" data-confirm="Delete this note?">
+              {% csrf_token %}
+              <button class="text-button" type="submit">Delete</button>
+            </form>
+          </div>
+        </article>
+      {% empty %}
+        <div class="empty-state">
+          <h2>No notes yet.</h2>
+          <p>Use the form to save your first idea. A note is more useful than a highlight.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

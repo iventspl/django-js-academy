@@ -22,6 +22,7 @@ from .models import (
     AiModule,
     AiProject,
     AiProjectCompletion,
+    AiQuestion,
     percent,
 )
 
@@ -186,6 +187,34 @@ def create_retry_attempt(learner: Learner, attempt: AiAttempt) -> AiAttempt:
     return create_attempt_from_questions(
         learner, missed_ids, module=attempt.module
     )
+
+
+def _weak_spot_ids(learner: Learner) -> list[int]:
+    rows = AiAttemptQuestion.objects.filter(
+        attempt__learner=learner, selected__isnull=False
+    )
+    missed = set(rows.filter(is_correct=False).values_list("question_id", flat=True))
+    correct = set(rows.filter(is_correct=True).values_list("question_id", flat=True))
+    return sorted(missed - correct)
+
+
+def weak_spot_count(learner: Learner) -> int:
+    return len(_weak_spot_ids(learner))
+
+
+def create_weak_spot_attempt(learner: Learner, limit: int = 10) -> AiAttempt:
+    ids = _weak_spot_ids(learner)[:limit]
+    if not ids:
+        raise ValueError("No open weak spots yet.")
+    module = AiQuestion.objects.select_related("module").get(pk=ids[0]).module
+    return create_attempt_from_questions(learner, ids, module=module)
+
+
+def reset_progress(learner: Learner) -> None:
+    AiAttempt.objects.filter(learner=learner).delete()
+    AiFlashcardReview.objects.filter(learner=learner).delete()
+    AiLessonProgress.objects.filter(learner=learner).delete()
+    AiProjectCompletion.objects.filter(learner=learner).delete()
 
 
 def gamification(learner: Learner) -> dict:

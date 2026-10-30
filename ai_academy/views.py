@@ -31,6 +31,7 @@ from .models import (
 )
 from .services import (
     award_flashcard,
+    create_weak_spot_attempt,
     due_cards,
     flashcard_decks,
     flashcard_progress,
@@ -40,6 +41,8 @@ from .services import (
     overall_stats,
     project_list,
     project_progress,
+    reset_progress,
+    weak_spot_count,
 )
 
 PROJECT_TEST_DIR = Path(__file__).resolve().parent / "project_tests"
@@ -115,6 +118,7 @@ def path(request: HttpRequest) -> HttpResponse:
             "stats": stats,
             "stages": _stage_groups(rows),
             "projects": project_list(learner),
+            "weak_spot_count": weak_spot_count(learner),
             "plan": TWELVE_MONTH_PLAN,
             "active_nav": "ai_path",
             "page_title": "The 12-month path",
@@ -137,6 +141,7 @@ def module_detail(request: HttpRequest, module_slug: str) -> HttpResponse:
             "progress": module_progress(learner, module),
             "cards": flashcard_progress(learner, module),
             "projects": project_list(learner),
+            "weak_spot_count": weak_spot_count(learner),
             "attempts": AiAttempt.objects.filter(
                 learner=learner, module=module, completed_at__isnull=False
             ).order_by("-started_at")[:5],
@@ -566,6 +571,7 @@ def progress(request: HttpRequest) -> HttpResponse:
         {
             "stats": stats,
             "projects": project_list(learner),
+            "weak_spot_count": weak_spot_count(learner),
             "recent_attempts": AiAttempt.objects.filter(
                 learner=learner, completed_at__isnull=False
             ).select_related("module")[:10],
@@ -761,3 +767,21 @@ def career(request: HttpRequest) -> HttpResponse:
             "page_title": "AI careers",
         },
     )
+
+
+@require_POST
+def weak_spots_practice(request: HttpRequest) -> HttpResponse:
+    learner = _learner()
+    try:
+        attempt = create_weak_spot_attempt(learner)
+    except ValueError as exc:
+        messages.info(request, str(exc))
+        return redirect("ai_academy:progress")
+    return redirect("ai_academy:quiz", attempt_id=attempt.pk)
+
+
+@require_POST
+def progress_reset(request: HttpRequest) -> HttpResponse:
+    reset_progress(_learner())
+    messages.success(request, "AI Academy progress cleared.")
+    return redirect("ai_academy:progress")

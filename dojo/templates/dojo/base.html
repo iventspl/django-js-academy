@@ -3,14 +3,18 @@
 <html lang="{% block html_lang %}en{% endblock %}">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="format-detection" content="telephone=no">
   <meta name="theme-color" content="{% if request.resolver_match.namespace == 'js_academy' %}#10131a{% elif request.resolver_match.namespace == 'ai_academy' %}#0b1020{% else %}#0d1b24{% endif %}">
   <meta name="description" content="{% block meta_description %}A local-first Django quiz and flashcard dojo for learning Python and Django from beginner to advanced.{% endblock %}">
   <title>{% block title %}Django Quest{% endblock %} · {% block product_name %}Django Quest{% endblock %}</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22{% if request.resolver_match.namespace == 'js_academy' %}%23f7df1e{% elif request.resolver_match.namespace == 'ai_academy' %}%238B5CF6{% else %}%23f6c451{% endif %}%22/><text x=%2232%22 y=%2244%22 text-anchor=%22middle%22 font-size=%2234%22 font-family=%22monospace%22 font-weight=%22bold%22 fill=%22%230d1b24%22>{% if request.resolver_match.namespace == 'js_academy' %}JS{% elif request.resolver_match.namespace == 'ai_academy' %}AI{% else %}DQ{% endif %}</text></svg>">
-  <link rel="stylesheet" href="{% static 'dojo/app.css' %}?v=20261029l">
+  <link rel="stylesheet" href="{% static 'dojo/app.css' %}?v=20261030o">
   {% block extra_css %}{% endblock %}
-  <script defer src="{% static 'dojo/app.js' %}?v=20261029l"></script>
+  <link rel="stylesheet" href="{% static 'dojo/mobile.css' %}?v=20261030k">
+  <script defer src="{% static 'dojo/app.js' %}?v=20261030p"></script>
 </head>
 <body class="{% block body_class %}{% endblock %} {% if request.resolver_match.namespace == 'js_academy' %}platform-js{% elif request.resolver_match.namespace == 'ai_academy' %}platform-ai{% endif %}">
   <a class="skip-link" href="#main-content">{% if request.resolver_match.namespace == 'js_academy' %}Przejdź do treści{% else %}Skip to content{% endif %}</a>
@@ -23,6 +27,9 @@
           <span>{% if request.resolver_match.namespace == 'js_academy' %}JS Akademia · PL{% elif request.resolver_match.namespace == 'ai_academy' %}applied AI · EN{% else %}learn by doing{% endif %}</span>
         </span>
       </a>
+
+      <input type="checkbox" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-label="Otwórz menu nawigacji">
+      <label for="mobile-nav-toggle" class="mobile-nav-label"><span aria-hidden="true">☰</span> Menu</label>
 
       <div class="track-switch" role="group" aria-label="Choose a learning platform">
         <a class="track-django {% if request.resolver_match.namespace != 'js_academy' and request.resolver_match.namespace != 'ai_academy' %}is-active{% endif %}" href="{% url 'dojo:home' %}">
@@ -74,6 +81,10 @@
           <a class="nav-link {% if active_nav == 'js_progress' %}is-active{% endif %}" href="{% url 'js_academy:progress' %}">
             <span class="nav-glyph" aria-hidden="true">↗</span>
             <span>Postępy</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'js_notes' %}is-active{% endif %}" href="{% url 'js_academy:notes' %}">
+            <span class="nav-glyph" aria-hidden="true">✎</span>
+            <span>Notatki</span>
           </a>
         </nav>
       {% elif request.resolver_match.namespace == 'ai_academy' %}
@@ -149,6 +160,10 @@
           <a class="nav-link {% if active_nav == 'progress' %}is-active{% endif %}" href="{% url 'dojo:progress' %}">
             <span class="nav-glyph" aria-hidden="true">↗</span>
             <span>Progress</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'notes' %}is-active{% endif %}" href="{% url 'dojo:notes' %}">
+            <span class="nav-glyph" aria-hidden="true">✎</span>
+            <span>Notes</span>
           </a>
           <a class="nav-link {% if active_nav == 'search' %}is-active{% endif %}" href="{% url 'dojo:search' %}">
             <span class="nav-glyph" aria-hidden="true">⌕</span>

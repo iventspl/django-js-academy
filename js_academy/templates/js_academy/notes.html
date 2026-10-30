@@ -1,0 +1,49 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Notatki{% endblock %}
+
+{% block content %}
+<div class="js-wrap">
+  <header class="js-page-header">
+    <p class="eyebrow eyebrow-js">Prywatny notatnik · lokalnie</p>
+    <h1>Twoje notatki.<br><em>Po Twojemu.</em></h1>
+    <p class="js-lead">Notatki i zakładki zapisują się w lokalnej bazie SQLite. Możesz opisać lekcję własnymi słowami albo oznaczyć ją do powtórki.</p>
+    <div class="hero-actions">
+      <a class="btn btn-js" href="{% url 'js_academy:path' %}">Wróć do ścieżki <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'js_academy:notes' %}?bookmarked=1">{% if bookmarked_only %}Wszystkie notatki{% else %}Tylko zakładki{% endif %} <span aria-hidden="true">✦</span></a>
+    </div>
+  </header>
+
+  <div class="js-progress-stat-grid">
+    <div><strong>{{ stats.note_count }}</strong><span>notatek</span></div>
+    <div><strong>{{ stats.bookmark_count }}</strong><span>zakładek</span></div>
+    <div><strong>{{ stats.completed_lessons }}</strong><span>ukończonych lekcji</span></div>
+    <div><strong>{{ stats.level_name }}</strong><span>poziom</span></div>
+  </div>
+
+  {% if notes %}
+    <div class="js-notes-grid">
+      {% for note in notes %}
+        <article class="js-note-card">
+          <div class="js-note-top">
+            <span class="tag tag-js-dark">{{ note.lesson.module.title }}</span>
+            {% if note.is_bookmarked %}<span class="tag tag-js">zakładka</span>{% endif %}
+          </div>
+          <h2><a href="{{ note.lesson.get_absolute_url }}">{{ note.lesson.title }}</a></h2>
+          {% if note.body %}<p>{{ note.body|linebreaksbr }}</p>{% else %}<p class="js-note-empty">Zakładka bez notatki.</p>{% endif %}
+          <div class="js-note-foot">
+            <span>{{ note.updated_at|date:"j.m.Y, H:i" }}</span>
+            <a href="{{ note.lesson.get_absolute_url }}">Otwórz lekcję →</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="js-empty">
+      <span class="js-empty-mark">✎</span>
+      <h1>{% if bookmarked_only %}Brak zakładek.{% else %}Brak notatek.{% endif %}</h1>
+      <p class="js-lead">Otwórz lekcję, zapisz jedną myśl własnymi słowami i opcjonalnie dodaj zakładkę.</p>
+      <a class="btn btn-js" href="{% url 'js_academy:path' %}">Otwórz ścieżkę</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

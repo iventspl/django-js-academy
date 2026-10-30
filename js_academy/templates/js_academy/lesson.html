@@ -66,6 +66,22 @@
         </section>
       {% endif %}
 
+      <section class="js-note-box">
+        <div class="js-note-head">
+          <div><p class="eyebrow eyebrow-js-dark">Twój notatnik</p><h2>Zapisz jedną myśl.</h2></div>
+          <a class="js-text-link" href="{% url 'js_academy:notes' %}">Wszystkie notatki →</a>
+        </div>
+        <form method="post" action="{% url 'js_academy:save_note' module.slug lesson.slug %}">
+          {% csrf_token %}
+          <label class="sr-only" for="lesson-note">Notatka do lekcji</label>
+          <textarea id="lesson-note" name="note" rows="4" placeholder="Co zapamiętujesz? Jak wytłumaczysz to komuś innemu?">{{ note.body|default:"" }}</textarea>
+          <div class="js-note-actions">
+            <label class="js-note-check"><input type="checkbox" name="bookmarked" {% if note.is_bookmarked %}checked{% endif %}> Dodaj do zakładek</label>
+            <button class="btn btn-js btn-small" type="submit">Zapisz notatkę</button>
+          </div>
+        </form>
+      </section>
+
       <div class="js-lesson-complete">
         {% if completed %}
           <div class="js-complete-state"><span aria-hidden="true">✓</span><div><strong>Lekcja ukończona</strong><p>Możesz wrócić do niej w każdej chwili.</p></div></div>

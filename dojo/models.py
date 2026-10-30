@@ -570,6 +570,30 @@ class ArchitectureCase(models.Model):
         return reverse("dojo:architecture_case", args=[self.key])
 
 
+class StudyNote(models.Model):
+    learner = models.ForeignKey(
+        Learner, on_delete=models.CASCADE, related_name="study_notes"
+    )
+    topic = models.ForeignKey(
+        Topic, on_delete=models.SET_NULL, null=True, blank=True, related_name="notes"
+    )
+    title = models.CharField(max_length=200)
+    body = models.TextField(blank=True)
+    is_bookmarked = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-is_bookmarked", "-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "title"], name="unique_dojo_learner_note_title"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.title
+
+
 class ContentSnapshot(models.Model):
     """Fingerprint of the JSON content used to seed this database."""
 

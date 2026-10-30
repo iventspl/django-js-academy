@@ -19,6 +19,12 @@
           {% csrf_token %}
           <button class="btn btn-ghost-dark" type="submit">Spróbuj ponownie <span aria-hidden="true">↻</span></button>
         </form>
+        {% if can_retry %}
+          <form method="post" action="{% url 'js_academy:retry_missed' attempt.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-ghost-dark" type="submit">Tylko błędne ({{ wrong_count }}) <span aria-hidden="true">↺</span></button>
+          </form>
+        {% endif %}
       </div>
     </div>
   </header>

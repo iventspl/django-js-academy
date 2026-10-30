@@ -18,6 +18,7 @@ from .models import (
     ReleaseNote,
     ReleaseSeries,
     StudyEvent,
+    StudyNote,
     Topic,
     level_from_xp,
     streak_for,
@@ -83,6 +84,12 @@ class HomeAndSetupTests(SeededTestCase):
         self.assertContains(response, "From first")
         self.assertContains(response, "The study map")
         self.assertContains(response, "JS Akademia")
+
+    def test_mobile_navigation_and_styles_are_loaded(self):
+        response = self.client.get(reverse("dojo:home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "mobile-nav-toggle")
+        self.assertContains(response, "dojo/mobile.css")
 
     def test_quiz_setup_renders(self):
         response = self.client.get(reverse("dojo:quiz_setup"))
@@ -513,6 +520,30 @@ class FieldGuideTests(SeededTestCase):
         self.assertContains(response, "Real-world app blueprints")
         self.assertContains(response, reverse("dojo:cheatsheets"))
 
+
+
+class NotesAndExportTests(SeededTestCase):
+    def test_create_note_and_bookmark(self):
+        topic = Topic.objects.first()
+        response = self.client.post(
+            reverse("dojo:notes"),
+            {"title": "Pamiętaj o select_related", "body": "Mniej zapytań.", "topic": topic.pk, "bookmarked": "on"},
+        )
+        self.assertEqual(response.status_code, 302)
+        note = StudyNote.objects.get(title="Pamiętaj o select_related")
+        self.assertTrue(note.is_bookmarked)
+        self.assertEqual(note.topic, topic)
+        response = self.client.get(reverse("dojo:notes"))
+        self.assertContains(response, "Pamiętaj o select_related")
+        response = self.client.post(reverse("dojo:delete_note", args=[note.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(StudyNote.objects.filter(pk=note.pk).exists())
+
+    def test_progress_export(self):
+        response = self.client.get(reverse("dojo:progress_export"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertContains(response, "Django Quest progress")
 
 
 class SearchTests(SeededTestCase):

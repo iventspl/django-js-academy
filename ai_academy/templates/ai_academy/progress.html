@@ -12,6 +12,9 @@
       <div class="ai-page-actions">
         <a class="btn btn-ai" href="{% url 'ai_academy:progress_export' %}">Download progress report <span aria-hidden="true">↓</span></a>
         <a class="btn btn-ai-ghost" href="{% url 'ai_academy:notes' %}">My notes ({{ stats.note_count }}) <span aria-hidden="true">✎</span></a>
+        {% if weak_spot_count %}
+          <form method="post" action="{% url 'ai_academy:weak_spots' %}">{% csrf_token %}<button class="btn btn-ai-ghost" type="submit">Practice {{ weak_spot_count }} weak spots</button></form>
+        {% endif %}
       </div>
     </div>
     <aside class="ai-readiness-card ai-readiness-card-large">
@@ -90,6 +93,14 @@
   <section class="ai-cta-band">
     <div><p class="eyebrow eyebrow-ai-light">Next milestone</p><h2>Ship one project this month.</h2><p>A finished project with a README and an evaluation is worth more than three half-started modules.</p></div>
     <a class="btn btn-ai" href="{% url 'ai_academy:projects' %}">Choose a project <span aria-hidden="true">→</span></a>
+  </section>
+
+  <section class="ai-cta-band" aria-labelledby="reset-title">
+    <div><p class="eyebrow eyebrow-ai-light">Fresh notebook</p><h2 id="reset-title">Start over, deliberately.</h2><p>Clear quiz history, card scheduling, lesson progress and shipped projects. Notes and content stay.</p></div>
+    <form method="post" action="{% url 'ai_academy:progress_reset' %}" data-confirm="Clear every quiz, card schedule, lesson and project completion?">
+      {% csrf_token %}
+      <button class="btn btn-ai-ghost" type="submit">Reset progress</button>
+    </form>
   </section>
 </div>
 {% endblock %}

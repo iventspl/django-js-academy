@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    StudyNote,
     AppBlueprint,
     ArchitectureCase,
     Attempt,
@@ -110,3 +111,10 @@ class ReleaseSeriesAdmin(admin.ModelAdmin):
     list_display = ("series", "latest_version", "status", "extended_ends")
     list_filter = ("status",)
 
+
+
+@admin.register(StudyNote)
+class StudyNoteAdmin(admin.ModelAdmin):
+    list_display = ("title", "learner", "topic", "is_bookmarked", "updated_at")
+    list_filter = ("is_bookmarked", "topic")
+    search_fields = ("title", "body")

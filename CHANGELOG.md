@@ -1,5 +1,64 @@
 # Changelog
 
+## 4.22 — 2026-10-30
+
+### Mobile-first responsive repair
+
+- Added a real mobile navigation menu instead of a squeezed horizontal nav row.
+- Kept the Django / JavaScript / AI platform switch visible on small screens.
+- Added a shared `mobile.css` loaded after all platform styles.
+- Improved touch targets: 44px buttons and navigation rows.
+- Prevented iOS input zoom with 16px form controls on small screens.
+- Collapsed cards, stats, notes, components, challenges and project grids for phones.
+- Added horizontal scrolling for tables and code blocks.
+- Resized lesson, demo and challenge iframes to the viewport.
+- Added `viewport-fit=cover` and safe-area padding for notches.
+- Added mobile web-app meta tags for Home Screen launch.
+- Added a test for the mobile navigation markup and stylesheet.
+- Fixed a hidden JS module overflow: the lesson list and nowrap lesson subtitles could force an 800px-wide page on a 390px phone.
+- Reworked AI summary bands: `ai-stat-band` stays in one compact five-column row, `ai-project-summary`/result bands stay in one four-column row, and `ai-next-band` stacks cleanly on phones.
+- Added a **Copy** button in the top-right corner of every code block across Django, JavaScript and AI. It uses the Clipboard API where available and a textarea fallback for plain HTTP on the LAN.
+- Fixed duplicate dev servers on port 8000, which could serve stale desktop CSS after a rebuild.
+
+### Verification
+
+- **135 tests pass**.
+- Mobile page over LAN checked at `/`, `/js/` and `/ai/`.
+- ZIP rebuilt and verified.
+
+## 4.21 — 2026-10-30
+
+### Cross-platform learner tools
+
+The same learner tools are now available in Django, JavaScript and AI:
+
+- **Notes and bookmarks**
+  - Django: topic-linked notebook at `/notes/`.
+  - JavaScript: per-lesson notes at `/js/notatki/`, with a save form on every lesson.
+  - AI: existing lesson notes.
+- **Progress export** — Markdown reports in all three platforms, available from the progress page.
+- **Retry missed** — JavaScript now has “Tylko błędne” on quiz results, joining Django and AI.
+- **Weak-spot practice** — JavaScript and AI now build a run from questions answered incorrectly and never correctly answered.
+- **Reset progress** — JavaScript and AI now offer a confirmed reset, joining Django.
+- **Navigation and tests** — notes links, tool bands, reset confirmation and parity tests across all three.
+
+### Verification
+
+- **134 tests pass**.
+- Django, JavaScript and AI tests cover notes, export, retry, weak spots and reset.
+- The LAN server was restarted with the new code.
+
+## 4.20 — 2026-10-30
+
+### Local Wi-Fi access
+
+- Added `python start.py --lan`: binds to `0.0.0.0` and detects the host's private IPv4 address.
+- Automatically configures `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` for the LAN address and hostname.
+- Prints both the local URL and the LAN URL, e.g. `http://192.168.1.23:8000/`.
+- Added a clear warning that the app has no login and should only be exposed on a trusted private network.
+- Added `allow_lan_windows.bat` to create a local-subnet-only inbound firewall rule (run as administrator), plus `start_lan_windows.bat`.
+- Documented Windows/macOS firewall requirements and the difference between local and LAN mode.
+
 ## 4.19 — 2026-10-30
 
 ### AI Academy learner tools

@@ -9,6 +9,7 @@ free local port. No global Python packages are needed.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import os
 import socket
 import subprocess
@@ -27,6 +28,36 @@ MIN_PYTHON = (3, 10)
 def fail(message: str) -> None:
     print(f"\n[error] {message}\n", file=sys.stderr)
     raise SystemExit(1)
+
+
+def lan_ipv4_addresses() -> list[str]:
+    """Return private IPv4 addresses usable by another device on the LAN."""
+    candidates: set[str] = set()
+
+    # This UDP connect does not send packets, but asks the OS which local
+    # interface would be used for outbound traffic.
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("8.8.8.8", 80))
+            candidates.add(sock.getsockname()[0])
+    except OSError:
+        pass
+
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            candidates.add(info[4][0])
+    except OSError:
+        pass
+
+    usable: list[str] = []
+    for candidate in candidates:
+        try:
+            address = ipaddress.ip_address(candidate)
+        except ValueError:
+            continue
+        if address.is_private and not address.is_loopback and not address.is_link_local:
+            usable.append(candidate)
+    return sorted(usable)
 
 
 def venv_python() -> Path:
@@ -164,14 +195,26 @@ def run_manage(python: Path, *args: str) -> None:
         fail(f"manage.py {' '.join(args)} failed.")
 
 
-def print_banner(url: str) -> None:
+def print_banner(url: str, lan_urls: list[str] | None = None) -> None:
+    width = 46
     print()
-    print("  +----------------------------------------------+")
-    print("  |  DJANGO QUEST + JS AKADEMIA                  |")
-    print("  +----------------------------------------------+")
-    print(f"  |  {url:<44}|")
-    print("  |  Press Ctrl+C to stop the server.            |")
-    print("  +----------------------------------------------+")
+    print("  +" + "-" * width + "+")
+
+    def line(text: str) -> None:
+        print("  |  " + f"{text:<{width - 2}}" + "|")
+
+    line("DJANGO QUEST + JS AKADEMIA")
+    print("  +" + "-" * width + "+")
+    line(f"Local:  {url}")
+    if lan_urls:
+        for index, lan_url in enumerate(lan_urls):
+            label = "LAN:    " if index == 0 else "        "
+            line(f"{label}{lan_url}")
+        line("Only use this on a trusted Wi-Fi network.")
+        if os.name == "nt":
+            line("Firewall: allow_lan_windows.bat (Admin)")
+    line("Press Ctrl+C to stop the server.")
+    print("  +" + "-" * width + "+")
     print()
 
 
@@ -181,6 +224,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Start the local Django Quest app.")
     parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8000, help="Preferred port (default: 8000)")
+    parser.add_argument(
+        "--lan",
+        action="store_true",
+        help="Allow other devices on the local Wi-Fi/LAN to connect (binds 0.0.0.0).",
+    )
     parser.add_argument("--no-browser", action="store_true", help="Do not open a browser window.")
     parser.add_argument(
         "--update",
@@ -213,10 +261,22 @@ def main() -> None:
         print("[done] Setup complete. Start with: python start.py")
         return
 
-    port = find_free_port(args.host, args.port)
-    display_host = "127.0.0.1" if args.host in {"0.0.0.0", "::"} else args.host
+    lan_addresses: list[str] = []
+    bind_host = args.host
+    if args.lan:
+        lan_addresses = lan_ipv4_addresses()
+        if not lan_addresses:
+            fail(
+                "Could not detect a private IPv4 address. Connect to Wi-Fi and "
+                "check your network adapter, then try again."
+            )
+        bind_host = "0.0.0.0"
+
+    port = find_free_port(bind_host, args.port)
+    display_host = "127.0.0.1" if bind_host in {"0.0.0.0", "::"} else bind_host
     url = f"http://{display_host}:{port}/"
-    print_banner(url)
+    lan_urls = [f"http://{address}:{port}/" for address in lan_addresses]
+    print_banner(url, lan_urls if args.lan else None)
     if not args.no_browser:
         threading.Timer(1.1, lambda: webbrowser.open(url)).start()
 
@@ -224,13 +284,35 @@ def main() -> None:
     env["PYTHONUNBUFFERED"] = "1"
     env["PYTHONUTF8"] = "1"
     env["PYTHONIOENCODING"] = "utf-8"
+    if args.lan:
+        hostname = socket.gethostname()
+        allowed_hosts = [
+            "127.0.0.1",
+            "localhost",
+            "[::1]",
+            "testserver",
+            hostname,
+            f"{hostname}.local",
+            *lan_addresses,
+        ]
+        env["DJANGO_ALLOWED_HOSTS"] = ",".join(dict.fromkeys(allowed_hosts))
+        origins = [f"http://{address}:{port}" for address in lan_addresses]
+        origins.extend(
+            [
+                f"http://{hostname}:{port}",
+                f"http://{hostname}.local:{port}",
+            ]
+        )
+        env["DJANGO_CSRF_TRUSTED_ORIGINS"] = ",".join(dict.fromkeys(origins))
+        print("[lan] Other devices can use the LAN URL above.")
+        print("[lan] The app has no login: anyone on this Wi-Fi can read and change progress.")
     try:
         subprocess.run(
             [
                 str(python),
                 str(ROOT / "manage.py"),
                 "runserver",
-                f"{args.host}:{port}",
+                f"{bind_host}:{port}",
                 "--noreload",
             ],
             cwd=str(ROOT),

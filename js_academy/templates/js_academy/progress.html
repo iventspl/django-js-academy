@@ -35,6 +35,21 @@
     </div>
   </section>
 
+  <section class="js-tools-band" aria-label="Narzędzia nauki">
+    <a href="{% url 'js_academy:progress_export' %}"><strong>Eksport postępów</strong><span>Markdown · pobierz ↗</span></a>
+    <a href="{% url 'js_academy:notes' %}"><strong>Notatki i zakładki</strong><span>{{ stats.note_count }} notatek · {{ stats.bookmark_count }} zakładek ✎</span></a>
+    <div>
+      <strong>Słabe punkty</strong>
+      <span>{{ weak_spot_count }} pytań bez poprawnej odpowiedzi</span>
+      {% if weak_spot_count %}
+        <form method="post" action="{% url 'js_academy:weak_spots' %}">
+          {% csrf_token %}
+          <button class="btn btn-ghost-dark btn-small" type="submit">Ćwicz słabe punkty ↺</button>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+
   <section class="js-achievements" aria-labelledby="achievements-title">
     <div class="section-head section-head-tight">
       <div><p class="eyebrow eyebrow-js">Kamienie milowe</p><h2 id="achievements-title">Osiągnięcia.</h2></div>
@@ -102,6 +117,18 @@
     {% else %}
       <div class="js-empty-inline"><p>Nie masz jeszcze ukończonego quizu. Zacznij od pierwszego modułu — wynik nie musi być idealny.</p><a class="btn btn-js btn-small" href="{% url 'js_academy:module' 'fundamenty-js' %}">Zacznij moduł 1 →</a></div>
     {% endif %}
+  </section>
+
+  <section class="js-danger-zone" aria-labelledby="reset-title">
+    <div><p class="eyebrow eyebrow-js-dark">Świeży notatnik</p><h2 id="reset-title">Zacznij od nowa świadomie.</h2><p>To czyści quizy, harmonogram fiszek, lekcje, wyzwania i XP. Treści pozostają na miejscu.</p></div>
+    <details>
+      <summary>Wyczyść moje postępy</summary>
+      <form method="post" action="{% url 'js_academy:progress_reset' %}" data-confirm="Wyczyścić wszystkie wyniki, fiszki, lekcje i XP?">
+        {% csrf_token %}
+        <p>Tej operacji nie można cofnąć.</p>
+        <button class="btn btn-ghost-dark" type="submit">Wyczyść postępy</button>
+      </form>
+    </details>
   </section>
 
   <div class="js-bottom-cta">

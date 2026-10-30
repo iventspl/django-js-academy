@@ -5263,3 +5263,253 @@
 .js-term-card pre {
   font-size: 0.8rem;
 }
+
+
+/* Notes */
+
+.js-note-box {
+  margin: 28px 0 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #f1e8d6;
+}
+
+.js-note-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 11px;
+}
+
+.js-note-head .eyebrow {
+  color: #766300;
+}
+
+.js-note-head h2 {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.js-note-box textarea {
+  width: 100%;
+  min-height: 105px;
+  padding: 10px;
+  resize: vertical;
+  border: 1px solid #d8ccb5;
+  border-radius: 6px;
+  background: #fffdf7;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.js-note-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 9px;
+}
+
+.js-note-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #5c6d66;
+  font-size: 0.62rem;
+}
+
+.js-notes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  margin-top: 24px;
+}
+
+.js-note-card {
+  padding: 17px;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.16);
+}
+
+.js-note-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.js-note-card h2 {
+  margin: 11px 0 6px;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.js-note-card > p {
+  margin: 0 0 11px;
+  color: #3e4f48;
+  font-size: 0.69rem;
+  line-height: 1.55;
+}
+
+.js-note-empty {
+  color: #8c7c60 !important;
+  font-style: italic;
+}
+
+.js-note-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+  color: #8c7c60;
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+}
+
+.js-note-foot a {
+  color: #766300;
+  font-weight: 800;
+}
+
+.js-empty-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 12px;
+  border-radius: 11px;
+  background: #f7df1e;
+  color: #10131a;
+  font-family: var(--font-mono);
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .js-notes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .js-note-head {
+    display: block;
+  }
+
+  .js-note-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+
+
+/* Learner tools parity */
+
+.js-tools-band {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.js-tools-band > a,
+.js-tools-band > div {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid var(--line-light);
+  border-radius: 8px;
+  background: rgba(246, 240, 226, 0.035);
+}
+
+.js-tools-band > a:hover {
+  border-color: rgba(247, 223, 30, 0.35);
+  background: rgba(247, 223, 30, 0.06);
+}
+
+.js-tools-band strong {
+  color: #e0e9e5;
+  font-size: 0.7rem;
+}
+
+.js-tools-band span {
+  margin-top: 3px;
+  color: #899d97;
+  font-size: 0.55rem;
+  line-height: 1.4;
+}
+
+.js-tools-band form {
+  margin-top: 8px;
+}
+
+.js-danger-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  margin-top: 32px;
+  padding: 18px;
+  border: 1px solid rgba(178, 67, 46, 0.25);
+  border-radius: 8px;
+  background: rgba(178, 67, 46, 0.06);
+}
+
+.js-danger-zone .eyebrow {
+  color: #d88470;
+}
+
+.js-danger-zone h2 {
+  margin: 2px 0 4px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.js-danger-zone p {
+  margin: 0;
+  color: #9daaa6;
+  font-size: 0.62rem;
+}
+
+.js-danger-zone details {
+  min-width: 260px;
+}
+
+.js-danger-zone summary {
+  color: #e0a091;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  cursor: pointer;
+}
+
+.js-danger-zone form {
+  margin-top: 9px;
+}
+
+.js-danger-zone form p {
+  margin-bottom: 7px;
+}
+
+@media (max-width: 760px) {
+  .js-tools-band {
+    grid-template-columns: 1fr;
+  }
+
+  .js-danger-zone {
+    display: block;
+  }
+
+  .js-danger-zone details {
+    margin-top: 12px;
+  }
+}
+

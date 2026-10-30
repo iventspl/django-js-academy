@@ -25,6 +25,7 @@ from .models import (
     JsFlashcardReview,
     JsInterviewQuestion,
     JsLesson,
+    JsLessonNote,
     JsLessonProgress,
     JsModule,
     JsTerm,
@@ -32,12 +33,16 @@ from .models import (
 from .runner import build_challenge_runner
 from .services import (
     achievements,
+    create_retry_attempt,
+    create_weak_spot_attempt,
     due_cards,
     flashcard_decks,
     flashcard_progress,
     module_progress,
     next_lesson,
     overall_stats,
+    reset_progress,
+    weak_spot_count,
 )
 
 
@@ -130,6 +135,7 @@ def lesson_detail(request: HttpRequest, module_slug: str, lesson_slug: str) -> H
     completed = JsLessonProgress.objects.filter(
         learner=learner, lesson=lesson
     ).exists()
+    note = JsLessonNote.objects.filter(learner=learner, lesson=lesson).first()
     completed_ids = set(
         JsLessonProgress.objects.filter(
             learner=learner, lesson__module=module
@@ -144,6 +150,7 @@ def lesson_detail(request: HttpRequest, module_slug: str, lesson_slug: str) -> H
             "lessons": lessons,
             "completed_ids": completed_ids,
             "completed": completed,
+            "note": note,
             "previous_lesson": lessons[index - 1] if index > 0 else None,
             "following_lesson": lessons[index + 1] if index + 1 < len(lessons) else None,
             "lesson_number": index + 1,
@@ -311,6 +318,7 @@ def quiz_results(request: HttpRequest, attempt_id: int) -> HttpResponse:
             "rows": rows,
             "verdict": verdict,
             "wrong_count": attempt.length - attempt.correct_count,
+            "can_retry": attempt.length > attempt.correct_count,
             "active_nav": "js_path",
             "page_title": f"Wynik · {attempt.module.title}",
         },
@@ -392,6 +400,7 @@ def progress(request: HttpRequest) -> HttpResponse:
             "modules": _modules_with_progress(learner),
             "stats": overall_stats(learner),
             "achievements": achievement_list,
+            "weak_spot_count": weak_spot_count(learner),
             "achievements_earned": sum(
                 1 for item in achievement_list if item["earned"]
             ),
@@ -696,3 +705,110 @@ def search(request: HttpRequest) -> HttpResponse:
         ]
         context["total"] = sum(len(group["items"]) for group in context["groups"])
     return render(request, "js_academy/search.html", context)
+
+
+@require_GET
+def notes(request: HttpRequest) -> HttpResponse:
+    learner = _learner()
+    bookmarked_only = request.GET.get("bookmarked") == "1"
+    rows = JsLessonNote.objects.filter(learner=learner).select_related(
+        "lesson", "lesson__module"
+    )
+    if bookmarked_only:
+        rows = rows.filter(is_bookmarked=True)
+    else:
+        rows = rows.exclude(body="", is_bookmarked=False)
+    return render(
+        request,
+        "js_academy/notes.html",
+        {
+            "notes": rows,
+            "bookmarked_only": bookmarked_only,
+            "stats": overall_stats(learner),
+            "active_nav": "js_notes",
+            "page_title": "Notatki",
+        },
+    )
+
+
+@require_POST
+def save_note(request: HttpRequest, module_slug: str, lesson_slug: str) -> HttpResponse:
+    learner = _learner()
+    module = get_object_or_404(JsModule, slug=module_slug)
+    lesson = get_object_or_404(JsLesson, module=module, slug=lesson_slug)
+    body = request.POST.get("note", "").strip()
+    bookmarked = request.POST.get("bookmarked") == "on"
+    if not body and not bookmarked:
+        JsLessonNote.objects.filter(learner=learner, lesson=lesson).delete()
+        messages.info(request, "Notatka została usunięta.")
+    else:
+        JsLessonNote.objects.update_or_create(
+            learner=learner,
+            lesson=lesson,
+            defaults={"body": body, "is_bookmarked": bookmarked},
+        )
+        messages.success(request, "Notatka zapisana lokalnie.")
+    return redirect(lesson.get_absolute_url())
+
+
+@require_POST
+def retry_missed(request: HttpRequest, attempt_id: int) -> HttpResponse:
+    learner = _learner()
+    attempt = get_object_or_404(
+        JsAttempt.objects.select_related("module"),
+        pk=attempt_id,
+        learner=learner,
+        completed_at__isnull=False,
+    )
+    try:
+        retry = create_retry_attempt(learner, attempt)
+    except ValueError as exc:
+        messages.info(request, str(exc))
+        return redirect("js_academy:quiz_results", attempt_id=attempt.pk)
+    return redirect("js_academy:quiz", attempt_id=retry.pk)
+
+
+@require_POST
+def weak_spots_practice(request: HttpRequest) -> HttpResponse:
+    learner = _learner()
+    try:
+        attempt = create_weak_spot_attempt(learner)
+    except ValueError as exc:
+        messages.info(request, str(exc))
+        return redirect("js_academy:progress")
+    return redirect("js_academy:quiz", attempt_id=attempt.pk)
+
+
+@require_GET
+def progress_export(request: HttpRequest) -> HttpResponse:
+    learner = _learner()
+    stats = overall_stats(learner)
+    lines = [
+        "# JS Akademia — raport postępów",
+        "",
+        f"Data: {timezone.localdate().isoformat()}",
+        f"Poziom: {stats['level_name']} ({stats['xp']} XP)",
+        f"Lekcje: {stats['completed_lessons']}/{stats['lesson_total']}",
+        f"Fiszki: {stats['reviewed_cards']}/{stats['card_total']}",
+        f"Najlepszy quiz: {stats['best_score']}%",
+        f"Wyzwania: {stats['challenge_count']}",
+        "",
+        "## Moduły",
+    ]
+    for row in _modules_with_progress(learner):
+        lines.append(
+            f"- {row['module'].title}: {row['completed_lessons']}/{row['lesson_total']} lekcji, quiz {row['best_score']}%"
+        )
+    lines.extend(["", "Wygenerowano lokalnie przez JS Akademię."])
+    response = HttpResponse(
+        "\n".join(lines) + "\n", content_type="text/markdown; charset=utf-8"
+    )
+    response["Content-Disposition"] = 'attachment; filename="js-akademia-postepy.md"'
+    return response
+
+
+@require_POST
+def progress_reset(request: HttpRequest) -> HttpResponse:
+    reset_progress(_learner())
+    messages.success(request, "Postępy JS Akademii zostały wyczyszczone.")
+    return redirect("js_academy:progress")

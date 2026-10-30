@@ -432,6 +432,28 @@ class JsChallengeCompletion(models.Model):
         return f"{self.challenge} · {self.learner}"
 
 
+class JsLessonNote(models.Model):
+    learner = models.ForeignKey(
+        "dojo.Learner", on_delete=models.CASCADE, related_name="js_lesson_notes"
+    )
+    lesson = models.ForeignKey(
+        JsLesson, on_delete=models.CASCADE, related_name="notes"
+    )
+    body = models.TextField(blank=True)
+    is_bookmarked = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "lesson"], name="unique_js_note_learner_lesson"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.learner_id}:{self.lesson_id}"
+
+
 class JsComponent(models.Model):
     """Gotowy komponent HTML/CSS/JS z podglądem i kodem do skopiowania."""
 

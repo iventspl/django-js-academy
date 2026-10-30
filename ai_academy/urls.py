@@ -37,6 +37,8 @@ urlpatterns = [
     ),
     path("progress/", views.progress, name="progress"),
     path("progress/export/", views.progress_export, name="progress_export"),
+    path("progress/weak-spots/", views.weak_spots_practice, name="weak_spots"),
+    path("progress/reset/", views.progress_reset, name="progress_reset"),
     path("notes/", views.notes, name="notes"),
     path(
         "notes/<slug:module_slug>/<slug:lesson_slug>/save/",

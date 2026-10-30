@@ -12,13 +12,16 @@ from dojo.models import Learner
 
 from .models import (
     JsAttempt,
+    JsAttemptQuestion,
     JsChallenge,
     JsChallengeCompletion,
     JsFlashcard,
     JsFlashcardReview,
     JsLesson,
+    JsLessonNote,
     JsLessonProgress,
     JsModule,
+    JsQuestion,
     percent,
 )
 
@@ -30,6 +33,58 @@ LEVELS = [
     (700, "Ekspert"),
     (1000, "Mistrz JS"),
 ]
+
+
+def create_attempt_from_questions(learner: Learner, module: JsModule, question_ids: list[int]) -> JsAttempt:
+    attempt = JsAttempt.objects.create(
+        learner=learner, module=module, length=len(question_ids)
+    )
+    JsAttemptQuestion.objects.bulk_create(
+        [
+            JsAttemptQuestion(attempt=attempt, question_id=question_id, position=index)
+            for index, question_id in enumerate(question_ids)
+        ]
+    )
+    return attempt
+
+
+def create_retry_attempt(learner: Learner, attempt: JsAttempt) -> JsAttempt:
+    missed_ids = list(
+        attempt.attempt_questions.filter(
+            selected__isnull=False, is_correct=False
+        ).values_list("question_id", flat=True)
+    )
+    if not missed_ids:
+        raise ValueError("Ta próba nie ma błędnych odpowiedzi do powtórki.")
+    return create_attempt_from_questions(learner, attempt.module, missed_ids)
+
+
+def _weak_spot_ids(learner: Learner) -> list[int]:
+    rows = JsAttemptQuestion.objects.filter(
+        attempt__learner=learner, selected__isnull=False
+    )
+    missed = set(rows.filter(is_correct=False).values_list("question_id", flat=True))
+    correct = set(rows.filter(is_correct=True).values_list("question_id", flat=True))
+    return sorted(missed - correct)
+
+
+def weak_spot_count(learner: Learner) -> int:
+    return len(_weak_spot_ids(learner))
+
+
+def create_weak_spot_attempt(learner: Learner, limit: int = 10) -> JsAttempt:
+    ids = _weak_spot_ids(learner)[:limit]
+    if not ids:
+        raise ValueError("Brak otwartych słabych punktów.")
+    module = JsQuestion.objects.select_related("module").get(pk=ids[0]).module
+    return create_attempt_from_questions(learner, module, ids)
+
+
+def reset_progress(learner: Learner) -> None:
+    JsAttempt.objects.filter(learner=learner).delete()
+    JsFlashcardReview.objects.filter(learner=learner).delete()
+    JsLessonProgress.objects.filter(learner=learner).delete()
+    JsChallengeCompletion.objects.filter(learner=learner).delete()
 
 
 def module_progress(learner: Learner, module: JsModule) -> dict:
@@ -187,6 +242,8 @@ def overall_stats(learner: Learner) -> dict:
         "lesson_total": lesson_total,
         "demo_total": JsLesson.objects.exclude(live_demo_html="").count(),
         "challenge_total": JsChallenge.objects.count(),
+        "note_count": JsLessonNote.objects.filter(learner=learner).exclude(body="").count(),
+        "bookmark_count": JsLessonNote.objects.filter(learner=learner, is_bookmarked=True).count(),
         "completed_lessons": completed_lessons,
         "lesson_percent": percent(completed_lessons, lesson_total),
         "card_total": card_total,

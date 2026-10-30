@@ -45,5 +45,8 @@ urlpatterns = [
     ),
     path("field-guide/releases/", views.release_radar, name="release_radar"),
     path("progress/", views.progress, name="progress"),
+    path("progress/export/", views.progress_export, name="progress_export"),
+    path("notes/", views.notes, name="notes"),
+    path("notes/<int:note_id>/delete/", views.delete_note, name="delete_note"),
     path("progress/reset/", views.progress_reset, name="progress_reset"),
 ]

@@ -19,6 +19,7 @@ from .models import (
     JsFlashcard,
     JsFlashcardReview,
     JsLesson,
+    JsLessonNote,
     JsLessonProgress,
     JsModule,
     JsQuestion,
@@ -477,6 +478,58 @@ class JsAiCareerTests(SeededJsTestCase):
             self.assertTrue(fact["url"].startswith("https://"), fact["label"])
         for source in SOURCES:
             self.assertTrue(source["url"].startswith("https://"), source["label"])
+
+
+class JsLearnerToolsTests(SeededJsTestCase):
+    def test_save_and_clear_note(self):
+        lesson = JsLesson.objects.first()
+        url = reverse("js_academy:save_note", args=[lesson.module.slug, lesson.slug])
+        response = self.client.post(url, {"note": "Moja notatka", "bookmarked": "on"})
+        self.assertEqual(response.status_code, 302)
+        note = JsLessonNote.objects.get(lesson=lesson)
+        self.assertEqual(note.body, "Moja notatka")
+        self.assertTrue(note.is_bookmarked)
+        response = self.client.get(reverse("js_academy:notes"))
+        self.assertContains(response, "Moja notatka")
+        self.client.post(url, {"note": ""})
+        self.assertFalse(JsLessonNote.objects.filter(lesson=lesson).exists())
+
+    def test_progress_export_is_downloadable(self):
+        response = self.client.get(reverse("js_academy:progress_export"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/markdown; charset=utf-8")
+        self.assertIn("attachment", response["Content-Disposition"])
+
+    def test_retry_missed_creates_smaller_attempt(self):
+        module = JsModule.objects.get(slug="fundamenty-js")
+        self.client.post(reverse("js_academy:quiz_start", args=[module.slug]))
+        attempt = JsAttempt.objects.latest("id")
+        for position in range(attempt.length):
+            attempt.refresh_from_db()
+            aq = attempt.current_attempt_question()
+            choice = (
+                aq.question.choices.get(is_correct=True)
+                if position != 0
+                else aq.question.choices.filter(is_correct=False).first()
+            )
+            self.client.post(attempt.get_absolute_url(), {"action": "answer", "choice": choice.pk})
+            self.client.post(attempt.get_absolute_url(), {"action": "next"})
+        attempt.refresh_from_db()
+        response = self.client.post(reverse("js_academy:retry_missed", args=[attempt.pk]))
+        self.assertEqual(response.status_code, 302)
+        retry = JsAttempt.objects.latest("id")
+        self.assertEqual(retry.length, 1)
+        response = self.client.post(reverse("js_academy:weak_spots"))
+        self.assertEqual(response.status_code, 302)
+        weak = JsAttempt.objects.latest("id")
+        self.assertEqual(weak.length, 1)
+
+    def test_progress_reset_clears_learning_progress(self):
+        module = JsModule.objects.get(slug="fundamenty-js")
+        self.client.post(reverse("js_academy:quiz_start", args=[module.slug]))
+        self.client.post(reverse("js_academy:progress_reset"))
+        self.assertEqual(JsAttempt.objects.count(), 0)
+        self.assertEqual(JsLessonProgress.objects.count(), 0)
 
 
 class JsAdminAndCommandsTests(SeededJsTestCase):

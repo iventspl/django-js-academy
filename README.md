@@ -2,7 +2,7 @@
 
 A local-first learning game for Python, Django, JavaScript and applied AI. It mixes multiple-choice quiz runs, open flashcards (fiszki), spaced repetition, explanations, coding challenges and a progress notebook — with a deliberately polished interface that runs the same way on macOS and Windows.
 
-No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.19 learner tools, the 4.18 lesson and code-library expansion, the 4.17 home cleanup, the 4.16 project library and code library, the 4.15 applied deep dives, the 4.14 examples and cheat sheet, the 4.13 Python module, the 4.12 practice update, the 4.11 launch, and the earlier search and adaptive-practice releases.
+No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.22 mobile layout, the 4.21 cross-platform learner tools, the 4.20 local Wi-Fi mode and earlier releases.
 
 ## What is inside
 
@@ -76,8 +76,65 @@ python start.py --setup-only      # install + migrate + seed, no server
 python start.py --update          # upgrade Django/requirements, then start
 python start.py --no-browser      # do not open a browser window
 python start.py --port 8765       # prefer a specific port
-python start.py --host 0.0.0.0    # expose on the local network (set DJANGO_ALLOWED_HOSTS too)
+python start.py --lan             # allow phone/tablet on the same Wi-Fi
 ```
+
+### Access from a phone or another computer on the same Wi-Fi
+
+```bash
+python start.py --lan
+```
+
+On Windows you can also double-click **`start_lan_windows.bat`**.
+
+The launcher binds to `0.0.0.0`, detects your private IPv4 address, configures `ALLOWED_HOSTS` and CSRF trusted origins for that address, and prints both URLs:
+
+```text
+Local:  http://127.0.0.1:8000/
+LAN:    http://192.168.1.23:8000/
+```
+
+Open the **LAN** URL on the other device. Both devices must be on the same Wi-Fi/LAN, and the host computer must allow Python through its firewall on **private networks** (Windows may show a firewall prompt on first LAN start; macOS may ask for incoming connections).
+
+If the phone or second computer still cannot connect on **Windows**:
+
+1. Right-click **`allow_lan_windows.bat`** and choose **Run as administrator**.
+2. If you changed the port, pass it: `allow_lan_windows.bat 8765`.
+3. The script creates an inbound TCP rule for that port, scoped to **LocalSubnet** only — it does not expose the app to the internet.
+
+You can also run the equivalent command in an elevated Command Prompt:
+
+```bat
+netsh advfirewall firewall add rule name="Django Quest LAN 8000" dir=in action=allow protocol=TCP localport=8000 remoteip=LocalSubnet profile=any
+```
+
+Then check:
+
+- the phone is on **Wi-Fi**, not mobile data;
+- both devices are on the same subnet (for example `192.168.8.x`);
+- the router is not using **guest network** or **AP/client isolation**;
+- the PC is not connected through a VPN that changes the route;
+- Windows network profile is **Private**, or the firewall rule above is active.
+
+On macOS, allow incoming connections for Python in **System Settings → Network → Firewall** when prompted.
+
+> **Security:** Django Quest has no login. In LAN mode, anyone on the same trusted network can read and change progress. Use it only on your own Wi-Fi, never on public Wi-Fi, and stop the server when you are done. Do not expose this development server directly to the internet.
+
+## Mobile use
+
+The interface is designed for phones and small tablets:
+
+- A **Menu** button opens the full navigation instead of squeezing links into one row.
+- The Django / JavaScript / AI switch remains visible above the menu.
+- Cards, stat bands, notes, components and project grids collapse to one column.
+- Tables and code blocks scroll horizontally instead of breaking the page.
+- Buttons use 44px touch targets; form controls use 16px text to avoid iOS zoom.
+- Lesson, demo and challenge iframes resize to the viewport.
+- Module lesson lists and long inline code no longer force horizontal zoom-out.
+- AI stat, next-step and project summary bands use compact single-row layouts on phones.
+- Every code block has a top-right **Copy** button, including on plain HTTP LAN connections.
+- `viewport-fit=cover` and safe-area padding handle notches and rounded corners.
+- Add the LAN URL to your phone's Home Screen for an app-like full-screen launch.
 
 ## Content map
 
@@ -164,6 +221,23 @@ Eight design labs start with a scenario, scale, requirements, and constraints �
 The studio also has a **durable skills map**, a “what AI changes / what it does not change” section, and a four-step method for using each lab: read the brief, sketch the shape, compare decisions, write an ADR.
 
 The architecture paths in the quiz cover the theory behind those labs: boundaries, distributed reliability, domain modeling, AI integration, AI-assisted engineering, platform operations, and security architecture.
+
+## Cross-platform learner tools
+
+All three study surfaces — **Django**, **JavaScript** and **AI** — now expose the same learner-tool set:
+
+| Tool | Django | JavaScript | AI |
+| --- | :---: | :---: | :---: |
+| Search | ✓ | ✓ | ✓ |
+| Notes and bookmarks | ✓ | ✓ | ✓ |
+| Export progress report | ✓ | ✓ | ✓ |
+| Retry missed questions | ✓ | ✓ | ✓ |
+| Weak-spot practice | ✓ | ✓ | ✓ |
+| Reset progress | ✓ | ✓ | ✓ |
+| Flashcards + scheduling | ✓ | ✓ | ✓ |
+| Reading/reference library | Field guide | Components | Code library |
+
+Notes are stored locally per platform; the progress export deliberately does not include note bodies.
 
 ## JS Akademia — Polish JavaScript → React Native platform
 
@@ -332,6 +406,8 @@ The scheduler is intentionally small and transparent, inspired by SM-2. It is no
 .
 ├── start.py                     # cross-platform launcher
 ├── start_windows.bat            # double-click entry point for Windows
+├── start_lan_windows.bat        # Windows launcher with LAN mode
+├── allow_lan_windows.bat        # admin-only firewall helper for LAN port
 ├── start_macos.command          # double-click entry point for macOS
 ├── requirements.txt
 ├── manage.py
@@ -536,7 +612,7 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **127 tests** in total.
+The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **135 tests** in total.
 
 You can also run Django's deployment check before hosting anything:
 

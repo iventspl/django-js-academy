@@ -172,6 +172,86 @@
     });
   });
 
+  /* ---------- Copy buttons for every code block ---------- */
+  const copyText = async (text, button) => {
+    const fallback = () => {
+      const helper = document.createElement("textarea");
+      helper.value = text;
+      helper.setAttribute("readonly", "");
+      helper.style.position = "fixed";
+      helper.style.top = "0";
+      helper.style.left = "-9999px";
+      helper.style.opacity = "0";
+      document.body.appendChild(helper);
+      helper.select();
+      helper.setSelectionRange(0, helper.value.length);
+      const copied = document.execCommand("copy");
+      helper.remove();
+      if (!copied) throw new Error("copy failed");
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (_) {
+        fallback();
+      }
+    } else {
+      fallback();
+    }
+
+    button.textContent = "Copied";
+    button.classList.add("is-copied");
+    window.setTimeout(() => {
+      button.textContent = "Copy";
+      button.classList.remove("is-copied");
+    }, 1600);
+  };
+
+  $$("pre").forEach((pre) => {
+    if (pre.closest(".code-copy-wrap")) return;
+    if (pre.closest(".code-block")?.querySelector("[data-copy-code]")) return;
+    if (!pre.textContent.trim()) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "code-copy-wrap";
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
+
+    const button = document.createElement("button");
+    button.className = "code-copy-btn";
+    button.type = "button";
+    button.textContent = "Copy";
+    button.setAttribute("aria-label", "Copy this code example");
+    button.title = "Copy this code example";
+    wrapper.appendChild(button);
+
+    button.addEventListener("click", async () => {
+      const code = pre.querySelector("code");
+      const text = (code || pre).textContent.replace(/\u00a0/g, " ");
+      try {
+        await copyText(text, button);
+      } catch (_) {
+        const target = pre.querySelector("code") || pre;
+        const range = document.createRange();
+        range.selectNodeContents(target);
+        const selection = window.getSelection();
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        button.textContent = "Select & copy";
+        button.classList.add("is-error");
+        button.title = "Copy was blocked; the code is selected for manual copy.";
+        window.setTimeout(() => {
+          button.textContent = "Copy";
+          button.classList.remove("is-error");
+          button.title = "Copy this code example";
+        }, 2600);
+      }
+    });
+  });
+
   /* ---------- Open a recipe when linked by hash ---------- */
   if (window.location.hash.startsWith("#recipe-")) {
     const target = document.querySelector(window.location.hash);
