@@ -58,6 +58,13 @@
       "summary": "Dlaczego jedna pętla w pętli potrafi zamrozić stronę.",
       "minutes": "17",
       "body_html": "<p>Złożoność to odpowiedź na pytanie: co się stanie, gdy danych będzie sto razy więcej?</p>\n<h2>Para w parze</h2>\n<pre><code>for (const a of users) {\n  for (const b of users) {\n    if (a.id === b.friendId) { /* ... */ }\n  }\n}</code></pre>\n<p>Dla 100 użytkowników to 10 000 porównań. Dla 10 000 — sto milionów.</p>\n<h2>Mapa zamiast szukania</h2>\n<pre><code>const byId = new Map(users.map((u) =&gt; [u.id, u]));\nconst friend = byId.get(user.friendId);</code></pre>\n<p>Jedno przejście po danych zamiast wielokrotnego szukania.</p>\n<div class=\"lesson-callout\"><strong>Pytanie:</strong> czy Twoja funkcja robi coś wielokrotnie, co można przygotować raz?</div>"
+    },
+    {
+      "slug": "warsztat-dane",
+      "title": "Warsztat: analiza danych",
+      "summary": "Map, filter, reduce i jeden realny raport.",
+      "minutes": "17",
+      "body_html": "<p>Policz, ile wydano w każdej kategorii i która kategoria jest największa.</p>\n<h2>Grupowanie</h2>\n<pre><code>const totals = expenses.reduce((acc, item) =&gt; {\n  acc[item.category] = (acc[item.category] ?? 0) + item.amount;\n  return acc;\n}, {});</code></pre>\n<h2>Największa kategoria</h2>\n<pre><code>const [top] = Object.entries(totals)\n  .sort((a, b) =&gt; b[1] - a[1]);</code></pre>\n<p>Sortowanie kopiuje tablicę dzięki <code>Object.entries</code>. Nie zmieniasz oryginalnych danych.</p>\n<div class=\"lesson-callout\"><strong>Zadanie:</strong> dodaj filtr „tylko ten miesiąc” przed grupowaniem.</div>"
     }
   ],
   "questions": [

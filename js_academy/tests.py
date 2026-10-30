@@ -38,7 +38,7 @@ class JsContentTests(SeededJsTestCase):
     def test_content_counts(self):
         self.assertEqual(len(load_bundles()), 22)
         self.assertEqual(JsModule.objects.count(), 22)
-        self.assertEqual(JsLesson.objects.count(), 116)
+        self.assertEqual(JsLesson.objects.count(), 137)
         self.assertEqual(JsQuestion.objects.count(), 152)
         self.assertEqual(JsFlashcard.objects.count(), 140)
         self.assertEqual(JsComponent.objects.count(), 13)
@@ -50,11 +50,11 @@ class JsContentTests(SeededJsTestCase):
             if module.slug == "fundamenty-js":
                 expected_lessons = 7
             elif module.slug == "mvc-w-js":
-                expected_lessons = 6
+                expected_lessons = 7
             elif module.slug == "przyklady-z-zycia":
-                expected_lessons = 8
+                expected_lessons = 9
             else:
-                expected_lessons = 5
+                expected_lessons = 6
             self.assertEqual(module.lessons.count(), expected_lessons, module.slug)
             if module.slug == "mistrzostwo-js":
                 self.assertEqual(module.questions.count(), 15, module.slug)
@@ -96,7 +96,7 @@ class JsContentTests(SeededJsTestCase):
         lesson = JsLesson.objects.first()
         call_command("seed_js", verbosity=0)
         self.assertEqual(JsModule.objects.count(), 22)
-        self.assertEqual(JsLesson.objects.count(), 116)
+        self.assertEqual(JsLesson.objects.count(), 137)
         self.assertEqual(JsLesson.objects.get(pk=lesson.pk).title, lesson.title)
 
     def test_lessons_are_in_curriculum_order(self):

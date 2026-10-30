@@ -58,6 +58,13 @@
       "summary": "Dlaczego sto zmian w pętli może być wolniejsze niż jedna aktualizacja.",
       "minutes": "14",
       "body_html": "<p>Przeglądarka nie rysuje strony po każdej zmianie. Czeka na moment, w którym może policzyć układ i odmalować ekran.</p>\n<h2>Grupuj zmiany</h2>\n<pre><code>const fragment = document.createDocumentFragment();\nitems.forEach((item) =&gt; fragment.append(makeCard(item)));\nlist.replaceChildren(fragment);</code></pre>\n<p>Fragment pozwala przygotować elementy poza dokumentem i wstawić je raz.</p>\n<h2>Nie mierz na oko</h2>\n<p>Performance panel pokaże, czy problemem jest JavaScript, styl czy układ. Mikrooptymalizacja bez pomiaru często nic nie daje.</p>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> porównaj renderowanie 100 kart przez <code>append</code> w pętli i przez fragment.</div>"
+    },
+    {
+      "slug": "warsztat-dom",
+      "title": "Warsztat: formularz i DOM",
+      "summary": "Od pustej listy do komunikatu, który rozumie użytkownik.",
+      "minutes": "17",
+      "body_html": "<p>Zbuduj mały formularz dodający zadanie. To ćwiczenie łączy zdarzenia, tworzenie elementów i komunikaty.</p>\n<h2>Szablon</h2>\n<pre><code>form.addEventListener(\"submit\", (event) =&gt; {\n  event.preventDefault();\n  const title = input.value.trim();\n  if (!title) return showError(\"Wpisz nazwę zadania.\");\n  list.append(makeTask(title));\n  form.reset();\n  input.focus();\n});</code></pre>\n<h2>Komunikat</h2>\n<pre><code>function showError(message) {\n  status.textContent = message;\n  status.setAttribute(\"role\", \"alert\");\n}</code></pre>\n<div class=\"lesson-callout\"><strong>Sprawdź:</strong> czy po dodaniu zadania focus wraca do pola i czy pusty formularz nie tworzy pustego elementu.</div>"
     }
   ],
   "questions": [

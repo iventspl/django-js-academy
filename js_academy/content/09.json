@@ -58,6 +58,13 @@
       "summary": "Kiedy podzielić plik i jak nie stworzyć dziesięciu zależności.",
       "minutes": "15",
       "body_html": "<p>Moduł powinien mieć powód, żeby istnieć. Jeśli dzielisz plik tylko dlatego, że ma 200 linii, możesz tylko przenieść problem.</p>\n<h2>Granica odpowiedzialności</h2>\n<pre><code>// api/movies.js\nexport async function fetchMovies(query) { /* HTTP */ }\n\n// movies/selectors.js\nexport function selectVisibleMovies(movies, state) { /* pure */ }</code></pre>\n<p>Warstwa API zna sieć. Selektory znają dane. Widok nie musi znać ani jednego, ani drugiego.</p>\n<h2>Import w jedną stronę</h2>\n<p>Ustal, kto może kogo importować. Jeśli dwa moduły importują się nawzajem, prawdopodobnie brakuje trzeciego, mniejszego modułu.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> czy możesz przetestować selektor bez uruchamiania sieci? Jeśli nie, granica jest za szeroka.</div>"
+    },
+    {
+      "slug": "warsztat-refaktor",
+      "title": "Warsztat: refaktor modułu",
+      "summary": "Podziel funkcję bez zmiany zachowania.",
+      "minutes": "17",
+      "body_html": "<p>Weź funkcję, która robi trzy rzeczy: pobiera dane, filtruje i renderuje. Podziel ją na trzy kroki.</p>\n<h2>Przed</h2>\n<pre><code>async function showProducts() {\n  const data = await fetch(\"/api/products\");\n  const filtered = data.filter((p) =&gt; p.active);\n  render(filtered);\n}</code></pre>\n<h2>Po</h2>\n<pre><code>const data = await fetchProducts();\nconst visible = selectActive(data);\nrenderProducts(visible);</code></pre>\n<p>Każdy krok można teraz sprawdzić osobno. Refaktor nie zmienia wyglądu, tylko granice.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> zapisz wynik przed i po refaktorze. Jeśli się różni, coś poszło nie tak.</div>"
     }
   ],
   "questions": [

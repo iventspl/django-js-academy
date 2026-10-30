@@ -58,6 +58,13 @@
       "summary": "Build, zmienne środowiskowe i szybka kontrola przed wdrożeniem.",
       "minutes": "16",
       "body_html": "<p>Publikacja to nie przycisk „deploy”. To lista rzeczy, które mogą zepsuć się tylko na produkcji.</p>\n<h2>Build lokalnie</h2>\n<pre><code>npm run build\nnpm run preview</code></pre>\n<p>Sprawdź build, nie tylko tryb developerski. Inny bundler, inne ścieżki i inne zmienne środowiskowe to klasyczne źródło błędów.</p>\n<h2>Checklista</h2>\n<ul><li>Czy brakuje sekretów w repozytorium?</li><li>Czy adres API jest właściwy?</li><li>Czy strona 404 działa?</li><li>Czy masz plan wycofania?</li></ul>\n<div class=\"lesson-callout\"><strong>Nawyk:</strong> zapisz checklistę w README. Następna osoba nie będzie zgadywać.</div>"
+    },
+    {
+      "slug": "warsztat-test",
+      "title": "Warsztat: test regresyjny",
+      "summary": "Napisz test, który failuje przed poprawką i przechodzi po niej.",
+      "minutes": "16",
+      "body_html": "<p>Test regresyjny ma jeden cel: nie pozwolić, żeby ten sam błąd wrócił.</p>\n<h2>Krok 1</h2>\n<pre><code>test(\"empty query returns all products\", () =&gt; {\n  assert.deepEqual(selectProducts(products, \"\"), products);\n});</code></pre>\n<h2>Krok 2</h2>\n<p>Uruchom test przed poprawką. Jeśli przechodzi, test nie sprawdza tego, co myślisz.</p>\n<pre><code>npm test -- --watch</code></pre>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> test bez dowodu, że potrafi failować, jest tylko dekoracją.</div>"
     }
   ],
   "questions": [

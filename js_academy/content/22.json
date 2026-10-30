@@ -79,6 +79,13 @@
       "summary": "Dodawanie, oznaczanie dnia i czytelne komunikaty.",
       "minutes": "17",
       "body_html": "<p>Nawyk jest użyteczny tylko wtedy, gdy można go szybko oznaczyć. Formularz nie może przeszkadzać.</p>\n<h2>Oznaczanie dnia</h2>\n<pre><code>function toggleDay(habit, date) {\n  const done = habit.days.includes(date);\n  return {\n    ...habit,\n    days: done ? habit.days.filter((d) =&gt; d !== date) : [...habit.days, date],\n  };\n}</code></pre>\n<h2>Komunikat</h2>\n<pre><code>&lt;p role=\"status\"&gt;Zapisano: 10 minut czytania.&lt;/p&gt;</code></pre>\n<p>Status po akcji pomaga też osobom korzystającym z czytnika ekranu.</p>\n<div class=\"lesson-callout\"><strong>Checklista:</strong> pusty stan, walidacja nazwy, focus po dodaniu i możliwość usunięcia.</div>"
+    },
+    {
+      "slug": "warsztat-nawyki",
+      "title": "Warsztat: aplikacja nawyków",
+      "summary": "Od modelu do oznaczenia dnia i zapisu.",
+      "minutes": "18",
+      "body_html": "<p>Zbuduj minimalną wersję aplikacji nawyków: dodaj, oznacz dzień, usuń.</p>\n<h2>Model</h2>\n<pre><code>const habit = { id: crypto.randomUUID(), name: \"Czytanie\", days: [] };</code></pre>\n<h2>Oznaczenie</h2>\n<pre><code>function toggleDay(habit, day) {\n  const done = habit.days.includes(day);\n  return {\n    ...habit,\n    days: done ? habit.days.filter((d) =&gt; d !== day) : [...habit.days, day],\n  };\n}</code></pre>\n<p>Zapisuj listę w <code>localStorage</code> po każdej zmianie. Pusty stan ma podpowiadać pierwszy krok.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> dodaj nawyk, oznacz dzień, odśwież stronę i sprawdź, czy stan wrócił.</div>"
     }
   ],
   "questions": [

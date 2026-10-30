@@ -58,6 +58,13 @@
       "summary": "Mierz, zanim zmienisz kod. Najpierw sieć i obrazy, potem drobiazgi.",
       "minutes": "17",
       "body_html": "<p>Największe spowolnienia często nie są w pętli, tylko w zbyt dużym obrazie i zbyt wielu zapytaniach.</p>\n<h2>Zacznij od pomiaru</h2>\n<pre><code>performance.mark(\"start\");\nawait loadData();\nperformance.mark(\"end\");\nperformance.measure(\"load\", \"start\", \"end\");</code></pre>\n<h2>Obrazy</h2>\n<pre><code>&lt;img src=\"cover.webp\" width=\"640\" height=\"360\" loading=\"lazy\" alt=\"\"&gt;</code></pre>\n<p>Dopiero potem sprawdzaj bundle i renderowanie listy.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> nie optymalizuj kodu, którego użytkownik nawet nie uruchamia.</div>"
+    },
+    {
+      "slug": "warsztat-xss",
+      "title": "Warsztat: audyt XSS",
+      "summary": "Trzy miejsca, w których dane użytkownika trafiają do HTML.",
+      "minutes": "17",
+      "body_html": "<p>Znajdź w projekcie każde miejsce, w którym dane z zewnątrz trafiają do DOM.</p>\n<h2>Bezpiecznie</h2>\n<pre><code>element.textContent = comment;</code></pre>\n<h2>Niebezpiecznie</h2>\n<pre><code>element.innerHTML = comment; // only for trusted HTML</code></pre>\n<p>Jeśli musisz wstawić HTML, użyj sanitizera i ogranicz dozwolone tagi.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> wpisz komentarz <code>&lt;img src=x onerror=alert(1)&gt;</code> i sprawdź, czy się nie wykona.</div>"
     }
   ],
   "questions": [

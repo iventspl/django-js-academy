@@ -58,6 +58,13 @@
       "summary": "Jak czytać zakładkę Network i nie gubić się w liczbach.",
       "minutes": "17",
       "body_html": "<p>Network pokazuje, co naprawdę poszło przez sieć. To często wyjaśnia „wolne ładowanie” lepiej niż przeglądanie kodu.</p>\n<h2>Najpierw sortuj po czasie</h2>\n<pre><code>// check: status, size, time, initiator</code></pre>\n<h2>Waterfall</h2>\n<p>Długi pasek może oznaczać wolny serwer, duży plik albo oczekiwanie na inne zapytanie. Sprawdź, czy nie ma niepotrzebnych requestów.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> ustaw wolne 3G i sprawdź, czy widok nadal jest używalny, czy tylko wygląda dobrze lokalnie.</div>"
+    },
+    {
+      "slug": "warsztat-debug",
+      "title": "Warsztat: debugowanie",
+      "summary": "Od objawu do hipotezy i testu.",
+      "minutes": "18",
+      "body_html": "<p>Masz błąd: po zmianie filtra lista pokazuje poprzednie wyniki. Zapisz hipotezę i sprawdź ją.</p>\n<h2>Hipoteza</h2>\n<pre><code>// render czyta stary currentQuery\n// sprawdź: console.log(state.currentQuery) przed render</code></pre>\n<h2>Naprawa</h2>\n<pre><code>function applyFilter(query) {\n  state = { ...state, currentQuery: query };\n  render();\n}</code></pre>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> po naprawie dodaj test regresyjny. Bez niego błąd wróci przy następnym refaktorze.</div>"
     }
   ],
   "questions": [

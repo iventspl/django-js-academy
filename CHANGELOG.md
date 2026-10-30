@@ -1,5 +1,40 @@
 # Changelog
 
+## 4.26 — 2026-10-30
+
+### JS workshops in every module
+
+- Added a practical **Warsztat** lesson to every substantive JS module:
+  - bug hunt in modern JS,
+  - form and DOM exercise,
+  - function typing,
+  - React list exercise,
+  - `useEffect` cleanup,
+  - mobile `FlatList`,
+  - regression test,
+  - module refactor,
+  - expense analysis,
+  - CLI report,
+  - React project feature,
+  - offline React Native queue,
+  - AI prompt with refusal,
+  - XSS audit,
+  - interview answer,
+  - portfolio review,
+  - MVC state exercise,
+  - pattern decision,
+  - cache/storage exercise,
+  - debugging regression,
+  - habits app exercise.
+- Every module now has **6 lessons** (first: 7, MVC: 7, Przykłady z życia: 9).
+- Each workshop includes concrete code, a common mistake and a short verification task.
+- JS totals: **22 modules / 137 lessons / 152 questions / 140 flashcards / 64 glossary terms**.
+
+### Verification
+
+- **140 tests pass**.
+- Seeded content: 22 modules, 137 lessons.
+
 ## 4.25 — 2026-10-30
 
 ### Extended JS modules

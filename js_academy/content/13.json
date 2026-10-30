@@ -58,6 +58,13 @@
       "summary": "Wersje, uprawnienia i plan na wycofanie zmiany.",
       "minutes": "17",
       "body_html": "<p>Aktualizacja mobilna nie jest natychmiastowa. Część użytkowników zostaje na starej wersji.</p>\n<h2>Wersja i numer builda</h2>\n<pre><code>\"version\": \"1.4.0\",\n\"android\": { \"versionCode\": 14 }</code></pre>\n<h2>Zgodność API</h2>\n<pre><code>if (response.status === 426) {\n  showUpdatePrompt();\n}</code></pre>\n<p>Serwer może poprosić o aktualizację, ale aplikacja musi umieć pokazać sensowny komunikat.</p>\n<div class=\"lesson-callout\"><strong>Checklista:</strong> uprawnienia, wersja, migracje danych i możliwość wycofania.</div>"
+    },
+    {
+      "slug": "warsztat-offline",
+      "title": "Warsztat: offline w React Native",
+      "summary": "Kolejka, status i powrót sieci.",
+      "minutes": "18",
+      "body_html": "<p>Dodaj zadanie w trybie samolotowym. Aplikacja ma pokazać, że czeka na wysłanie.</p>\n<h2>Zapis lokalny</h2>\n<pre><code>await AsyncStorage.setItem(\"pending\", JSON.stringify(queue));</code></pre>\n<h2>Po powrocie</h2>\n<pre><code>NetInfo.addEventListener((state) =&gt; {\n  if (state.isConnected) flushQueue();\n});</code></pre>\n<div class=\"lesson-callout\"><strong>Ważne:</strong> „zapisano” i „wysłano” to dwa różne stany. Użytkownik musi je rozróżnić.</div>"
     }
   ],
   "questions": [

@@ -58,6 +58,13 @@
       "summary": "Jak nie ufać danym z sieci i gdzie postawić granicę typów.",
       "minutes": "16",
       "body_html": "<p>API może zwrócić wszystko. Typ odpowiedzi to obietnica, którą trzeba sprawdzić przy wejściu do aplikacji.</p>\n<h2>Typ surowy i typ domenowy</h2>\n<pre><code>type ApiMovie = { id: number; title?: string; rating?: number };\ntype Movie = { id: string; title: string; rating: number };\n\nfunction toMovie(raw: ApiMovie): Movie {\n  return {\n    id: String(raw.id),\n    title: raw.title ?? \"Bez tytułu\",\n    rating: Number(raw.rating) || 0,\n  };\n}</code></pre>\n<p>Nie przepuszczaj surowego obiektu przez całą aplikację. Normalizuj go raz, na granicy.</p>\n<h2>Błąd jako wartość</h2>\n<pre><code>type Result&lt;T&gt; = { ok: true; data: T } | { ok: false; error: string };</code></pre>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> dodaj typ <code>Result&lt;Movie[]&gt;</code> i sprawdź, czy kompilator zmusza Cię do obsługi błędu.</div>"
+    },
+    {
+      "slug": "warsztat-typescript",
+      "title": "Warsztat: typowanie funkcji",
+      "summary": "Typy, które łapią błąd przed uruchomieniem.",
+      "minutes": "16",
+      "body_html": "<p>Weź funkcję, która przyjmuje dane z formularza, i opisz jej wejście oraz wyjście.</p>\n<h2>Typ wejścia</h2>\n<pre><code>type FormValues = {\n  email: string;\n  password: string;\n};\n\nfunction validate(values: FormValues) {\n  const errors: Record&lt;string, string&gt; = {};\n  return errors;\n}</code></pre>\n<h2>Wynik</h2>\n<pre><code>const result = validate({ email: \"ala@example.com\", password: \"12345678\" });</code></pre>\n<p>Kompilator nie sprawdzi poprawności adresu, ale nie pozwoli pominąć pola ani pomylić typu.</p>\n<div class=\"lesson-callout\"><strong>Zadanie:</strong> dodaj pole <code>age: number</code> i sprawdź, gdzie kompilator zgłosi brak aktualizacji.</div>"
     }
   ],
   "questions": [

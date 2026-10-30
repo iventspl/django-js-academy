@@ -58,6 +58,13 @@
       "summary": "Co pokazać, gdy każdy potrafi wygenerować podobny kod.",
       "minutes": "17",
       "body_html": "<p>Portfolio nie wygrywa liczbą funkcji. Wygrywa dowodem, że rozumiesz problem i potrafisz utrzymać rozwiązanie.</p>\n<h2>Trzy rzeczy do pokazania</h2>\n<ol><li>Problem i ograniczenia.</li><li>Decyzje i odrzucone alternatywy.</li><li>Testy, pomiary i znane wady.</li></ol>\n<pre><code>README:\n- problem\n- uruchomienie\n- architektura\n- decyzje\n- testy\n- czego bym nie zrobił ponownie</code></pre>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> dodaj do projektu sekcję „ograniczenia”. Pokazuje dojrzałość lepiej niż lista technologii.</div>"
+    },
+    {
+      "slug": "warsztat-portfolio",
+      "title": "Warsztat: portfolio",
+      "summary": "Projekt, README i historia decyzji.",
+      "minutes": "17",
+      "body_html": "<p>Wybierz jeden projekt i przygotuj go do pokazania w 3 minuty.</p>\n<h2>README</h2>\n<pre><code>## Problem\n## Uruchomienie\n## Architektura\n## Decyzje i alternatywy\n## Testy\n## Ograniczenia</code></pre>\n<h2>Demo</h2>\n<p>Pokaż jeden przepływ: dodanie danych, błąd i stan pusty. To mówi więcej niż lista technologii.</p>\n<div class=\"lesson-callout\"><strong>Zadanie:</strong> dopisz sekcję „czego bym nie zrobił ponownie”. To dowód dojrzałości.</div>"
     }
   ],
   "questions": [

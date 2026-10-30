@@ -58,6 +58,13 @@
       "summary": "Lista, szczegóły i formularz bez duplikowania stanu.",
       "minutes": "17",
       "body_html": "<p>Najczęstszy problem projektu React to ten sam stan w trzech miejscach. Wybierz jedno źródło i przekazuj tylko to, czego potrzebuje widok.</p>\n<h2>Stan listy</h2>\n<pre><code>const [tasks, setTasks] = useState([]);</code></pre>\n<h2>Formularz jako osobny komponent</h2>\n<pre><code>&lt;TaskForm onAdd={(title) =&gt; setTasks((items) =&gt; [...items, makeTask(title)])} /&gt;</code></pre>\n<p>Formularz nie musi znać całej listy. Dostaje akcję i zwraca nowy element.</p>\n<div class=\"lesson-callout\"><strong>Pytanie:</strong> ile komponentów musi się zmienić, gdy zmienisz kształt jednego zadania?</div>"
+    },
+    {
+      "slug": "warsztat-projekt-react",
+      "title": "Warsztat: funkcja projektu React",
+      "summary": "Jedna funkcja od danych do widoku.",
+      "minutes": "18",
+      "body_html": "<p>Dodaj do projektu ekran „szczegóły”, który pobiera dane po id i pokazuje stan ładowania.</p>\n<h2>Pobranie</h2>\n<pre><code>useEffect(() =&gt; {\n  fetchItem(id).then(setItem).catch(setError);\n}, [id]);</code></pre>\n<h2>Widok</h2>\n<pre><code>if (error) return &lt;ErrorState message={error} /&gt;;\nif (!item) return &lt;Loading /&gt;;\nreturn &lt;Details item={item} /&gt;;</code></pre>\n<p>Nie pokazuj pustego ekranu, gdy dane się jeszcze ładują.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> otwórz nieistniejący identyfikator. Czy widok pokazuje błąd, a nie pustkę?</div>"
     }
   ],
   "questions": [

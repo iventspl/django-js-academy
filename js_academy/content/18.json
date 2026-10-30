@@ -65,6 +65,13 @@
       "summary": "Co testować osobno, a co dopiero w przeglądarce.",
       "minutes": "16",
       "body_html": "<p>Nie każdy test musi uruchamiać całą aplikację. Najpierw sprawdź funkcje, które nie dotykają DOM.</p>\n<h2>Test selektora</h2>\n<pre><code>test(\"filters by query\", () =&gt; {\n  const result = selectProducts(products, { currentQuery: \"latte\" });\n  assert.deepEqual(result.map((p) =&gt; p.id), [\"latte\"]);\n});</code></pre>\n<h2>Test integracyjny</h2>\n<pre><code>// render list, type query, assert visible cards\n// one test for the whole flow, not ten duplicates</code></pre>\n<p>Selektory testuj szybko i szczegółowo. Przepływ użytkownika sprawdź jednym testem integracyjnym.</p>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> jeśli test wymaga całej aplikacji do sprawdzenia jednej reguły, reguła prawdopodobnie jest za głęboko.</div>"
+    },
+    {
+      "slug": "warsztat-mvc",
+      "title": "Warsztat: jeden stan w MVC",
+      "summary": "currentView, currentQuery i currentPage w praktyce.",
+      "minutes": "18",
+      "body_html": "<p>Zbuduj jeden obiekt stanu i sprawdź, czy każda akcja przechodzi przez tę samą aktualizację.</p>\n<h2>Stan</h2>\n<pre><code>const state = {\n  currentView: \"list\",\n  currentQuery: \"\",\n  currentPage: 1,\n};</code></pre>\n<h2>Aktualizacja</h2>\n<pre><code>function update(patch) {\n  state = { ...state, ...patch };\n  if (\"currentQuery\" in patch) state.currentPage = 1;\n  render();\n}</code></pre>\n<div class=\"lesson-callout\"><strong>Test:</strong> zmień query i sprawdź, czy strona wraca do 1 oraz czy widok nie ma własnej kopii stanu.</div>"
     }
   ],
   "questions": [

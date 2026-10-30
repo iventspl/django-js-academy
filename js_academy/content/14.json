@@ -58,6 +58,13 @@
       "summary": "Źródła, odmowa i granice odpowiedzi.",
       "minutes": "17",
       "body_html": "<p>Interfejs AI musi umieć powiedzieć „nie wiem”. Inaczej zamienia brak danych w pewną siebie opowieść.</p>\n<h2>Odpowiedź z źródłem</h2>\n<pre><code>{\n  \"answer\": \"Zwrot jest możliwy w 30 dni.\",\n  \"sources\": [\"regulamin.pdf#s.4\"],\n  \"confidence\": \"high\"\n}</code></pre>\n<h2>Brak źródła</h2>\n<pre><code>if (!sources.length) {\n  return \"Nie mam wystarczających danych, żeby odpowiedzieć.\";\n}</code></pre>\n<div class=\"lesson-callout\"><strong>Test:</strong> zadaj pytanie spoza dokumentacji. Czy aplikacja odmawia, czy zmyśla?</div>"
+    },
+    {
+      "slug": "warsztat-ai",
+      "title": "Warsztat: odpowiedź AI",
+      "summary": "Prompt, źródło i odmowa w jednym przepływie.",
+      "minutes": "17",
+      "body_html": "<p>Zbuduj funkcję, która odpowiada tylko na podstawie przekazanego dokumentu.</p>\n<h2>Prompt</h2>\n<pre><code>const prompt = `Odpowiedz tylko na podstawie tekstu.\nJeśli brakuje informacji, napisz: \"Brak danych w dokumencie\".\nTekst: ${document}`;</code></pre>\n<h2>Sprawdzenie</h2>\n<pre><code>if (!answer.includes(\"Brak danych\")) {\n  showSources(sources);\n}</code></pre>\n<div class=\"lesson-callout\"><strong>Test:</strong> zapytaj o rzecz spoza dokumentu. Czy odpowiedź odmawia, czy zmyśla?</div>"
     }
   ],
   "questions": [

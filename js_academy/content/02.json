@@ -58,6 +58,13 @@
       "summary": "Kopiowanie, this i pułapki, które wyglądają jak drobiazgi.",
       "minutes": "15",
       "body_html": "<p>Większość błędów w nowoczesnym JS nie wynika z braku składni. Wynika z tego, że dwie zmienne wskazują ten sam obiekt.</p>\n<h2>Płytka kopia</h2>\n<pre><code>const copy = { ...user };\ncopy.address.city = \"Kraków\"; // zmienia też user.address.city</code></pre>\n<p>Spread kopiuje tylko pierwszy poziom. Zagnieżdżony obiekt nadal jest wspólny. Do głębokiej kopii użyj świadomej funkcji albo <code>structuredClone</code>, gdy dane są proste.</p>\n<h2>this w metodzie</h2>\n<pre><code>const button = {\n  label: \"Zapisz\",\n  click() { console.log(this.label); }\n};\nconst click = button.click;\nclick(); // this nie wskazuje button</code></pre>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> gdy przekazujesz metodę jako callback, od razu zaplanuj, czym będzie <code>this</code>.</div>"
+    },
+    {
+      "slug": "warsztat-nowoczesny-js",
+      "title": "Warsztat: bug w nowoczesnym JS",
+      "summary": "Trzy przykłady, w których skrócony zapis ukrywa błąd.",
+      "minutes": "16",
+      "body_html": "<p>Skrócony kod jest dobry tylko wtedy, gdy nadal widać, co się dzieje. Zobacz trzy miejsca, w których łatwo się pomylić.</p>\n<h2>1. Domyślna wartość</h2>\n<pre><code>const count = input ?? 0; // 0 zostaje zerem\nconst count2 = input || 0; // 0 też daje 0, ale \"\" również</code></pre>\n<h2>2. Opcjonalny obiekt</h2>\n<pre><code>const city = order?.customer?.address?.city ?? \"Brak\";</code></pre>\n<p>Opcjonalne łańcuchy nie zastępują walidacji. Nadal sprawdź, czy dane są kompletne, zanim pokażesz je jako fakt.</p>\n<h2>3. Kopia zagnieżdżona</h2>\n<pre><code>const next = { ...state, user: { ...state.user, name: \"Ala\" } };</code></pre>\n<div class=\"lesson-callout\"><strong>Zadanie:</strong> znajdź w swoim kodzie jedno <code>||</code> używane jako domyślna wartość i sprawdź, czy zero nie jest poprawną wartością.</div>"
     }
   ],
   "questions": [

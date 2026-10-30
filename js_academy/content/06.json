@@ -58,6 +58,13 @@
       "summary": "Jak wyciągnąć logikę z komponentu bez ukrywania jej w magii.",
       "minutes": "15",
       "body_html": "<p>Własny hook to funkcja zaczynająca się od <code>use</code>. Nie jest nowym API — to sposób na wspólny kawałek logiki.</p>\n<h2>Hook do licznika</h2>\n<pre><code>function useCounter(start = 0) {\n  const [value, setValue] = useState(start);\n  const increment = () =&gt; setValue((n) =&gt; n + 1);\n  return { value, increment };\n}</code></pre>\n<h2>Hook do zapytań</h2>\n<pre><code>function useMovie(id) {\n  const [state, setState] = useState({ status: \"loading\", data: null });\n  useEffect(() =&gt; { /* fetch + cleanup */ }, [id]);\n  return state;\n}</code></pre>\n<p>Hook powinien zwracać proste dane i akcje. Jeśli ma dziesięć pól, może ukrywać zbyt wiele.</p>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> wyciągnij z komponentu logikę ładowania i zostaw w nim tylko renderowanie.</div>"
+    },
+    {
+      "slug": "warsztat-efekt",
+      "title": "Warsztat: useEffect bez pętli",
+      "summary": "Efekt, cleanup i zależności w jednym małym przykładzie.",
+      "minutes": "17",
+      "body_html": "<p>Napisz efekt, który pobiera dane po zmianie <code>id</code> i anuluje poprzednie zapytanie.</p>\n<h2>Efekt</h2>\n<pre><code>useEffect(() =&gt; {\n  const controller = new AbortController();\n  loadMovie(id, { signal: controller.signal });\n  return () =&gt; controller.abort();\n}, [id]);</code></pre>\n<h2>Błędna zależność</h2>\n<pre><code>useEffect(() =&gt; {}, [{ id }]); // nowy obiekt przy każdym renderze</code></pre>\n<p>To często powoduje pętlę. Używaj stabilnych wartości: <code>id</code>, a nie obiektu tworzonego w renderze.</p>\n<div class=\"lesson-callout\"><strong>Pytanie:</strong> czy ten efekt można zastąpić obliczeniem podczas renderu?</div>"
     }
   ],
   "questions": [

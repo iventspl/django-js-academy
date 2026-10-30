@@ -58,6 +58,13 @@
       "summary": "Jak opowiadać o decyzjach bez recytowania definicji.",
       "minutes": "18",
       "body_html": "<p>Na rozmowie ważne jest nie „znasz MVC”, tylko „umiesz uzasadnić, dlaczego podzieliłeś kod właśnie tak”.</p>\n<h2>Odpowiedź w trzech częściach</h2>\n<ol><li>Sytuacja i ograniczenie.</li><li>Decyzja i alternatywa.</li><li>Koszt i sposób sprawdzenia.</li></ol>\n<pre><code>„Rozdzieliłem dane i widok, bo testy selektorów nie potrzebują DOM.\nAlternatywą był jeden duży komponent, ale trudniej go testować.\nKoszt: więcej plików; sprawdziłem to testami i czasem zmian.”</code></pre>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> opisz jeden projekt w 90 sekundach bez nazw bibliotek. Skup się na problemie i decyzjach.</div>"
+    },
+    {
+      "slug": "warsztat-rozmowa",
+      "title": "Warsztat: pytanie rekrutacyjne",
+      "summary": "Odpowiedź w 60 sekundach bez recytowania definicji.",
+      "minutes": "18",
+      "body_html": "<p>Wybierz jedno pytanie: czym jest domknięcie, czym jest event loop, kiedy użyć MVC.</p>\n<h2>Struktura odpowiedzi</h2>\n<ol><li>Definicja jednym zdaniem.</li><li>Przykład z projektu.</li><li>Konsekwencja lub ograniczenie.</li></ol>\n<pre><code>„Domknięcie to funkcja, która pamięta zmienne z miejsca powstania.\nUżyłem go w liczniku, żeby stan był prywatny.\nMinus: łatwo niechcący trzymać duży obiekt w pamięci.”</code></pre>\n<div class=\"lesson-callout\"><strong>Ćwiczenie:</strong> nagraj odpowiedź. Jeśli przekracza 90 sekund, skróć przykład, nie definicję.</div>"
     }
   ],
   "questions": [

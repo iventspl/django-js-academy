@@ -58,6 +58,13 @@
       "summary": "Kontrolowane pola, walidacja i czytelne komunikaty błędów.",
       "minutes": "15",
       "body_html": "<p>Pole kontrolowane ma jedną wartość prawdy: stan Reacta. Dzięki temu możesz je walidować i czyścić bez walki z DOM.</p>\n<h2>Jedno źródło wartości</h2>\n<pre><code>const [email, setEmail] = useState(\"\");\n&lt;input value={email} onChange={(e) =&gt; setEmail(e.target.value)} /&gt;</code></pre>\n<h2>Błąd przy polu</h2>\n<pre><code>{errors.email &amp;&amp; &lt;p role=\"alert\"&gt;{errors.email}&lt;/p&gt;}</code></pre>\n<p>Komunikat powinien być powiązany z polem przez <code>aria-describedby</code>. Sam czerwony border nie wystarczy.</p>\n<div class=\"lesson-callout\"><strong>Nawyk:</strong> waliduj przy submit i przy opuszczeniu pola, ale nie krzycz o błędzie, zanim użytkownik zacznie pisać.</div>"
+    },
+    {
+      "slug": "warsztat-react-lista",
+      "title": "Warsztat: lista w React",
+      "summary": "Dodaj, usuń i oznacz element bez mutowania stanu.",
+      "minutes": "17",
+      "body_html": "<p>Zbuduj listę zadań w React. Najważniejsza jest aktualizacja przez nową tablicę.</p>\n<h2>Dodanie</h2>\n<pre><code>setTasks((tasks) =&gt; [\n  ...tasks,\n  { id: crypto.randomUUID(), title, done: false },\n]);</code></pre>\n<h2>Oznaczenie</h2>\n<pre><code>setTasks((tasks) =&gt;\n  tasks.map((task) =&gt;\n    task.id === id ? { ...task, done: !task.done } : task\n  )\n);</code></pre>\n<p>Nie używaj indeksu jako <code>key</code>. Po usunięciu elementu React może pomylić wiersze.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> usuń środkowy element i sprawdź, czy checkbox zostaje przy właściwym zadaniu.</div>"
     }
   ],
   "questions": [

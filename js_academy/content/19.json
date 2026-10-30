@@ -58,6 +58,13 @@
       "summary": "Prostota, koszt abstrakcji i refaktor, którego nie warto robić.",
       "minutes": "15",
       "body_html": "<p>Abstrakcja ma koszt: więcej plików, więcej nazw i więcej miejsc, w których można się zgubić.</p>\n<h2>Trzy pytania przed refaktorem</h2>\n<ol><li>Czy problem występuje więcej niż raz?</li><li>Czy zmiana będzie częstsza niż odczyt?</li><li>Czy da się to sprawdzić testem?</li></ol>\n<pre><code>// before: one clear function\nfunction total(items) { return items.reduce((sum, i) =&gt; sum + i.price, 0); }\n// do not wrap it in a factory just because a book says so</code></pre>\n<div class=\"lesson-callout\"><strong>Zasada:</strong> najpierw działający, czytelny kod. Wzorzec dopiero gdy pojawia się realna potrzeba.</div>"
+    },
+    {
+      "slug": "warsztat-wzorce",
+      "title": "Warsztat: wzorzec bez przegięcia",
+      "summary": "Strategia, obserwator i granica sensu.",
+      "minutes": "17",
+      "body_html": "<p>Weź dwa warianty zachowania (np. dostawa kurierem i odbiór) i sprawdź, czy strategia naprawdę upraszcza kod.</p>\n<h2>Strategia</h2>\n<pre><code>const shipping = {\n  courier: (order) =&gt; order.weight * 2,\n  pickup: () =&gt; 0,\n};</code></pre>\n<h2>Granica</h2>\n<p>Jeśli masz dwa warianty i nigdy więcej, zwykły <code>if</code> może być czytelniejszy. Wzorzec ma sens, gdy wariantów przybywa.</p>\n<div class=\"lesson-callout\"><strong>Pytanie:</strong> co się stanie, gdy dodasz trzeci wariant? Czy kod nadal jest czytelny?</div>"
     }
   ],
   "questions": [

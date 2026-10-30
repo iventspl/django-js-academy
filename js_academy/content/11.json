@@ -58,6 +58,13 @@
       "summary": "Logi, breakpointy i najczęstsze pułapki serwera.",
       "minutes": "15",
       "body_html": "<p>W Node logi są szybkie, ale zbyt wiele logów ukrywa przyczynę. Najpierw ustal, czego szukasz.</p>\n<h2>Log z kontekstem</h2>\n<pre><code>console.log(\"order failed\", { orderId, status, error: error.message });</code></pre>\n<h2>Breakpoint</h2>\n<pre><code>node --inspect-brk src/server.js</code></pre>\n<p>Otwórz <code>chrome://inspect</code>, ustaw breakpoint i sprawdź zmienne. To często szybsze niż dziesięć logów.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> odtwórz błąd lokalnie z tymi samymi danymi. Bez reprodukcji debugowanie jest zgadywaniem.</div>"
+    },
+    {
+      "slug": "warsztat-cli",
+      "title": "Warsztat: CLI do raportu",
+      "summary": "Argumenty, plik i czytelny błąd.",
+      "minutes": "17",
+      "body_html": "<p>Zbuduj CLI, które czyta plik CSV i wypisuje liczbę wierszy. Ma działać także wtedy, gdy plik nie istnieje.</p>\n<h2>Argumenty</h2>\n<pre><code>const file = process.argv[2];\nif (!file) {\n  console.error(\"Użycie: node count.js plik.csv\");\n  process.exit(1);\n}</code></pre>\n<h2>Odczyt</h2>\n<pre><code>const text = await fs.readFile(file, \"utf8\");\nconsole.log(\"Wiersze:\", text.trim().split(\"\\n\").length);</code></pre>\n<div class=\"lesson-callout\"><strong>Sprawdź:</strong> uruchom bez argumentu i z nieistniejącym plikiem. Czy komunikaty mówią, co poprawić?</div>"
     }
   ],
   "questions": [

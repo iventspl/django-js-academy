@@ -58,6 +58,13 @@
       "summary": "Kiedy praca w tle ma sens, a kiedy tylko komplikuje aplikację.",
       "minutes": "17",
       "body_html": "<p>Web Worker nie jest magicznym przyspieszeniem. Przenosi ciężką pracę poza wątek interfejsu.</p>\n<h2>Worker</h2>\n<pre><code>const worker = new Worker(\"worker.js\");\nworker.postMessage({ type: \"parse\", text });\nworker.onmessage = (event) =&gt; console.log(event.data);</code></pre>\n<h2>Powiadomienia</h2>\n<pre><code>if (\"Notification\" in window) {\n  const permission = await Notification.requestPermission();\n}</code></pre>\n<p>Nie proś o powiadomienia przy pierwszym wejściu. Najpierw daj powód.</p>\n<div class=\"lesson-callout\"><strong>Pytanie:</strong> czy użytkownik zyska na pracy w tle, czy wystarczy zwykły przycisk?</div>"
+    },
+    {
+      "slug": "warsztat-cache",
+      "title": "Warsztat: cache i storage",
+      "summary": "Co zostaje po odświeżeniu, a co powinno zniknąć.",
+      "minutes": "17",
+      "body_html": "<p>Zbuduj listę filmów, która pamięta ulubione, ale nie zapisuje całej odpowiedzi API.</p>\n<h2>Zapis</h2>\n<pre><code>localStorage.setItem(\"favorites\", JSON.stringify(ids));</code></pre>\n<h2>Odczyt</h2>\n<pre><code>let ids = [];\ntry { ids = JSON.parse(localStorage.getItem(\"favorites\") ?? \"[]\"); } catch (_) {}</code></pre>\n<p>Dane z API mogą być nieaktualne. Zapisz tylko wybór użytkownika, nie cały świat.</p>\n<div class=\"lesson-callout\"><strong>Test:</strong> odśwież stronę i sprawdź, czy ulubione zostają, a lista pobiera się od nowa.</div>"
     }
   ],
   "questions": [

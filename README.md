@@ -2,7 +2,7 @@
 
 A local-first learning game for Python, Django, JavaScript and applied AI. It mixes multiple-choice quiz runs, open flashcards (fiszki), spaced repetition, explanations, coding challenges and a progress notebook — with a deliberately polished interface that runs the same way on macOS and Windows.
 
-No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.25 extended JavaScript modules, the 4.24 practical examples and plain-language glossary, the 4.23 full MVC project walkthroughs, the 4.22 mobile layout, the 4.21 cross-platform learner tools, the 4.20 local Wi-Fi mode and earlier releases.
+No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.26 JS workshops, the 4.25 extended modules, the 4.24 practical examples and plain-language glossary, the 4.23 full MVC project walkthroughs, the 4.22 mobile layout, the 4.21 cross-platform learner tools, the 4.20 local Wi-Fi mode and earlier releases.
 
 ## What is inside
 
@@ -11,7 +11,7 @@ No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHAN
 - **34 real-world cheatsheets** covering permissions, uploads, private storage, email, webhooks, N+1 queries, search, migrations, deployment, LLM gateways, RAG, evals, prompt injection, ADRs, HTMX, typing, and tooling.
 - **6 application blueprints** for SaaS, marketplace, booking, CMS, support desk, and mobile API products — with data models, starter code, build order, and production traps.
 - **8 Architecture Studio labs** for AI document assistants, tool-using agents, multi-tenant SaaS, webhook platforms, marketplace ledgers, real-time fan-out, analytics pipelines, and legacy modernization.
-- **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 22 modules, 116 lessons, 152 quiz questions, 140 flashcards, 2 full project walkthroughs (17 steps), 13 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 64-term glossary, 30 interview questions, and XP/streaks.
+- **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 22 modules, 137 lessons, 152 quiz questions, 140 flashcards, 2 full project walkthroughs (17 steps), 13 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 64-term glossary, 30 interview questions, and XP/streaks.
 - **AI Academy** — a 12-month applied AI engineering path with 8 modules, 42 lessons, 48 quiz questions, 40 concept cards, 55 glossary terms, 12 real projects and a career map.
 - **Release radar** with current Django versions, LTS windows, CVE summaries, and source links to the official release notes.
 - **Spaced repetition** for every card with four recall ratings: Again, Hard, Good, Easy.
@@ -265,31 +265,31 @@ Use the **Django / JavaScript / AI** switch in the sidebar to enter **JS Akademi
 | Module | Lessons | Quiz | Fiszki | Projekt |
 | --- | ---: | ---: | ---: | --- |
 | Fundamenty JavaScript | 7 | 13 | 11 | Kalkulator budżetu |
-| Nowoczesny JavaScript | 5 | 6 | 5 | Klient API z błędami |
-| DOM, formularze i przeglądarka | 5 | 6 | 5 | Lista zadań w JS |
-| TypeScript w praktyce | 5 | 6 | 5 | Typowany koszyk |
-| React — podstawy | 5 | 6 | 5 | Lista zadań React |
-| React — hooki i architektura | 5 | 6 | 5 | Mini sklep |
-| React Native | 5 | 6 | 5 | Mobilna lista zadań |
-| Testy, jakość i publikacja | 5 | 6 | 5 | Wydanie aplikacji |
-| Wzorce i architektura frontendu | 5 | 6 | 5 | Kreator zamówienia |
-| Struktury danych i algorytmy | 5 | 6 | 5 | Analizator wydatków |
-| Node.js i narzędzia | 5 | 6 | 5 | CLI do raportu |
-| React w praktyce | 5 | 6 | 5 | Panel produktów |
-| React Native w produkcji | 5 | 6 | 5 | Notes offline-first |
-| JavaScript + AI | 5 | 6 | 5 | Asystent z cytowaniami |
-| Bezpieczeństwo i wydajność frontendu | 5 | 6 | 5 | Audyt aplikacji |
-| Mistrzostwo JS: powtórka i rozmowa | 5 | 15 | 25 | Obrona decyzji projektowej |
-| AI a praca programisty | 5 | 6 | 5 | Audyt kodu wygenerowanego przez AI |
-| MVC w JavaScript | 6 | 8 | 6 | Lista produktów MVC |
-| Wzorce projektowe w JS | 5 | 6 | 5 | Mini store z obserwatorem |
-| Web APIs w praktyce | 5 | 6 | 5 | Cache offline |
-| Debugging i DevTools | 5 | 6 | 5 | Polowanie na błąd |
-| Przykłady z życia | 8 | 8 | 8 | Aplikacja nawyków |
+| Nowoczesny JavaScript | 6 | 6 | 5 | Klient API z błędami |
+| DOM, formularze i przeglądarka | 6 | 6 | 5 | Lista zadań w JS |
+| TypeScript w praktyce | 6 | 6 | 5 | Typowany koszyk |
+| React — podstawy | 6 | 6 | 5 | Lista zadań React |
+| React — hooki i architektura | 6 | 6 | 5 | Mini sklep |
+| React Native | 6 | 6 | 5 | Mobilna lista zadań |
+| Testy, jakość i publikacja | 6 | 6 | 5 | Wydanie aplikacji |
+| Wzorce i architektura frontendu | 6 | 6 | 5 | Kreator zamówienia |
+| Struktury danych i algorytmy | 6 | 6 | 5 | Analizator wydatków |
+| Node.js i narzędzia | 6 | 6 | 5 | CLI do raportu |
+| React w praktyce | 6 | 6 | 5 | Panel produktów |
+| React Native w produkcji | 6 | 6 | 5 | Notes offline-first |
+| JavaScript + AI | 6 | 6 | 5 | Asystent z cytowaniami |
+| Bezpieczeństwo i wydajność frontendu | 6 | 6 | 5 | Audyt aplikacji |
+| Mistrzostwo JS: powtórka i rozmowa | 6 | 15 | 25 | Obrona decyzji projektowej |
+| AI a praca programisty | 6 | 6 | 5 | Audyt kodu wygenerowanego przez AI |
+| MVC w JavaScript | 7 | 8 | 6 | Lista produktów MVC |
+| Wzorce projektowe w JS | 6 | 6 | 5 | Mini store z obserwatorem |
+| Web APIs w praktyce | 6 | 6 | 5 | Cache offline |
+| Debugging i DevTools | 6 | 6 | 5 | Polowanie na błąd |
+| Przykłady z życia | 9 | 8 | 8 | Aplikacja nawyków |
 
 The platform includes:
 
-- **22 modules / 116 lessons** with Polish explanations, code and practical warnings.
+- **22 modules / 137 lessons** with Polish explanations, code and practical warnings.
 - **152 quiz questions** with detailed explanations.
 - **140 open flashcards** with spaced repetition.
 - **13 live iframe demos** — real interactive HTML/JS examples embedded directly in lessons.
