@@ -1,0 +1,681 @@
+{
+  "chapters": [
+    {
+      "slug": "drf-advanced",
+      "title": "Advanced DRF",
+      "subtitle": "Nested writes, schemas, versioning and throttling",
+      "category": "API & deploy",
+      "order": 3,
+      "level": "Advanced",
+      "tags": [
+        "DRF",
+        "API",
+        "OpenAPI"
+      ],
+      "aliases": [
+        "nested serializer",
+        "writable nested",
+        "serializer create",
+        "serializer update",
+        "drf spectacular",
+        "openapi",
+        "swagger",
+        "versioning",
+        "throttling",
+        "rate limit",
+        "apiclient",
+        "force authenticate",
+        "pagination",
+        "filtering",
+        "api schema"
+      ],
+      "summary": "The DRF parts that decide whether an API survives clients: nested writes, explicit scoping, schema generation, versioning and rate limits.",
+      "quick_answer": "Keep serializers thin, put writes in `create()`/`update()` with an atomic block, scope every queryset, version the URL, generate an OpenAPI schema, and throttle by user/scope. Test cross-user access explicitly.",
+      "sections": [
+        {
+          "id": "nested-writes",
+          "title": "Writable nested serializers",
+          "body": "A nested serializer is read-only by default. To write nested data, implement `create()`/`update()` and decide how to handle removed children. Wrap the write in `transaction.atomic()` so a partial order is impossible.\n\nFor large child lists, `bulk_create` is faster but bypasses `save()` and signals. Use it deliberately.",
+          "code": "class OrderItemSerializer(serializers.ModelSerializer):\n    class Meta:\n        model = OrderItem\n        fields = [\"product\", \"quantity\"]\n\nclass OrderSerializer(serializers.ModelSerializer):\n    items = OrderItemSerializer(many=True)\n\n    class Meta:\n        model = Order\n        fields = [\"id\", \"customer\", \"items\", \"status\"]\n        read_only_fields = [\"customer\", \"status\"]\n\n    def create(self, validated_data):\n        items = validated_data.pop(\"items\")\n        with transaction.atomic():\n            order = Order.objects.create(customer=self.context[\"request\"].user, **validated_data)\n            OrderItem.objects.bulk_create(\n                [OrderItem(order=order, **item) for item in items]\n            )\n        return order",
+          "language": "python",
+          "note": "For updates, decide whether the payload replaces the child list or merges. Document it; clients will assume one or the other.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "scoping",
+          "title": "Scoping and object permissions",
+          "body": "`IsAuthenticated` is not scoping. `get_queryset()` must filter by tenant/user before `get_object()` runs. Object permissions run after the object is fetched, so an unscoped queryset can leak existence and data.\n\nUse a base viewset with `get_queryset()` and a `perform_create()` that sets server-controlled fields.",
+          "code": "class OrderViewSet(viewsets.ModelViewSet):\n    serializer_class = OrderSerializer\n    permission_classes = [IsAuthenticated]\n\n    def get_queryset(self):\n        return Order.objects.filter(customer=self.request.user).prefetch_related(\"items\")\n\n    def perform_create(self, serializer):\n        serializer.save(customer=self.request.user)",
+          "language": "python",
+          "note": "A 404 for another user's object is usually safer than a 403. Choose per product.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "schema",
+          "title": "OpenAPI schemas",
+          "body": "`drf-spectacular` generates an OpenAPI schema from serializers and views. Add `@extend_schema` for query parameters, examples and error responses. Serve `/api/schema/` and `/api/docs/` for humans.\n\nA schema is a contract. Generate it in CI and fail if it changes unexpectedly for a versioned API.",
+          "code": "REST_FRAMEWORK = {\n    \"DEFAULT_SCHEMA_CLASS\": \"drf_spectacular.openapi.AutoSchema\",\n}\n\nSPECTACULAR_SETTINGS = {\n    \"TITLE\": \"Shop API\",\n    \"VERSION\": \"1.0.0\",\n    \"SERVE_INCLUDE_SCHEMA\": False,\n}\n\n# urls.py\npath(\"api/schema/\", SpectacularAPIView.as_view(), name=\"schema\"),\npath(\"api/docs/\", SpectacularSwaggerView.as_view(url_name=\"schema\")),",
+          "language": "python",
+          "note": "Document error shapes too. Clients need to know what a 400 looks like.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "versioning-throttling",
+          "title": "Versioning, pagination and throttling",
+          "body": "Put the version in the URL (`/api/v1/`) for a public API; header versioning is harder to test and cache. Paginate every list; cursor pagination is better for large feeds.\n\nThrottle by user or scope. A global rate limit protects the service; a scoped limit protects an expensive endpoint (search, export, login).",
+          "code": "REST_FRAMEWORK = {\n    \"DEFAULT_VERSIONING_CLASS\": \"rest_framework.versioning.URLPathVersioning\",\n    \"DEFAULT_VERSION\": \"v1\",\n    \"ALLOWED_VERSIONS\": [\"v1\"],\n    \"DEFAULT_PAGINATION_CLASS\": \"rest_framework.pagination.CursorPagination\",\n    \"PAGE_SIZE\": 20,\n    \"DEFAULT_THROTTLE_CLASSES\": [\"rest_framework.throttling.UserRateThrottle\"],\n    \"DEFAULT_THROTTLE_RATES\": {\"user\": \"1000/day\", \"login\": \"10/min\"},\n}\n\nclass LoginView(APIView):\n    throttle_scope = \"login\"",
+          "language": "python",
+          "note": "A throttle is not a security boundary. Use account lockout/rate limiting at the edge for credential stuffing.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "api-testing",
+          "title": "Testing the API contract",
+          "body": "Use `APIClient` and `force_authenticate` for fast tests. Assert status codes, response shape and database changes. Add one schema test and a cross-user 404 test.\n\nA 200 with the wrong owner's data is worse than a 500; tests must prove scoping.",
+          "code": "from rest_framework.test import APITestCase\n\nclass OrderAPITests(APITestCase):\n    def test_cannot_read_another_users_order(self):\n        self.client.force_authenticate(self.other_user)\n        response = self.client.get(f\"/api/v1/orders/{self.order.pk}/\")\n        self.assertEqual(response.status_code, 404)",
+          "language": "python",
+          "note": "`force_authenticate` bypasses the auth backend; keep a few real token/session tests too.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Writing nested data without a transaction.",
+        "An authenticated viewset with an unscoped queryset.",
+        "Changing a response shape without bumping the API version.",
+        "Throttling only globally and leaving login unthrottled.",
+        "Publishing a schema that does not match the implementation."
+      ],
+      "checklist": [
+        "Nested writes are atomic and documented.",
+        "Every queryset is scoped to the caller.",
+        "The API is versioned and paginated.",
+        "Sensitive endpoints have scoped throttles.",
+        "Schema is generated and tested."
+      ],
+      "related": [
+        "drf",
+        "auth",
+        "security",
+        "testing-advanced"
+      ],
+      "official": "https://www.django-rest-framework.org/",
+      "errors": []
+    },
+    {
+      "slug": "deploy-hardening",
+      "title": "Production deployment",
+      "subtitle": "Process model, Postgres, Redis, zero downtime and backups",
+      "category": "API & deploy",
+      "order": 4,
+      "level": "Advanced",
+      "tags": [
+        "deployment",
+        "PostgreSQL",
+        "operations"
+      ],
+      "aliases": [
+        "gunicorn",
+        "uvicorn",
+        "workers",
+        "postgres",
+        "redis",
+        "connection pooling",
+        "collectstatic",
+        "whitenoise",
+        "health check",
+        "readiness",
+        "zero downtime",
+        "backup",
+        "restore",
+        "12 factor",
+        "docker",
+        "release",
+        "rollback"
+      ],
+      "summary": "A production Django deployment is a set of boring, testable decisions: process model, database connections, static files, health checks, migrations and backups.",
+      "quick_answer": "Run `DEBUG=False` behind Gunicorn/Uvicorn, use managed PostgreSQL and Redis, collect static files, run migrations once per release, expose health/readiness endpoints, and test a backup restore. Deploy the same artifact everywhere.",
+      "sections": [
+        {
+          "id": "artifact-config",
+          "title": "One artifact, configuration from the environment",
+          "body": "Build a container image or wheel once, promote it through staging and production. Secrets and hostnames come from the environment, not the image. `DEBUG=False`, a real `SECRET_KEY`, explicit `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` are baseline.\n\nPin dependencies. A build that resolves latest versions at deploy time is not reproducible.",
+          "code": "# Dockerfile sketch\nFROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nRUN python manage.py collectstatic --noinput\nCMD [\"gunicorn\", \"config.wsgi:application\", \"--bind\", \"0.0.0.0:8000\", \"--workers\", \"3\", \"--timeout\", \"30\"]",
+          "language": "dockerfile",
+          "note": "`collectstatic` at build time needs the static settings, not production secrets. Use a settings module that can run without a database.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "process-model",
+          "title": "Workers, threads and timeouts",
+          "body": "Gunicorn workers are processes. A rough starting point is `2 × CPU + 1`, then measure. More workers mean more memory and database connections. Async workers (Uvicorn) handle I/O concurrency differently; do not mix models without a load test.\n\nSet a request timeout, graceful timeout and keep-alive. A stuck request should not own a worker forever.",
+          "code": "gunicorn config.wsgi:application \\\n  --bind 0.0.0.0:8000 \\\n  --workers 3 \\\n  --timeout 30 \\\n  --graceful-timeout 30 \\\n  --access-logfile - \\\n  --error-logfile -\n\n# ASGI\nuvicorn config.asgi:application --host 0.0.0.0 --port 8000 --workers 4",
+          "language": "bash",
+          "note": "Database connection limits are global. 10 workers × 20 connections = 200 connections; check the PostgreSQL plan.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "database-redis",
+          "title": "PostgreSQL, connections and Redis",
+          "body": "Use a managed PostgreSQL for multi-user production. Persistent connections (`CONN_MAX_AGE`) reduce handshake cost but consume a connection per worker/thread. A pooler (PgBouncer) can sit in front.\n\nRedis is used for cache, sessions, channel layers and locks. Treat it as a dependency with its own memory policy and persistence plan. Do not store the only copy of important data there.",
+          "code": "DATABASES = {\n    \"default\": {\n        **dj_database_url.config(conn_max_age=600, conn_health_checks=True),\n        \"OPTIONS\": {\"connect_timeout\": 5},\n    }\n}",
+          "language": "python",
+          "note": "`CONN_MAX_AGE` with a process-based server can leave idle connections open. Monitor `pg_stat_activity`.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "static-media",
+          "title": "Static files and uploads",
+          "body": "Run `collectstatic` during the release and serve `STATIC_ROOT` with WhiteNoise, Nginx or a CDN. Do not let Django serve static files in production. User media belongs in object storage or a shared volume, not each app server's disk.\n\nUse a manifest storage backend so filenames are content-hashed and cacheable for a year.",
+          "code": "MIDDLEWARE = [\n    \"django.middleware.security.SecurityMiddleware\",\n    \"whitenoise.middleware.WhiteNoiseMiddleware\",\n    # ...\n]\nSTORAGES = {\n    \"default\": {\"BACKEND\": \"django.core.files.storage.FileSystemStorage\"},\n    \"staticfiles\": {\"BACKEND\": \"whitenoise.storage.CompressedManifestStaticFilesStorage\"},\n}",
+          "language": "python",
+          "note": "If styles disappear after deploy, check `collectstatic` and the manifest, not the CSS file.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "zero-downtime",
+          "title": "Zero downtime and health checks",
+          "body": "A rolling deploy starts new processes before stopping old ones. Migrations must be compatible with both. Run migrations as a separate release step, not from every web worker. A failed readiness check should remove the instance from the load balancer.\n\nHealth = process alive. Readiness = database/cache reachable and migrations applied. Keep both cheap.",
+          "code": "def health(request):\n    return JsonResponse({\"status\": \"ok\"})\n\ndef ready(request):\n    with connection.cursor() as cursor:\n        cursor.execute(\"SELECT 1\")\n    return JsonResponse({\"status\": \"ready\"})",
+          "language": "python",
+          "note": "Do not expose dependency details or secrets in a public readiness response.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "backups",
+          "title": "Backups and restore drills",
+          "body": "A backup you have never restored is a hope. Schedule automated PostgreSQL backups, keep them off the primary host, encrypt them, and restore into a scratch environment on a schedule. Document RPO/RTO.\n\nObject storage needs versioning/lifecycle rules. Redis persistence is not a database backup.",
+          "code": "# Verify a restore, not just a dump\npg_dump \"$DATABASE_URL\" --format=custom --file=backup.dump\npg_restore --clean --if-exists --dbname=\"$RESTORE_URL\" backup.dump",
+          "language": "bash",
+          "note": "A restore drill is also a migration test: does the old backup run with the current code?",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Running migrations from every web worker at boot.",
+        "Serving static files with Django in production.",
+        "Setting workers without checking database connection limits.",
+        "Using local disk for uploads behind a load balancer.",
+        "No readiness check, so a dead process keeps traffic.",
+        "Backups that have never been restored."
+      ],
+      "checklist": [
+        "`check --deploy` passes.",
+        "The release artifact is reproducible.",
+        "Migrations run once before new workers take traffic.",
+        "Static files are collected and served efficiently.",
+        "Health and readiness endpoints exist.",
+        "A restore drill has succeeded."
+      ],
+      "related": [
+        "deploy",
+        "security",
+        "observability",
+        "performance"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/howto/deployment/",
+      "errors": []
+    },
+    {
+      "slug": "observability",
+      "title": "Observability",
+      "subtitle": "Logs, metrics, traces and alerts that explain production",
+      "category": "API & deploy",
+      "order": 5,
+      "level": "Advanced",
+      "tags": [
+        "logging",
+        "metrics",
+        "tracing"
+      ],
+      "aliases": [
+        "logging",
+        "structured logging",
+        "request id",
+        "metrics",
+        "prometheus",
+        "opentelemetry",
+        "tracing",
+        "sentry",
+        "error tracking",
+        "slo",
+        "alerting",
+        "health",
+        "dashboard",
+        "log aggregation"
+      ],
+      "summary": "When a request fails at 3 a.m., you need three answers: what happened, for whom, and how often. Logs, metrics and traces provide them; alerts should be tied to user impact.",
+      "quick_answer": "Log structured events with a request id, expose a few RED/USE metrics, trace the critical path, send exceptions to an error tracker, and alert on symptoms (error rate, latency, saturation) rather than every CPU blip.",
+      "sections": [
+        {
+          "id": "logging",
+          "title": "Structured logs",
+          "body": "A log line should be machine-parseable and include a timestamp, level, logger, request id, user id (or a hash), route, status and duration. Do not log passwords, tokens, full card numbers or private file URLs.\n\nSend logs to stdout in containers and let the platform aggregate them. A local file inside a container disappears with the container.",
+          "code": "LOGGING = {\n    \"version\": 1,\n    \"disable_existing_loggers\": False,\n    \"formatters\": {\n        \"json\": {\n            \"format\": '{\"time\":\"%(asctime)s\",\"level\":\"%(levelname)s\",\"logger\":\"%(name)s\",\"message\":\"%(message)s\",\"request_id\":\"%(request_id)s\"}',\n        },\n    },\n    \"filters\": {\"request_id\": {\"()\": \"common.logging.RequestIdFilter\"}},\n    \"handlers\": {\n        \"console\": {\n            \"class\": \"logging.StreamHandler\",\n            \"formatter\": \"json\",\n            \"filters\": [\"request_id\"],\n        },\n    },\n    \"root\": {\"handlers\": [\"console\"], \"level\": \"INFO\"},\n}",
+          "language": "python",
+          "note": "Logging a full request body is a data-protection incident waiting to happen. Log identifiers and outcomes.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "metrics",
+          "title": "Metrics and dashboards",
+          "body": "Track rate, errors and duration (RED) for every endpoint, plus saturation (CPU, memory, DB connections, queue depth). Use histograms for latency, not averages: p95/p99 expose the tail.\n\n`django-prometheus` can expose `/metrics`; protect it from the public internet. Keep labels low-cardinality: route and status, not user id.",
+          "code": "from prometheus_client import Counter, Histogram\n\nREQUESTS = Counter(\"http_requests_total\", \"HTTP requests\", [\"route\", \"method\", \"status\"])\nLATENCY = Histogram(\"http_request_duration_seconds\", \"Request latency\", [\"route\"])\n\ndef instrument(view):\n    def wrapped(request, *args, **kwargs):\n        with LATENCY.labels(route=request.resolver_match.route if request.resolver_match else \"unknown\").time():\n            response = view(request, *args, **kwargs)\n        REQUESTS.labels(route=\"...\", method=request.method, status=response.status_code).inc()\n        return response\n    return wrapped",
+          "language": "python",
+          "note": "A metric with a user id label can explode cardinality and memory. Use bounded labels only.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "tracing",
+          "title": "Tracing the request path",
+          "body": "A trace follows one request across Django, the database, Redis and external APIs. OpenTelemetry auto-instrumentation captures HTTP and SQL spans; add manual spans around important service calls.\n\nThe trace id should appear in logs and error reports. Without it, debugging a distributed failure is guesswork.",
+          "code": "# Run with: opentelemetry-instrument gunicorn config.wsgi:application\nfrom opentelemetry import trace\n\ntracer = trace.get_tracer(__name__)\n\ndef charge_order(order):\n    with tracer.start_as_current_span(\"payments.charge\") as span:\n        span.set_attribute(\"order.id\", order.pk)\n        return gateway.charge(order)",
+          "language": "python",
+          "note": "Do not put PII in span attributes. Sampling reduces cost but can hide rare failures.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "errors-alerts",
+          "title": "Error tracking and alerts",
+          "body": "Send unhandled exceptions to Sentry or an equivalent with the request id, route and release version. Group by fingerprint, not by raw message if it contains ids.\n\nAlert on user impact: error rate, p95 latency, queue age, failed payments. Every alert needs a runbook and an owner. A dashboard nobody checks is decoration.",
+          "code": "import sentry_sdk\nfrom sentry_sdk.integrations.django import DjangoIntegration\n\nsentry_sdk.init(\n    dsn=os.environ[\"SENTRY_DSN\"],\n    integrations=[DjangoIntegration()],\n    traces_sample_rate=0.1,\n    send_default_pii=False,\n    release=os.environ.get(\"GIT_SHA\"),\n)",
+          "language": "python",
+          "note": "`send_default_pii=False` is a safer default. Review what your error tracker captures.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "slos",
+          "title": "SLOs and the on-call conversation",
+          "body": "An SLO turns reliability into a number: “99.9% of checkout requests succeed under 500 ms over 30 days”. An error budget quantifies how much failure is acceptable.\n\nUse SLOs to prioritise reliability work and to decide when to stop shipping risky changes. Do not page on a single 500; page on a sustained burn rate.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Signal",
+              "Example",
+              "Alert when"
+            ],
+            "rows": [
+              [
+                "Availability",
+                "5xx rate",
+                "> 1% for 5 minutes"
+              ],
+              [
+                "Latency",
+                "p95 checkout",
+                "> 800 ms for 10 minutes"
+              ],
+              [
+                "Saturation",
+                "DB connections",
+                "> 80% for 10 minutes"
+              ],
+              [
+                "Queue",
+                "oldest job age",
+                "> 15 minutes"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Logging secrets, tokens or full request bodies.",
+        "High-cardinality metric labels.",
+        "Alerting on CPU instead of user impact.",
+        "No request/trace id linking logs and errors.",
+        "A dashboard with no owner or runbook."
+      ],
+      "checklist": [
+        "Logs are structured and correlated by request id.",
+        "RED metrics and saturation are visible.",
+        "Critical paths are traced.",
+        "Exceptions reach an error tracker with release info.",
+        "Alerts have owners and runbooks."
+      ],
+      "related": [
+        "deploy-hardening",
+        "performance",
+        "background-jobs"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/logging/",
+      "errors": []
+    },
+    {
+      "slug": "i18n",
+      "title": "Internationalization",
+      "subtitle": "Translations, locales, time zones and plural forms",
+      "category": "Quality",
+      "order": 8,
+      "level": "Advanced",
+      "tags": [
+        "i18n",
+        "l10n",
+        "time zones"
+      ],
+      "aliases": [
+        "i18n",
+        "translation",
+        "gettext",
+        "gettext_lazy",
+        "makemessages",
+        "compilemessages",
+        "locale",
+        "language code",
+        "plural",
+        "ngettext",
+        "time zone",
+        "localtime",
+        "locale middleware",
+        "translation template",
+        "blocktranslate"
+      ],
+      "summary": "Django's translation and time-zone machinery: marking strings, compiling catalogs, pluralization, locale-aware formatting and the time-zone boundary.",
+      "quick_answer": "Mark strings with `gettext`/`gettext_lazy` (or `{% translate %}`), run `makemessages`/`compilemessages`, enable `LocaleMiddleware`, and store aware UTC datetimes. Convert to the user's time zone only at the display boundary.",
+      "sections": [
+        {
+          "id": "marking-strings",
+          "title": "Marking strings",
+          "body": "Use `gettext()` for runtime strings and `gettext_lazy()` for module-level strings (model choices, form labels) that are evaluated later. In templates use `{% translate %}` and `{% blocktranslate %}`.\n\nDo not concatenate translated fragments; word order differs. Use a placeholder in one translated string.",
+          "code": "from django.utils.translation import gettext as _, gettext_lazy as _lazy\n\nclass Post(models.Model):\n    STATUS_CHOICES = [\n        (\"draft\", _lazy(\"Draft\")),\n        (\"published\", _lazy(\"Published\")),\n    ]\n\ndef welcome(request):\n    messages.success(request, _(\"Your account is ready.\"))\n\n# template\n{% load i18n %}\n{% translate \"Save changes\" %}\n{% blocktranslate with name=user.first_name %}Welcome, {{ name }}.{% endblocktranslate %}",
+          "language": "python",
+          "note": "`gettext_lazy` returns a proxy, not a string. It is safe in choices and labels; convert with `str()` when passing to code that needs a real string.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "catalogs",
+          "title": "Catalogs and compilation",
+          "body": "`makemessages` scans source/templates for marked strings and updates `.po` files. Translators edit those files. `compilemessages` produces `.mo` files, which are what Django reads. Commit both.\n\nSet `LOCALE_PATHS` for project-level locales and `LANGUAGES` for the supported set. A language missing from `LANGUAGES` will not be activated by the middleware.",
+          "code": "python manage.py makemessages -l pl -l de\npython manage.py compilemessages\n\n# settings.py\nLANGUAGES = [(\"en\", \"English\"), (\"pl\", \"Polski\"), (\"de\", \"Deutsch\")]\nLOCALE_PATHS = [BASE_DIR / \"locale\"]\nMIDDLEWARE = [\n    \"django.middleware.locale.LocaleMiddleware\",\n    # after SessionMiddleware, before CommonMiddleware\n]",
+          "language": "bash",
+          "note": "`LocaleMiddleware` must run after `SessionMiddleware` and before `CommonMiddleware`.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "pluralization",
+          "title": "Pluralization and formatting",
+          "body": "Plural rules differ by language. Use `ngettext`/`{% blocktranslate count %}` rather than an `if count == 1` branch. Use Django's localization filters (`{{ value|floatformat }}`, `{{ date|date }}`) and `USE_L10N`/`USE_THOUSAND_SEPARATOR` deliberately.\n\nNumbers, currencies and dates are product decisions; do not assume every locale wants the same format.",
+          "code": "from django.utils.translation import ngettext\n\nmessage = ngettext(\n    \"%(count)d item was added.\",\n    \"%(count)d items were added.\",\n    count,\n) % {\"count\": count}\n\n{% load i18n %}\n{% blocktranslate count counter=items|length %}\n  {{ counter }} item\n{% plural %}\n  {{ counter }} items\n{% endblocktranslate %}",
+          "language": "python",
+          "note": "A translation catalog with a missing plural form falls back to the source string. Test the plural cases.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "time-zones",
+          "title": "Time zones at the boundary",
+          "body": "With `USE_TZ=True`, the database stores UTC. `timezone.now()` is aware; `datetime.now()` is naive and dangerous. Convert for display with `timezone.localtime()` or the `date`/`time` template filters.\n\nStore UTC, render in the user's zone, and be explicit in exports and API payloads (ISO 8601 with offset).",
+          "code": "from django.utils import timezone\n\nnow = timezone.now()\nlocal = timezone.localtime(now)\ntoday = timezone.localdate()\n\n# API: include the offset\nnow.isoformat()  # 2026-11-06T14:00:00+00:00",
+          "language": "python",
+          "note": "A naive datetime saved into an aware field raises a warning and can shift by the server time zone. Never use `datetime.now()`.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "testing",
+          "title": "Testing translations",
+          "body": "Test the language switch and at least one translated string. `override_settings(LANGUAGE_CODE=...)` and `translation.override()` change the active language in a test. Do not assert exact translated prose in every test; assert the key behaviour.\n\nThe default language test alone will not catch a missing catalog or a broken plural.",
+          "code": "from django.test import override_settings\nfrom django.utils import translation\n\n@override_settings(LANGUAGE_CODE=\"pl\")\ndef test_plural_form(self):\n    with translation.override(\"pl\"):\n        self.assertIn(\"elementy\", str(ngettext(\"item\", \"items\", 3)))",
+          "language": "python",
+          "note": "Compiled `.mo` files must exist in CI for translation tests to pass.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Concatenating translated sentence fragments.",
+        "Forgetting `compilemessages` after editing `.po` files.",
+        "Using `datetime.now()` with `USE_TZ=True`.",
+        "Adding a language to `LANGUAGES` but not to `LocaleMiddleware` order.",
+        "Testing only the default language."
+      ],
+      "checklist": [
+        "User-facing strings are marked for translation.",
+        "Catalogs are compiled and committed.",
+        "LocaleMiddleware order is correct.",
+        "Datetimes are stored aware/UTC and converted for display.",
+        "At least one non-default language is tested."
+      ],
+      "related": [
+        "settings",
+        "templates",
+        "urls-advanced"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/i18n/",
+      "errors": []
+    },
+    {
+      "slug": "search-postgres",
+      "title": "Search with PostgreSQL",
+      "subtitle": "Full-text search, trigram, ranking and indexes",
+      "category": "Data",
+      "order": 9,
+      "level": "Advanced",
+      "tags": [
+        "search",
+        "PostgreSQL",
+        "indexes"
+      ],
+      "aliases": [
+        "full text search",
+        "searchvector",
+        "searchquery",
+        "searchrank",
+        "searchheadline",
+        "trigram",
+        "gin index",
+        "postgres search",
+        "websearch",
+        "fuzzy search",
+        "elasticsearch",
+        "opensearch",
+        "search pagination",
+        "search ranking"
+      ],
+      "summary": "PostgreSQL can carry a serious search feature without a second service: full-text vectors, ranking, trigram similarity and the right GIN indexes.",
+      "quick_answer": "Use `SearchVector`/`SearchQuery`/`SearchRank` for word search, trigram similarity for typo tolerance, and GIN indexes on the vector/trigram columns. Paginate by a stable rank and always filter by tenant/permission first.",
+      "sections": [
+        {
+          "id": "full-text",
+          "title": "Full-text search primitives",
+          "body": "`SearchVector` converts text to a `tsvector`; `SearchQuery` parses the user's query; `SearchRank` scores matches. `SearchHeadline` highlights snippets. PostgreSQL stemming means “running” can match “run”.\n\nUse `websearch_to_tsquery` semantics for user input (`SearchQuery(value, search_type=\"websearch\")`) so quotes and `OR` behave as users expect.",
+          "code": "from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector\n\nquery = SearchQuery(\"django forms\", search_type=\"websearch\")\nposts = (\n    Post.objects.annotate(\n        rank=SearchRank(\n            SearchVector(\"title\", weight=\"A\") + SearchVector(\"body\", weight=\"B\"),\n            query,\n        )\n    )\n    .filter(rank__gt=0.01)\n    .order_by(\"-rank\", \"-published_at\")\n)",
+          "language": "python",
+          "note": "Rank thresholds are data-dependent. Inspect scores before choosing a cutoff.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "stored-vector",
+          "title": "Stored vectors and GIN indexes",
+          "body": "Computing a vector on every query is fine for small tables and bad for large ones. Add a `SearchVectorField`, populate it on write or with a trigger, and index it with `GinIndex`.\n\nA generated column/trigger keeps the vector consistent; an application-side update can drift if a bulk update bypasses it.",
+          "code": "from django.contrib.postgres.indexes import GinIndex\nfrom django.contrib.postgres.search import SearchVectorField\n\nclass Post(models.Model):\n    title = models.CharField(max_length=200)\n    body = models.TextField()\n    search_vector = SearchVectorField(null=True)\n\n    class Meta:\n        indexes = [GinIndex(fields=[\"search_vector\"])]\n\n# Backfill\nPost.objects.update(search_vector=SearchVector(\"title\", \"body\"))\n\n# Query\nPost.objects.filter(search_vector=SearchQuery(\"django\"))",
+          "language": "python",
+          "note": "`SearchVectorField` requires PostgreSQL. SQLite has no equivalent; use a simple `icontains` fallback in development.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "trigram",
+          "title": "Trigram and typo tolerance",
+          "body": "`pg_trgm` compares three-character sequences and supports `%` similarity and `ILIKE` indexes. It is useful for names, SKUs and “did you mean” search. Enable the extension in a migration with `TrigramExtension`.\n\nTrigram indexes are larger than GIN full-text indexes. Use them for short fields and fuzzy matching, not as a replacement for FTS.",
+          "code": "from django.contrib.postgres.indexes import GinIndex\nfrom django.contrib.postgres.operations import TrigramExtension\nfrom django.contrib.postgres.search import TrigramSimilarity\n\nclass Migration(migrations.Migration):\n    operations = [TrigramExtension()]\n\nPost.objects.annotate(similarity=TrigramSimilarity(\"title\", \"djang forms\")).filter(\n    similarity__gt=0.3\n).order_by(\"-similarity\")",
+          "language": "python",
+          "note": "`TrigramExtension` must run before the index/query that depends on it.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "ranking-pagination",
+          "title": "Ranking, pagination and permissions",
+          "body": "Paginate by a stable rank plus a tiebreaker (`-rank`, `-id`). Offset pagination on a huge search result is slow; cursor pagination needs an encoded sort key. Always filter by tenant/visibility before ranking.\n\nIf search becomes a product differentiator or needs synonyms, facets and language analyzers, consider OpenSearch/Elasticsearch. Do not add a cluster for a 10-row table.",
+          "code": "page = Paginator(\n    Post.objects.filter(tenant=tenant, status=\"published\")\n    .annotate(rank=SearchRank(\"search_vector\", query))\n    .filter(rank__gt=0.01)\n    .order_by(\"-rank\", \"-id\"),\n    20,\n).get_page(request.GET.get(\"page\"))",
+          "language": "python",
+          "note": "A search index is a copy of the data. It must respect the same permissions as the database, or it leaks.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Searching with `icontains` on a huge table and calling it search.",
+        "Forgetting the tenant/permission filter before ranking.",
+        "Computing `SearchVector` on every request for a large table.",
+        "Using trigram for long documents instead of FTS.",
+        "Pagination without a stable tiebreaker."
+      ],
+      "checklist": [
+        "Search uses FTS or trigram deliberately.",
+        "Vectors are stored and indexed for large tables.",
+        "Queries are tenant/permission scoped.",
+        "Ranking has a stable tiebreaker.",
+        "There is a fallback for SQLite development."
+      ],
+      "related": [
+        "orm",
+        "performance",
+        "multi-tenancy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/postgres/search/",
+      "errors": []
+    },
+    {
+      "slug": "multi-tenancy",
+      "title": "Multi-tenancy",
+      "subtitle": "Shared schema, schema-per-tenant and isolation",
+      "category": "Architecture",
+      "order": 1,
+      "level": "Advanced",
+      "tags": [
+        "tenancy",
+        "SaaS",
+        "isolation"
+      ],
+      "aliases": [
+        "multi tenant",
+        "tenant",
+        "shared schema",
+        "schema per tenant",
+        "database per tenant",
+        "row level security",
+        "tenant middleware",
+        "tenant scoping",
+        "quota",
+        "onboarding",
+        "data isolation",
+        "tenant leak"
+      ],
+      "summary": "A tenant is a security boundary, not a filter you remember sometimes. Choose the isolation model, enforce scoping at the data layer, and test the leak paths.",
+      "quick_answer": "Use a `tenant_id` on every tenant-owned row, scope queries in a base manager/queryset, resolve the tenant in middleware, and test cross-tenant access. Schema-per-tenant or database-per-tenant increases isolation at the cost of migrations and operations.",
+      "sections": [
+        {
+          "id": "models",
+          "title": "Pick the isolation model",
+          "body": "**Shared schema** adds `tenant_id` to every row; cheapest to operate, easiest to leak if a query forgets the filter. **Schema per tenant** gives each tenant its own tables; stronger isolation, harder migrations and connection routing. **Database per tenant** is strongest and most expensive.\n\nMost SaaS starts shared-schema and moves high-value customers to a dedicated database later. Do not choose schema-per-tenant for a 10-user app.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Model",
+              "Isolation",
+              "Cost",
+              "Typical use"
+            ],
+            "rows": [
+              [
+                "Shared schema",
+                "Row filter",
+                "Low",
+                "Early SaaS, many small tenants"
+              ],
+              [
+                "Schema per tenant",
+                "PostgreSQL schema",
+                "Medium",
+                "Regulated data, moderate tenant count"
+              ],
+              [
+                "Database per tenant",
+                "Separate DB",
+                "High",
+                "Enterprise, residency, noisy neighbours"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "scoping",
+          "title": "Scope at the data layer",
+          "body": "A `TenantManager` that filters by the current tenant is safer than remembering `filter(tenant=request.tenant)` in every view. But ambient state is dangerous: background jobs, admin and shell sessions have no request. Pass the tenant explicitly where possible; use a context variable only as a guard.\n\nA missing tenant should raise, not return all rows.",
+          "code": "from contextvars import ContextVar\n\n_current_tenant = ContextVar(\"current_tenant\", default=None)\n\nclass TenantQuerySet(models.QuerySet):\n    def for_tenant(self, tenant):\n        if tenant is None:\n            raise ValueError(\"Tenant is required\")\n        return self.filter(tenant=tenant)\n\nclass TenantManager(models.Manager.from_queryset(TenantQuerySet)):\n    def get_queryset(self):\n        tenant = _current_tenant.get()\n        qs = super().get_queryset()\n        return qs.filter(tenant=tenant) if tenant else qs.none()",
+          "language": "python",
+          "note": "Returning `.none()` for a missing tenant is safer than returning every row. Admin and jobs must set the tenant explicitly.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "middleware",
+          "title": "Resolve the tenant in middleware",
+          "body": "Resolve the tenant from the subdomain, path or authenticated user, verify membership, and set `request.tenant`. Reject unknown tenants before the view. Clear any context variable in `finally` so it cannot leak between requests.\n\nA user who belongs to two tenants needs an explicit switch, not a silent default.",
+          "code": "class TenantMiddleware:\n    def __init__(self, get_response):\n        self.get_response = get_response\n\n    def __call__(self, request):\n        host = request.get_host().split(\":\")[0]\n        tenant = Tenant.objects.filter(domain=host, active=True).first()\n        if tenant is None:\n            raise Http404(\"Unknown workspace\")\n        if request.user.is_authenticated and not request.user.tenants.filter(pk=tenant.pk).exists():\n            raise PermissionDenied\n        request.tenant = tenant\n        token = _current_tenant.set(tenant)\n        try:\n            return self.get_response(request)\n        finally:\n            _current_tenant.reset(token)",
+          "language": "python",
+          "note": "A 404 for an unknown workspace avoids leaking which tenants exist.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "migrations-onboarding",
+          "title": "Migrations, onboarding and quotas",
+          "body": "Schema-per-tenant means running migrations for every schema; database-per-tenant means routing each migration. Shared-schema is one migration for everyone. Plan a tenant creation flow that is idempotent and can resume.\n\nEnforce quotas (users, storage, API calls) at the service layer and in the database where possible. A quota check that races is not a quota.",
+          "code": "def create_tenant(name, domain):\n    with transaction.atomic():\n        tenant = Tenant.objects.create(name=name, domain=domain)\n        Membership.objects.create(tenant=tenant, user=request.user, role=\"owner\")\n        OutboxEvent.objects.create(topic=\"tenant.created\", payload={\"tenant_id\": tenant.pk})\n    return tenant",
+          "language": "python",
+          "note": "Run a cross-tenant test suite: user A must receive 404/403 for every one of B's objects.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Filtering by tenant only in the view, not in shared managers/services.",
+        "Forgetting tenant filters in admin, exports and background jobs.",
+        "A missing tenant returning all rows.",
+        "Schema-per-tenant without a migration runner for every schema.",
+        "Quota checks that race under concurrent requests."
+      ],
+      "checklist": [
+        "Isolation model is documented and tested.",
+        "Tenant-owned rows carry a tenant key.",
+        "Data access is scoped at the manager/service layer.",
+        "Middleware verifies membership and clears context.",
+        "Cross-tenant access tests exist."
+      ],
+      "related": [
+        "models",
+        "auth",
+        "security",
+        "multi-db"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/",
+      "errors": []
+    }
+  ]
+}

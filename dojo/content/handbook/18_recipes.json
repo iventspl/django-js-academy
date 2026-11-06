@@ -1,0 +1,793 @@
+{
+  "chapters": [
+    {
+      "slug": "recipe-auth",
+      "title": "Recipe: accounts",
+      "subtitle": "Signup, login, logout and password reset",
+      "category": "Recipes",
+      "order": 1,
+      "tags": [
+        "auth",
+        "recipe"
+      ],
+      "aliases": [
+        "signup recipe",
+        "registration",
+        "usercreationform",
+        "login view",
+        "logout view",
+        "password reset recipe",
+        "email verification",
+        "account flow",
+        "auth urls"
+      ],
+      "summary": "A complete, small account flow using Django's built-in auth forms and views, with the settings and templates that make it work.",
+      "quick_answer": "Use `UserCreationForm` for signup, the built-in `LoginView`/`LogoutView`/password-reset views for the rest, and `login_required` for private pages. Add email verification only when the product needs it.",
+      "sections": [
+        {
+          "id": "urls-settings",
+          "title": "URLs and settings",
+          "body": "Wire the built-in views and set the redirect targets. Templates live in `registration/` by convention.",
+          "code": "# config/urls.py\nfrom django.contrib.auth import views as auth_views\nfrom django.urls import path\nfrom accounts import views\n\nurlpatterns = [\n    path(\"signup/\", views.signup, name=\"signup\"),\n    path(\"login/\", auth_views.LoginView.as_view(), name=\"login\"),\n    path(\"logout/\", auth_views.LogoutView.as_view(), name=\"logout\"),\n    path(\"password-reset/\", auth_views.PasswordResetView.as_view(), name=\"password_reset\"),\n    path(\"password-reset/done/\", auth_views.PasswordResetDoneView.as_view(), name=\"password_reset_done\"),\n    path(\"reset/<uidb64>/<token>/\", auth_views.PasswordResetConfirmView.as_view(), name=\"password_reset_confirm\"),\n    path(\"reset/done/\", auth_views.PasswordResetCompleteView.as_view(), name=\"password_reset_complete\"),\n]\n\nLOGIN_URL = \"login\"\nLOGIN_REDIRECT_URL = \"home\"\nLOGOUT_REDIRECT_URL = \"home\"",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "signup",
+          "title": "Signup form and view",
+          "body": "`UserCreationForm` handles password hashing and validation. Add an email field if you need one, and log the user in after signup.",
+          "code": "from django.contrib.auth import login\nfrom django.contrib.auth.forms import UserCreationForm\nfrom django.shortcuts import redirect, render\n\nclass SignupForm(UserCreationForm):\n    class Meta(UserCreationForm.Meta):\n        model = User\n        fields = (\"username\", \"email\")\n\ndef signup(request):\n    form = SignupForm(request.POST or None)\n    if request.method == \"POST\" and form.is_valid():\n        user = form.save()\n        login(request, user)\n        return redirect(\"home\")\n    return render(request, \"registration/signup.html\", {\"form\": form})",
+          "language": "python",
+          "note": "If email is your login identifier, use a custom user model or a custom authentication backend. The default `User` logs in with username.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "protect",
+          "title": "Protect private pages",
+          "body": "Use `login_required` on function views and `LoginRequiredMixin` on class-based views. Keep the `next` redirect safe.",
+          "code": "from django.contrib.auth.decorators import login_required\n\n@login_required\ndef dashboard(request):\n    return render(request, \"dashboard.html\")\n\nclass Dashboard(LoginRequiredMixin, TemplateView):\n    template_name = \"dashboard.html\"",
+          "language": "python",
+          "note": "Validate `next` with `url_has_allowed_host_and_scheme` before redirecting. An open redirect is a phishing primitive.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Storing or logging raw passwords.",
+        "Using the default user when email is the login identifier.",
+        "Forgetting `LOGIN_REDIRECT_URL` and landing on `/accounts/profile/`.",
+        "Open redirects through an unvalidated `next`.",
+        "No email backend, so reset emails never arrive."
+      ],
+      "checklist": [
+        "Signup hashes passwords through the auth API.",
+        "Login/logout/reset views are wired.",
+        "Private pages use a login guard.",
+        "Redirect targets are safe.",
+        "Reset email works end to end."
+      ],
+      "related": [
+        "auth",
+        "auth-advanced",
+        "recipe-email"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/auth/default/",
+      "level": "Recipe",
+      "errors": []
+    },
+    {
+      "slug": "recipe-crud",
+      "title": "Recipe: CRUD with ownership",
+      "subtitle": "List, detail, create, edit and delete",
+      "category": "Recipes",
+      "order": 2,
+      "tags": [
+        "CRUD",
+        "views",
+        "recipe"
+      ],
+      "aliases": [
+        "crud recipe",
+        "listview",
+        "detailview",
+        "createview",
+        "updateview",
+        "deleteview",
+        "ownership",
+        "object permission",
+        "post form",
+        "confirm delete"
+      ],
+      "summary": "A full CRUD flow with the security detail most tutorials skip: every read and write is scoped to the owner.",
+      "quick_answer": "Use generic views for the five pages, override `get_queryset()` to scope by owner, and use `LoginRequiredMixin` before the view. A delete confirmation is a GET page that posts to a DELETE view.",
+      "sections": [
+        {
+          "id": "read",
+          "title": "List and detail",
+          "body": "The list and detail views share one scoped queryset. Another user's object becomes a 404.",
+          "code": "class PostList(LoginRequiredMixin, ListView):\n    model = Post\n    paginate_by = 20\n\n    def get_queryset(self):\n        return Post.objects.filter(author=self.request.user).select_related(\"author\")\n\nclass PostDetail(LoginRequiredMixin, DetailView):\n    model = Post\n\n    def get_queryset(self):\n        return Post.objects.filter(author=self.request.user)",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "write",
+          "title": "Create, update and delete",
+          "body": "Set the owner on create, scope update/delete to the owner, and redirect after success.",
+          "code": "class PostCreate(LoginRequiredMixin, CreateView):\n    model = Post\n    fields = [\"title\", \"body\"]\n    success_url = reverse_lazy(\"blog:list\")\n\n    def form_valid(self, form):\n        form.instance.author = self.request.user\n        return super().form_valid(form)\n\nclass PostUpdate(LoginRequiredMixin, UpdateView):\n    model = Post\n    fields = [\"title\", \"body\"]\n\n    def get_queryset(self):\n        return Post.objects.filter(author=self.request.user)\n\nclass PostDelete(LoginRequiredMixin, DeleteView):\n    model = Post\n    success_url = reverse_lazy(\"blog:list\")\n\n    def get_queryset(self):\n        return Post.objects.filter(author=self.request.user)",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "urls-templates",
+          "title": "URLs and templates",
+          "body": "The delete page must submit a POST, not delete on GET. Include CSRF.",
+          "code": "urlpatterns = [\n    path(\"\", PostList.as_view(), name=\"list\"),\n    path(\"new/\", PostCreate.as_view(), name=\"create\"),\n    path(\"<int:pk>/\", PostDetail.as_view(), name=\"detail\"),\n    path(\"<int:pk>/edit/\", PostUpdate.as_view(), name=\"update\"),\n    path(\"<int:pk>/delete/\", PostDelete.as_view(), name=\"delete\"),\n]\n\n<form method=\"post\">\n  {% csrf_token %}\n  <p>Delete “{{ object.title }}”?</p>\n  <button type=\"submit\">Delete</button>\n</form>",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "An unscoped `get_queryset()`.",
+        "Deleting on GET.",
+        "Trusting a hidden `author` field.",
+        "Forgetting `reverse_lazy` in class attributes.",
+        "Returning 403 when a 404 would not leak existence."
+      ],
+      "checklist": [
+        "Every view is login-protected.",
+        "Reads and writes are scoped to the owner.",
+        "Create sets server-controlled fields.",
+        "Delete is a POST with CSRF.",
+        "Another user gets 404 in tests."
+      ],
+      "related": [
+        "views",
+        "views-advanced",
+        "forms",
+        "recipe-auth"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/class-based-views/",
+      "level": "Recipe",
+      "errors": []
+    },
+    {
+      "slug": "recipe-search",
+      "title": "Recipe: search & filters",
+      "subtitle": "Query params, Q objects and pagination",
+      "category": "Recipes",
+      "order": 3,
+      "tags": [
+        "search",
+        "filters",
+        "recipe"
+      ],
+      "aliases": [
+        "search page",
+        "filter queryset",
+        "query params",
+        "q object",
+        "icontains",
+        "pagination recipe",
+        "facets",
+        "ordering",
+        "search form",
+        "empty state"
+      ],
+      "summary": "A search page that handles an empty query, combines filters and paginates without losing the query string.",
+      "quick_answer": "Read a small, validated set of query parameters, build a `Q` object, apply an allowlisted sort, paginate, and preserve the query string in pagination links.",
+      "sections": [
+        {
+          "id": "query",
+          "title": "Build the queryset",
+          "body": "Never pass raw query params into `order_by` or field names. Validate against an allowlist.",
+          "code": "def post_search(request):\n    query = request.GET.get(\"q\", \"\").strip()\n    category = request.GET.get(\"category\", \"\")\n    sort = request.GET.get(\"sort\", \"newest\")\n    posts = Post.objects.filter(status=\"published\").select_related(\"author\")\n    if query:\n        posts = posts.filter(\n            Q(title__icontains=query) | Q(body__icontains=query) | Q(author__username__icontains=query)\n        )\n    if category:\n        posts = posts.filter(category__slug=category)\n    ordering = {\"newest\": \"-published_at\", \"oldest\": \"published_at\", \"title\": \"title\"}\n    posts = posts.order_by(ordering.get(sort, \"-published_at\"))\n    return posts",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "view",
+          "title": "View and pagination",
+          "body": "Paginate the filtered queryset and keep the other params in the pager links.",
+          "code": "from django.core.paginator import Paginator\nfrom django.shortcuts import render\n\ndef search(request):\n    posts = post_search(request)\n    page = Paginator(posts, 20).get_page(request.GET.get(\"page\"))\n    return render(request, \"blog/search.html\", {\n        \"page_obj\": page,\n        \"query\": request.GET.get(\"q\", \"\"),\n        \"categories\": Category.objects.all(),\n    })\n\n{% for post in page_obj %}{{ post.title }}{% endfor %}\n{% if page_obj.has_next %}\n  <a href=\"?q={{ query|urlencode }}&page={{ page_obj.next_page_number }}\">Next</a>\n{% endif %}",
+          "language": "python",
+          "note": "A paginator with an unordered queryset can repeat rows. Always `order_by()` before paginating.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "empty-performance",
+          "title": "Empty states and performance",
+          "body": "An empty query should show a useful default, not an error. A search page is a common N+1 source; select/prefetch what the template renders.",
+          "code": "{% if query %}\n  <p>{{ page_obj.paginator.count }} result{{ page_obj.paginator.count|pluralize }} for “{{ query }}”</p>\n{% endif %}\n{% for post in page_obj %}\n  {% include \"blog/_card.html\" %}\n{% empty %}\n  <p>No posts matched. Try a shorter phrase.</p>\n{% endfor %}",
+          "language": "html",
+          "note": "Measure query count with `assertNumQueries`; a search page with authors and categories often hides N+1.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Passing `sort` directly to `order_by`.",
+        "Paginating an unordered queryset.",
+        "Losing the query string on page 2.",
+        "Searching a huge text column without an index.",
+        "No empty state."
+      ],
+      "checklist": [
+        "Query params are validated.",
+        "Sorting uses an allowlist.",
+        "Pagination preserves filters.",
+        "The page has a stable query count.",
+        "Empty and no-query states are designed."
+      ],
+      "related": [
+        "orm",
+        "views",
+        "templates",
+        "search-postgres"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/pagination/",
+      "level": "Recipe",
+      "errors": []
+    },
+    {
+      "slug": "recipe-upload",
+      "title": "Recipe: image upload",
+      "subtitle": "Validate, store and serve a private image",
+      "category": "Recipes",
+      "order": 4,
+      "tags": [
+        "upload",
+        "images",
+        "recipe"
+      ],
+      "aliases": [
+        "image upload",
+        "file upload",
+        "pillow",
+        "thumbnail",
+        "private file",
+        "upload form",
+        "imagefield",
+        "media",
+        "storage recipe",
+        "download permission"
+      ],
+      "summary": "An upload flow with the security basics: size/type validation, a generated filename, private storage and a permission-checked download.",
+      "quick_answer": "Use a `ModelForm` with `ImageField`, pass `request.FILES`, validate size/type, re-encode with Pillow, store privately, and serve through a view that checks ownership.",
+      "sections": [
+        {
+          "id": "model-form",
+          "title": "Model and form",
+          "body": "Store the file key, not the raw path. Generate a filename and keep the original name only for display.",
+          "code": "from pathlib import Path\nfrom uuid import uuid4\n\ndef avatar_path(instance, filename):\n    return f\"avatars/{instance.user_id}/{uuid4()}{Path(filename).suffix.lower()}\"\n\nclass Profile(models.Model):\n    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)\n    avatar = models.ImageField(upload_to=avatar_path)\n\nclass AvatarForm(forms.ModelForm):\n    class Meta:\n        model = Profile\n        fields = [\"avatar\"]\n\n    def clean_avatar(self):\n        image = self.cleaned_data[\"avatar\"]\n        if image.size > 5 * 1024 * 1024:\n            raise forms.ValidationError(\"Maximum size is 5 MB.\")\n        return image",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "view",
+          "title": "View and template",
+          "body": "Pass both POST and FILES. Login is required; the profile is fetched for the current user.",
+          "code": "@login_required\ndef upload_avatar(request):\n    profile, _ = Profile.objects.get_or_create(user=request.user)\n    form = AvatarForm(request.POST or None, request.FILES or None, instance=profile)\n    if request.method == \"POST\" and form.is_valid():\n        form.save()\n        return redirect(\"profile\")\n    return render(request, \"profile/avatar.html\", {\"form\": form})\n\n<form method=\"post\" enctype=\"multipart/form-data\">\n  {% csrf_token %}\n  {{ form.as_p }}\n  <button type=\"submit\">Upload</button>\n</form>",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "serve",
+          "title": "Serve privately",
+          "body": "Do not expose `MEDIA_URL` for private avatars. Stream through a view with an ownership check, or redirect to a short-lived signed URL.",
+          "code": "@login_required\ndef avatar(request, user_id):\n    profile = get_object_or_404(Profile, user_id=user_id)\n    if request.user != profile.user and not request.user.is_staff:\n        raise PermissionDenied\n    return FileResponse(profile.avatar.open(\"rb\"))",
+          "language": "python",
+          "note": "A public avatar can be served from a CDN; a private document cannot. Decide per field.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Forgetting `enctype=\"multipart/form-data\"`.",
+        "Passing only `request.POST` and losing the file.",
+        "Trusting the filename or content type.",
+        "Serving private uploads from `MEDIA_URL`.",
+        "Loading the whole image into memory for a thumbnail."
+      ],
+      "checklist": [
+        "The form receives `request.FILES`.",
+        "Size/type are validated server-side.",
+        "Filenames are generated.",
+        "Private files are permission-checked.",
+        "Images are re-encoded or thumbnailed."
+      ],
+      "related": [
+        "forms",
+        "static-media",
+        "storage-files",
+        "security"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/http/file-uploads/",
+      "level": "Recipe",
+      "errors": []
+    },
+    {
+      "slug": "recipe-export",
+      "title": "Recipe: CSV export",
+      "subtitle": "A safe, streaming download in one view",
+      "category": "Recipes",
+      "order": 5,
+      "tags": [
+        "CSV",
+        "export",
+        "recipe"
+      ],
+      "aliases": [
+        "csv download",
+        "streaming csv",
+        "export view",
+        "formula injection",
+        "attachment",
+        "large export",
+        "report download"
+      ],
+      "summary": "The smallest correct CSV export: scoped queryset, streamed rows, safe cells and a filename.",
+      "quick_answer": "Stream rows from an iterator, escape cells that start with `=+-@`, set `Content-Disposition: attachment`, and scope the query to the current user/tenant.",
+      "sections": [
+        {
+          "id": "view",
+          "title": "The view",
+          "body": "Use an `Echo` adapter so `csv.writer` can write to the streaming response.",
+          "code": "import csv\nfrom django.http import StreamingHttpResponse\n\nclass Echo:\n    def write(self, value):\n        return value\n\ndef export_orders(request):\n    writer = csv.writer(Echo())\n    orders = Order.objects.filter(customer=request.user).select_related(\"customer\")\n\n    def rows():\n        yield writer.writerow([\"id\", \"customer\", \"total\", \"status\"])\n        for order in orders.iterator(chunk_size=500):\n            yield writer.writerow([order.pk, order.customer.email, order.total, order.status])\n\n    response = StreamingHttpResponse(rows(), content_type=\"text/csv\")\n    response[\"Content-Disposition\"] = 'attachment; filename=\"orders.csv\"'\n    return response",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "safe-cells",
+          "title": "Escape formula injection",
+          "body": "A cell starting with `=`, `+`, `-` or `@` can become a spreadsheet formula. Prefix it.",
+          "code": "DANGEROUS = (\"=\", \"+\", \"-\", \"@\", \"\\t\", \"\\r\")\n\ndef safe_cell(value):\n    text = str(value)\n    return \"'\" + text if text.startswith(DANGEROUS) else text",
+          "language": "python",
+          "note": "This changes the displayed value for a legitimate negative number. Decide per column whether to escape or format as a number.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "large",
+          "title": "Large exports",
+          "body": "If the file takes minutes, enqueue a job, store it and send a short-lived link. The request should not occupy a worker.",
+          "code": "@shared_task\ndef build_export(job_id):\n    job = ExportJob.objects.get(pk=job_id)\n    path = f\"exports/{job.pk}.csv\"\n    with default_storage.open(path, \"w\") as handle:\n        write_orders_csv(handle, job.user_id)\n    job.file.name = path\n    job.status = \"ready\"\n    job.save(update_fields=[\"file\", \"status\"])",
+          "language": "python",
+          "note": "Store the user/tenant scope in the job row. Do not rely on request state inside a worker.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Building the whole CSV in memory.",
+        "Exporting every row regardless of tenant/user.",
+        "Leaving formula injection unescaped.",
+        "No `Content-Disposition`.",
+        "A long export inside the request."
+      ],
+      "checklist": [
+        "The queryset is scoped.",
+        "Rows stream from an iterator.",
+        "Cells are escaped for spreadsheets.",
+        "The download has a filename.",
+        "Large exports run as a job."
+      ],
+      "related": [
+        "views-advanced",
+        "exports",
+        "background-jobs"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/howto/outputting-csv/",
+      "level": "Recipe",
+      "errors": []
+    },
+    {
+      "slug": "recipe-email",
+      "title": "Recipe: transactional email",
+      "subtitle": "Send, queue and test a receipt",
+      "category": "Recipes",
+      "order": 6,
+      "tags": [
+        "email",
+        "recipe"
+      ],
+      "aliases": [
+        "send email",
+        "receipt email",
+        "email template",
+        "email queue",
+        "smtp",
+        "console backend",
+        "email test",
+        "transactional email"
+      ],
+      "summary": "A production-shaped email flow: a template, a queued send, a retry policy and a test that asserts the message.",
+      "quick_answer": "Render subject/body from templates, send in a worker after commit, retry only transient failures, and use the locmem backend in tests.",
+      "sections": [
+        {
+          "id": "compose",
+          "title": "Compose",
+          "body": "Keep the subject and body in templates so translations and design changes do not touch Python.",
+          "code": "from django.core.mail import EmailMultiAlternatives\nfrom django.template.loader import render_to_string\n\ndef build_receipt(order):\n    context = {\"order\": order}\n    subject = render_to_string(\"email/receipt_subject.txt\", context).strip()\n    text = render_to_string(\"email/receipt.txt\", context)\n    html = render_to_string(\"email/receipt.html\", context)\n    message = EmailMultiAlternatives(subject, text, None, [order.customer.email])\n    message.attach_alternative(html, \"text/html\")\n    return message",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "queue",
+          "title": "Queue after commit",
+          "body": "The worker should not see an order that the transaction has not committed. Pass the order id.",
+          "code": "@shared_task(bind=True, max_retries=3)\ndef send_receipt(self, order_id):\n    order = Order.objects.get(pk=order_id)\n    try:\n        build_receipt(order).send()\n    except TransientEmailError as exc:\n        raise self.retry(exc=exc, countdown=60)\n\nwith transaction.atomic():\n    order = Order.objects.create(...)\n    transaction.on_commit(lambda: send_receipt.delay(order.pk))",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "test",
+          "title": "Test",
+          "body": "Use the locmem backend and assert the recipient and subject. A reset/receipt link should be tested end to end.",
+          "code": "@override_settings(EMAIL_BACKEND=\"django.core.mail.backends.locmem.EmailBackend\")\nclass ReceiptTests(TestCase):\n    def test_receipt_is_sent(self):\n        with self.captureOnCommitCallbacks(execute=True):\n            create_order(self.user)\n        self.assertEqual(len(mail.outbox), 1)\n        self.assertIn(\"Receipt\", mail.outbox[0].subject)",
+          "language": "python",
+          "note": "`TestCase` wraps the test in a transaction, so use `captureOnCommitCallbacks(execute=True)` for `on_commit` sends.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Sending synchronously in the request.",
+        "Sending before the transaction commits.",
+        "Retrying hard bounces forever.",
+        "No plain-text alternative.",
+        "Testing with a real SMTP server."
+      ],
+      "checklist": [
+        "Email is queued after commit.",
+        "Templates exist for subject/text/HTML.",
+        "Transient failures retry with a limit.",
+        "Tests use the locmem backend.",
+        "Bounces/complaints are handled."
+      ],
+      "related": [
+        "email-deliverability",
+        "background-jobs",
+        "recipe-auth"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/email/",
+      "level": "Recipe",
+      "errors": []
+    },
+    {
+      "slug": "recipe-api",
+      "title": "Recipe: JSON API",
+      "subtitle": "A scoped DRF endpoint from zero",
+      "category": "Recipes",
+      "order": 7,
+      "tags": [
+        "API",
+        "DRF",
+        "recipe"
+      ],
+      "aliases": [
+        "api endpoint",
+        "drf recipe",
+        "serializer recipe",
+        "viewset recipe",
+        "router",
+        "token auth",
+        "api permissions",
+        "json api",
+        "api test"
+      ],
+      "summary": "A minimal but production-shaped DRF endpoint: serializer, viewset, router, scoped queryset and a test.",
+      "quick_answer": "Define a `ModelSerializer`, a `ModelViewSet` with `get_queryset()` scoped to the user, register it on a router, and require authentication. Paginate and version the URL.",
+      "sections": [
+        {
+          "id": "serializer-view",
+          "title": "Serializer and viewset",
+          "body": "List fields explicitly and make server-controlled fields read-only.",
+          "code": "class PostSerializer(serializers.ModelSerializer):\n    class Meta:\n        model = Post\n        fields = [\"id\", \"title\", \"body\", \"created_at\"]\n        read_only_fields = [\"id\", \"created_at\"]\n\nclass PostViewSet(viewsets.ModelViewSet):\n    serializer_class = PostSerializer\n    permission_classes = [IsAuthenticated]\n\n    def get_queryset(self):\n        return Post.objects.filter(author=self.request.user)\n\n    def perform_create(self, serializer):\n        serializer.save(author=self.request.user)",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "urls",
+          "title": "Router and URLs",
+          "body": "The router generates list/detail routes. Version the prefix.",
+          "code": "router = DefaultRouter()\nrouter.register(\"posts\", PostViewSet, basename=\"post\")\n\nurlpatterns = [\n    path(\"api/v1/\", include(router.urls)),\n]",
+          "language": "python",
+          "note": "A router is a convenience, not a requirement. Use explicit paths when the URL shape is not CRUD.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "test",
+          "title": "Test",
+          "body": "Prove authentication, creation and cross-user isolation.",
+          "code": "class PostAPITests(APITestCase):\n    def test_requires_authentication(self):\n        self.assertEqual(self.client.get(\"/api/v1/posts/\").status_code, 401)\n\n    def test_create_sets_author(self):\n        self.client.force_authenticate(self.user)\n        response = self.client.post(\"/api/v1/posts/\", {\"title\": \"Hi\", \"body\": \"...\"})\n        self.assertEqual(response.status_code, 201)\n        self.assertEqual(Post.objects.get().author, self.user)",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "An unscoped queryset.",
+        "Letting clients set `author`.",
+        "No pagination.",
+        "No authentication.",
+        "Changing the response shape without a version."
+      ],
+      "checklist": [
+        "Serializer fields are explicit.",
+        "Queryset is scoped.",
+        "Authentication and permissions are set.",
+        "List endpoints paginate.",
+        "Cross-user access is tested."
+      ],
+      "related": [
+        "drf",
+        "drf-advanced",
+        "recipe-auth"
+      ],
+      "official": "https://www.django-rest-framework.org/tutorial/quickstart/",
+      "level": "Recipe",
+      "errors": []
+    },
+    {
+      "slug": "recipe-deploy",
+      "title": "Recipe: first deploy",
+      "subtitle": "Settings, release script, health and rollback",
+      "category": "Recipes",
+      "order": 8,
+      "tags": [
+        "deployment",
+        "recipe"
+      ],
+      "aliases": [
+        "deploy recipe",
+        "release script",
+        "gunicorn recipe",
+        "whitenoise",
+        "health check",
+        "production settings",
+        "rollback",
+        "docker deploy",
+        "first deploy"
+      ],
+      "summary": "A launch checklist you can execute: production settings, a repeatable release, a health check and a rollback.",
+      "quick_answer": "Set `DEBUG=False`, real secrets and hosts; run migrate + collectstatic once; serve with Gunicorn/WhiteNoise; add health/readiness; keep the previous image for rollback.",
+      "sections": [
+        {
+          "id": "settings",
+          "title": "Production settings",
+          "body": "These are the minimums. Keep values in the environment.",
+          "code": "DEBUG = False\nSECRET_KEY = os.environ[\"DJANGO_SECRET_KEY\"]\nALLOWED_HOSTS = os.environ[\"DJANGO_ALLOWED_HOSTS\"].split(\",\")\nCSRF_TRUSTED_ORIGINS = os.environ.get(\"DJANGO_CSRF_TRUSTED_ORIGINS\", \"\").split(\",\")\n\nSECURE_SSL_REDIRECT = True\nSESSION_COOKIE_SECURE = True\nCSRF_COOKIE_SECURE = True\nSECURE_HSTS_SECONDS = 31536000\nX_FRAME_OPTIONS = \"DENY\"\n\nDATABASES = {\"default\": dj_database_url.config(conn_max_age=600)}",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "release",
+          "title": "Release script",
+          "body": "Run migrations once, collect static, check and restart. Keep it idempotent.",
+          "code": "set -e\npip install -r requirements.txt\npython manage.py migrate --noinput\npython manage.py collectstatic --noinput\npython manage.py check --deploy\ngunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 30",
+          "language": "bash",
+          "note": "Do not run `migrate` from every web worker at boot; they will race.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "health-rollback",
+          "title": "Health and rollback",
+          "body": "A shallow health check proves the process is alive; readiness proves dependencies work. Keep the previous image and a database backup.",
+          "code": "def health(request):\n    return JsonResponse({\"status\": \"ok\"})\n\ndef ready(request):\n    with connection.cursor() as cursor:\n        cursor.execute(\"SELECT 1\")\n    return JsonResponse({\"status\": \"ready\"})",
+          "language": "python",
+          "note": "After deploy, watch error rate, p95 latency and queue depth. Roll back before debugging in production if the blast radius is growing.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Running `runserver` in production.",
+        "Migrations from every worker.",
+        "Serving static files with Django.",
+        "No readiness check.",
+        "No rollback image."
+      ],
+      "checklist": [
+        "`check --deploy` passes.",
+        "Release script is idempotent.",
+        "Health/readiness endpoints exist.",
+        "Static files are collected/served.",
+        "Rollback image and backup exist."
+      ],
+      "related": [
+        "deploy",
+        "deploy-hardening",
+        "security"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/howto/deployment/checklist/",
+      "level": "Recipe",
+      "errors": []
+    },
+    {
+      "slug": "recipe-background",
+      "title": "Recipe: background job",
+      "subtitle": "Enqueue, retry and observe one job",
+      "category": "Recipes",
+      "order": 9,
+      "tags": [
+        "tasks",
+        "Celery",
+        "recipe"
+      ],
+      "aliases": [
+        "celery recipe",
+        "background task",
+        "retry task",
+        "on_commit",
+        "idempotent job",
+        "worker recipe",
+        "task monitoring",
+        "outbox recipe"
+      ],
+      "summary": "A single job that is safe to retry: enqueue after commit, pass an id, dedupe and log.",
+      "quick_answer": "Define a task that takes an id, write the job intent in the transaction, enqueue with `on_commit`, and make the task idempotent with a dedupe key.",
+      "sections": [
+        {
+          "id": "task",
+          "title": "The task",
+          "body": "The task fetches its own data and records success. It should be safe to run twice.",
+          "code": "@shared_task(bind=True, max_retries=5, acks_late=True)\ndef sync_invoice(self, invoice_id):\n    invoice = Invoice.objects.get(pk=invoice_id)\n    if invoice.synced_at:\n        return\n    try:\n        gateway.push(invoice)\n    except TransientGatewayError as exc:\n        raise self.retry(exc=exc, countdown=2 ** self.request.retries)\n    invoice.synced_at = timezone.now()\n    invoice.save(update_fields=[\"synced_at\"])",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "enqueue",
+          "title": "Enqueue after commit",
+          "body": "The row must exist before the worker reads it.",
+          "code": "with transaction.atomic():\n    invoice = Invoice.objects.create(order=order, total=order.total)\n    transaction.on_commit(lambda: sync_invoice.delay(invoice.pk))",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "observe",
+          "title": "Observe",
+          "body": "Log the job id, invoice id, attempt and outcome. Alert on a growing queue and failures.",
+          "code": "logger.info(\"invoice.sync\", extra={\"invoice_id\": invoice_id, \"attempt\": self.request.retries})\n# Metrics: queue depth, duration, failures, oldest job age",
+          "language": "python",
+          "note": "A task with no logs and no metrics is invisible until a customer complains.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Enqueuing before commit.",
+        "Passing model instances.",
+        "Retrying a permanent failure.",
+        "No idempotency.",
+        "No queue monitoring."
+      ],
+      "checklist": [
+        "Job is idempotent.",
+        "Enqueue happens after commit.",
+        "Retries are bounded.",
+        "Failures are logged and alerted.",
+        "Queue depth is monitored."
+      ],
+      "related": [
+        "background-jobs",
+        "transactions-locking",
+        "observability"
+      ],
+      "official": "https://docs.celeryq.dev/en/stable/django/first-steps-with-django.html",
+      "level": "Recipe",
+      "errors": []
+    },
+    {
+      "slug": "recipe-multi-tenant",
+      "title": "Recipe: tenant scoping",
+      "subtitle": "Resolve, scope and test one tenant boundary",
+      "category": "Recipes",
+      "order": 10,
+      "tags": [
+        "tenancy",
+        "SaaS",
+        "recipe"
+      ],
+      "aliases": [
+        "tenant recipe",
+        "tenant middleware",
+        "tenant scoping",
+        "cross tenant test",
+        "membership",
+        "workspace",
+        "saas recipe",
+        "row level tenant"
+      ],
+      "summary": "A minimal shared-schema tenant flow: membership, middleware, scoped manager and a leak test.",
+      "quick_answer": "Add `tenant` to every owned model, resolve membership in middleware, filter at the manager/service layer, and test that user A cannot read B's rows.",
+      "sections": [
+        {
+          "id": "model-middleware",
+          "title": "Model and middleware",
+          "body": "Resolve the tenant from the host, verify membership, and attach it to the request.",
+          "code": "class Tenant(models.Model):\n    name = models.CharField(max_length=120)\n    domain = models.CharField(max_length=120, unique=True)\n\nclass Membership(models.Model):\n    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE)\n    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)\n    role = models.CharField(max_length=20, default=\"member\")\n\nclass TenantMiddleware:\n    def __init__(self, get_response):\n        self.get_response = get_response\n\n    def __call__(self, request):\n        host = request.get_host().split(\":\")[0]\n        tenant = Tenant.objects.filter(domain=host).first()\n        if tenant is None:\n            raise Http404(\"Unknown workspace\")\n        if request.user.is_authenticated and not Membership.objects.filter(tenant=tenant, user=request.user).exists():\n            raise PermissionDenied\n        request.tenant = tenant\n        return self.get_response(request)",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "scope",
+          "title": "Scope the queryset",
+          "body": "Every tenant-owned model gets a `tenant` FK. Services take the tenant explicitly; views pass `request.tenant`.",
+          "code": "class Post(models.Model):\n    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE)\n    title = models.CharField(max_length=200)\n\ndef posts_for(tenant):\n    return Post.objects.filter(tenant=tenant)\n\ndef create_post(tenant, title):\n    return Post.objects.create(tenant=tenant, title=title)",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "test",
+          "title": "Test the leak",
+          "body": "Two tenants, two users, one object. User A must not read or mutate B's row.",
+          "code": "class TenantIsolationTests(TestCase):\n    def test_cannot_read_other_tenant_post(self):\n        self.client.force_login(self.user_a)\n        response = self.client.get(f\"/posts/{self.post_b.pk}/\")\n        self.assertEqual(response.status_code, 404)",
+          "language": "python",
+          "note": "Test the admin, exports and background jobs too. The view is not the only path to the data.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Filtering by tenant only in the view.",
+        "Forgetting `tenant` on a new owned model.",
+        "An admin changelist that shows every tenant.",
+        "Background jobs without tenant context.",
+        "A missing tenant returning all rows."
+      ],
+      "checklist": [
+        "Owned models carry a tenant FK.",
+        "Membership is verified in middleware.",
+        "Services take tenant explicitly.",
+        "Admin/exports/jobs are scoped.",
+        "Cross-tenant tests exist."
+      ],
+      "related": [
+        "multi-tenancy",
+        "auth",
+        "security",
+        "testing"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/",
+      "level": "Recipe",
+      "errors": []
+    }
+  ]
+}

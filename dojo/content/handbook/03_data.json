@@ -1,0 +1,293 @@
+{
+  "chapters": [
+    {
+      "slug": "models",
+      "title": "models.py",
+      "subtitle": "Fields, relationships, constraints and validation",
+      "category": "Data",
+      "order": 1,
+      "aliases": [
+        "models",
+        "models.py",
+        "model",
+        "field",
+        "fields",
+        "foreignkey",
+        "manytomany",
+        "onetoone",
+        "on_delete",
+        "related_name",
+        "meta",
+        "constraints",
+        "indexes",
+        "choices",
+        "textchoices",
+        "custom user",
+        "abstractuser",
+        "full_clean",
+        "str"
+      ],
+      "summary": "How to shape the database in Python: the right field, the right relationship, the constraint that protects the invariant, and the validation that runs before save.",
+      "quick_answer": "A model class maps to a table and each field maps to a column. Choose the narrowest field that expresses the data, set `on_delete` deliberately, add database constraints for invariants, and put reusable validation in `clean()` rather than only in forms.",
+      "sections": [
+        {
+          "id": "a-model-is-a-table",
+          "title": "A model is a table with a Python face",
+          "body": "Each concrete model becomes a table. Each field becomes a column. Django adds an `id` primary key unless you declare one. `Meta` carries table-level behaviour: ordering, constraints, indexes, verbose names.\n\n`__str__` is not cosmetic: it is what the admin, shell and logs show. Give every model a useful one.",
+          "code": "from django.db import models\n\nclass Post(models.Model):\n    title = models.CharField(max_length=200)\n    slug = models.SlugField(unique=True)\n    body = models.TextField()\n    published_at = models.DateTimeField(null=True, blank=True)\n    created_at = models.DateTimeField(auto_now_add=True)\n    updated_at = models.DateTimeField(auto_now=True)\n\n    class Meta:\n        ordering = [\"-published_at\", \"-created_at\"]\n        indexes = [models.Index(fields=[\"slug\"])]\n\n    def __str__(self):\n        return self.title",
+          "language": "python"
+        },
+        {
+          "id": "fields",
+          "title": "Choose the narrowest field",
+          "body": "The field type is documentation, validation and database type at once. Do not use `CharField` for everything.\n\n- `CharField(max_length=...)` — short text with a hard limit.\n- `TextField()` — long text; no database length limit.\n- `EmailField()` — email validation on top of `CharField`.\n- `SlugField()` — URL-safe letters, numbers, hyphens, underscores.\n- `IntegerField`, `PositiveIntegerField`, `DecimalField` — numbers; `DecimalField` needs `max_digits` and `decimal_places`.\n- `BooleanField(default=False)` — never use `null=True` for a boolean.\n- `DateField`, `DateTimeField` — dates; `auto_now_add` sets once, `auto_now` updates every save.\n- `JSONField()` — structured data when the shape is genuinely flexible.",
+          "code": "price = models.DecimalField(max_digits=8, decimal_places=2)\nstock = models.PositiveIntegerField(default=0)\nis_active = models.BooleanField(default=True)\nmetadata = models.JSONField(default=dict, blank=True)",
+          "language": "python",
+          "note": "`null=True` controls the database; `blank=True` controls form validation. They are not synonyms."
+        },
+        {
+          "id": "relationships",
+          "title": "Relationships and on_delete",
+          "body": "`ForeignKey` is many-to-one, `ManyToManyField` is many-to-many, `OneToOneField` is a unique one-to-one. `on_delete` is required on `ForeignKey` and `OneToOneField` because the database must decide what happens to children when the parent disappears.\n\n- `CASCADE` — delete children too. Correct for owned rows.\n- `PROTECT` — refuse the delete. Correct for important references.\n- `SET_NULL` — keep the child; requires `null=True`.\n- `SET_DEFAULT` — replace with a default.\n- `DO_NOTHING` — almost always a mistake; it can leave dangling rows.\n\n`related_name` names the reverse accessor: `author.posts.all()`.",
+          "code": "class Author(models.Model):\n    name = models.CharField(max_length=120)\n\nclass Post(models.Model):\n    author = models.ForeignKey(\n        Author,\n        on_delete=models.CASCADE,\n        related_name=\"posts\",\n    )\n    tags = models.ManyToManyField(\"Tag\", blank=True, related_name=\"posts\")\n\nclass Profile(models.Model):\n    author = models.OneToOneField(\n        Author,\n        on_delete=models.CASCADE,\n        related_name=\"profile\",\n    )\n    bio = models.TextField(blank=True)",
+          "language": "python"
+        },
+        {
+          "id": "constraints",
+          "title": "Constraints are promises the database keeps",
+          "body": "Application validation can be bypassed by a script, a bulk update or a race. Database constraints hold even then. Use `UniqueConstraint` for multi-column uniqueness and `CheckConstraint` for ranges and state rules.\n\nCatch `IntegrityError` at the boundary and turn it into a form error; do not hide it with a bare `except`.",
+          "code": "class Meta:\n    constraints = [\n        models.UniqueConstraint(\n            fields=[\"author\", \"slug\"],\n            name=\"unique_post_slug_per_author\",\n        ),\n        models.CheckConstraint(\n            condition=models.Q(price__gte=0),\n            name=\"post_price_non_negative\",\n        ),\n    ]",
+          "language": "python",
+          "note": "On Django 5.1+ `CheckConstraint` uses `condition=`. Older code may use `check=`; follow the version you deploy."
+        },
+        {
+          "id": "validation",
+          "title": "Validation belongs in the model too",
+          "body": "`full_clean()` runs field validation, `clean_fields()`, `clean()` and constraint checks. `save()` does not call `full_clean()` automatically; forms do. If a model can be created from a script, a command or an API, call `full_clean()` in the service layer or override `save()` carefully.\n\nPut cross-field invariants in `clean()` and raise `ValidationError` with a field key when possible.",
+          "code": "from django.core.exceptions import ValidationError\nfrom django.db import models\n\nclass Event(models.Model):\n    starts_at = models.DateTimeField()\n    ends_at = models.DateTimeField()\n\n    def clean(self):\n        super().clean()\n        if self.ends_at <= self.starts_at:\n            raise ValidationError({\"ends_at\": \"The end must be after the start.\"})\n\n    def save(self, *args, **kwargs):\n        self.full_clean()\n        return super().save(*args, **kwargs)",
+          "language": "python",
+          "note": "Overriding `save()` to call `full_clean()` is a trade-off: it adds a query per save and can surprise bulk operations. Many teams call `full_clean()` explicitly in services instead."
+        },
+        {
+          "id": "custom-user",
+          "title": "Custom user: decide before the first migrate",
+          "body": "The default `User` is fine for a prototype. If you need email login, a different identifier or extra fields, create a custom user before the first migration. Swapping it later requires a careful data migration and is a common source of pain.\n\nExtend `AbstractUser` when you want the built-in fields; extend `AbstractBaseUser` only when you need full control. Point `AUTH_USER_MODEL` at the model and reference it with `get_user_model()` or `settings.AUTH_USER_MODEL`.",
+          "code": "# accounts/models.py\nfrom django.contrib.auth.models import AbstractUser\nfrom django.db import models\n\nclass User(AbstractUser):\n    email = models.EmailField(unique=True)\n    display_name = models.CharField(max_length=80, blank=True)\n\n# settings.py\nAUTH_USER_MODEL = \"accounts.User\"\n\n# anywhere else\nfrom django.contrib.auth import get_user_model\nUser = get_user_model()",
+          "language": "python",
+          "note": "Do not import the concrete user model directly in reusable apps; use `get_user_model()`."
+        }
+      ],
+      "pitfalls": [
+        "Using `null=True` on `CharField` and creating two empty states (`NULL` and `\"\"`).",
+        "Using `CASCADE` for a reference that should survive the parent; use `PROTECT` or `SET_NULL`.",
+        "Forgetting `related_name` and then guessing the reverse accessor.",
+        "Relying only on form validation for an invariant that scripts and APIs can bypass.",
+        "Adding a custom user after `migrate` has created `auth.User`.",
+        "Storing money in `FloatField` instead of `DecimalField`."
+      ],
+      "checklist": [
+        "Every field is the narrowest type that fits.",
+        "`null` and `blank` are set deliberately.",
+        "Every relationship has a deliberate `on_delete` and a useful `related_name`.",
+        "Invariants have database constraints where possible.",
+        "`__str__` is useful.",
+        "Custom user decision made before the first migration."
+      ],
+      "related": [
+        "migrations",
+        "orm",
+        "forms",
+        "admin"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/models/"
+    },
+    {
+      "slug": "migrations",
+      "title": "Migrations",
+      "subtitle": "Schema history you can review, apply and reverse",
+      "category": "Data",
+      "order": 2,
+      "aliases": [
+        "migrations",
+        "migration",
+        "makemigrations",
+        "migrate",
+        "runpython",
+        "data migration",
+        "squash",
+        "rollback",
+        "fake",
+        "sqlmigrate",
+        "showmigrations",
+        "schema",
+        "database change",
+        "zero downtime",
+        "dependencies"
+      ],
+      "summary": "Migrations are version-controlled Python files that describe schema changes. Learn the loop, the data-migration pattern, and how to recover without guessing.",
+      "quick_answer": "Change the model, run `makemigrations`, review the generated file, then run `migrate`. Commit migrations. Use `RunPython` for data changes and never edit an already-applied migration.",
+      "sections": [
+        {
+          "id": "the-loop",
+          "title": "The loop",
+          "body": "`makemigrations` compares models to the migration history and writes new files. `migrate` applies them to the database and records what ran. The migration files are the source of truth; the database is a consumer.\n\nAlways read the generated file. Check the field type, defaults, nullability and any data operation. A migration that runs instantly on 100 rows can lock a table for minutes on 10 million.",
+          "code": "python manage.py makemigrations\npython manage.py makemigrations blog --name add_post_status\npython manage.py sqlmigrate blog 0003\npython manage.py migrate\npython manage.py showmigrations blog",
+          "language": "bash"
+        },
+        {
+          "id": "anatomy",
+          "title": "What a migration file contains",
+          "body": "A migration has dependencies, operations and an optional `RunPython`. Dependencies tell Django what must run first. Operations are reversible where possible.\n\nDo not edit a migration that has already been applied in an environment you care about. Add a new migration instead. If nobody has applied it yet, deleting and regenerating is safe.",
+          "code": "from django.db import migrations, models\n\nclass Migration(migrations.Migration):\n    dependencies = [(\"blog\", \"0002_post_slug\")]\n\n    operations = [\n        migrations.AddField(\n            model_name=\"post\",\n            name=\"status\",\n            field=models.CharField(\n                max_length=12,\n                choices=[(\"draft\", \"Draft\"), (\"published\", \"Published\")],\n                default=\"draft\",\n            ),\n        ),\n    ]",
+          "language": "python"
+        },
+        {
+          "id": "data-migrations",
+          "title": "Data migrations",
+          "body": "Schema migrations change tables. Data migrations change rows. Use `RunPython` with two functions: forwards and backwards. Always use the historical model from `apps.get_model()`; importing the live model couples the migration to future code.\n\nFor large tables, batch the work and make the migration idempotent. A migration that times out halfway is much easier to recover when it can be re-run.",
+          "code": "from django.db import migrations\n\ndef forwards(apps, schema_editor):\n    Post = apps.get_model(\"blog\", \"Post\")\n    for post in Post.objects.filter(status=\"\").iterator(chunk_size=500):\n        post.status = \"draft\"\n        post.save(update_fields=[\"status\"])\n\ndef backwards(apps, schema_editor):\n    Post = apps.get_model(\"blog\", \"Post\")\n    Post.objects.filter(status=\"draft\").update(status=\"\")\n\nclass Migration(migrations.Migration):\n    dependencies = [(\"blog\", \"0003_add_post_status\")]\n    operations = [migrations.RunPython(forwards, backwards)]",
+          "language": "python",
+          "note": "Use `migrations.RunPython.noop` when a data migration genuinely has no safe reverse."
+        },
+        {
+          "id": "rollback-and-recovery",
+          "title": "Rollback, fake and recovery",
+          "body": "`migrate blog 0002` unapplies migrations after `0002` for that app. It is a schema rollback, not a backup: data added by later migrations may be lost. In production, prefer a new forward migration over a rollback.\n\n`--fake` records a migration as applied without running it. It is for recovering from a known drift, not for skipping a failed migration. `--fake-initial` is for adopting an existing database into a project with an initial migration.",
+          "code": "python manage.py migrate blog 0002\npython manage.py migrate blog 0004 --fake\npython manage.py migrate --fake-initial\npython manage.py showmigrations --plan",
+          "language": "bash",
+          "note": "Before any manual migration surgery, take a database backup. A migration mistake is recoverable; a deleted table is not."
+        },
+        {
+          "id": "zero-downtime",
+          "title": "Zero-downtime habits",
+          "body": "During a rolling deploy, old and new code run at the same time. A migration must therefore be compatible with both versions.\n\nThe safe pattern is expand → migrate → contract: add nullable columns or new tables, deploy code that writes both shapes, backfill in batches, then remove the old shape in a later release. Avoid adding a non-nullable column without a default to a large table, and avoid renaming a column in one step.",
+          "code": "# Release 1: add the new nullable column\n# Release 2: deploy code that writes old and new\n# Release 3: backfill in batches, then add the constraint\n# Release 4: remove the old column",
+          "language": "text"
+        }
+      ],
+      "pitfalls": [
+        "Editing a migration that is already applied in staging or production.",
+        "Deleting migration files and recreating them while the database still has the old history.",
+        "Importing live models inside a data migration instead of `apps.get_model()`.",
+        "Running `migrate --fake` to make an error disappear without understanding the drift.",
+        "Adding a non-nullable field without a default to a large table in one step."
+      ],
+      "checklist": [
+        "Generated migration reviewed, not blindly committed.",
+        "Data migrations use historical models and are reversible.",
+        "Migration files committed with the model change.",
+        "Production plan accounts for old and new code overlapping.",
+        "A database backup exists before destructive changes."
+      ],
+      "related": [
+        "models",
+        "orm",
+        "commands",
+        "deploy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/migrations/"
+    },
+    {
+      "slug": "orm",
+      "title": "ORM & QuerySets",
+      "subtitle": "Queries, joins, aggregation and the N+1 trap",
+      "category": "Data",
+      "order": 3,
+      "aliases": [
+        "orm",
+        "queryset",
+        "query",
+        "filter",
+        "exclude",
+        "get",
+        "select_related",
+        "prefetch_related",
+        "n+1",
+        "annotate",
+        "aggregate",
+        "count",
+        "sum",
+        "f",
+        "q",
+        "transaction",
+        "atomic",
+        "bulk_create",
+        "exists",
+        "only",
+        "defer",
+        "explain",
+        "database",
+        "sql"
+      ],
+      "summary": "How to get the data you need in the number of queries you expect: lookups, joins, prefetching, aggregation, transactions and the N+1 diagnosis.",
+      "quick_answer": "QuerySets are lazy; they hit the database when you iterate, slice with a step, call `len()`, `list()`, `count()` or `exists()`. Use `select_related` for foreign keys and one-to-one, `prefetch_related` for many-to-many and reverse relations, and inspect `connection.queries` when a page feels slow.",
+      "sections": [
+        {
+          "id": "lazy",
+          "title": "QuerySets are lazy",
+          "body": "Building a QuerySet does not run SQL. Chaining filters builds a query description. The database is hit when the result is needed.\n\nThis is why a QuerySet can be passed around and refined, and why a loop over a QuerySet inside a template can quietly run one query per row. Evaluate once, then reuse the list if the result is needed more than once.",
+          "code": "posts = Post.objects.filter(published=True)  # no query yet\nposts = posts.order_by(\"-published_at\")      # still no query\nfor post in posts:                           # query runs here\n    print(post.title)\n\n# Force evaluation once when you need the same rows repeatedly:\nposts = list(Post.objects.filter(published=True))",
+          "language": "python"
+        },
+        {
+          "id": "lookups",
+          "title": "Lookups cover most SQL you need",
+          "body": "Field lookups use `__`: `__exact`, `__iexact`, `__contains`, `__icontains`, `__in`, `__gt`, `__gte`, `__lt`, `__lte`, `__startswith`, `__isnull`, `__range`, `__year`, `__date`. Related fields use the same double underscore: `author__email`.\n\n`Q` objects combine conditions with `&`, `|` and `~`. `F` refers to another column and lets the database do arithmetic atomically.",
+          "code": "from django.db.models import F, Q\n\nPost.objects.filter(title__icontains=\"django\")\nPost.objects.filter(status__in=[\"draft\", \"review\"])\nPost.objects.filter(published_at__isnull=True)\nPost.objects.filter(author__email__iendswith=\"@example.com\")\nPost.objects.filter(Q(status=\"draft\") | Q(published_at__isnull=True))\nPost.objects.filter(view_count__gte=F(\"like_count\"))\nPost.objects.filter(created_at__year=2026)",
+          "language": "python"
+        },
+        {
+          "id": "joins-and-n-plus-one",
+          "title": "Joins, prefetching and the N+1 trap",
+          "body": "`select_related` performs a SQL join and is for `ForeignKey` and `OneToOneField`. `prefetch_related` runs a second query and joins in Python; it is for `ManyToManyField` and reverse relations. Both reduce queries, but only when the related data is actually used.\n\nThe N+1 problem: one query for 50 posts, then 50 queries for each author. The page works, then gets slower as the data grows. Fix it at the queryset, not in the template.",
+          "code": "# 1 query for posts + 1 for authors\nposts = Post.objects.select_related(\"author\").all()\n\n# 1 query for posts + 1 for tags\nposts = Post.objects.prefetch_related(\"tags\").all()\n\n# Custom prefetch with a filtered queryset\nfrom django.db.models import Prefetch\nposts = Post.objects.prefetch_related(\n    Prefetch(\"comments\", queryset=Comment.objects.filter(approved=True), to_attr=\"approved_comments\")\n)\n\n# Diagnose\nfrom django.db import connection\nprint(len(connection.queries))",
+          "language": "python",
+          "note": "`select_related` on a reverse `ForeignKey` raises `FieldError`; use `prefetch_related` for the reverse side."
+        },
+        {
+          "id": "aggregation",
+          "title": "Aggregation and annotation",
+          "body": "`aggregate()` returns one dictionary for the whole queryset. `annotate()` adds a computed value per row. Use `Count`, `Sum`, `Avg`, `Min`, `Max` and `F` expressions; let the database do the work.\n\nWatch for double counting when you annotate across multiple many-to-many relations. `Count(..., distinct=True)` is often necessary.",
+          "code": "from django.db.models import Avg, Count, Sum\n\nPost.objects.aggregate(total=Count(\"id\"), avg_views=Avg(\"view_count\"))\n\nAuthor.objects.annotate(\n    post_count=Count(\"posts\", distinct=True),\n    total_views=Sum(\"posts__view_count\"),\n).order_by(\"-total_views\")[:10]",
+          "language": "python"
+        },
+        {
+          "id": "transactions",
+          "title": "Transactions and bulk operations",
+          "body": "Wrap a group of writes that must succeed or fail together in `transaction.atomic()`. If an exception escapes, the block rolls back. Do not catch an exception inside the block and continue writing unless you understand the transaction state.\n\n`bulk_create` and `bulk_update` are much faster than a loop of `save()` calls, but they bypass `save()` and signals. Use them for imports and backfills, not as a default.",
+          "code": "from django.db import transaction\n\nwith transaction.atomic():\n    order = Order.objects.create(customer=customer)\n    for item in items:\n        OrderItem.objects.create(order=order, **item)\n\n# Atomic stock decrement without a read-modify-write race\nProduct.objects.filter(pk=product.pk, stock__gte=quantity).update(\n    stock=F(\"stock\") - quantity\n)\n\nPost.objects.bulk_create([Post(title=t) for t in titles], batch_size=500)",
+          "language": "python"
+        },
+        {
+          "id": "performance",
+          "title": "When the query is the problem",
+          "body": "Measure before optimising. `QuerySet.explain()` shows the database plan. `only()` and `defer()` limit columns, but can cause extra queries when deferred fields are accessed later. `iterator()` streams large result sets without loading everything into memory.\n\nAdd indexes for columns used in filters, ordering and joins. A missing index on a foreign key is a common slow query; Django creates one automatically for `ForeignKey`, but not for every filtered field.",
+          "code": "print(Post.objects.filter(status=\"published\").explain())\n\nfor post in Post.objects.filter(status=\"published\").iterator(chunk_size=500):\n    process(post)\n\nPost.objects.only(\"id\", \"title\").filter(status=\"published\")",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Calling `len(queryset)` repeatedly instead of evaluating once.",
+        "Accessing `post.author.name` in a loop without `select_related`.",
+        "Using `select_related` for many-to-many data; it raises an error or creates a huge join.",
+        "Annotating multiple relations without `distinct=True` and double-counting.",
+        "Catching an exception inside `transaction.atomic()` and continuing to write.",
+        "Using `bulk_create` and expecting `save()` or `post_save` to run."
+      ],
+      "checklist": [
+        "The page's query count is known and stable.",
+        "Foreign keys used in templates are selected or prefetched.",
+        "Aggregates happen in the database, not in Python loops.",
+        "Multi-step writes are atomic.",
+        "Large exports and imports use batching or streaming."
+      ],
+      "related": [
+        "models",
+        "migrations",
+        "views",
+        "admin"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/queries/"
+    }
+  ]
+}

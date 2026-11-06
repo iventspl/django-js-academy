@@ -1,0 +1,602 @@
+{
+  "chapters": [
+    {
+      "slug": "auth-advanced",
+      "title": "Advanced auth",
+      "subtitle": "Backends, object permissions, sessions and MFA",
+      "category": "Users & admin",
+      "order": 3,
+      "level": "Advanced",
+      "tags": [
+        "auth",
+        "security",
+        "sessions"
+      ],
+      "aliases": [
+        "authentication backend",
+        "custom backend",
+        "object permission",
+        "guardian",
+        "rules",
+        "session fixation",
+        "session security",
+        "mfa",
+        "2fa",
+        "totp",
+        "webauthn",
+        "login throttling",
+        "password hashing",
+        "auth backend"
+      ],
+      "summary": "The auth system beyond login_view: custom identity backends, object-level permissions, session hardening and the realities of adding a second factor.",
+      "quick_answer": "Authenticate with a backend, authorize with explicit object checks or a permission library, rotate sessions on login, and store secrets hashed. For MFA, use a maintained library (django-otp, WebAuthn) and enforce it in middleware or a mixin, not just in the login template.",
+      "sections": [
+        {
+          "id": "backends",
+          "title": "Custom authentication backends",
+          "body": "A backend implements `authenticate(request, **credentials)` and `get_user(user_id)`. Return `None` for “not my credential”; raise nothing for a bad password. `AUTHENTICATION_BACKENDS` is ordered; the first non-None user wins.\n\nUse a backend for email login, an external identity provider or a legacy password hash. Do not put authorization rules in `authenticate()`; that is a separate decision.",
+          "code": "from django.contrib.auth.backends import BaseBackend\nfrom django.contrib.auth import get_user_model\n\nclass EmailBackend(BaseBackend):\n    def authenticate(self, request, username=None, password=None, **kwargs):\n        User = get_user_model()\n        if username is None or password is None:\n            return None\n        try:\n            user = User.objects.get(email__iexact=username)\n        except User.DoesNotExist:\n            return None\n        if user.check_password(password) and self.user_can_authenticate(user):\n            return user\n        return None\n\n    def get_user(self, user_id):\n        User = get_user_model()\n        try:\n            return User.objects.get(pk=user_id)\n        except User.DoesNotExist:\n            return None\n\nAUTHENTICATION_BACKENDS = [\"accounts.backends.EmailBackend\"]",
+          "language": "python",
+          "note": "Email lookups should be case-insensitive and unique. Enforce uniqueness at the database level.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "object-permissions",
+          "title": "Object-level permissions",
+          "body": "Django's default model permissions are global: “can change post”, not “can change this post”. For per-row rules, either write an explicit service (`can_edit(user, post)`) or use a library such as django-guardian or rules.\n\nWhatever you choose, enforce it in the view/service that performs the write and test the negative case. A hidden button is not authorization.",
+          "code": "def can_edit_post(user, post):\n    if not user.is_authenticated:\n        return False\n    return user.is_superuser or post.author_id == user.id\n\ndef edit_post(request, pk):\n    post = get_object_or_404(Post, pk=pk)\n    if not can_edit_post(request.user, post):\n        raise PermissionDenied\n    ...",
+          "language": "python",
+          "note": "Returning 404 instead of 403 can avoid leaking that another user's object exists. Choose deliberately.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "sessions",
+          "title": "Session hardening",
+          "body": "`login()` rotates the session key, which prevents session fixation. Set `SESSION_COOKIE_SECURE`, `HTTPONLY` and `SAMESITE`. Use `SESSION_EXPIRE_AT_BROWSER_CLOSE` for high-risk apps and a short `SESSION_COOKIE_AGE` for admin sessions.\n\nFor “log out everywhere”, store a session version or use the database session backend and delete the user's sessions. Rotate `SECRET_KEY` only with a plan: it invalidates sessions and signed data.",
+          "code": "SESSION_COOKIE_SECURE = True\nSESSION_COOKIE_HTTPONLY = True\nSESSION_COOKIE_SAMESITE = \"Lax\"\nSESSION_COOKIE_AGE = 60 * 60 * 12\nSESSION_EXPIRE_AT_BROWSER_CLOSE = True\n\n# Invalidate every session for a user (database backend)\nfrom django.contrib.sessions.models import Session\nfor session in Session.objects.filter(expire_date__gte=timezone.now()):\n    data = session.get_decoded()\n    if data.get(\"_auth_user_id\") == str(user.pk):\n        session.delete()",
+          "language": "python",
+          "note": "With the cache or cookie session backend, you need a separate session-version table to revoke everywhere.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "mfa",
+          "title": "Adding a second factor",
+          "body": "MFA is a product flow, not a checkbox. The normal shape is: password succeeds → user has a confirmed second factor → redirect to a challenge → mark the session as verified. A user without a factor should be forced to enrol if your policy requires it.\n\nUse a maintained library for TOTP/WebAuthn and store recovery codes hashed. Rate-limit challenges and log failures. Do not build your own TOTP implementation.",
+          "code": "# Conceptual middleware rule\nclass RequireMFA:\n    def __init__(self, get_response):\n        self.get_response = get_response\n\n    def __call__(self, request):\n        if request.user.is_authenticated and not request.session.get(\"mfa_verified\"):\n            allowed = {\"/login/\", \"/mfa/\", \"/logout/\", \"/static/\"}\n            if request.path not in allowed:\n                return redirect(\"mfa-challenge\")\n        return self.get_response(request)",
+          "language": "python",
+          "note": "A middleware is a blunt instrument. A login-required mixin plus an explicit MFA gate is often easier to test.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Returning a user for a wrong password from a custom backend.",
+        "Treating model permissions as object permissions.",
+        "Storing MFA secrets in plaintext.",
+        "Forgetting to rotate the session on login.",
+        "Building custom crypto instead of using a maintained library."
+      ],
+      "checklist": [
+        "Authentication backends are ordered and tested.",
+        "Object-level checks are enforced on every write path.",
+        "Session cookies are secure and rotated.",
+        "MFA has enrolment, challenge, recovery and rate limiting.",
+        "Sensitive auth events are logged."
+      ],
+      "related": [
+        "auth",
+        "security",
+        "security-hardening",
+        "testing"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/auth/customizing/",
+      "errors": []
+    },
+    {
+      "slug": "admin-advanced",
+      "title": "Advanced admin",
+      "subtitle": "Custom views, performant changelists and audited actions",
+      "category": "Users & admin",
+      "order": 4,
+      "level": "Advanced",
+      "tags": [
+        "admin",
+        "operations"
+      ],
+      "aliases": [
+        "custom admin view",
+        "admin get_urls",
+        "admin template",
+        "admin action",
+        "admin inline",
+        "admin performance",
+        "autocomplete",
+        "raw id",
+        "admin audit",
+        "admin permissions",
+        "admin site"
+      ],
+      "summary": "Turn the admin from a CRUD screen into a safe internal tool: custom pages, bulk actions with guardrails, fast changelists and an audit trail.",
+      "quick_answer": "Use `get_urls()` plus `admin_site.admin_view()` for a custom page, `list_select_related`/annotations for the changelist, and idempotent actions with confirmation. The admin is staff-only; keep it behind HTTPS/VPN and log sensitive changes.",
+      "sections": [
+        {
+          "id": "custom-views",
+          "title": "Custom admin pages",
+          "body": "Override `get_urls()` to add a page under the model's admin namespace. Wrap the view with `self.admin_site.admin_view()` so staff checks and CSRF protection apply. Use `change_list_template` to add a link.\n\nKeep custom admin views small. Heavy reports belong in a separate dashboard or a background job.",
+          "code": "from django.urls import path\nfrom django.shortcuts import render\n\n@admin.register(Order)\nclass OrderAdmin(admin.ModelAdmin):\n    change_list_template = \"admin/order/change_list.html\"\n\n    def get_urls(self):\n        urls = super().get_urls()\n        custom = [\n            path(\"stats/\", self.admin_site.admin_view(self.stats_view), name=\"order_stats\"),\n        ]\n        return custom + urls\n\n    def stats_view(self, request):\n        context = {\n            **self.admin_site.each_context(request),\n            \"pending\": Order.objects.filter(status=\"pending\").count(),\n        }\n        return render(request, \"admin/order/stats.html\", context)",
+          "language": "python",
+          "note": "Custom URLs must come before the default `catch-all` model URLs, or they will be shadowed.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "fast-changelists",
+          "title": "Changelists that stay fast",
+          "body": "`list_display` methods run per row. A method that queries creates an N+1. Use `list_select_related`, `prefetch_related` or `get_queryset()` with annotations. Add `ordering` on an indexed column.\n\n`search_fields` on huge text columns is slow; index or narrow it. `date_hierarchy` and `list_filter` also cost queries.",
+          "code": "from django.db.models import Count\n\n@admin.register(Author)\nclass AuthorAdmin(admin.ModelAdmin):\n    list_display = [\"name\", \"post_count\"]\n    list_select_related = [\"profile\"]\n\n    def get_queryset(self, request):\n        return super().get_queryset(request).annotate(_post_count=Count(\"posts\"))\n\n    @admin.display(description=\"Posts\", ordering=\"_post_count\")\n    def post_count(self, obj):\n        return obj._post_count",
+          "language": "python",
+          "note": "Use `list_select_related` for forward FK/OneToOne. Use `prefetch_related` for many-to-many or reverse relations.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "safe-actions",
+          "title": "Bulk actions with guardrails",
+          "body": "An admin action runs on a queryset selected by a staff user. Make it idempotent, confirm destructive intent, and avoid long synchronous loops. For thousands of rows, enqueue a job and show a message.\n\n`queryset.update()` bypasses `save()` and signals. That is often correct for a bulk transition, but it must not skip audit logging or required side effects.",
+          "code": "@admin.action(description=\"Archive selected drafts\")\ndef archive_drafts(self, request, queryset):\n    count = queryset.filter(status=\"draft\").update(status=\"archived\")\n    self.message_user(request, f\"Archived {count} drafts.\", messages.SUCCESS)\n\n@admin.register(Post)\nclass PostAdmin(admin.ModelAdmin):\n    actions = [archive_drafts]",
+          "language": "python",
+          "note": "Admin actions are POST requests with CSRF. Do not make them GET links.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "audit",
+          "title": "Audit and least privilege",
+          "body": "The admin can edit every registered row. Use model permissions, `has_*_permission()` overrides and read-only fields for audit columns. Log who changed what for sensitive models.\n\nDo not expose the admin publicly without HTTPS, strong accounts and rate limiting. A VPN or IP allowlist is a reasonable extra layer.",
+          "code": "class OrderAdmin(admin.ModelAdmin):\n    readonly_fields = [\"created_at\", \"created_by\", \"paid_at\"]\n\n    def save_model(self, request, obj, form, change):\n        if not change:\n            obj.created_by = request.user\n        super().save_model(request, obj, form, change)\n        AuditLog.objects.create(\n            actor=request.user,\n            action=\"change\" if change else \"create\",\n            model=\"order\",\n            object_id=obj.pk,\n        )",
+          "language": "python",
+          "note": "Audit logs should be append-only and outside the admin's edit path.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Adding a custom admin URL without `admin_site.admin_view()`.",
+        "Putting a query in a `list_display` method.",
+        "Running a 10-minute action in the request.",
+        "Using the admin as the public product UI.",
+        "Letting staff edit audit fields."
+      ],
+      "checklist": [
+        "Custom admin views are staff-protected.",
+        "Changelists use select_related/annotations.",
+        "Actions are idempotent and confirmed.",
+        "Sensitive models have audit logs.",
+        "Admin access is network-restricted where possible."
+      ],
+      "related": [
+        "admin",
+        "auth",
+        "performance",
+        "security"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/admin/",
+      "errors": []
+    },
+    {
+      "slug": "security-hardening",
+      "title": "Security hardening",
+      "subtitle": "CSP, SSRF, uploads, secrets and supply chain",
+      "category": "Quality",
+      "order": 4,
+      "level": "Advanced",
+      "tags": [
+        "security",
+        "CSP",
+        "OWASP"
+      ],
+      "aliases": [
+        "content security policy",
+        "csp",
+        "ssrf",
+        "server side request forgery",
+        "xss",
+        "clickjacking",
+        "hsts",
+        "secrets management",
+        "supply chain",
+        "pip audit",
+        "upload security",
+        "deserialization",
+        "rate limiting",
+        "threat model"
+      ],
+      "summary": "The attacks that survive Django's defaults: script injection through a policy gap, server-side request forgery, hostile uploads, leaked secrets and a vulnerable dependency chain.",
+      "quick_answer": "Keep autoescaping and CSRF; add a Content Security Policy as a second layer; validate and isolate uploads; allowlist outbound hosts; keep secrets out of code; pin and audit dependencies; and have a plan for key rotation and incident response.",
+      "sections": [
+        {
+          "id": "threat-model",
+          "title": "Start with a threat model",
+          "body": "List the assets (accounts, payments, private files, admin), the actors (anonymous, customer, staff, attacker), the entry points (forms, APIs, webhooks, uploads, admin) and the trust boundaries. Then choose controls.\n\nMost Django incidents are not exotic: debug left on, an object fetched without a tenant filter, a secret in git, an upload served from the app origin, or an old Django patch.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "csp-headers",
+          "title": "CSP and response headers",
+          "body": "A Content Security Policy limits which scripts, styles, frames and connections the browser will allow. It is a second line of defence behind escaping. Start in report-only mode, fix violations, then enforce.\n\nDjango 6.x and third-party packages offer CSP middleware; a small custom middleware is enough to understand the header. Also set HSTS, `X-Content-Type-Options`, `Referrer-Policy` and frame options.",
+          "code": "class SecurityHeadersMiddleware:\n    def __init__(self, get_response):\n        self.get_response = get_response\n\n    def __call__(self, request):\n        response = self.get_response(request)\n        response[\"Content-Security-Policy\"] = (\n            \"default-src 'self'; \"\n            \"img-src 'self' data:; \"\n            \"style-src 'self'; \"\n            \"script-src 'self'; \"\n            \"frame-ancestors 'none'; \"\n            \"base-uri 'self'\"\n        )\n        response[\"Referrer-Policy\"] = \"strict-origin-when-cross-origin\"\n        return response",
+          "language": "python",
+          "note": "Inline scripts and styles are blocked by a strict policy. Move them to files or use nonces/hashes; do not add `'unsafe-inline'` to make the error disappear.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "ssrf",
+          "title": "SSRF: outbound requests are an attack surface",
+          "body": "If the server fetches a URL supplied by a user (webhook test, image import, link preview), an attacker can target `127.0.0.1`, the cloud metadata endpoint or internal services. Validate the scheme, resolve the host, block private/link-local ranges and re-check after redirects.\n\nAn allowlist of domains is stronger than a blocklist. Egress firewall rules are stronger still.",
+          "code": "import ipaddress\nimport socket\nfrom urllib.parse import urlparse\n\ndef assert_public_http_url(url):\n    parsed = urlparse(url)\n    if parsed.scheme not in {\"http\", \"https\"} or not parsed.hostname:\n        raise ValueError(\"Only http(s) URLs are allowed\")\n    infos = socket.getaddrinfo(parsed.hostname, None)\n    for info in infos:\n        address = ipaddress.ip_address(info[4][0])\n        if address.is_private or address.is_loopback or address.is_link_local:\n            raise ValueError(\"Private addresses are not allowed\")",
+          "language": "python",
+          "note": "DNS rebinding can change the address between validation and request. Re-resolve at connect time or use a proxy with an egress allowlist.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "uploads",
+          "title": "Hostile uploads",
+          "body": "Validate size, content type and extension on the server; generate your own filename; store outside the web root or in private object storage; serve through a permission-checked view. For images, re-encode with Pillow rather than trusting the original bytes.\n\nIf users can upload HTML/SVG, serve it from a separate domain or with `Content-Disposition: attachment`. Antivirus scanning is a queue job, not a synchronous request.",
+          "code": "from pathlib import Path\nfrom uuid import uuid4\n\ndef safe_name(filename):\n    suffix = Path(filename).suffix.lower()\n    if suffix not in {\".png\", \".jpg\", \".jpeg\", \".pdf\"}:\n        raise ValueError(\"Unsupported extension\")\n    return f\"{uuid4()}{suffix}\"",
+          "language": "python",
+          "note": "Content-Type is client-supplied. Inspect magic bytes or decode the file with a trusted library.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "secrets-supply-chain",
+          "title": "Secrets and the supply chain",
+          "body": "Secrets belong in environment variables or a secret manager. Rotate anything that has been committed; deleting the latest commit is not enough. Pin dependencies and run `pip-audit` in CI. Stay on a supported Django patch line.\n\nFor an incident: rotate keys, invalidate sessions, revoke API tokens, preserve logs, notify affected users, and write down what happened. A runbook beats panic.",
+          "code": "pip install pip-audit\npip-audit -r requirements.txt\npython manage.py check --deploy\n\n# Rotate a leaked secret\n# 1. Generate a new key in the secret manager.\n# 2. Deploy it.\n# 3. Invalidate sessions/signed links.\n# 4. Remove the old key after the rollback window.",
+          "language": "bash",
+          "note": "A secret in a public repository is compromised immediately, even if the repo is later made private.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Adding `'unsafe-inline'` to CSP instead of moving scripts.",
+        "Fetching arbitrary user URLs from the server without egress controls.",
+        "Serving user uploads from the main application origin.",
+        "Trusting the `Content-Type` header sent by a browser.",
+        "Committing secrets and only deleting the latest commit.",
+        "Running an unsupported Django version with known CVEs."
+      ],
+      "checklist": [
+        "Threat model exists for sensitive flows.",
+        "CSP is enforced and tested.",
+        "Outbound requests use an allowlist/egress control.",
+        "Uploads are validated, renamed and served privately.",
+        "Secrets are in a manager and rotation is documented.",
+        "Dependencies are audited and Django is patched."
+      ],
+      "related": [
+        "security",
+        "auth-advanced",
+        "storage-files",
+        "deploy-hardening"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/security/",
+      "errors": []
+    },
+    {
+      "slug": "testing-advanced",
+      "title": "Advanced testing",
+      "subtitle": "pytest, factories, mocks, browser tests and CI",
+      "category": "Quality",
+      "order": 5,
+      "level": "Advanced",
+      "tags": [
+        "testing",
+        "pytest",
+        "CI"
+      ],
+      "aliases": [
+        "pytest django",
+        "factory boy",
+        "mock",
+        "patch",
+        "freezegun",
+        "async test",
+        "playwright",
+        "selenium",
+        "coverage",
+        "flaky test",
+        "test performance",
+        "assertnumqueries",
+        "transactiontestcase",
+        "captureoncommitcallbacks"
+      ],
+      "summary": "A test suite that stays fast and trustworthy: factories, mocks at the boundary, async/transactional cases, browser tests and CI gates.",
+      "quick_answer": "Test behaviour at the boundary, use factories for data, mock external services (not your own code), use `assertNumQueries` for query regressions, and keep slow browser tests in a separate CI stage. Fix flaky tests instead of retrying them.",
+      "sections": [
+        {
+          "id": "pytest-factories",
+          "title": "pytest and factories",
+          "body": "`pytest-django` gives you `db`, `client`, `settings`, `rf` and `django_user_model`. `factory_boy` builds valid objects with overrides, so tests show only the data that matters.\n\nKeep factory defaults valid and deterministic. Avoid a factory that creates ten related objects by default; tests become slow and coupled.",
+          "code": "# conftest.py\nimport pytest\n\n@pytest.fixture\ndef author(db):\n    from django.contrib.auth import get_user_model\n    return get_user_model().objects.create_user(\"ada\", password=\"x\")\n\n# test_posts.py\n@pytest.mark.django_db\ndef test_anonymous_user_cannot_edit(client, author):\n    from blog.models import Post\n    post = Post.objects.create(title=\"Mine\", slug=\"mine\", author=author)\n    response = client.get(f\"/blog/{post.slug}/edit/\")\n    assert response.status_code in {302, 403, 404}",
+          "language": "python",
+          "note": "Use `client.force_login(user)` when the login flow is not the subject of the test.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "mocks",
+          "title": "Mock at the boundary",
+          "body": "Mock the network, clock, filesystem or payment provider — not your own service classes. If you mock your own code, the test proves the mock works, not the feature.\n\n`unittest.mock.patch` replaces an attribute in a module namespace. Patch where it is looked up, not where it is defined. Freeze time for date logic; do not sleep.",
+          "code": "from unittest.mock import patch\n\ndef test_receipt_is_sent(client, order):\n    with patch(\"shop.services.send_receipt.delay\") as delay:\n        client.post(f\"/orders/{order.pk}/pay/\")\n    delay.assert_called_once_with(order.pk)\n\n@patch(\"shop.services.httpx.post\")\ndef test_gateway_timeout(mock_post, client):\n    mock_post.side_effect = httpx.TimeoutException(\"slow\")\n    response = client.post(\"/pay/\")\n    assert response.status_code == 502",
+          "language": "python",
+          "note": "Patch the name used by the code under test: `shop.services.httpx.post`, not `httpx.post`.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "async-transactions",
+          "title": "Async, transactions and on_commit",
+          "body": "`TestCase` wraps tests in a transaction, so `transaction.on_commit()` callbacks do not run. Use `captureOnCommitCallbacks(execute=True)` or `TransactionTestCase` when commit behaviour is the subject. Async views can be tested with `AsyncClient` and `async_to_sync`.\n\nA test that passes only because the callback was skipped is a false negative.",
+          "code": "from django.test import TestCase\n\nclass ReceiptTests(TestCase):\n    def test_receipt_runs_after_commit(self):\n        with self.captureOnCommitCallbacks(execute=True):\n            create_order(customer)\n        self.assertEqual(mail.outbox[0].subject, \"Receipt\")",
+          "language": "python",
+          "note": "`TransactionTestCase` is slower and resets sequences; use it only when you need real commits.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "browser-performance",
+          "title": "Browser, accessibility and query tests",
+          "body": "Unit tests cannot prove the page works. Add a small browser suite (Playwright/Selenium) for the critical path: signup, checkout, login, password reset. Run it against a real server and database.\n\nUse `assertNumQueries` to catch N+1 regressions. Use an accessibility checker (axe) or manual keyboard testing for the flows that matter. A performance budget (response time, query count) is a test too.",
+          "code": "from django.test import TestCase\n\nclass PostListQueryTests(TestCase):\n    def test_list_uses_a_bounded_number_of_queries(self):\n        with self.assertNumQueries(4):\n            response = self.client.get(\"/blog/\")\n        self.assertEqual(response.status_code, 200)",
+          "language": "python",
+          "note": "Query-count assertions are brittle if the page legitimately changes. Pair them with a comment explaining the expected budget.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "ci",
+          "title": "CI, coverage and flaky tests",
+          "body": "Run the fast suite on every push, the browser/performance suite on a schedule or before release, and `makemigrations --check` to catch missing migrations. Coverage is a smoke detector, not a goal; 100% coverage with no assertions is worthless.\n\nA flaky test is a bug in the test or the code. Quarantine it with an owner and a deadline; do not add retries and forget it.",
+          "code": "python manage.py makemigrations --check --dry-run\npython manage.py test\npytest --cov=dojo --cov-report=term-missing --cov-fail-under=85",
+          "language": "bash",
+          "note": "Pin the database version in CI to match production. SQLite and PostgreSQL behave differently under concurrency.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Mocking your own service layer and never testing it.",
+        "Using `TestCase` for `on_commit()` behaviour and wondering why the callback did not run.",
+        "Creating huge object graphs in every test.",
+        "Retrying flaky tests instead of fixing them.",
+        "Chasing coverage instead of asserting outcomes."
+      ],
+      "checklist": [
+        "Happy, invalid and permission paths are tested.",
+        "External services are mocked at the boundary.",
+        "Commit callbacks are tested explicitly.",
+        "Critical flows have a browser test.",
+        "CI checks migrations, tests and dependency audit."
+      ],
+      "related": [
+        "testing",
+        "performance",
+        "background-jobs",
+        "typing"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/testing/advanced/",
+      "errors": []
+    },
+    {
+      "slug": "performance",
+      "title": "Performance",
+      "subtitle": "Measure, query plans, indexes and load",
+      "category": "Quality",
+      "order": 6,
+      "level": "Advanced",
+      "tags": [
+        "performance",
+        "ORM",
+        "PostgreSQL"
+      ],
+      "aliases": [
+        "slow page",
+        "n+1",
+        "query count",
+        "explain",
+        "index",
+        "database performance",
+        "profiling",
+        "debug toolbar",
+        "silk",
+        "caching",
+        "pagination",
+        "load test",
+        "locust",
+        "k6",
+        "response time",
+        "bottleneck"
+      ],
+      "summary": "A repeatable performance method: measure the request, count the queries, read the plan, fix the data access, add the right index and only then cache.",
+      "quick_answer": "Measure first. Use `connection.queries`/`assertNumQueries`, `.explain()` and a profiler. Fix N+1 with `select_related`/`prefetch_related`, paginate, add indexes for real filters, and cache only after the query is correct. Load-test the critical path.",
+      "sections": [
+        {
+          "id": "measure",
+          "title": "Measure before you optimize",
+          "body": "A slow page has a small number of causes: too many queries, a missing index, a large payload, a slow external call, CPU-heavy templates or lock contention. Measure each layer before changing code.\n\nUse Django Debug Toolbar or Silk in development, `connection.queries` in a test, and a profiler (py-spy, cProfile) for CPU. In production, use request timing and database metrics.",
+          "code": "from django.db import connection\nfrom django.test import TestCase\n\nclass PagePerformanceTests(TestCase):\n    def test_dashboard_query_budget(self):\n        with self.assertNumQueries(6):\n            self.client.get(\"/dashboard/\")\n\n# Print the SQL for a queryset\nprint(Post.objects.filter(status=\"published\").explain())",
+          "language": "python",
+          "note": "Query count is not the same as query cost. Six fast indexed queries can beat one unindexed join.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "n-plus-one",
+          "title": "N+1 and data access",
+          "body": "The classic: one query for 50 posts, then 50 for authors. `select_related` joins forward FK/OneToOne; `prefetch_related` runs a second query for M2M/reverse relations. `Prefetch` lets you filter the prefetched set.\n\nDo not prefetch data the page never uses. It adds queries and memory. Measure the exact template path.",
+          "code": "posts = (\n    Post.objects.filter(status=\"published\")\n    .select_related(\"author\")\n    .prefetch_related(\"tags\")\n    .order_by(\"-published_at\")\n)\n\nfrom django.db.models import Prefetch\nposts = Post.objects.prefetch_related(\n    Prefetch(\"comments\", queryset=Comment.objects.filter(approved=True), to_attr=\"approved_comments\")\n)",
+          "language": "python",
+          "note": "`select_related` on a reverse FK raises `FieldError`; use `prefetch_related` for the reverse side.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "indexes",
+          "title": "Indexes and query plans",
+          "body": "An index speeds reads and slows writes. Index columns used in `WHERE`, `JOIN`, `ORDER BY` and uniqueness checks. Composite indexes follow the leftmost-prefix rule: `(tenant, status, created_at)` helps `tenant` and `tenant+status`, but not `status` alone.\n\nRead `EXPLAIN (ANALYZE, BUFFERS)` on production-like data. A sequential scan on a small table is fine; a sequential scan on a million rows is not.",
+          "code": "class Meta:\n    indexes = [\n        models.Index(fields=[\"tenant\", \"status\", \"-created_at\"]),\n        models.Index(fields=[\"slug\"]),\n    ]\n\n# PostgreSQL plan\nprint(Order.objects.filter(tenant=tenant, status=\"paid\").explain(analyze=True, buffers=True))",
+          "language": "python",
+          "note": "Do not index every column. Unused indexes are pure write overhead.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "cache-async",
+          "title": "Caching and async work",
+          "body": "Cache after the query is correct. Cache the expensive, stable fragment, not the user-specific page unless you key by user. Use a shared cache (Redis) across workers; `LocMemCache` is per-process.\n\nMove slow side effects (email, PDF, third-party sync) out of the request. Use async views only for I/O; CPU work belongs in a worker.",
+          "code": "key = f\"catalog:{tenant.pk}:{category.pk}\"\ndata = cache.get(key)\nif data is None:\n    data = build_catalog(tenant, category)\n    cache.set(key, data, 60)\nreturn render(request, \"catalog.html\", data)",
+          "language": "python",
+          "note": "A cache with no invalidation plan is a stale-data generator. Version the key or use short timeouts.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "load",
+          "title": "Load testing and capacity",
+          "body": "A page that is fast for one user can collapse at 100 concurrent users. Load-test the critical path with Locust or k6, measure p95/p99 latency and error rate, and watch database connections, CPU and memory.\n\nFind the bottleneck before adding workers. More Gunicorn workers with the same saturated database just move the queue.",
+          "code": "# k6 sketch\nimport http from \"k6/http\";\nimport { check, sleep } from \"k6\";\n\nexport const options = { vus: 50, duration: \"2m\" };\nexport default function () {\n  const res = http.get(\"https://example.com/blog/\");\n  check(res, { \"status 200\": (r) => r.status === 200 });\n  sleep(1);\n}",
+          "language": "javascript",
+          "note": "Load-test a staging environment with production-like data volumes. A 100-row database hides every query-plan problem.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Optimizing by intuition without a measurement.",
+        "Adding `select_related` to every queryset and fetching unused columns.",
+        "Indexing every column and slowing writes.",
+        "Caching a buggy query and making it harder to find.",
+        "Load-testing against an empty database."
+      ],
+      "checklist": [
+        "The slow path has a measured baseline.",
+        "Query count and query plans are known.",
+        "No N+1 on the critical page.",
+        "Indexes match real filters/order.",
+        "Cache invalidation is defined.",
+        "Load test uses realistic data."
+      ],
+      "related": [
+        "orm",
+        "orm-expressions",
+        "caching-deep",
+        "deploy-hardening"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/optimization/",
+      "errors": []
+    },
+    {
+      "slug": "typing",
+      "title": "Type checking Django",
+      "subtitle": "django-stubs, mypy, Ruff and typed boundaries",
+      "category": "Quality",
+      "order": 7,
+      "level": "Advanced",
+      "tags": [
+        "typing",
+        "mypy",
+        "tooling"
+      ],
+      "aliases": [
+        "django stubs",
+        "django-stubs",
+        "mypy",
+        "pyright",
+        "type hints",
+        "typing",
+        "queryset type",
+        "manager type",
+        "ruff",
+        "pre-commit",
+        "py.typed",
+        "protocol"
+      ],
+      "summary": "Static typing that pays for itself: typed models and managers, typed service boundaries, django-stubs configuration and CI that fails on regressions.",
+      "quick_answer": "Install `django-stubs[compatible-mypy]`, add the mypy plugin, type your models/managers/services at the boundaries, and run mypy + Ruff in CI. Do not annotate every local variable; type the contracts that cross modules.",
+      "sections": [
+        {
+          "id": "setup",
+          "title": "Install and configure",
+          "body": "`django-stubs` provides type information for Django. The mypy plugin understands `models.Manager`, `QuerySet`, settings and the ORM's dynamic attributes. Without the plugin, mypy sees many false errors.\n\nPin compatible versions. Run mypy in CI on the apps you actually type; a whole-repo strict mode on day one is usually abandoned.",
+          "code": "pip install \"django-stubs[compatible-mypy]\" mypy\n\n# mypy.ini\n[mypy]\nplugins = mypy_django_plugin.main\nstrict_optional = True\nwarn_unused_ignores = True\nignore_missing_imports = True\n\n[mypy.plugins.django-stubs]\ndjango_settings_module = \"config.settings\"\n\n# pyproject.toml\n[tool.django-stubs]\ndjango_settings_module = \"config.settings\"",
+          "language": "bash",
+          "note": "The settings module must be importable in CI. Use a test settings module if production settings need secrets.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "models",
+          "title": "Typed models, managers and querysets",
+          "body": "Use `QuerySet[Model]` and `Manager[Model]` generics. Type custom queryset methods with `Self` (Python 3.11+) or a TypeVar. Avoid `# type: ignore` on model fields; fix the annotation or the plugin configuration.\n\n`get_user_model()` returns a type that mypy cannot know statically. Use `settings.AUTH_USER_MODEL` for relations and a typed alias in a central module.",
+          "code": "from django.db import models\n\nclass PostQuerySet(models.QuerySet[\"Post\"]):\n    def published(self) -> \"PostQuerySet\":\n        return self.filter(status=\"published\")\n\nclass Post(models.Model):\n    title: str = models.CharField(max_length=200)\n    objects: PostQuerySet = PostQuerySet.as_manager()\n\ndef published_titles() -> list[str]:\n    return list(Post.objects.published().values_list(\"title\", flat=True))",
+          "language": "python",
+          "note": "Django's model fields are descriptors; the annotation describes the Python value, not the field object.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "boundaries",
+          "title": "Type the boundaries, not every line",
+          "body": "Annotate service inputs/outputs, view return types and data-transfer objects. Use `TypedDict` for JSON payloads and dataclasses for internal results. `Protocol` is useful for pluggable gateways (payments, email, storage).\n\nDo not fight the ORM's dynamic nature in every template context. Type the code that other code depends on.",
+          "code": "from dataclasses import dataclass\nfrom typing import Protocol\n\nclass PaymentGateway(Protocol):\n    def charge(self, customer_id: str, amount: int) -> str: ...\n\n@dataclass(frozen=True)\nclass CheckoutResult:\n    order_id: int\n    redirect_url: str\n\ndef checkout(cart_id: int, gateway: PaymentGateway) -> CheckoutResult:\n    ...",
+          "language": "python",
+          "note": "A Protocol lets tests pass a fake gateway without inheriting from a concrete provider.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "ci",
+          "title": "CI and tooling",
+          "body": "Run mypy and Ruff on every push. Ruff replaces flake8/isort/pyupgrade for most projects and is fast enough for pre-commit. Add `django-stubs` to the dev dependencies, not production.\n\nStart with the apps that change most. A type error in a migration is less valuable than a type error in a payment service.",
+          "code": "ruff check .\nruff format --check .\nmypy apps/ config/",
+          "language": "bash",
+          "note": "If mypy is too slow, run it on changed apps first and expand coverage over time.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Installing django-stubs without the mypy plugin and drowning in false errors.",
+        "Adding `# type: ignore` everywhere instead of fixing the boundary.",
+        "Typing every local variable and adding noise.",
+        "Running mypy with production secrets unavailable in CI.",
+        "Treating typing as a substitute for tests."
+      ],
+      "checklist": [
+        "django-stubs and plugin versions are pinned.",
+        "Models/managers use generics.",
+        "Service boundaries and external gateways are typed.",
+        "mypy and Ruff run in CI.",
+        "Type ignores are rare and explained."
+      ],
+      "related": [
+        "testing",
+        "architecture-patterns",
+        "deploy-hardening"
+      ],
+      "official": "https://github.com/typeddjango/django-stubs",
+      "errors": []
+    }
+  ]
+}

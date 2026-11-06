@@ -1,0 +1,76 @@
+{% load handbook_extras %}
+<div class="hb-idle">
+  <div class="hb-idle-head">
+    <div>
+      <p class="hb-label">Browse by area · {{ visible_total }} chapter{{ visible_total|pluralize }}</p>
+      <h2>Start with the file you are stuck in.</h2>
+    </div>
+    <p>Every chapter is written for the moment a tutorial stops helping: the traceback, the empty form, the query that got slow, the deploy that broke.</p>
+  </div>
+
+  <div class="hb-cat-grid">
+    {% for category in categories %}
+      <section class="hb-cat-card" aria-labelledby="hb-cat-{{ forloop.counter }}">
+        <div class="hb-cat-head">
+          <span class="hb-cat-index">{{ forloop.counter|stringformat:"02d" }}</span>
+          <h3 id="hb-cat-{{ forloop.counter }}">{{ category.name }}</h3>
+          <span class="hb-cat-count">{{ category.count }}</span>
+        </div>
+        <ul class="hb-chapter-list">
+          {% for chapter in category.chapters %}
+            <li>
+              <a href="{% url 'dojo:handbook_chapter' chapter.slug %}">
+                <span class="hb-chapter-num">{{ chapter.number|stringformat:"02d" }}</span>
+                <span class="hb-chapter-copy">
+                  <strong>{{ chapter.title }}</strong>
+                  <span>{{ chapter.subtitle }}</span>
+                </span>
+                <span class="hb-chapter-time">{{ chapter.read_minutes }}m</span>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endfor %}
+  </div>
+
+  <section class="hb-fix-band" aria-labelledby="hb-fix-title">
+    <div class="hb-fix-copy">
+      <p class="hb-label hb-label-light">Popular fixes</p>
+      <h2 id="hb-fix-title">Jump straight to the answer.</h2>
+      <p>The questions that send most people looking for documentation, already answered in plain language.</p>
+    </div>
+    <div class="hb-fix-links">
+      <a href="{% url 'dojo:handbook_chapter' 'forms' %}#debug-checklist">
+        <span>forms.py</span>
+        <strong>The form is valid in my head, not in Django</strong>
+        <small>Bound forms, cleaned_data, CSRF and management forms →</small>
+      </a>
+      <a href="{% url 'dojo:handbook_chapter' 'errors' %}#decode">
+        <span>Traceback</span>
+        <strong>NoReverseMatch, FieldError, no such table</strong>
+        <small>The exception decoder with exact fixes →</small>
+      </a>
+      <a href="{% url 'dojo:handbook_chapter' 'orm' %}#joins-and-n-plus-one">
+        <span>ORM</span>
+        <strong>The page got slower as the data grew</strong>
+        <small>Find the N+1 and fix it at the queryset →</small>
+      </a>
+      <a href="{% url 'dojo:handbook_chapter' 'urls' %}#reverse">
+        <span>urls.py</span>
+        <strong>Hard-coded links keep breaking</strong>
+        <small>Names, namespaces and reverse() →</small>
+      </a>
+      <a href="{% url 'dojo:handbook_chapter' 'security' %}#deployment-checklist">
+        <span>Launch</span>
+        <strong>Is this safe to put on the internet?</strong>
+        <small>DEBUG, HTTPS, CSRF and the deploy checklist →</small>
+      </a>
+      <a href="{% url 'dojo:handbook_chapter' 'migrations' %}#data-migrations">
+        <span>Migrations</span>
+        <strong>I need to change data, not just schema</strong>
+        <small>RunPython, historical models and rollback →</small>
+      </a>
+    </div>
+  </section>
+</div>

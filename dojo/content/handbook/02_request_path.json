@@ -1,0 +1,282 @@
+{
+  "chapters": [
+    {
+      "slug": "urls",
+      "title": "urls.py",
+      "subtitle": "Routing, parameters, names and reverse",
+      "category": "Request path",
+      "order": 1,
+      "aliases": [
+        "urls",
+        "urls.py",
+        "urlconf",
+        "path",
+        "re_path",
+        "include",
+        "reverse",
+        "reverse_lazy",
+        "app_name",
+        "namespace",
+        "route",
+        "slug converter",
+        "noreverseMatch",
+        "trailing slash",
+        "append_slash"
+      ],
+      "summary": "How a URL becomes a view call: path converters, includes, names, namespaces, and the reverse() habit that keeps links from breaking.",
+      "quick_answer": "Each `path()` matches a URL pattern and calls a view. Capture values with converters such as `<int:pk>`, give every route a `name`, and build links with `{% url %}` or `reverse()` instead of writing strings by hand.",
+      "sections": [
+        {
+          "id": "a-route-is-a-mapping",
+          "title": "A route is a mapping, not a regex",
+          "body": "`path()` takes a route, a view and an optional name. The route is matched from the top down; the first match wins. Captured values arrive in the view as keyword arguments.\n\nUse `re_path()` only when a path converter cannot express the pattern. Most routes do not need a regular expression.",
+          "code": "from django.urls import path\nfrom . import views\n\nurlpatterns = [\n    path(\"\", views.home, name=\"home\"),\n    path(\"posts/\", views.post_list, name=\"post-list\"),\n    path(\"posts/<int:pk>/\", views.post_detail, name=\"post-detail\"),\n    path(\"posts/<slug:slug>/\", views.post_by_slug, name=\"post-by-slug\"),\n]",
+          "language": "python"
+        },
+        {
+          "id": "converters",
+          "title": "Converters decide the type",
+          "body": "The converter is not decoration; it converts the string and constrains what can match.\n\n- `str` — any non-empty string without `/`.\n- `int` — digits only; the view receives an `int`.\n- `slug` — letters, numbers, hyphens and underscores.\n- `uuid` — a UUID object.\n- `path` — like `str`, but allows `/`.\n\nIf no converter matches, Django returns 404 before your view runs.",
+          "code": "path(\"articles/<int:year>/<slug:slug>/\", views.article, name=\"article\")\n\n# /articles/2026/django-forms/ calls:\n# views.article(request, year=2026, slug=\"django-forms\")",
+          "language": "python"
+        },
+        {
+          "id": "include-and-namespaces",
+          "title": "include() keeps apps self-contained",
+          "body": "The root URLconf should not know every route in the project. Give each app a `urls.py`, set `app_name`, and include it under a prefix. Inside templates, the namespace prevents two apps from fighting over a route called `detail`.",
+          "code": "# config/urls.py\nfrom django.urls import include, path\n\nurlpatterns = [\n    path(\"blog/\", include(\"blog.urls\")),\n    path(\"shop/\", include(\"shop.urls\")),\n]\n\n# blog/urls.py\nfrom django.urls import path\nfrom . import views\n\napp_name = \"blog\"\nurlpatterns = [\n    path(\"\", views.index, name=\"index\"),\n    path(\"<slug:slug>/\", views.detail, name=\"detail\"),\n]\n\n# template\n<a href=\"{% url 'blog:detail' slug=post.slug %}\">{{ post.title }}</a>",
+          "language": "python"
+        },
+        {
+          "id": "reverse",
+          "title": "Reverse, do not hard-code",
+          "body": "Hard-coded URLs break the moment a route changes. `reverse()` builds the URL from the route name and arguments. `reverse_lazy()` is the version to use in class attributes, settings and model `get_absolute_url()` when URLs may not be loaded yet.\n\n`{% url %}` is the template version and automatically escapes the result.",
+          "code": "from django import forms\nfrom django.db import models\nfrom django.urls import reverse, reverse_lazy\n\nreverse(\"blog:detail\", kwargs={\"slug\": \"django-forms\"})\n# \"/blog/django-forms/\"\n\nreverse(\"blog:article\", args=[2026, \"django-forms\"])\n# \"/blog/2026/django-forms/\"\n\nclass Post(models.Model):\n    def get_absolute_url(self):\n        return reverse(\"blog:detail\", kwargs={\"slug\": self.slug})\n\nclass PostForm(forms.ModelForm):\n    success_url = reverse_lazy(\"blog:index\")",
+          "language": "python",
+          "note": "If `reverse()` raises `NoReverseMatch`, the route name or the argument names do not match. Check the namespace first."
+        },
+        {
+          "id": "trailing-slashes-and-errors",
+          "title": "Trailing slashes, 404s and custom error pages",
+          "body": "Django's `CommonMiddleware` appends a trailing slash when `APPEND_SLASH=True` and the slashless URL does not match. Pick one style and stay consistent; most Django projects use trailing slashes.\n\nA view that cannot find an object should raise `Http404` (or use `get_object_or_404`). Django then renders `404.html` at the project root when `DEBUG=False`.",
+          "code": "from django.http import Http404\nfrom django.shortcuts import get_object_or_404, render\nfrom .models import Post\n\ndef detail(request, slug):\n    post = get_object_or_404(Post, slug=slug, published=True)\n    return render(request, \"blog/detail.html\", {\"post\": post})\n\n# templates/404.html and templates/500.html are used automatically\n# when DEBUG=False and the matching handler is not overridden.",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Using `path(\"posts/<pk>/\")` and expecting an integer; without a converter the value is a string.",
+        "Forgetting `app_name` and then using a namespace in `{% url %}`.",
+        "Hard-coding `/blog/...` in templates and breaking every link after a route rename.",
+        "Catching `ObjectDoesNotExist` and returning a 200 page for a missing object.",
+        "Putting a catch-all route above specific routes; the first match wins."
+      ],
+      "checklist": [
+        "Every route has a meaningful `name`.",
+        "Each app owns its `urls.py` and `app_name`.",
+        "No hard-coded internal URLs in templates or views.",
+        "404s use `get_object_or_404` or `Http404`.",
+        "Trailing-slash behaviour is consistent."
+      ],
+      "related": [
+        "views",
+        "templates",
+        "errors"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/http/urls/"
+    },
+    {
+      "slug": "views",
+      "title": "views.py",
+      "subtitle": "Requests in, responses out",
+      "category": "Request path",
+      "order": 2,
+      "aliases": [
+        "views",
+        "views.py",
+        "view",
+        "function view",
+        "class based view",
+        "cbv",
+        "fbv",
+        "render",
+        "redirect",
+        "httpresponse",
+        "jsonresponse",
+        "get_object_or_404",
+        "login_required",
+        "listview",
+        "detailview",
+        "formview",
+        "request",
+        "response",
+        "pagination",
+        "paginator",
+        "page_obj"
+      ],
+      "summary": "The view is the traffic controller: read the request, call the domain logic, choose a response. Function views, class-based views, shortcuts and the errors that follow.",
+      "quick_answer": "A view receives an `HttpRequest` and returns an `HttpResponse` (or raises an exception such as `Http404`). Prefer a function view until the class-based generic view genuinely removes more code than it adds.",
+      "sections": [
+        {
+          "id": "the-contract",
+          "title": "The contract is small",
+          "body": "A view is any callable that takes a request and returns a response. The response can be HTML, JSON, a redirect, a file or an error. Django does not care how you build it.\n\nThe request gives you `method`, `GET`, `POST`, `FILES`, `headers`, `user`, `session` and `path`. The response needs a status code and content; `render()` and `JsonResponse()` handle the boilerplate.",
+          "code": "from django.http import HttpResponse, JsonResponse\nfrom django.shortcuts import render\n\ndef health(request):\n    return JsonResponse({\"ok\": True})\n\ndef about(request):\n    return render(request, \"pages/about.html\", {\"title\": \"About\"})\n\ndef ping(request):\n    return HttpResponse(\"pong\", content_type=\"text/plain\")",
+          "language": "python"
+        },
+        {
+          "id": "function-views",
+          "title": "Function views: the honest default",
+          "body": "A function view makes the flow obvious. Branch on `request.method`, validate on POST, render on GET. Keep business logic in a service or model method; the view should read like a short paragraph.\n\nUse `require_GET` or `require_POST` to reject the wrong method explicitly instead of accidentally accepting it.",
+          "code": "from django.contrib import messages\nfrom django.shortcuts import redirect, render\nfrom django.views.decorators.http import require_http_methods\n\nfrom .forms import ContactForm\n\n@require_http_methods([\"GET\", \"POST\"])\ndef contact(request):\n    if request.method == \"POST\":\n        form = ContactForm(request.POST)\n        if form.is_valid():\n            form.send()\n            messages.success(request, \"Thanks — we will reply soon.\")\n            return redirect(\"pages:contact\")\n    else:\n        form = ContactForm()\n    return render(request, \"pages/contact.html\", {\"form\": form})",
+          "language": "python",
+          "note": "The POST/redirect/GET pattern prevents a browser refresh from submitting the same form twice."
+        },
+        {
+          "id": "shortcuts",
+          "title": "The shortcuts worth knowing",
+          "body": "`render()` combines a template and context. `redirect()` accepts a URL, a view name or a model with `get_absolute_url()`. `get_object_or_404()` turns a missing object into a clean 404. `get_list_or_404()` does the same for a list.\n\nPrefer these over manual `try/except` blocks; they encode the common behaviour and are easier to read.",
+          "code": "from django.shortcuts import get_object_or_404, redirect, render\n\nfrom .models import Post\n\ndef detail(request, pk):\n    post = get_object_or_404(Post, pk=pk, published=True)\n    return render(request, \"blog/detail.html\", {\"post\": post})\n\ndef create(request):\n    if request.method == \"POST\":\n        post = Post.objects.create(title=request.POST[\"title\"])\n        return redirect(post)  # uses post.get_absolute_url()\n    return render(request, \"blog/create.html\")",
+          "language": "python"
+        },
+        {
+          "id": "class-based-views",
+          "title": "Class-based views: use them when they fit",
+          "body": "Generic CBVs are useful when the page is genuinely a list, a detail page or a form. They are a poor fit for a flow with several branches and custom side effects; a function view is clearer there.\n\nOverride the smallest hook: `get_queryset()` for filtering, `get_context_data()` for extra template data, `form_valid()` for a successful submit, `dispatch()` for cross-cutting checks. Call `super()` unless you intentionally replace the behaviour.",
+          "code": "from django.contrib.auth.mixins import LoginRequiredMixin\nfrom django.views.generic import ListView\n\nfrom .models import Post\n\nclass PostList(LoginRequiredMixin, ListView):\n    model = Post\n    template_name = \"blog/post_list.html\"\n    context_object_name = \"posts\"\n    paginate_by = 20\n\n    def get_queryset(self):\n        return (\n            super()\n            .get_queryset()\n            .filter(author=self.request.user)\n            .select_related(\"author\")\n        )\n\n    def get_context_data(self, **kwargs):\n        context = super().get_context_data(**kwargs)\n        context[\"draft_count\"] = self.get_queryset().filter(status=\"draft\").count()\n        return context",
+          "language": "python",
+          "note": "For a FormView, `form_valid()` usually saves and then returns `super().form_valid(form)` so the configured `success_url` redirect happens."
+        },
+        {
+          "id": "pagination",
+          "title": "Pagination without loading the whole table",
+          "body": "`ListView` paginates with `paginate_by`. The template receives `page_obj` and `paginator`; `page_obj.object_list` holds the current page and `page_obj.has_next` drives the next link. The `?page=` parameter is handled for you.\n\nFor a function view, use `Paginator` directly. Always order the queryset; an unordered paginated query can return the same row twice across pages. Keep the page size bounded so a client cannot ask for 10,000 rows.",
+          "code": "class PostList(ListView):\n    model = Post\n    paginate_by = 20\n    template_name = \"blog/post_list.html\"\n\n# template\n{% for post in page_obj %}\n  <article>{{ post.title }}</article>\n{% endfor %}\n\n{% if page_obj.has_previous %}\n  <a href=\"?page={{ page_obj.previous_page_number }}\">Newer</a>\n{% endif %}\n{% if page_obj.has_next %}\n  <a href=\"?page={{ page_obj.next_page_number }}\">Older</a>\n{% endif %}\n\n# function view\nfrom django.core.paginator import Paginator\n\ndef post_list(request):\n    posts = Post.objects.filter(published=True).order_by(\"-created_at\")\n    page = Paginator(posts, 20).get_page(request.GET.get(\"page\"))\n    return render(request, \"blog/post_list.html\", {\"page_obj\": page})",
+          "language": "python",
+          "note": "An unordered queryset can produce unstable pages. Add `order_by()` before paginating."
+        },
+        {
+          "id": "errors-and-status-codes",
+          "title": "Errors and status codes",
+          "body": "Raise `Http404` when the resource does not exist. Return `HttpResponseBadRequest` for malformed input, `HttpResponseForbidden` for a permission failure, and `HttpResponseNotAllowed` for the wrong method. Do not return a 200 page that silently says “not found”; clients, caches and tests all rely on the status code.\n\nFor expected form errors, re-render the form with a 200 status and field-level messages. For an unhandled exception, let Django return 500 and log it.",
+          "code": "from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotAllowed\nfrom django.shortcuts import render\n\ndef article(request, pk):\n    if not request.user.is_authenticated:\n        return HttpResponseForbidden(\"Sign in first\")\n    article = Article.objects.filter(pk=pk).first()\n    if article is None:\n        raise Http404(\"No article here\")\n    if request.method != \"GET\":\n        return HttpResponseNotAllowed([\"GET\"])\n    return render(request, \"blog/article.html\", {\"article\": article})",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Doing complex business logic in the view instead of a service or model method.",
+        "Forgetting to return a response on one branch and getting `ValueError: The view didn't return an HttpResponse object`.",
+        "Using `request.GET[\"q\"]` without a default; a missing parameter raises `KeyError`.",
+        "Trusting `request.POST` for a value without validating it through a form.",
+        "Overriding `dispatch()` without calling `super()` and silently skipping the view."
+      ],
+      "checklist": [
+        "Every branch returns a response or raises an exception.",
+        "POST handling uses a form and redirects on success.",
+        "Missing objects produce a 404, not a 200 with an empty page.",
+        "Permissions are checked before side effects.",
+        "The view reads like a short paragraph, not a second models.py."
+      ],
+      "related": [
+        "urls",
+        "forms",
+        "templates",
+        "middleware"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/http/views/"
+    },
+    {
+      "slug": "templates",
+      "title": "Templates",
+      "subtitle": "Inheritance, tags, filters and escaping",
+      "category": "Request path",
+      "order": 3,
+      "aliases": [
+        "templates",
+        "template",
+        "dtl",
+        "django template language",
+        "extends",
+        "block",
+        "include",
+        "csrf_token",
+        "static",
+        "url tag",
+        "autoescape",
+        "safe",
+        "filters",
+        "template inheritance",
+        "context",
+        "for loop",
+        "if tag"
+      ],
+      "summary": "The Django template language without the cargo cult: inheritance, context lookup, the tags you actually need, and why autoescaping is not optional.",
+      "quick_answer": "Put a `base.html` with named blocks at the project level, extend it in each app template, and keep logic out of the template. Use `{{ value }}` for output, `{% tag %}` for control, and never disable autoescaping for user data.",
+      "sections": [
+        {
+          "id": "inheritance",
+          "title": "Inheritance in one picture",
+          "body": "A child template extends a base and fills blocks. The base owns the document shell, navigation and footer; the child owns one screen. `{{ block.super }}` keeps the parent content when you only want to add to it.\n\nUse `{% include %}` for a fragment reused inside a page, and `{% extends %}` for a page that fills a layout.",
+          "code": "<!-- templates/base.html -->\n<!doctype html>\n<html lang=\"en\">\n<head>\n  <title>{% block title %}My site{% endblock %}</title>\n</head>\n<body>\n  <main>{% block content %}{% endblock %}</main>\n</body>\n</html>\n\n<!-- blog/templates/blog/list.html -->\n{% extends \"base.html\" %}\n{% block title %}Posts · {{ block.super }}{% endblock %}\n{% block content %}\n  <h1>{{ page_title }}</h1>\n  {% include \"blog/_post_list.html\" with posts=object_list only %}\n{% endblock %}",
+          "language": "html",
+          "note": "`only` prevents the included template from seeing the parent context; it makes the fragment's dependencies explicit."
+        },
+        {
+          "id": "variables-and-lookup",
+          "title": "Variables use dot lookup, not Python",
+          "body": "`{{ post.author.name }}` tries, in order: dictionary key, attribute, list index. You cannot call a function with arguments, do arithmetic, or use arbitrary Python. That is a feature: templates stay presentation-only.\n\nMissing values render as an empty string by default. Use `default`, `default_if_none` and `{% if %}` to make empty states explicit.",
+          "code": "{{ post.title }}\n{{ post.author.profile.display_name|default:\"Anonymous\" }}\n{{ items|length }}\n{{ price|floatformat:2 }}\n{{ created_at|date:\"j M Y, H:i\" }}\n{{ body|truncatewords:30 }}\n{{ html|escape }}",
+          "language": "html"
+        },
+        {
+          "id": "tags",
+          "title": "The tags you will use daily",
+          "body": "Tags control flow and URL generation. `{% url %}` reverses a named route; `{% static %}` builds a static URL; `{% csrf_token %}` adds the hidden CSRF field to every POST form. `{% for %}` has an `{% empty %}` branch that is easy to forget.\n\n`{% with %}` and `{% cycle %}` are occasionally useful. Avoid custom template tags until a real repetition proves the need.",
+          "code": "{% load static %}\n\n<a href=\"{% url 'blog:detail' slug=post.slug %}\">{{ post.title }}</a>\n<img src=\"{% static 'img/logo.svg' %}\" alt=\"Logo\">\n\n<form method=\"post\">\n  {% csrf_token %}\n  {{ form.as_p }}\n  <button type=\"submit\">Save</button>\n</form>\n\n{% for post in posts %}\n  <article>{{ post.title }}</article>\n{% empty %}\n  <p>No posts yet.</p>\n{% endfor %}",
+          "language": "html"
+        },
+        {
+          "id": "forms-in-templates",
+          "title": "Rendering a form without guessing",
+          "body": "`{{ form.as_p }}` is fine for a prototype. For real layout, render fields explicitly: label, widget, errors and help text are separate pieces. Always render `form.non_field_errors` and add `{% csrf_token %}` inside the form.\n\nIf you render the `<input>` yourself, keep `{{ field.id_for_label }}` and `{{ field.html_name }}` so labels and POST data still work.",
+          "code": "<form method=\"post\" enctype=\"multipart/form-data\" novalidate>\n  {% csrf_token %}\n  {{ form.non_field_errors }}\n\n  <div class=\"field\">\n    {{ field.label_tag }}\n    {{ field }}\n    {% for error in field.errors %}\n      <p class=\"error\">{{ error }}</p>\n    {% endfor %}\n    {% if field.help_text %}<p class=\"help\">{{ field.help_text }}</p>{% endif %}\n  </div>\n\n  <button type=\"submit\">Save</button>\n</form>",
+          "language": "html"
+        },
+        {
+          "id": "escaping",
+          "title": "Autoescaping is the safety net",
+          "body": "By default, `{{ value }}` escapes `<`, `>`, `&`, quotes and apostrophes. That is why a comment containing `<script>` renders as text instead of executing.\n\n`|safe` and `{% autoescape off %}` turn the net off. Use them only for HTML you generated yourself and trust. If you need to mark a fragment as safe, prefer a small template include or a sanitising library over a blanket `|safe`.",
+          "code": "Safe:      {{ comment.body }}\nUnsafe:    {{ comment.body|safe }}\n\n{# Only if the value was sanitised on the way in: #}\n{{ rendered_markdown|safe }}\n\n{# Escape first, then add the tiny bit of formatting you control: #}\n{{ user_text|escape|linebreaksbr }}",
+          "language": "html",
+          "note": "A Content Security Policy is a second line of defence, not a replacement for escaping."
+        },
+        {
+          "id": "static-and-urls",
+          "title": "Static files and URLs",
+          "body": "`{% static %}` builds a URL from `STATIC_URL`. During development, `runserver` serves static files when `django.contrib.staticfiles` is installed. In production, `collectstatic` copies them to `STATIC_ROOT` and a web server (or WhiteNoise) serves them.\n\nNever hard-code `/static/...`; the storage backend may add a manifest hash or a CDN prefix.",
+          "code": "{% load static %}\n<link rel=\"stylesheet\" href=\"{% static 'css/site.css' %}\">\n<script src=\"{% static 'js/app.js' %}\" defer></script>\n\n<!-- cache-busting is handled by the storage backend -->",
+          "language": "html"
+        }
+      ],
+      "pitfalls": [
+        "Putting business logic in templates; it is hard to test and impossible to reuse.",
+        "Forgetting `{% csrf_token %}` and getting a 403 on every POST.",
+        "Using `|safe` on user input and creating an XSS hole.",
+        "Assuming `{% extends %}` can appear anywhere except the first tag in the file.",
+        "Loading static files with a hard-coded path that breaks under a manifest storage backend."
+      ],
+      "checklist": [
+        "Base template has named blocks and a content block.",
+        "Every POST form includes `{% csrf_token %}`.",
+        "User data is escaped; `|safe` is reviewed.",
+        "Empty states handled with `{% empty %}` or `{% if %}`.",
+        "Static assets use `{% static %}`."
+      ],
+      "related": [
+        "views",
+        "forms",
+        "static-media"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/templates/"
+    }
+  ]
+}

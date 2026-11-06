@@ -5,7 +5,7 @@ from datetime import date
 import django
 from django.contrib import messages
 from django.db.models import Q
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -13,6 +13,15 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from .field_guide import load_releases
 from .forms import QuizSetupForm
+from .handbook import (
+    LEVELS,
+    categories as handbook_categories,
+    chapter_hits,
+    chapter_map,
+    level_summary,
+    load_chapters,
+    search_handbook,
+)
 from .models import (
     AppBlueprint,
     ArchitectureCase,
@@ -80,6 +89,7 @@ def search(request: HttpRequest) -> HttpResponse:
     blueprints = AppBlueprint.objects.none()
     cases = ArchitectureCase.objects.none()
     releases = ReleaseNote.objects.none()
+    handbook_matches: list[dict] = []
     counts = {
         "topics": 0,
         "questions": 0,
@@ -88,6 +98,7 @@ def search(request: HttpRequest) -> HttpResponse:
         "blueprints": 0,
         "cases": 0,
         "releases": 0,
+        "handbook": 0,
     }
 
     if searched:
@@ -130,6 +141,7 @@ def search(request: HttpRequest) -> HttpResponse:
             | Q(summary__icontains=query)
             | Q(why_it_matters__icontains=query)
         )
+        all_handbook_matches = chapter_hits(query, limit=200)
 
         counts = {
             "topics": topic_qs.count(),
@@ -139,6 +151,7 @@ def search(request: HttpRequest) -> HttpResponse:
             "blueprints": blueprint_qs.count(),
             "cases": case_qs.count(),
             "releases": release_qs.count(),
+            "handbook": len(all_handbook_matches),
         }
         topics = topic_qs[:8]
         questions = question_qs[:10]
@@ -147,6 +160,7 @@ def search(request: HttpRequest) -> HttpResponse:
         blueprints = blueprint_qs[:8]
         cases = case_qs[:8]
         releases = release_qs[:8]
+        handbook_matches = all_handbook_matches[:6]
 
     return render(
         request,
@@ -161,10 +175,95 @@ def search(request: HttpRequest) -> HttpResponse:
             "blueprints": blueprints,
             "cases": cases,
             "releases": releases,
+            "handbook_matches": handbook_matches,
             "counts": counts,
             "total_count": sum(counts.values()),
             "topic_total": Topic.objects.count(),
             "active_nav": "search",
+        },
+    )
+
+
+@require_GET
+def handbook(request: HttpRequest) -> HttpResponse:
+    query = request.GET.get("q", "").strip()
+    level = request.GET.get("level", "").strip()
+    if level not in LEVELS:
+        level = ""
+    search_ready = len(query) >= 2
+    hits = search_handbook(query) if search_ready else []
+    chapters = load_chapters()
+    visible_chapters = [chapter for chapter in chapters if not level or chapter["level"] == level]
+    return render(
+        request,
+        "dojo/handbook.html",
+        {
+            "query": query,
+            "level": level,
+            "levels": level_summary(),
+            "searched": bool(query),
+            "too_short": 0 < len(query) < 2,
+            "search_ready": search_ready,
+            "hits": hits,
+            "categories": handbook_categories(level or None),
+            "visible_total": len(visible_chapters),
+            "chapter_total": len(chapters),
+            "section_total": sum(len(chapter["sections"]) for chapter in chapters),
+            "error_total": sum(len(chapter["errors"]) for chapter in chapters),
+            "active_nav": "handbook",
+        },
+    )
+
+
+@require_GET
+def handbook_search(request: HttpRequest) -> HttpResponse:
+    query = request.GET.get("q", "").strip()
+    hits = search_handbook(query) if len(query) >= 2 else []
+    results = []
+    for hit in hits:
+        chapter = hit["chapter"]
+        section = hit["section"]
+        url = reverse("dojo:handbook_chapter", args=[chapter["slug"]])
+        if section:
+            url = f"{url}#{section['id']}"
+        results.append(
+            {
+                "kind": hit["kind"],
+                "title": hit["title"],
+                "chapter": chapter["title"],
+                "chapter_number": chapter["number"],
+                "category": chapter["category"],
+                "level": chapter["level"],
+                "section": section["title"] if section else "",
+                "snippet": hit["snippet"],
+                "url": url,
+            }
+        )
+    return JsonResponse({"query": query, "count": len(results), "results": results})
+
+
+@require_GET
+def handbook_chapter(request: HttpRequest, slug: str) -> HttpResponse:
+    chapters = load_chapters()
+    chapter = next((item for item in chapters if item["slug"] == slug), None)
+    if chapter is None:
+        raise Http404("Handbook chapter not found")
+    index = chapters.index(chapter)
+    by_slug = chapter_map()
+    related = [
+        by_slug[related_slug]
+        for related_slug in chapter["related"]
+        if related_slug in by_slug
+    ]
+    return render(
+        request,
+        "dojo/handbook_chapter.html",
+        {
+            "chapter": chapter,
+            "previous_chapter": chapters[index - 1] if index > 0 else None,
+            "next_chapter": chapters[index + 1] if index + 1 < len(chapters) else None,
+            "related_chapters": related,
+            "active_nav": "handbook",
         },
     )
 

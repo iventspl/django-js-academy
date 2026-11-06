@@ -1,0 +1,176 @@
+{
+  "chapters": [
+    {
+      "slug": "auth",
+      "title": "Auth & permissions",
+      "subtitle": "Login, sessions, permissions and the custom user decision",
+      "category": "Users & admin",
+      "order": 1,
+      "aliases": [
+        "auth",
+        "authentication",
+        "authorization",
+        "login",
+        "logout",
+        "user",
+        "password",
+        "permissions",
+        "groups",
+        "login_required",
+        "loginrequiredmixin",
+        "permissionrequiredmixin",
+        "authenticate",
+        "session",
+        "password reset",
+        "superuser",
+        "staff",
+        "is_authenticated",
+        "custom user"
+      ],
+      "summary": "Django ships with a complete auth system. Use it instead of inventing sessions, password hashing and permission checks. The chapter covers the normal flow and the places where teams accidentally weaken it.",
+      "quick_answer": "Use `django.contrib.auth` for users, passwords, groups and permissions. Log in with `authenticate()` + `login()`, protect views with `login_required` or `LoginRequiredMixin`, and check object-level permission in the view or service. Decide on a custom user before the first migration.",
+      "sections": [
+        {
+          "id": "built-in-user",
+          "title": "The built-in user model",
+          "body": "`django.contrib.auth` gives you `User`, `Group`, `Permission`, password hashing, sessions and the admin integration. The default `User` has `username`, `password`, `email`, `first_name`, `last_name`, `is_staff`, `is_active`, `is_superuser`, `last_login` and `date_joined`.\n\n`is_staff` controls access to the admin site. `is_superuser` bypasses permission checks. Neither is a substitute for object-level authorization: a staff user can still be the wrong person to edit a given row.",
+          "code": "from django.contrib.auth import get_user_model\n\nUser = get_user_model()\nuser = User.objects.create_user(\n    username=\"ada\",\n    email=\"ada@example.com\",\n    password=\"a-long-random-password\",\n)\nuser.set_password(\"a-new-password\")\nuser.save(update_fields=[\"password\"])",
+          "language": "python",
+          "note": "Never store a password with `user.password = raw`. Use `create_user`, `set_password` and `check_password`."
+        },
+        {
+          "id": "login-logout",
+          "title": "Login and logout",
+          "body": "`authenticate(request, username=..., password=...)` returns a user or `None`. `login(request, user)` writes the session. `logout(request)` flushes it. Always redirect after a successful login so a refresh does not resubmit the credentials.\n\nDjango's built-in auth views handle login, logout, password change and password reset. You can use them directly or subclass them for styling.",
+          "code": "# urls.py\nfrom django.contrib.auth import views as auth_views\nfrom django.urls import path\n\nurlpatterns = [\n    path(\"login/\", auth_views.LoginView.as_view(template_name=\"registration/login.html\"), name=\"login\"),\n    path(\"logout/\", auth_views.LogoutView.as_view(), name=\"logout\"),\n]\n\n# custom view\nfrom django.contrib.auth import authenticate, login\nfrom django.shortcuts import redirect, render\n\ndef sign_in(request):\n    error = None\n    if request.method == \"POST\":\n        user = authenticate(\n            request,\n            username=request.POST.get(\"username\"),\n            password=request.POST.get(\"password\"),\n        )\n        if user is not None:\n            login(request, user)\n            return redirect(request.GET.get(\"next\") or \"home\")\n        error = \"Invalid username or password.\"\n    return render(request, \"registration/login.html\", {\"error\": error})",
+          "language": "python",
+          "note": "Validate the `next` parameter before redirecting; an open redirect is a real vulnerability."
+        },
+        {
+          "id": "protect-views",
+          "title": "Protect views",
+          "body": "`@login_required` redirects anonymous users to the login page and preserves `next`. `LoginRequiredMixin` does the same for class-based views; it must come first in the MRO. `PermissionRequiredMixin` checks a permission such as `blog.change_post`.\n\nFor object-level rules (“only the author can edit”), check `obj.author == request.user` or call `request.user.has_perm(...)` against the object. Authentication answers “who are you”; authorization answers “may you do this”.",
+          "code": "from django.contrib.auth.decorators import login_required, permission_required\nfrom django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin\nfrom django.views.generic import UpdateView\n\n@login_required\n@permission_required(\"blog.change_post\", raise_exception=True)\ndef edit_post(request, pk):\n    ...\n\nclass PostUpdate(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):\n    model = Post\n    fields = [\"title\", \"body\"]\n    permission_required = \"blog.change_post\"\n\n    def get_queryset(self):\n        return super().get_queryset().filter(author=self.request.user)",
+          "language": "python",
+          "note": "Putting `LoginRequiredMixin` after `UpdateView` can break the MRO. Authentication mixins go first."
+        },
+        {
+          "id": "permissions-groups",
+          "title": "Permissions and groups",
+          "body": "Every model gets `add`, `change`, `delete` and `view` permissions. Assign them to users or groups. Check with `user.has_perm(\"app.codename\")`; in templates use `{% if perms.blog.change_post %}`.\n\nGroups are for bundles of permissions tied to a role: editors, support, finance. Avoid hard-coding usernames or `is_superuser` checks in business logic; they do not survive a team change.",
+          "code": "from django.contrib.auth.models import Group, Permission\n\neditors, _ = Group.objects.get_or_create(name=\"Editors\")\neditors.permissions.add(\n    Permission.objects.get(codename=\"change_post\"),\n    Permission.objects.get(codename=\"add_post\"),\n)\nuser.groups.add(editors)\n\nuser.has_perm(\"blog.change_post\")  # True for members of Editors",
+          "language": "python"
+        },
+        {
+          "id": "password-reset",
+          "title": "Password reset needs email",
+          "body": "Django's password reset flow creates a signed, time-limited token and emails a link. It needs a working email backend and a template. In development, the console backend prints the email instead of sending it.\n\nSet `DEFAULT_FROM_EMAIL`, configure `EMAIL_HOST`, and test the full flow with a real inbox before launch. The reset link must use HTTPS in production.",
+          "code": "# settings.py (development)\nEMAIL_BACKEND = \"django.core.mail.backends.console.EmailBackend\"\nDEFAULT_FROM_EMAIL = \"no-reply@example.com\"\n\n# production\nEMAIL_BACKEND = \"django.core.mail.backends.smtp.EmailBackend\"\nEMAIL_HOST = \"smtp.example.com\"\nEMAIL_PORT = 587\nEMAIL_USE_TLS = True\nEMAIL_HOST_USER = os.environ[\"EMAIL_HOST_USER\"]\nEMAIL_HOST_PASSWORD = os.environ[\"EMAIL_HOST_PASSWORD\"]",
+          "language": "python",
+          "note": "If reset emails never arrive, check spam, the from address, SMTP credentials and whether the site URL in the email is reachable."
+        }
+      ],
+      "pitfalls": [
+        "Storing raw passwords instead of using `set_password()`.",
+        "Using `is_staff` as the only authorization check for a business action.",
+        "Forgetting object-level checks and letting any logged-in user edit any row.",
+        "Redirecting to an unvalidated `next` URL.",
+        "Creating a custom user after the first migration.",
+        "Using the default `User` when email is the real login identifier."
+      ],
+      "checklist": [
+        "Passwords are hashed through Django's auth APIs.",
+        "Every private view is protected by login and permission checks.",
+        "Object-level ownership is checked, not just authentication.",
+        "Login redirects are validated.",
+        "Password reset works end to end with real email.",
+        "Custom user decision documented before migration."
+      ],
+      "related": [
+        "models",
+        "admin",
+        "security",
+        "testing"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/auth/"
+    },
+    {
+      "slug": "admin",
+      "title": "admin.py",
+      "subtitle": "A useful internal tool in a few lines",
+      "category": "Users & admin",
+      "order": 2,
+      "aliases": [
+        "admin",
+        "admin.py",
+        "django admin",
+        "modeladmin",
+        "list_display",
+        "list_filter",
+        "search_fields",
+        "inlines",
+        "actions",
+        "admin site",
+        "staff",
+        "superuser",
+        "readonly_fields",
+        "changelist",
+        "autocomplete"
+      ],
+      "summary": "The admin is a staff-only CRUD interface. It is excellent for operations and content, and a poor public product surface. Make it fast, explicit and safe.",
+      "quick_answer": "Register models with `@admin.register`, set `list_display`, `list_filter` and `search_fields`, use inlines for owned children, and keep dangerous fields read-only. The admin is for staff, not for end users.",
+      "sections": [
+        {
+          "id": "register",
+          "title": "Register with a useful ModelAdmin",
+          "body": "The default admin page is a list of `__str__` values with an edit link. Add the columns staff actually need, filters for the fields they use, and search for the identifiers they type.\n\n`list_select_related` avoids N+1 queries in the changelist. `ordering` should match an indexed column when the table is large.",
+          "code": "from django.contrib import admin\nfrom .models import Post\n\n@admin.register(Post)\nclass PostAdmin(admin.ModelAdmin):\n    list_display = [\"title\", \"author\", \"status\", \"published_at\"]\n    list_filter = [\"status\", \"created_at\"]\n    search_fields = [\"title\", \"slug\", \"author__email\"]\n    list_select_related = [\"author\"]\n    ordering = [\"-created_at\"]\n    date_hierarchy = \"created_at\"\n    readonly_fields = [\"created_at\", \"updated_at\"]\n    prepopulated_fields = {\"slug\": (\"title\",)}",
+          "language": "python"
+        },
+        {
+          "id": "inlines-actions",
+          "title": "Inlines and actions",
+          "body": "`TabularInline` and `StackedInline` edit children on the parent page. They are convenient for a small number of owned rows; they become slow for hundreds. Set `extra = 0` and `can_delete` deliberately.\n\nAdmin actions operate on selected rows. Mark destructive actions clearly and keep them idempotent. For large datasets, queue the work instead of doing it in the request.",
+          "code": "from django.contrib import admin, messages\n\nclass OrderItemInline(admin.TabularInline):\n    model = OrderItem\n    extra = 0\n    autocomplete_fields = [\"product\"]\n\n@admin.register(Order)\nclass OrderAdmin(admin.ModelAdmin):\n    list_display = [\"id\", \"customer\", \"status\", \"total\"]\n    inlines = [OrderItemInline]\n    actions = [\"mark_paid\"]\n\n    @admin.action(description=\"Mark selected orders as paid\")\n    def mark_paid(self, request, queryset):\n        updated = queryset.filter(status=\"pending\").update(status=\"paid\")\n        self.message_user(request, f\"Marked {updated} orders as paid.\", messages.SUCCESS)",
+          "language": "python",
+          "note": "`queryset.update()` does not call `save()` or send signals. That is usually what you want for a bulk action, but be explicit about it."
+        },
+        {
+          "id": "permissions",
+          "title": "Admin permissions",
+          "body": "Admin access requires `is_staff=True`. Model permissions control what a staff user can view, add, change and delete. Superusers bypass those checks.\n\nDo not expose the admin to the public internet without HTTPS, strong accounts and rate limiting. Consider putting it behind a VPN or an allowlist. The admin is a high-value target because it can edit every row.",
+          "code": "from django.contrib import admin\n\n@admin.register(Post)\nclass PostAdmin(admin.ModelAdmin):\n    def has_change_permission(self, request, obj=None):\n        if obj is not None and obj.author_id != request.user.id:\n            return request.user.is_superuser\n        return super().has_change_permission(request, obj)\n\nadmin.site.site_header = \"Acme operations\"\nadmin.site.site_title = \"Acme operations\"\nadmin.site.index_title = \"Content and orders\"",
+          "language": "python"
+        },
+        {
+          "id": "admin-performance",
+          "title": "Keep the changelist fast",
+          "body": "The admin is a Django page like any other. A `list_display` method that queries per row creates an N+1. Use `list_select_related`, `prefetch_related` or annotate the value in `get_queryset()`.\n\n`search_fields` on a non-indexed text column gets slow. Add an index or narrow the search. `date_hierarchy` and `list_filter` also run queries; measure before adding every filter.",
+          "code": "from django.db.models import Count\n\n@admin.register(Author)\nclass AuthorAdmin(admin.ModelAdmin):\n    list_display = [\"name\", \"post_count\"]\n\n    def get_queryset(self, request):\n        return super().get_queryset(request).annotate(_post_count=Count(\"posts\"))\n\n    @admin.display(description=\"Posts\", ordering=\"_post_count\")\n    def post_count(self, obj):\n        return obj._post_count",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Treating the admin as the public application UI.",
+        "Exposing the admin without HTTPS, strong passwords and network restrictions.",
+        "Putting every field in `list_display` and creating an N+1 changelist.",
+        "Using `fields = \"__all__\"` and letting staff edit audit fields.",
+        "Running a long destructive action synchronously on thousands of rows."
+      ],
+      "checklist": [
+        "Only staff can reach the admin.",
+        "`list_display`, `list_filter` and `search_fields` match real staff tasks.",
+        "Changelists use `list_select_related` or annotations.",
+        "Dangerous fields are read-only.",
+        "Bulk actions are explicit and idempotent."
+      ],
+      "related": [
+        "models",
+        "auth",
+        "orm",
+        "security"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/admin/"
+    }
+  ]
+}

@@ -1,0 +1,529 @@
+{
+  "chapters": [
+    {
+      "slug": "orm-expressions",
+      "title": "ORM expressions & SQL",
+      "subtitle": "Subqueries, Exists, CASE, windows and custom lookups",
+      "category": "Data",
+      "order": 4,
+      "level": "Advanced",
+      "tags": [
+        "ORM",
+        "SQL",
+        "performance"
+      ],
+      "aliases": [
+        "expressions",
+        "subquery",
+        "outerref",
+        "exists",
+        "case",
+        "when",
+        "window",
+        "row_number",
+        "rank",
+        "cte",
+        "common table expression",
+        "coalesce",
+        "cast",
+        "custom lookup",
+        "transform",
+        "raw sql",
+        "annotate",
+        "sql"
+      ],
+      "summary": "When filter() is not enough: compose SQL expressions, correlate subqueries, build conditional values, rank rows and drop to raw SQL safely.",
+      "quick_answer": "Use `F()` for columns, `Value()` for literals, `Func`/`Cast`/`Coalesce` for SQL functions, `Subquery` + `OuterRef` for correlated values, `Exists` for presence checks, `Case`/`When` for conditional logic, and `Window` for per-partition calculations. Drop to `cursor.execute(sql, params)` only when the ORM cannot express the query.",
+      "sections": [
+        {
+          "id": "expressions-are-composable",
+          "title": "Expressions are SQL you compose",
+          "body": "An expression is a fragment the database evaluates. `F(\"views\")` is a column reference; `Value(10)` is a literal. Wrap functions with `Func`, cast with `Cast`, and handle nulls with `Coalesce`.\n\nExpressions can be used in `annotate()`, `filter()`, `order_by()`, `update()` and `values()`. The database does the work; Python does not loop over rows.",
+          "code": "from django.db.models import F, Value, CharField\nfrom django.db.models.functions import Cast, Coalesce, Concat, Lower\n\nPost.objects.annotate(\n    score=F(\"likes\") * 2 + F(\"shares\"),\n    label=Concat(\"title\", Value(\" · \"), Cast(\"id\", CharField())),\n    author_name=Coalesce(\"author__display_name\", Value(\"Anonymous\")),\n    lower_title=Lower(\"title\"),\n).filter(score__gte=10).order_by(\"-score\")",
+          "language": "python",
+          "note": "Annotated names become available to later `.filter()` calls, but each database backend decides how much of the expression it can push into the WHERE clause.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "subqueries",
+          "title": "Subqueries and Exists",
+          "body": "`Subquery` returns one column from a correlated queryset. `OuterRef` points at the outer query. `Exists` returns a boolean and is often cheaper than counting rows.\n\nA subquery must return at most one row and one column. Slice it (`[:1]`) when the logic is “the latest one”.",
+          "code": "from django.db.models import Exists, OuterRef, Subquery\n\nlatest_comment = (\n    Comment.objects.filter(post=OuterRef(\"pk\"))\n    .order_by(\"-created_at\")\n    .values(\"body\")[:1]\n)\nPost.objects.annotate(\n    latest_comment=Subquery(latest_comment),\n    has_comments=Exists(Comment.objects.filter(post=OuterRef(\"pk\"))),\n)\n\n# A scalar aggregate per parent\nfrom django.db.models import Count\ncomment_count = (\n    Comment.objects.filter(post=OuterRef(\"pk\"))\n    .values(\"post\")\n    .annotate(total=Count(\"pk\"))\n    .values(\"total\")\n)\nPost.objects.annotate(comment_count=Subquery(comment_count))",
+          "language": "python",
+          "note": "`OuterRef` must refer to a field on the outer queryset. If the subquery is not correlated, use a normal queryset or a join instead.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "case-when",
+          "title": "CASE, WHEN and conditional updates",
+          "body": "`Case`/`When` express SQL CASE. Use `default=` for the fallback. They work in annotations and in `update()`.\n\nFor a simple boolean, `Exists` or a filtered `Count` is clearer than a CASE. Use CASE when the output is a value, a bucket or a priority label.",
+          "code": "from django.db.models import Case, IntegerField, Value, When\n\nPost.objects.annotate(\n    priority=Case(\n        When(status=\"review\", then=Value(3)),\n        When(status=\"draft\", then=Value(2)),\n        default=Value(1),\n        output_field=IntegerField(),\n    )\n).order_by(\"-priority\")\n\n# Bulk status transition with one query\nfrom django.utils import timezone\nPost.objects.filter(status=\"draft\", updated_at__lt=timezone.now() - timezone.timedelta(days=30)).update(\n    status=\"archived\"\n)",
+          "language": "python",
+          "note": "`update()` bypasses `save()`, signals and `full_clean()`. Send notifications with `transaction.on_commit()` if needed.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "window-functions",
+          "title": "Window functions",
+          "body": "A window function computes across a partition without collapsing rows. `Window(expression, partition_by=[...], order_by=...)` wraps `RowNumber`, `Rank`, `DenseRank`, `Sum`, `Avg`, `Lag`, `Lead` and friends.\n\nUse windows for leaderboards, “latest per group”, running totals and percentiles. Add a stable ordering; ties make row numbers non-deterministic.",
+          "code": "from django.db.models import F, Window\nfrom django.db.models.functions import Rank, RowNumber\n\nPost.objects.annotate(\n    author_rank=Window(\n        expression=RowNumber(),\n        partition_by=[F(\"author_id\")],\n        order_by=F(\"created_at\").desc(),\n    ),\n    global_rank=Window(\n        expression=Rank(),\n        order_by=F(\"score\").desc(),\n    ),\n).filter(author_rank__lte=3)",
+          "language": "python",
+          "note": "You cannot filter on a window alias in the same query on every backend. Wrap it in a subquery or filter in Python when needed.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "custom-lookups",
+          "title": "Custom lookups and the raw SQL escape hatch",
+          "body": "A `Lookup` implements a new `field__lookup` operator; a `Transform` converts a value before the lookup. Register them on a field class. This is advanced API: write tests against every supported database.\n\nWhen the ORM cannot express the query, use `cursor.execute()` with parameters. Never interpolate values; parameters are the difference between a query and an injection hole.",
+          "code": "from django.db.models import CharField, Lookup\n\nclass NotEqual(Lookup):\n    lookup_name = \"ne\"\n\n    def as_sql(self, compiler, connection):\n        lhs, lhs_params = self.process_lhs(compiler, connection)\n        rhs, rhs_params = self.process_rhs(compiler, connection)\n        return f\"{lhs} <> {rhs}\", lhs_params + rhs_params\n\nCharField.register_lookup(NotEqual)\nPost.objects.filter(status__ne=\"draft\")\n\n# Raw SQL with parameters\nfrom django.db import connection\nwith connection.cursor() as cursor:\n    cursor.execute(\n        \"SELECT id, title FROM blog_post WHERE score > %s ORDER BY score DESC\",\n        [100],\n    )\n    rows = cursor.fetchall()",
+          "language": "python",
+          "note": "Raw SQL is backend-specific and must be reviewed for injection, locking and query-plan regressions.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Using `len(queryset)` in a template loop and running the query repeatedly.",
+        "Forgetting `output_field` on `Case`/`Value` and getting a mixed-type error.",
+        "Correlating a subquery with `OuterRef` but returning more than one column or row.",
+        "Filtering on a window alias in the same SELECT; use a subquery or Python.",
+        "Interpolating user input into raw SQL instead of passing parameters."
+      ],
+      "checklist": [
+        "The query plan was inspected with `.explain()`.",
+        "Subqueries return exactly one column and at most one row.",
+        "Expressions have an explicit `output_field` when types are mixed.",
+        "Raw SQL uses parameters and has tests.",
+        "Window queries have deterministic ordering."
+      ],
+      "related": [
+        "orm",
+        "transactions-locking",
+        "performance"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/models/expressions/",
+      "errors": []
+    },
+    {
+      "slug": "transactions-locking",
+      "title": "Transactions & locking",
+      "subtitle": "Atomicity, row locks, isolation and retries",
+      "category": "Data",
+      "order": 5,
+      "level": "Advanced",
+      "tags": [
+        "transactions",
+        "concurrency",
+        "PostgreSQL"
+      ],
+      "aliases": [
+        "transaction",
+        "atomic",
+        "savepoint",
+        "select_for_update",
+        "row lock",
+        "isolation",
+        "deadlock",
+        "serializable",
+        "on_commit",
+        "race condition",
+        "concurrency",
+        "lock",
+        "nowait",
+        "skip locked"
+      ],
+      "summary": "How to make multi-step writes atomic, lock the rows you are about to change, and survive deadlocks without pretending the database is single-threaded.",
+      "quick_answer": "Wrap related writes in `transaction.atomic()`, lock rows with `select_for_update()` inside the transaction, keep transactions short, and retry deadlocks/serialization failures at the boundary. Run side effects with `transaction.on_commit()`.",
+      "sections": [
+        {
+          "id": "atomic",
+          "title": "Atomic blocks and savepoints",
+          "body": "`transaction.atomic()` commits on success and rolls back if an exception escapes. Nested atomic blocks create savepoints: an inner failure can be rolled back without losing the outer work, but only if you catch the exception outside the inner block.\n\nDo not swallow an exception inside an atomic block and continue writing. The transaction may already be marked for rollback; use a savepoint if partial recovery is intentional.",
+          "code": "from django.db import transaction\n\nwith transaction.atomic():\n    order = Order.objects.create(customer=customer)\n    for item in items:\n        OrderItem.objects.create(order=order, **item)\n\n# Savepoint: recover one optional step\nwith transaction.atomic():\n    order = Order.objects.create(customer=customer)\n    try:\n        with transaction.atomic():\n            create_invoice(order)\n    except InvoiceError:\n        order.needs_manual_invoice = True\n        order.save(update_fields=[\"needs_manual_invoice\"])",
+          "language": "python",
+          "note": "Keep external HTTP calls out of the transaction. A slow third party holding a row lock can stall the whole site.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "row-locks",
+          "title": "Lock the row before you change it",
+          "body": "A read-modify-write race loses updates: two requests read stock 1, both write 0, and two items are sold. `select_for_update()` locks the selected rows until the transaction ends.\n\nUse `nowait=True` to fail fast, or `skip_locked=True` for a worker queue. SQLite ignores row-level locks; test concurrency on the database you deploy. `select_for_update()` must be inside `atomic()`.",
+          "code": "from django.db import transaction\n\nwith transaction.atomic():\n    product = (\n        Product.objects.select_for_update()\n        .get(pk=product_id)\n    )\n    if product.stock < quantity:\n        raise OutOfStock\n    product.stock -= quantity\n    product.save(update_fields=[\"stock\"])\n\n# Queue pattern: several workers, no duplicate rows\nwith transaction.atomic():\n    job = (\n        Job.objects.select_for_update(skip_locked=True)\n        .filter(status=\"queued\")\n        .order_by(\"created_at\")\n        .first()\n    )\n    if job is None:\n        return\n    job.status = \"running\"\n    job.save(update_fields=[\"status\"])",
+          "language": "python",
+          "note": "Lock rows in a consistent order to reduce deadlocks. PostgreSQL will detect a deadlock and abort one transaction; your code should retry it.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "isolation-deadlocks",
+          "title": "Isolation levels and deadlocks",
+          "body": "Databases trade consistency for concurrency. PostgreSQL defaults to READ COMMITTED; SERIALIZABLE can abort transactions that would violate a serial schedule. SQLite serialises writers.\n\nA deadlock is not a bug in the database; it is two transactions each holding what the other needs. Keep transactions short, touch rows in a stable order, and retry on `OperationalError` with exponential backoff and a retry limit.",
+          "code": "import time\nfrom django.db import OperationalError, transaction\n\ndef retry_on_deadlock(operation, attempts=3):\n    for attempt in range(attempts):\n        try:\n            with transaction.atomic():\n                return operation()\n        except OperationalError as exc:\n            if \"deadlock\" not in str(exc).lower() or attempt == attempts - 1:\n                raise\n            time.sleep(0.05 * (2 ** attempt))",
+          "language": "python",
+          "note": "A retry must be idempotent. If the operation sends email or charges a card, move that side effect to `on_commit()` and make it safe to repeat.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "on-commit",
+          "title": "on_commit: side effects after the commit",
+          "body": "A signal or worker can see a row that the transaction has not committed yet. `transaction.on_commit(callback)` runs the callback only after the outermost atomic block commits. If the transaction rolls back, the callback does not run.\n\nUse it for email, webhooks, queue jobs and cache invalidation. Capture IDs, not model instances that may be stale.",
+          "code": "from django.db import transaction\n\nwith transaction.atomic():\n    order = Order.objects.create(customer=request.user, total=total)\n    transaction.on_commit(lambda: send_receipt.delay(order.pk))\n    transaction.on_commit(lambda: cache.delete(f\"orders:{request.user.pk}\"))",
+          "language": "python",
+          "note": "In tests, `TestCase` wraps each test in a transaction, so `on_commit()` callbacks do not run. Use `captureOnCommitCallbacks(execute=True)` or `TransactionTestCase`.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Calling `select_for_update()` outside `atomic()` and getting a `TransactionManagementError`.",
+        "Doing an external API call while holding a row lock.",
+        "Catching an exception inside `atomic()` and continuing to write.",
+        "Assuming SQLite enforces the same row locking as PostgreSQL.",
+        "Retrying a non-idempotent operation after a deadlock."
+      ],
+      "checklist": [
+        "Every multi-step invariant is inside one transaction.",
+        "Rows that are read then written are locked.",
+        "Transactions are short and contain no network calls.",
+        "Deadlock/serialization retries are bounded and idempotent.",
+        "Side effects use `on_commit()`."
+      ],
+      "related": [
+        "orm",
+        "orm-expressions",
+        "multi-db",
+        "background-jobs"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/transactions/",
+      "errors": []
+    },
+    {
+      "slug": "models-advanced",
+      "title": "Advanced models",
+      "subtitle": "Inheritance, custom fields, managers and constraints",
+      "category": "Data",
+      "order": 6,
+      "level": "Advanced",
+      "tags": [
+        "models",
+        "inheritance",
+        "managers",
+        "constraints"
+      ],
+      "aliases": [
+        "abstract model",
+        "multi table inheritance",
+        "proxy model",
+        "custom field",
+        "manager",
+        "queryset manager",
+        "meta options",
+        "constraints",
+        "indexes",
+        "model validation",
+        "select related",
+        "defer",
+        "only"
+      ],
+      "summary": "The model layer beyond the first ten fields: inheritance strategies, reusable managers, custom fields and the database constraints that keep invariants true.",
+      "quick_answer": "Use abstract models for shared fields, proxy models for alternate behaviour, and multi-table inheritance only when the extra table is genuinely a different entity. Custom managers should return well-named querysets; invariants belong in constraints, not just `clean()`.",
+      "sections": [
+        {
+          "id": "inheritance",
+          "title": "Three kinds of model inheritance",
+          "body": "**Abstract** base classes copy fields into each child table and create no table themselves. **Multi-table inheritance** creates a parent table and a child table joined by a one-to-one link; it is useful when the child is a distinct entity. **Proxy** models share one table and change Python behaviour, not the schema.\n\nDo not use multi-table inheritance just to reuse fields. It adds joins and complicates queries; an abstract base or a separate profile is usually simpler.",
+          "code": "class Timestamped(models.Model):\n    created_at = models.DateTimeField(auto_now_add=True)\n    updated_at = models.DateTimeField(auto_now=True)\n\n    class Meta:\n        abstract = True\n\nclass Post(Timestamped):\n    title = models.CharField(max_length=200)\n\nclass PublishedPost(Post):\n    class Meta:\n        proxy = True\n\n    def publish(self):\n        self.status = \"published\"\n        self.save(update_fields=[\"status\"])\n\nclass StaffProfile(models.Model):\n    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)\n    bio = models.TextField(blank=True)",
+          "language": "python",
+          "note": "A proxy model cannot add or remove fields. It is for behaviour, permissions or a different default manager.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "custom-fields",
+          "title": "Custom fields and validators",
+          "body": "`Field` subclasses define a database type and a Python conversion. Most projects do not need a custom field; a `CharField` with a validator, a `JSONField` or a small value object is enough.\n\nWhen you do write one, implement `db_type()`, `get_prep_value()`, `from_db_value()` and `to_python()`, and write migration tests. A custom field is a long-term API for every database you support.",
+          "code": "from django.core.exceptions import ValidationError\nfrom django.db import models\n\ndef validate_even(value):\n    if value % 2:\n        raise ValidationError(\"Use an even number.\")\n\nclass EvenIntegerField(models.IntegerField):\n    default_validators = [validate_even]\n\n    def get_prep_value(self, value):\n        value = super().get_prep_value(value)\n        if value is not None and value % 2:\n            raise ValidationError(\"Use an even number.\")\n        return value",
+          "language": "python",
+          "note": "Validators run in forms and `full_clean()`, not on `save()` by default. Database constraints are the durable guarantee.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "managers",
+          "title": "Managers and QuerySets",
+          "body": "A manager is the entry point (`Post.objects`). A custom `QuerySet` gives you chainable methods; a manager returns it. Keep methods composable: they should return QuerySets, not lists, unless evaluation is the point.\n\n`as_manager()` avoids writing a separate manager class. The default manager affects admin and related-object access, so choose it deliberately.",
+          "code": "class PostQuerySet(models.QuerySet):\n    def published(self):\n        return self.filter(status=\"published\", published_at__lte=timezone.now())\n\n    def with_author(self):\n        return self.select_related(\"author\")\n\nclass Post(models.Model):\n    objects = PostQuerySet.as_manager()\n\nPost.objects.published().with_author().order_by(\"-published_at\")",
+          "language": "python",
+          "note": "Avoid hiding a query in a property that looks like a field. `post.comments` should be a relation or a documented method, not a surprise query.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "meta-options",
+          "title": "Meta options that change behaviour",
+          "body": "`ordering` sets the default order, `indexes` adds database indexes, `constraints` enforces invariants, and `verbose_name` improves the admin. `db_table` is a compatibility decision; do not rename it casually.\n\n`get_latest_by`, `default_related_name` and `permissions` are small options with long-lived effects. Put them in code review, not in a migration generated by accident.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Option",
+              "Effect",
+              "Watch out"
+            ],
+            "rows": [
+              [
+                "ordering",
+                "Default queryset order",
+                "Every query pays for it; pagination needs a stable order"
+              ],
+              [
+                "indexes",
+                "Extra database indexes",
+                "Write cost and storage; index real filters"
+              ],
+              [
+                "constraints",
+                "Unique/check guarantees",
+                "A failed constraint raises IntegrityError"
+              ],
+              [
+                "db_table",
+                "Explicit table name",
+                "Hard to change later"
+              ],
+              [
+                "permissions",
+                "Extra auth permissions",
+                "Not a substitute for object-level checks"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "constraints",
+          "title": "Constraints and indexes that earn their keep",
+          "body": "A `UniqueConstraint` can span columns and a condition; a `CheckConstraint` protects a range or a state machine. Add indexes for real query shapes, especially foreign keys used in filters and ordering.\n\nMeasure before indexing. Every index slows writes and costs disk. Use `EXPLAIN` on production-like data, not on ten rows.",
+          "code": "class Meta:\n    constraints = [\n        models.UniqueConstraint(\n            fields=[\"tenant\", \"slug\"],\n            name=\"unique_slug_per_tenant\",\n        ),\n        models.CheckConstraint(\n            condition=models.Q(price__gte=0),\n            name=\"price_non_negative\",\n        ),\n        models.CheckConstraint(\n            condition=models.Q(status__in=[\"draft\", \"review\", \"published\"]),\n            name=\"valid_post_status\",\n        ),\n    ]\n    indexes = [\n        models.Index(fields=[\"tenant\", \"status\", \"-published_at\"]),\n    ]",
+          "language": "python",
+          "note": "On Django 5.1+ use `condition=` for `CheckConstraint`; older code uses `check=`.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Using multi-table inheritance as a field-reuse mechanism and paying for joins forever.",
+        "Adding a custom field without migration tests on PostgreSQL and SQLite.",
+        "Putting business rules only in `clean()` and bypassing them with bulk updates.",
+        "Ordering by a non-indexed column on a large table.",
+        "Renaming `db_table` in a migration without a plan."
+      ],
+      "checklist": [
+        "Inheritance strategy is deliberate and documented.",
+        "Custom fields have `db_type`, `get_prep_value`, `from_db_value` and `to_python`.",
+        "Manager methods return QuerySets and compose.",
+        "Invariants have database constraints.",
+        "Indexes match real filters and ordering."
+      ],
+      "related": [
+        "models",
+        "migrations",
+        "orm",
+        "orm-expressions"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/models/",
+      "errors": []
+    },
+    {
+      "slug": "multi-db",
+      "title": "Multiple databases",
+      "subtitle": "Routers, replicas and cross-database traps",
+      "category": "Data",
+      "order": 7,
+      "level": "Advanced",
+      "tags": [
+        "database",
+        "replicas",
+        "routing"
+      ],
+      "aliases": [
+        "multiple databases",
+        "database router",
+        "read replica",
+        "db_for_read",
+        "db_for_write",
+        "allow_migrate",
+        "using",
+        "replica lag",
+        "connection",
+        "database alias",
+        "sharding"
+      ],
+      "summary": "Django can talk to more than one database, but it will not make distributed transactions or replica lag disappear. Learn the routing contract and the limits.",
+      "quick_answer": "Define database aliases in `DATABASES`, add a router with `db_for_read`, `db_for_write`, `allow_relation` and `allow_migrate`, and call `.using(alias)` when routing is not enough. There is no cross-database transaction; design around it.",
+      "sections": [
+        {
+          "id": "routers",
+          "title": "A router is a small policy object",
+          "body": "A router answers four questions: which database to read from, which to write to, whether two objects may relate, and whether a migration may run on an alias. Return `None` to let the next router decide.\n\nKeep routing coarse and predictable. Per-request routing based on user input is a recipe for split-brain writes.",
+          "code": "class PrimaryReplicaRouter:\n    def db_for_read(self, model, **hints):\n        return \"replica\"\n\n    def db_for_write(self, model, **hints):\n        return \"default\"\n\n    def allow_relation(self, obj1, obj2, **hints):\n        return obj1._state.db == obj2._state.db\n\n    def allow_migrate(self, db, app_label, model_name=None, **hints):\n        return db == \"default\"\n\nDATABASE_ROUTERS = [\"myproject.routers.PrimaryReplicaRouter\"]",
+          "language": "python",
+          "note": "If `allow_relation` returns False, assigning a foreign key across databases raises an error. Cross-database foreign keys are not supported.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "using",
+          "title": "Using an alias explicitly",
+          "body": "`Model.objects.using(\"replica\")` reads from an alias. `instance.save(using=\"archive\")` writes to one. `transaction.atomic(using=\"archive\")` opens a transaction on that connection.\n\nExplicit `.using()` overrides the router. Use it for reporting, imports and archival jobs, not as a casual escape hatch in views.",
+          "code": "recent = Order.objects.using(\"replica\").filter(created_at__gte=since)\norder.save(using=\"archive\")\n\nwith transaction.atomic(using=\"archive\"):\n    Archive.objects.using(\"archive\").bulk_create(rows)",
+          "language": "python",
+          "note": "A queryset is bound to one database. Joining objects loaded from different aliases in Python is fine; a database join across aliases is not.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "replica-lag",
+          "title": "Replica lag and read-after-write",
+          "body": "A replica is eventually consistent. A user who just saved a row may be routed to a replica that has not received it yet. This is a product bug, not a database bug.\n\nThe usual fixes are: read your own writes from the primary for a short window, route by session, or show a pending state. Do not add `sleep()` and hope.",
+          "code": "def get_order(request, pk):\n    alias = \"default\" if request.session.get(\"just_wrote\") else \"replica\"\n    return Order.objects.using(alias).get(pk=pk)",
+          "language": "python",
+          "note": "Measure lag. A replica that is seconds behind under load will produce intermittent 404s that are hard to reproduce.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "migrations",
+          "title": "Migrations across aliases",
+          "body": "`allow_migrate()` decides which alias gets which app. Run `migrate --database=alias` explicitly for every database that owns tables. Do not assume `migrate` touched the replica.\n\nA common setup is: primary owns everything, replica owns nothing, archive owns a subset. Test the migration plan for each alias.",
+          "code": "python manage.py migrate --database=default\npython manage.py migrate --database=archive\npython manage.py showmigrations --database=archive",
+          "language": "bash",
+          "note": "There is no two-phase commit across Django databases. If two aliases must change together, use an outbox or a single database.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Assuming a transaction spans multiple database aliases.",
+        "Routing reads to a replica immediately after a write.",
+        "Forgetting `allow_migrate()` and creating tables in the wrong database.",
+        "Using cross-database foreign keys, which Django does not support.",
+        "Letting user input choose a database alias."
+      ],
+      "checklist": [
+        "Every alias is declared and reachable.",
+        "Router policy is explicit and tested.",
+        "Read-after-write behaviour is defined.",
+        "Migrations run on every alias that needs them.",
+        "No transaction spans aliases."
+      ],
+      "related": [
+        "transactions-locking",
+        "deploy-hardening",
+        "multi-tenancy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/multi-db/",
+      "errors": []
+    },
+    {
+      "slug": "migrations-advanced",
+      "title": "Advanced migrations",
+      "subtitle": "Zero-downtime changes, data backfills and migration surgery",
+      "category": "Data",
+      "order": 8,
+      "level": "Advanced",
+      "tags": [
+        "migrations",
+        "deployment",
+        "PostgreSQL"
+      ],
+      "aliases": [
+        "zero downtime migration",
+        "separate database and state",
+        "runsql",
+        "runpython",
+        "squash migrations",
+        "data migration",
+        "backfill",
+        "migration operation",
+        "migrate --fake",
+        "migration conflict",
+        "large table"
+      ],
+      "summary": "Migrations that survive a rolling deploy: expand/contract, batched backfills, state-only operations and the commands that recover from a bad history.",
+      "quick_answer": "Never combine a destructive schema change with the deploy that stops using the old shape. Expand, backfill, switch reads/writes, then contract in a later release. Batch data migrations, make them idempotent, and take a backup before surgery.",
+      "sections": [
+        {
+          "id": "expand-contract",
+          "title": "Expand, migrate, contract",
+          "body": "Old and new application processes overlap during a rolling deploy. A migration must be compatible with both. Add nullable columns or new tables first; deploy code that writes both; backfill; switch reads; then remove the old shape in a later release.\n\nRenaming a column in one step breaks old code. Add the new column, dual-write, backfill, switch, then drop the old one.",
+          "code": "# Release 1 — expand\n# Add nullable column `status_new`; old code ignores it.\n# Release 2 — dual write\n# New code writes status and status_new.\n# Release 3 — backfill in batches, then add NOT NULL.\n# Release 4 — switch reads to status_new.\n# Release 5 — contract: stop writing status, drop it.",
+          "language": "text",
+          "note": "Every step must be safe if the next deploy is delayed or rolled back. A migration is not a time machine.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "state-and-sql",
+          "title": "SeparateDatabaseAndState and RunSQL",
+          "body": "`SeparateDatabaseAndState` lets Django's migration state and the actual database operations diverge. It is useful for adopting an existing table, renaming with a hand-written plan, or adding a database-specific index.\n\n`RunSQL` is the low-level escape hatch. It needs a reverse SQL or `reverse_sql=migrations.RunSQL.noop`; prefer a reversible migration.",
+          "code": "from django.db import migrations\n\nclass Migration(migrations.Migration):\n    dependencies = [(\"shop\", \"0004_order_status\")]\n    operations = [\n        migrations.RunSQL(\n            sql=\"CREATE INDEX CONCURRENTLY order_created_idx ON shop_order (created_at);\",\n            reverse_sql=\"DROP INDEX CONCURRENTLY IF EXISTS order_created_idx;\",\n        ),\n    ]",
+          "language": "python",
+          "note": "PostgreSQL `CREATE INDEX CONCURRENTLY` cannot run inside a transaction. Use `atomic = False` on the migration when required.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "backfills",
+          "title": "Backfills that do not melt the database",
+          "body": "A data migration that loops over millions of rows in one transaction locks tables, bloats WAL and times out. Batch it. Commit between batches. Make each batch idempotent.\n\nFor very large tables, a management command or a queue job is better than a migration: it can be paused, monitored and resumed.",
+          "code": "def forwards(apps, schema_editor):\n    Order = apps.get_model(\"shop\", \"Order\")\n    batch = []\n    for order in Order.objects.filter(status=\"\").iterator(chunk_size=1000):\n        order.status = \"pending\"\n        batch.append(order)\n        if len(batch) >= 1000:\n            Order.objects.bulk_update(batch, [\"status\"])\n            batch.clear()\n    if batch:\n        Order.objects.bulk_update(batch, [\"status\"])",
+          "language": "python",
+          "note": "`bulk_update` bypasses `save()` and signals. That is usually correct for a backfill; document it.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "squash-and-recover",
+          "title": "Squashing and recovering",
+          "body": "Squash old migrations when the history becomes noise, but keep the migration graph valid and test a fresh database plus an existing one. `squashmigrations` can produce a replacement; review it before deleting anything.\n\nFor a broken history: stop, take a backup, run `showmigrations --plan`, and understand the drift. `--fake` records a migration without running it; it is not a repair tool for a schema you do not understand.",
+          "code": "python manage.py squashmigrations shop 0001 0020\npython manage.py showmigrations --plan\npython manage.py migrate shop 0018\npython manage.py migrate shop 0019 --fake\npython manage.py makemigrations --check --dry-run",
+          "language": "bash",
+          "note": "`makemigrations --check` in CI prevents model changes from shipping without a migration.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Renaming or dropping a column in the same release that stops using it.",
+        "Running a giant data migration inside one transaction.",
+        "Editing an already-applied migration.",
+        "Using `--fake` to hide a schema mismatch.",
+        "Adding `NOT NULL` without a default on a large table.",
+        "Creating an index without `CONCURRENTLY` on a busy PostgreSQL table."
+      ],
+      "checklist": [
+        "Migration is compatible with old and new code.",
+        "Data backfills are batched and idempotent.",
+        "Destructive changes happen in a later release.",
+        "A backup exists before surgery.",
+        "CI runs `makemigrations --check`."
+      ],
+      "related": [
+        "migrations",
+        "deploy-hardening",
+        "models-advanced",
+        "transactions-locking"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/howto/writing-migrations/",
+      "errors": []
+    }
+  ]
+}

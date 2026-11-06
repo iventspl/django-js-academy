@@ -1,0 +1,199 @@
+{% extends "dojo/base.html" %}
+{% load static handbook_extras %}
+
+{% block title %}{{ chapter.title }} · Django handbook{% endblock %}
+{% block body_class %}page-handbook page-handbook-chapter{% endblock %}
+{% block meta_description %}{{ chapter.summary }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261106a">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-chapter-wrap">
+  <details class="hb-mobile-toc">
+    <summary>
+      <span>On this page</span>
+      <span>{{ chapter.sections|length }} sections · {{ chapter.read_minutes }} min</span>
+    </summary>
+    <nav aria-label="On this page">
+      {% for section in chapter.sections %}
+        <a href="#{{ section.id }}"><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ section.title }}</a>
+      {% endfor %}
+      {% if chapter.errors %}<a href="#error-decoder"><span>!</span>Error fixes</a>{% endif %}
+    </nav>
+  </details>
+
+  <div class="hb-chapter-grid">
+    <aside class="hb-toc" aria-label="Chapter contents">
+      <a class="hb-back" href="{% url 'dojo:handbook' %}">← All chapters</a>
+      <p class="hb-toc-label">{{ chapter.category }}</p>
+      <nav aria-label="On this page">
+        {% for section in chapter.sections %}
+          <a href="#{{ section.id }}"><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ section.title }}</a>
+        {% endfor %}
+        {% if chapter.errors %}<a href="#error-decoder"><span>!</span>Error fixes</a>{% endif %}
+      </nav>
+      <div class="hb-toc-foot">
+        <span>{{ chapter.read_minutes }} min read</span>
+        <span>{{ chapter.sections|length }} sections</span>
+        <a href="{% url 'dojo:handbook' %}">⌕ Search again</a>
+      </div>
+    </aside>
+
+    <article class="hb-article">
+      <header class="hb-article-head">
+        <p class="hb-kicker">{{ chapter.category }} · Chapter {{ chapter.number|stringformat:"02d" }}</p>
+        <h1>{{ chapter.title }}</h1>
+        <p class="hb-deck">{{ chapter.subtitle }}</p>
+        <p class="hb-summary">{{ chapter.summary }}</p>
+        <div class="hb-badges">
+          <span class="hb-level hb-level-{{ chapter.level|lower }}">{{ chapter.level }}</span>
+          {% for tag in chapter.tags %}<span class="hb-tag">{{ tag }}</span>{% endfor %}
+        </div>
+        <div class="hb-meta-row">
+          <span>{{ chapter.read_minutes }} min read</span>
+          <span>{{ chapter.sections|length }} sections</span>
+          <span>Django 5.2 – 6.1</span>
+          <a href="{{ chapter.official }}" target="_blank" rel="noopener noreferrer">Official docs <span aria-hidden="true">↗</span></a>
+        </div>
+      </header>
+
+      <section class="hb-quick" aria-labelledby="hb-quick-title">
+        <span class="hb-quick-label" id="hb-quick-title">Short answer</span>
+        <div class="hb-prose">{{ chapter.quick_answer|prose }}</div>
+      </section>
+
+      {% for section in chapter.sections %}
+        <section class="hb-section" id="{{ section.id }}">
+          <div class="hb-section-head">
+            <span class="hb-section-num">{{ forloop.counter|stringformat:"02d" }}</span>
+            <h2>{{ section.title }}</h2>
+          </div>
+          <div class="hb-prose">{{ section.body|prose }}</div>
+          {% if section.table %}
+            <div class="hb-table-wrap">
+              <table class="hb-table">
+                <thead>
+                  <tr>{% for cell in section.table.head %}<th>{{ cell|inline }}</th>{% endfor %}</tr>
+                </thead>
+                <tbody>
+                  {% for row in section.table.rows %}
+                    <tr>{% for cell in row %}<td>{{ cell|inline }}</td>{% endfor %}</tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+          {% if section.code %}
+            <div class="code-block hb-code">
+              <div class="code-bar">
+                <span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span>{{ section.language }}</span>
+                <button class="copy-code" type="button" data-copy-code>Copy</button>
+              </div>
+              <pre><code>{{ section.code }}</code></pre>
+            </div>
+          {% endif %}
+          {% if section.note %}
+            <aside class="hb-note">
+              <span class="hb-note-label">Note</span>
+              <div class="hb-prose">{{ section.note|prose }}</div>
+            </aside>
+          {% endif %}
+          {% if section.reference %}
+            <a class="hb-ref-link" href="{{ section.reference }}" target="_blank" rel="noopener noreferrer">Open the official reference <span aria-hidden="true">↗</span></a>
+          {% endif %}
+        </section>
+      {% endfor %}
+
+      {% if chapter.pitfalls %}
+        <section class="hb-section hb-pitfalls" id="pitfalls">
+          <div class="hb-section-head">
+            <span class="hb-section-num">!</span>
+            <h2>The traps</h2>
+          </div>
+          <ul class="hb-check-list hb-check-list-warn">
+            {% for pitfall in chapter.pitfalls %}<li>{{ pitfall|inline }}</li>{% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      {% if chapter.checklist %}
+        <section class="hb-section hb-checklist" id="checklist">
+          <div class="hb-section-head">
+            <span class="hb-section-num">✓</span>
+            <h2>Before you move on</h2>
+          </div>
+          <ul class="hb-check-list">
+            {% for item in chapter.checklist %}<li>{{ item|inline }}</li>{% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      {% if chapter.errors %}
+        <section class="hb-section hb-errors" id="error-decoder">
+          <div class="hb-section-head">
+            <span class="hb-section-num">×</span>
+            <h2>Error fixes</h2>
+          </div>
+          <p class="hb-section-intro">Match the exception, then read the cause before changing code. The first fix is usually the one that works.</p>
+          <div class="hb-error-list">
+            {% for error in chapter.errors %}
+              <article class="hb-error-card">
+                <div class="hb-error-head">
+                  <code>{{ error.error }}</code>
+                </div>
+                <p><strong>Why it happens</strong> {{ error.cause|inline }}</p>
+                <p class="hb-error-fix"><strong>Fix</strong> {{ error.fix|inline }}</p>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      {% if related_chapters %}
+        <section class="hb-section hb-related" id="related">
+          <div class="hb-section-head">
+            <span class="hb-section-num">↗</span>
+            <h2>Keep going</h2>
+          </div>
+          <div class="hb-related-grid">
+            {% for related in related_chapters %}
+              <a class="hb-related-card" href="{% url 'dojo:handbook_chapter' related.slug %}">
+                <span class="hb-related-num">{{ related.number|stringformat:"02d" }}</span>
+                <strong>{{ related.title }}</strong>
+                <span>{{ related.subtitle }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      <aside class="hb-source">
+        <div>
+          <p class="hb-label hb-label-light">The source of truth</p>
+          <h2>This is a companion, not a replacement.</h2>
+          <p>Every chapter links to the official Django documentation for the exact version you deploy. When the two disagree, the official docs win.</p>
+        </div>
+        <a class="btn btn-primary" href="{{ chapter.official }}" target="_blank" rel="noopener noreferrer">Open official docs <span aria-hidden="true">↗</span></a>
+      </aside>
+
+      <nav class="hb-pager" aria-label="Chapter navigation">
+        {% if previous_chapter %}
+          <a class="hb-pager-link hb-pager-prev" href="{% url 'dojo:handbook_chapter' previous_chapter.slug %}">
+            <span>← Previous</span>
+            <strong>{{ previous_chapter.title }}</strong>
+          </a>
+        {% else %}<span></span>{% endif %}
+        {% if next_chapter %}
+          <a class="hb-pager-link hb-pager-next" href="{% url 'dojo:handbook_chapter' next_chapter.slug %}">
+            <span>Next →</span>
+            <strong>{{ next_chapter.title }}</strong>
+          </a>
+        {% endif %}
+      </nav>
+    </article>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,689 @@
+{
+  "chapters": [
+    {
+      "slug": "middleware-async",
+      "title": "Middleware in depth",
+      "subtitle": "Async middleware, streaming and the exception path",
+      "category": "Assets & runtime",
+      "order": 5,
+      "level": "Advanced",
+      "tags": [
+        "middleware",
+        "async",
+        "performance"
+      ],
+      "aliases": [
+        "async middleware",
+        "middleware order",
+        "get_response",
+        "streaming middleware",
+        "exception middleware",
+        "process exception",
+        "middleware performance",
+        "request lifecycle",
+        "asgi middleware",
+        "security headers"
+      ],
+      "summary": "The middleware chain in detail: sync vs async callables, streaming responses, exception handling and the performance cost of running code on every request.",
+      "quick_answer": "A middleware is a factory around `get_response`. Mark it `async_capable` only if every branch is async-safe. Responses can be streaming, so do not assume a `Content-Length`. Use `process_exception`/try-except for errors, and keep global code cheap.",
+      "sections": [
+        {
+          "id": "sync-async",
+          "title": "Sync and async middleware",
+          "body": "Django adapts sync middleware for async requests, but a blocking call inside an async middleware stalls the event loop. Prefer a sync middleware unless you genuinely need async I/O. If you write async, use `await` all the way down and `sync_to_async` for the ORM.\n\nSet `async_capable = True` only after testing with an ASGI server. A middleware that claims async support but blocks is worse than an honest sync adapter.",
+          "code": "class AsyncTimingMiddleware:\n    async_capable = True\n    sync_capable = False\n\n    def __init__(self, get_response):\n        self.get_response = get_response\n\n    async def __call__(self, request):\n        started = time.perf_counter()\n        response = await self.get_response(request)\n        response[\"Server-Timing\"] = f\"app;dur={(time.perf_counter() - started) * 1000:.1f}\"\n        return response",
+          "language": "python",
+          "note": "Django wraps sync middleware for async requests, but the wrapper still runs the sync code in a thread. Heavy work is still heavy.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "streaming",
+          "title": "Streaming responses and headers",
+          "body": "A `StreamingHttpResponse` has no known length and may not be safe to modify after the first chunk. Middleware that reads `response.content` forces the whole stream into memory. Check `response.streaming` before touching content.\n\nHeaders can still be set before the response starts. Compression, ETag and Content-Length middleware must handle streaming responses explicitly.",
+          "code": "class NoCacheStreamingMiddleware:\n    def __init__(self, get_response):\n        self.get_response = get_response\n\n    def __call__(self, request):\n        response = self.get_response(request)\n        if not response.streaming:\n            response[\"Cache-Control\"] = \"no-store\"\n        return response",
+          "language": "python",
+          "note": "`response.streaming` is True for `StreamingHttpResponse` and `FileResponse`.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "exceptions",
+          "title": "Exceptions and the error path",
+          "body": "An exception raised in a view propagates back through middleware. If it escapes the outermost middleware, Django returns a 500. Middleware can catch it, log it and return a response, but that can hide bugs.\n\n`process_exception` is the old hook; a try/except around `get_response` is the modern equivalent. Do not swallow exceptions without logging and a deliberate response.",
+          "code": "class ErrorEnvelopeMiddleware:\n    def __init__(self, get_response):\n        self.get_response = get_response\n\n    def __call__(self, request):\n        try:\n            return self.get_response(request)\n        except Exception:\n            logger.exception(\"Unhandled request error\", extra={\"path\": request.path})\n            raise",
+          "language": "python",
+          "note": "Re-raise after logging. Returning a generic 200 for an exception breaks clients and monitoring.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "ordering-cost",
+          "title": "Ordering and the cost of global code",
+          "body": "Middleware runs on every request, including static files (depending on the server), health checks and error pages. A database query or a network call in middleware multiplies across the whole site.\n\nOrder dependencies: sessions before auth, CSRF before reading POST, security headers early. A maintenance-mode middleware near the top can return 503 before sessions or the database are touched.",
+          "code": "MIDDLEWARE = [\n    \"myapp.middleware.MaintenanceModeMiddleware\",\n    \"django.middleware.security.SecurityMiddleware\",\n    \"django.contrib.sessions.middleware.SessionMiddleware\",\n    \"django.middleware.common.CommonMiddleware\",\n    \"django.middleware.csrf.CsrfViewMiddleware\",\n    \"django.contrib.auth.middleware.AuthenticationMiddleware\",\n    \"myapp.middleware.AsyncTimingMiddleware\",\n]",
+          "language": "python",
+          "note": "A middleware that fails open (for example, a broken feature flag service) can take down the whole site. Define fail-open vs fail-closed explicitly.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Blocking the event loop in an async middleware.",
+        "Reading `response.content` on a streaming response.",
+        "Running a query on every request, including health checks.",
+        "Catching exceptions and returning 200.",
+        "Putting auth before sessions in `MIDDLEWARE`."
+      ],
+      "checklist": [
+        "Async middleware is genuinely async-safe.",
+        "Streaming responses are not buffered by middleware.",
+        "Exceptions are logged and re-raised or deliberately handled.",
+        "Ordering dependencies are documented.",
+        "Global code has a measured cost."
+      ],
+      "related": [
+        "middleware",
+        "async-deep",
+        "security-hardening",
+        "performance"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/http/middleware/",
+      "errors": []
+    },
+    {
+      "slug": "caching-deep",
+      "title": "Caching in depth",
+      "subtitle": "Keys, invalidation, stampedes and fragment caching",
+      "category": "Assets & runtime",
+      "order": 6,
+      "level": "Advanced",
+      "tags": [
+        "cache",
+        "Redis",
+        "performance"
+      ],
+      "aliases": [
+        "redis cache",
+        "memcached",
+        "cache key",
+        "cache invalidation",
+        "cache stampede",
+        "thundering herd",
+        "cache page",
+        "template fragment cache",
+        "vary on cookie",
+        "cache version",
+        "session cache",
+        "distributed lock",
+        "get_or_set"
+      ],
+      "summary": "Caching is easy; invalidation is the engineering. Design keys, versions and expiry before adding a cache, and protect the database from a stampede when a hot key expires.",
+      "quick_answer": "Use a shared cache in production (Redis/Memcached), key by tenant/user/version, prefer short TTLs plus explicit invalidation, and use `cache.add()` as a cheap lock for hot keys. Cache data, not whole pages, when the page is personalised.",
+      "sections": [
+        {
+          "id": "backends-keys",
+          "title": "Backends and key design",
+          "body": "`LocMemCache` is per-process and unsuitable across Gunicorn workers. Redis or Memcached gives every worker the same view. The cache is not durable; treat a miss as normal.\n\nA key should include every dimension that changes the value: model, id, tenant, user, language, version. Use a prefix and a version constant so you can invalidate a whole namespace by bumping the version.",
+          "code": "CACHES = {\n    \"default\": {\n        \"BACKEND\": \"django.core.cache.backends.redis.RedisCache\",\n        \"LOCATION\": os.environ[\"REDIS_URL\"],\n        \"TIMEOUT\": 300,\n        \"KEY_PREFIX\": \"dq\",\n    }\n}\n\nCACHE_VERSION = 4\nkey = f\"catalog:v{CACHE_VERSION}:{tenant.pk}:{language}:{category.pk}\"\ncache.set(key, data, timeout=120)",
+          "language": "python",
+          "note": "`KEY_PREFIX` and `VERSION` are applied by Django; do not duplicate them inconsistently.",
+          "table": null,
+          "reference": "https://docs.djangoproject.com/en/stable/topics/cache/"
+        },
+        {
+          "id": "invalidation",
+          "title": "Invalidation without a crystal ball",
+          "body": "There are three honest strategies: expire quickly, invalidate explicitly on write, or version the key. Pick one per cache, not all three by accident.\n\nSignal-based invalidation is invisible; a service-layer `cache.delete()` is easier to trace. For lists, a version counter is often better than deleting every page key.",
+          "code": "def save_post(post):\n    post.save()\n    cache.delete(f\"post:{post.pk}\")\n    cache.incr(f\"post-list-version:{post.tenant_id}\")\n\ndef post_list(tenant):\n    version = cache.get_or_set(f\"post-list-version:{tenant.pk}\", 1)\n    key = f\"post-list:{tenant.pk}:v{version}\"\n    return cache.get_or_set(key, lambda: list(Post.objects.filter(tenant=tenant)), 60)",
+          "language": "python",
+          "note": "A cache key that includes a version can be invalidated by incrementing the version; old keys expire naturally.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "stampede",
+          "title": "Stampedes and hot keys",
+          "body": "When a popular key expires, every request misses and hits the database at once. A short lock with `cache.add()` lets one process rebuild while others serve stale data or wait briefly.\n\nNever hold a lock indefinitely. Use a timeout, a token and a `finally` release. For very hot data, a background refresher is better than request-time rebuilding.",
+          "code": "import time\n\ndef get_catalog(tenant):\n    key = f\"catalog:{tenant.pk}\"\n    data = cache.get(key)\n    if data is not None:\n        return data\n    lock = f\"{key}:lock\"\n    if cache.add(lock, \"1\", timeout=10):\n        try:\n            data = build_catalog(tenant)\n            cache.set(key, data, 120)\n        finally:\n            cache.delete(lock)\n        return data\n    for _ in range(5):\n        time.sleep(0.05)\n        data = cache.get(key)\n        if data is not None:\n            return data\n    return build_catalog(tenant)",
+          "language": "python",
+          "note": "A cache stampede is a load problem, not a correctness problem. Decide whether stale data is acceptable before adding a lock.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "fragments-pages",
+          "title": "Fragments, pages and sessions",
+          "body": "`cache_page` caches a whole response. It is suitable for anonymous, shared pages. Personalised pages need `vary_on_cookie` or a user-specific key; otherwise one user sees another user's data.\n\n`{% cache %}` caches a template fragment. The session cache backend stores sessions in the cache; if the cache is evicted, users are logged out.",
+          "code": "from django.views.decorators.cache import cache_page\nfrom django.views.decorators.vary import vary_on_cookie\n\n@cache_page(60)\n@vary_on_cookie\ndef pricing(request):\n    ...\n\n{% load cache %}\n{% cache 120 \"nav\" request.user.pk %}\n  {% include \"includes/nav.html\" %}\n{% endcache %}",
+          "language": "python",
+          "note": "`cache_page` caches the response body and headers. A redirect or a Set-Cookie header can be cached too; test the full response.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Using `LocMemCache` in production with multiple workers.",
+        "Caching a personalised page without varying by user.",
+        "Forgetting to invalidate after a write.",
+        "Building a lock that never expires.",
+        "Caching errors or empty results for too long."
+      ],
+      "checklist": [
+        "Production cache is shared.",
+        "Keys include tenant/user/language/version.",
+        "Invalidation strategy is documented.",
+        "Hot keys have a stampede plan.",
+        "Cached responses are tested for private data leaks."
+      ],
+      "related": [
+        "async-cache",
+        "performance",
+        "deploy-hardening"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/cache/",
+      "errors": []
+    },
+    {
+      "slug": "async-deep",
+      "title": "Async Django",
+      "subtitle": "Async views, ORM, ASGI and the sync boundary",
+      "category": "Assets & runtime",
+      "order": 7,
+      "level": "Advanced",
+      "tags": [
+        "async",
+        "ASGI",
+        "performance"
+      ],
+      "aliases": [
+        "async view",
+        "async orm",
+        "sync_to_async",
+        "async_to_sync",
+        "asgi",
+        "uvicorn",
+        "daphne",
+        "event loop",
+        "await",
+        "async iterator",
+        "async test",
+        "concurrency"
+      ],
+      "summary": "Where async actually helps, how to call the ORM without blocking the loop, and what changes when the server is ASGI instead of WSGI.",
+      "quick_answer": "Use async views for I/O-bound work. Use the async ORM methods (`acreate`, `aget`, `afilter`, `aiterator`) or `sync_to_async`; never call the sync ORM directly on the event loop. Test with `AsyncClient` and run an ASGI server in production if you rely on async.",
+      "sections": [
+        {
+          "id": "async-views",
+          "title": "Async views and the event loop",
+          "body": "An `async def` view runs on the event loop. Awaiting a slow HTTP call lets other requests proceed. Blocking calls — `requests.get`, `time.sleep`, sync ORM — stop the loop and make the whole worker unresponsive.\n\nAsync is not automatically faster. It helps when concurrency is limited by waiting, not CPU.",
+          "code": "import httpx\n\nasync def weather(request, city):\n    async with httpx.AsyncClient(timeout=5) as client:\n        response = await client.get(f\"https://api.example.com/{city}\")\n    return JsonResponse(response.json())",
+          "language": "python",
+          "note": "Use an async HTTP client (`httpx`, `aiohttp`). A sync client inside `async def` blocks the loop.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "async-orm",
+          "title": "The async ORM",
+          "body": "Django's ORM exposes async variants: `acreate`, `aget`, `afilter`, `acount`, `aexists`, `aupdate`, `adelete`, `abulk_create`, `abulk_update`, `aiterator`. Use `await` and `async for`; do not wrap a sync queryset in a thread just to avoid learning the API.\n\nTransactions inside async views need `sync_to_async` or the async transaction API where available. Keep the transaction scope small.",
+          "code": "post = await Post.objects.aget(pk=pk)\nposts = [post async for post in Post.objects.filter(published=True).aiterator(chunk_size=100)]\ncount = await Post.objects.acount()\nawait Post.objects.filter(pk=pk).aupdate(views=F(\"views\") + 1)",
+          "language": "python",
+          "note": "Many third-party model methods are still sync. Call them through `sync_to_async` and keep the boundary explicit.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "sync-boundary",
+          "title": "sync_to_async and async_to_sync",
+          "body": "`sync_to_async(func, thread_sensitive=True)` runs a sync callable in a thread. `thread_sensitive=True` serialises calls on the same thread, which matters for database connections and thread-local state. `async_to_sync` does the reverse in a sync context.\n\nDo not sprinkle `sync_to_async` around the whole view; isolate the blocking library call.",
+          "code": "from asgiref.sync import async_to_sync, sync_to_async\n\ndef legacy_report():\n    return build_pdf()\n\nasync def report_view(request):\n    pdf = await sync_to_async(legacy_report, thread_sensitive=True)()\n    return HttpResponse(pdf, content_type=\"application/pdf\")\n\n# Calling an async function from sync code (for example, a Celery task)\nresult = async_to_sync(fetch_external_status)(order.pk)",
+          "language": "python",
+          "note": "A thread is not free. High concurrency plus `thread_sensitive=True` can become a queue.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "asgi",
+          "title": "ASGI, lifespan and deployment",
+          "body": "WSGI handles one request per worker thread/process. ASGI supports async views, long-lived connections and WebSockets. Run Uvicorn, Daphne or Hypercorn; Gunicorn can supervise Uvicorn workers.\n\nASGI servers have a lifespan protocol for startup/shutdown. Do not open database connections in module import; use app startup hooks or lazy connections.",
+          "code": "uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --workers 4\n# or\ngunicorn config.asgi:application -k uvicorn.workers.UvicornWorker --workers 4",
+          "language": "bash",
+          "note": "A sync view still works under ASGI, but it runs in a thread. Mixing sync and async is supported, not free.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "async-tests",
+          "title": "Testing async code",
+          "body": "Django's `AsyncClient` tests async views. `pytest-asyncio` or `async_to_sync` can drive async functions. Database tests still need the `db` fixture/`TestCase`.\n\nTest cancellation and timeouts, not just the happy path. An async view that leaks a task can outlive the request.",
+          "code": "from django.test import AsyncClient\n\nasync def test_health(async_client=None):\n    client = AsyncClient()\n    response = await client.get(\"/health/\")\n    assert response.status_code == 200",
+          "language": "python",
+          "note": "An async test function needs an async test runner (pytest-asyncio or Django's async test support).",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Calling sync ORM methods inside an async view.",
+        "Using `requests` or `time.sleep` on the event loop.",
+        "Assuming async makes CPU-bound code faster.",
+        "Opening connections at import time under ASGI.",
+        "Testing async views with the sync test client and missing loop errors."
+      ],
+      "checklist": [
+        "Async is used for I/O, not CPU.",
+        "No blocking calls on the event loop.",
+        "ORM calls use async methods or an explicit sync boundary.",
+        "The deployment server supports ASGI.",
+        "Async tests cover timeouts/cancellation."
+      ],
+      "related": [
+        "async-cache",
+        "middleware-async",
+        "deploy-hardening",
+        "realtime-channels"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/async/",
+      "errors": []
+    },
+    {
+      "slug": "background-jobs",
+      "title": "Background jobs",
+      "subtitle": "Queues, retries, idempotency and the outbox",
+      "category": "Assets & runtime",
+      "order": 8,
+      "level": "Advanced",
+      "tags": [
+        "tasks",
+        "Celery",
+        "reliability"
+      ],
+      "aliases": [
+        "celery",
+        "rq",
+        "dramatiq",
+        "django tasks",
+        "task queue",
+        "worker",
+        "retry",
+        "idempotency",
+        "outbox",
+        "transaction on commit",
+        "dead letter",
+        "scheduled task",
+        "cron",
+        "beat",
+        "job monitoring"
+      ],
+      "summary": "Move slow and failure-prone work out of the request, then make the worker safe to retry. A queue without idempotency is a duplicate-generator.",
+      "quick_answer": "Enqueue after commit, pass IDs rather than objects, make jobs idempotent with a dedupe key, retry with backoff and a limit, and monitor failures. For reliable events, write an outbox row in the same transaction and let a worker publish it.",
+      "sections": [
+        {
+          "id": "choose-queue",
+          "title": "Choose a queue and enqueue after commit",
+          "body": "Celery is the common choice; RQ and Dramatiq are simpler. Django's Tasks framework is an option on newer versions. The request should write the intent and return; the worker does the slow part.\n\nUse `transaction.on_commit()` so a worker cannot pick up a row that is not committed yet. Pass an ID, not a pickled model instance.",
+          "code": "from django.db import transaction\n\ndef create_order(request):\n    with transaction.atomic():\n        order = Order.objects.create(customer=request.user)\n        transaction.on_commit(lambda: send_receipt.delay(order.pk))\n    return redirect(order)",
+          "language": "python",
+          "note": "A queue that is down should not silently lose the job. Use a durable broker and a failure alert.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "django-tasks",
+          "title": "Django's built-in Tasks framework",
+          "body": "Django 6.0 added a first-party Tasks API: define a function with `@task`, enqueue it, and let a configured backend/worker execute it. Django handles task definition, validation, queuing and result storage; it does not ship a production worker. The built-in immediate and dummy backends are for development and tests only.\n\nThis is a good default abstraction if you do not need Celery's ecosystem. You still need a durable production backend and a worker process.",
+          "code": "from functools import partial\n\nfrom django.db import transaction\nfrom django.tasks import task\n\n@task\ndef send_receipt(order_id):\n    order = Order.objects.get(pk=order_id)\n    build_receipt(order).send()\n\nwith transaction.atomic():\n    order = Order.objects.create(...)\n    transaction.on_commit(partial(send_receipt.enqueue, order_id=order.pk))\n\n# settings.py — development/test only\nTASKS = {\n    \"default\": {\"BACKEND\": \"django.tasks.backends.immediate.ImmediateBackend\"},\n}",
+          "language": "python",
+          "note": "Arguments and return values are JSON-serializable. Pass ids/primitive values, not model instances or datetimes.",
+          "table": null,
+          "reference": "https://docs.djangoproject.com/en/stable/topics/tasks/"
+        },
+        {
+          "id": "idempotency",
+          "title": "Idempotency and deduplication",
+          "body": "Networks fail after the work succeeds. A retry must not charge twice or send two receipts. Use an idempotency key stored in the database, a unique constraint, or a state machine that only allows one transition.\n\nFor a payment, the provider's idempotency key is the source of truth. For email, a dedupe table keyed by event id works.",
+          "code": "def send_receipt(order_id, event_id):\n    if ProcessedEvent.objects.filter(event_id=event_id).exists():\n        return\n    with transaction.atomic():\n        ProcessedEvent.objects.create(event_id=event_id)\n        order = Order.objects.get(pk=order_id)\n        send_mail(\"Receipt\", \"...\", None, [order.email])",
+          "language": "python",
+          "note": "The dedupe row and the side effect should be as close to atomic as the external system allows. For payments, rely on the provider's idempotency key.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "retries",
+          "title": "Retries, backoff and dead letters",
+          "body": "Retry only transient failures: timeouts, 429s, deadlocks. Do not retry a validation error or a 400. Use exponential backoff with jitter, a maximum attempt count, and a dead-letter queue for manual inspection.\n\nLog the job id, attempt, input and error. A worker that logs nothing is impossible to debug.",
+          "code": "from celery import shared_task\nfrom celery.utils.log import get_task_logger\n\nlogger = get_task_logger(__name__)\n\n@shared_task(bind=True, max_retries=5, acks_late=True)\ndef sync_invoice(self, invoice_id):\n    try:\n        gateway.push(invoice_id)\n    except TransientGatewayError as exc:\n        raise self.retry(exc=exc, countdown=2 ** self.request.retries)",
+          "language": "python",
+          "note": "`acks_late=True` can redeliver a job if the worker dies mid-flight; idempotency is mandatory.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "outbox",
+          "title": "The transactional outbox",
+          "body": "A database write and a broker publish cannot be atomic. The outbox pattern writes an event row in the same transaction as the business change; a relay publishes it later and marks it sent. Consumers dedupe by event id.\n\nThis is the reliable alternative to “save then publish and hope”.",
+          "code": "with transaction.atomic():\n    order = Order.objects.create(customer=customer, total=total)\n    OutboxEvent.objects.create(\n        event_id=uuid4(),\n        topic=\"order.created\",\n        payload={\"order_id\": order.pk},\n    )\n\n# relay worker\nfor event in OutboxEvent.objects.filter(sent_at__isnull=True)[:100]:\n    broker.publish(event.topic, event.payload)\n    event.sent_at = timezone.now()\n    event.save(update_fields=[\"sent_at\"])",
+          "language": "python",
+          "note": "The relay must be idempotent too: publishing twice is normal; consumers must dedupe.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "monitoring",
+          "title": "Monitoring and scheduling",
+          "body": "Track queue depth, job duration, failure rate and age of the oldest job. Alert on a growing backlog, not just a crashed worker. A periodic task needs a lock so two schedulers do not run it twice.\n\nCelery Beat, cron or a platform scheduler can trigger work; the task itself should still be idempotent.",
+          "code": "# Celery Beat schedule\nCELERY_BEAT_SCHEDULE = {\n    \"expire-trials\": {\n        \"task\": \"billing.tasks.expire_trials\",\n        \"schedule\": crontab(hour=3, minute=0),\n    },\n}",
+          "language": "python",
+          "note": "Use a distributed lock (Redis) or a database advisory lock for singleton periodic jobs.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Enqueuing before the database transaction commits.",
+        "Passing model instances instead of IDs.",
+        "Retrying non-idempotent work.",
+        "Retrying permanent failures forever.",
+        "No dead-letter queue or failure alert.",
+        "Scheduling a job twice with two schedulers."
+      ],
+      "checklist": [
+        "Slow work runs outside the request.",
+        "Jobs are idempotent and deduplicated.",
+        "Retries are bounded and only for transient errors.",
+        "Outbox is used for reliable events.",
+        "Queue depth and failures are monitored."
+      ],
+      "related": [
+        "async-cache",
+        "transactions-locking",
+        "payments-webhooks",
+        "observability"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/tasks/",
+      "errors": []
+    },
+    {
+      "slug": "storage-files",
+      "title": "Storage & files",
+      "subtitle": "Storage backends, private files, S3 and large uploads",
+      "category": "Assets & runtime",
+      "order": 9,
+      "level": "Advanced",
+      "tags": [
+        "storage",
+        "S3",
+        "uploads"
+      ],
+      "aliases": [
+        "storage backend",
+        "default_storage",
+        "s3",
+        "object storage",
+        "presigned url",
+        "signed url",
+        "private file",
+        "file upload",
+        "multipart upload",
+        "streaming file",
+        "django storages",
+        "custom storage",
+        "media root",
+        "file validation"
+      ],
+      "summary": "The storage API is a small abstraction with big deployment consequences. Choose local vs object storage, keep private files private, and stream large files instead of buffering them.",
+      "quick_answer": "Use `default_storage` and `FileField(storage=...)` instead of hard-coding paths. In production, use object storage (S3/GCS/Azure) with private ACLs and short-lived signed URLs. Stream large files with `FileResponse`; never expose a private key through `MEDIA_URL`.",
+      "sections": [
+        {
+          "id": "storage-api",
+          "title": "The storage API",
+          "body": "Storage exposes `open()`, `save()`, `delete()`, `exists()`, `size()`, `url()` and `path()` (not every backend supports `path()`). Code against the API, not the filesystem, so moving to S3 does not require a rewrite.\n\n`FileField` stores a key in the database; the bytes live in storage. `upload_to` can be a callable for per-instance paths.",
+          "code": "from django.core.files.storage import default_storage\n\nname = default_storage.save(\"reports/2026/report.pdf\", content)\nurl = default_storage.url(name)\nexists = default_storage.exists(name)\ndefault_storage.delete(name)\n\nclass Report(models.Model):\n    file = models.FileField(upload_to=\"reports/%Y/%m/\")",
+          "language": "python",
+          "note": "`storage.path()` raises `NotImplementedError` on object storage. Do not assume a local path.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "object-storage",
+          "title": "Object storage and private files",
+          "body": "Configure a bucket, region and credentials via environment variables. Set a private default ACL; public objects are a data leak waiting for a URL guess. For downloads, check permission in Django and redirect to a short-lived signed URL, or stream through `FileResponse`.\n\nKeep the bucket out of the app's cookie domain. A separate domain also protects against stored XSS from uploaded HTML/SVG.",
+          "code": "STORAGES = {\n    \"default\": {\n        \"BACKEND\": \"storages.backends.s3.S3Storage\",\n        \"OPTIONS\": {\n            \"bucket_name\": os.environ[\"AWS_STORAGE_BUCKET_NAME\"],\n            \"region_name\": os.environ[\"AWS_S3_REGION_NAME\"],\n            \"default_acl\": \"private\",\n            \"querystring_auth\": True,\n            \"file_overwrite\": False,\n        },\n    },\n    \"staticfiles\": {\n        \"BACKEND\": \"django.contrib.staticfiles.storage.StaticFilesStorage\",\n    },\n}",
+          "language": "python",
+          "note": "A signed URL is a bearer token. Keep expiry short and do not log the full URL.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "validation",
+          "title": "Validation and hostile files",
+          "body": "Validate size, extension and content type before saving. Content-Type is client-supplied; inspect magic bytes or decode images with Pillow. Generate a new filename; never trust the original path.\n\nScan uploads asynchronously if they are shared with other users. Store the scan status and block download until clean if your threat model requires it.",
+          "code": "def validate_upload(uploaded):\n    if uploaded.size > 10 * 1024 * 1024:\n        raise ValidationError(\"Maximum size is 10 MB.\")\n    if uploaded.content_type not in {\"image/png\", \"image/jpeg\", \"application/pdf\"}:\n        raise ValidationError(\"Unsupported type.\")\n    return uploaded",
+          "language": "python",
+          "note": "A ZIP bomb can pass a size check after decompression. Limit decompressed size and processing time.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "large-files",
+          "title": "Large files and streaming",
+          "body": "`FileResponse` streams from storage to the client; it does not load the file into memory. For object storage, a redirect to a signed URL is usually faster and cheaper than proxying through Django.\n\nFor uploads larger than the request body limit, use multipart uploads directly to object storage with a short-lived policy, then confirm the object key with your server.",
+          "code": "from django.http import FileResponse, Http404\n\ndef download(request, pk):\n    report = get_object_or_404(Report, pk=pk, owner=request.user)\n    try:\n        handle = report.file.open(\"rb\")\n    except FileNotFoundError as exc:\n        raise Http404(\"File missing\") from exc\n    return FileResponse(handle, as_attachment=True)",
+          "language": "python",
+          "note": "Permission checks must happen before opening the file. Do not rely on an unguessable URL alone.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Serving private files from `MEDIA_URL`.",
+        "Assuming `storage.path()` exists on S3.",
+        "Trusting the uploaded content type.",
+        "Buffering a multi-gigabyte file into memory.",
+        "Storing uploads on local disk behind a load balancer."
+      ],
+      "checklist": [
+        "Code uses the storage API, not filesystem paths.",
+        "Production uses private object storage.",
+        "Downloads are permission-checked.",
+        "Uploads are validated and renamed.",
+        "Large files stream or use signed URLs."
+      ],
+      "related": [
+        "static-media",
+        "security-hardening",
+        "deploy-hardening"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/files/",
+      "errors": []
+    },
+    {
+      "slug": "email-deliverability",
+      "title": "Email & deliverability",
+      "subtitle": "Transactional email, SPF/DKIM and bounces",
+      "category": "Assets & runtime",
+      "order": 10,
+      "level": "Advanced",
+      "tags": [
+        "email",
+        "deliverability",
+        "operations"
+      ],
+      "aliases": [
+        "smtp",
+        "send_mail",
+        "emailmultialternatives",
+        "transactional email",
+        "spf",
+        "dkim",
+        "dmarc",
+        "bounce",
+        "complaint",
+        "ses",
+        "sendgrid",
+        "postmark",
+        "email queue",
+        "password reset email",
+        "email testing"
+      ],
+      "summary": "Sending email is easy; landing in the inbox is the hard part. Configure authentication, send from a real domain, queue the send and process bounces.",
+      "quick_answer": "Use a transactional provider or a properly authenticated SMTP relay, set `DEFAULT_FROM_EMAIL` on your own domain, publish SPF/DKIM/DMARC, send asynchronously, and process bounces/complaints. Never send from a `no-reply` address you do not monitor.",
+      "sections": [
+        {
+          "id": "configure",
+          "title": "Configure the backend",
+          "body": "In development, use the console backend so reset links appear in the terminal. In production, use SMTP with TLS or a provider API. Keep credentials in the environment and set a timeout.\n\n`send_mail()` is the simple path; `EmailMultiAlternatives` adds an HTML part and attachments. `send_messages()` opens one connection for a batch.",
+          "code": "EMAIL_BACKEND = \"django.core.mail.backends.smtp.EmailBackend\"\nEMAIL_HOST = \"smtp.example.com\"\nEMAIL_PORT = 587\nEMAIL_USE_TLS = True\nEMAIL_HOST_USER = os.environ[\"EMAIL_HOST_USER\"]\nEMAIL_HOST_PASSWORD = os.environ[\"EMAIL_HOST_PASSWORD\"]\nEMAIL_TIMEOUT = 10\nDEFAULT_FROM_EMAIL = \"Django Quest <hello@example.com>\"\n\nfrom django.core.mail import EmailMultiAlternatives\nmessage = EmailMultiAlternatives(\"Receipt\", \"Thanks!\", None, [user.email])\nmessage.attach_alternative(\"<h1>Thanks!</h1>\", \"text/html\")\nmessage.send()",
+          "language": "python",
+          "note": "A synchronous SMTP call inside a request adds latency and can time out. Queue it.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "authentication",
+          "title": "SPF, DKIM and DMARC",
+          "body": "Receivers check whether the sending IP is authorised (SPF), whether the message is cryptographically signed (DKIM) and what the domain owner says to do with failures (DMARC). All three need the domain you put in `From:`.\n\nUse the provider's DNS records, align the From domain with the signing domain, and start DMARC with `p=none` plus reporting before moving to quarantine/reject.",
+          "code": "# DNS sketch — values come from your provider\nexample.com.        TXT  \"v=spf1 include:_spf.provider.example ~all\"\nselector._domainkey  TXT  \"v=DKIM1; k=rsa; p=...\"\n_dmarc.example.com. TXT  \"v=DMARC1; p=none; rua=mailto:dmarc@example.com\"",
+          "language": "text",
+          "note": "Do not publish multiple SPF records for one domain. Merge them.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "queue-bounces",
+          "title": "Queue, bounces and complaints",
+          "body": "Send in a worker and record the provider message id. Process bounce/complaint webhooks and suppress hard-bounced addresses. A “send receipt” job that retries forever on a permanent bounce is a bug.\n\nFor password reset, do not reveal whether an email exists. The response should be the same either way.",
+          "code": "@shared_task(bind=True, max_retries=3)\ndef send_receipt(self, order_id):\n    order = Order.objects.get(pk=order_id)\n    try:\n        message.send()\n    except TransientEmailError as exc:\n        raise self.retry(exc=exc, countdown=60)",
+          "language": "python",
+          "note": "Hard bounces are permanent; retrying them damages sender reputation. Suppress the address.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "testing",
+          "title": "Testing email flows",
+          "body": "Use the locmem backend in tests and assert on `mail.outbox`. Test the password-reset link end to end, including the token and the redirect. Check plain-text and HTML parts.\n\nA real inbox test before launch catches DNS, TLS and spam-folder issues that unit tests cannot.",
+          "code": "from django.core import mail\nfrom django.test import TestCase, override_settings\n\n@override_settings(EMAIL_BACKEND=\"django.core.mail.backends.locmem.EmailBackend\")\nclass PasswordResetTests(TestCase):\n    def test_reset_email_has_a_link(self):\n        self.client.post(\"/password-reset/\", {\"email\": \"ada@example.com\"})\n        self.assertEqual(len(mail.outbox), 1)\n        self.assertIn(\"/reset/\", mail.outbox[0].body)",
+          "language": "python",
+          "note": "If `mail.outbox` is empty, check the backend setting and whether the code path was reached.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Sending from a domain without SPF/DKIM.",
+        "Publishing multiple SPF records.",
+        "Sending synchronously in the request.",
+        "Retrying hard bounces forever.",
+        "Revealing whether an email exists in a reset form.",
+        "Using a no-reply address nobody monitors."
+      ],
+      "checklist": [
+        "Production uses an authenticated provider/relay.",
+        "SPF, DKIM and DMARC are published.",
+        "Email is queued and failures are logged.",
+        "Bounces/complaints update suppression.",
+        "Password reset is tested end to end."
+      ],
+      "related": [
+        "auth",
+        "background-jobs",
+        "observability"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/email/",
+      "errors": []
+    },
+    {
+      "slug": "realtime-channels",
+      "title": "Realtime & Channels",
+      "subtitle": "WebSockets, consumers, groups and scaling",
+      "category": "Assets & runtime",
+      "order": 11,
+      "level": "Advanced",
+      "tags": [
+        "Channels",
+        "WebSockets",
+        "ASGI"
+      ],
+      "aliases": [
+        "channels",
+        "websocket",
+        "asyncwebsocketconsumer",
+        "channel layer",
+        "redis channel layer",
+        "group send",
+        "asgi routing",
+        "realtime",
+        "presence",
+        "fan out",
+        "socket auth"
+      ],
+      "summary": "Django can serve WebSockets through Channels and ASGI. The hard parts are authentication, group fan-out, backpressure and running more than one process.",
+      "quick_answer": "Use Channels with an ASGI server and a Redis channel layer. Authenticate in `connect()`, join a scoped group, send small messages, and plan for multiple workers: an in-memory channel layer only works on one process.",
+      "sections": [
+        {
+          "id": "asgi-routing",
+          "title": "ASGI routing and consumers",
+          "body": "Channels routes WebSocket connections to consumers through `ProtocolTypeRouter`. A consumer is an ASGI application with `connect`, `receive`, `disconnect`. `AsyncWebsocketConsumer` is the async base.\n\nKeep the consumer thin: validate the message, call a service, send a response. Database work in a consumer must use the async ORM or a sync boundary.",
+          "code": "# config/asgi.py\nimport os\nos.environ.setdefault(\"DJANGO_SETTINGS_MODULE\", \"config.settings\")\n\nfrom channels.auth import AuthMiddlewareStack\nfrom channels.routing import ProtocolTypeRouter, URLRouter\nfrom django.core.asgi import get_asgi_application\nfrom chat.routing import websocket_urlpatterns\n\napplication = ProtocolTypeRouter({\n    \"http\": get_asgi_application(),\n    \"websocket\": AuthMiddlewareStack(URLRouter(websocket_urlpatterns)),\n})",
+          "language": "python",
+          "note": "`get_asgi_application()` must run after `DJANGO_SETTINGS_MODULE` is set.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "consumer",
+          "title": "A consumer with groups",
+          "body": "`group_add` subscribes the connection to a group. `group_send` broadcasts to every member. The `type` key names the handler method (`chat.message` → `chat_message`).\n\nAlways remove the group on disconnect. Scope the group name by tenant/room and authorize membership before joining.",
+          "code": "from channels.generic.websocket import AsyncWebsocketConsumer\nimport json\n\nclass ChatConsumer(AsyncWebsocketConsumer):\n    async def connect(self):\n        self.room = self.scope[\"url_route\"][\"kwargs\"][\"room\"]\n        if not self.scope[\"user\"].is_authenticated:\n            await self.close()\n            return\n        await self.channel_layer.group_add(self.room, self.channel_name)\n        await self.accept()\n\n    async def disconnect(self, code):\n        await self.channel_layer.group_discard(self.room, self.channel_name)\n\n    async def receive(self, text_data):\n        payload = json.loads(text_data)\n        await self.channel_layer.group_send(\n            self.room,\n            {\"type\": \"chat.message\", \"text\": payload[\"text\"]},\n        )\n\n    async def chat_message(self, event):\n        await self.send(text_data=json.dumps({\"text\": event[\"text\"]}))",
+          "language": "python",
+          "note": "Validate and limit message size. A WebSocket is an input boundary like any HTTP request.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "auth-scaling",
+          "title": "Authentication and scaling",
+          "body": "`AuthMiddlewareStack` reads the session cookie, but a WebSocket handshake from a mobile client may use a token. Authenticate before `accept()` and close with a policy code if unauthorized.\n\nThe in-memory channel layer only works within one process. With multiple workers, use `channels_redis`. Presence and “who is online” need a shared store and a TTL, not a Python dict.",
+          "code": "CHANNEL_LAYERS = {\n    \"default\": {\n        \"BACKEND\": \"channels_redis.core.RedisChannelLayer\",\n        \"CONFIG\": {\"hosts\": [os.environ[\"REDIS_URL\"]]},\n    }\n}",
+          "language": "python",
+          "note": "A Redis restart drops group membership. Consumers must reconnect and rejoin.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "fallbacks",
+          "title": "Backpressure and fallbacks",
+          "body": "A slow client can accumulate messages. Bound per-connection queues, drop stale updates, and send a snapshot on reconnect. For notifications, persist the event and let the client fetch missed items by cursor.\n\nNot every feature needs a socket. Polling or server-sent events can be simpler and more cache-friendly. Choose realtime when the product needs it.",
+          "code": "# Persist first, then notify; the client can catch up after reconnect.\nNotification.objects.create(user=user, payload=payload)\nawait self.channel_layer.group_send(f\"user.{user.pk}\", {\"type\": \"notify\", \"id\": notification.pk})",
+          "language": "python",
+          "note": "At-least-once delivery plus client dedupe is usually more reliable than trying to guarantee exactly-once.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Using the in-memory channel layer with multiple workers.",
+        "Joining a group before checking authorization.",
+        "Doing blocking ORM calls in an async consumer.",
+        "Sending unbounded messages to a slow client.",
+        "Forgetting `group_discard` on disconnect."
+      ],
+      "checklist": [
+        "ASGI server and Redis channel layer are configured.",
+        "Connections are authenticated before joining a group.",
+        "Group names are scoped by tenant/room.",
+        "Messages are validated and size-limited.",
+        "Missed events can be fetched after reconnect."
+      ],
+      "related": [
+        "async-deep",
+        "deploy-hardening",
+        "observability"
+      ],
+      "official": "https://channels.readthedocs.io/",
+      "errors": []
+    }
+  ]
+}

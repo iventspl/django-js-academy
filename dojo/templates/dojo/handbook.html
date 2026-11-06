@@ -1,0 +1,105 @@
+{% extends "dojo/base.html" %}
+{% load static handbook_extras %}
+
+{% block title %}Django handbook · every answer, one search{% endblock %}
+{% block body_class %}page-handbook{% endblock %}
+{% block meta_description %}A plain-language, searchable Django manual: forms, models, ORM, URLs, templates, migrations, errors and deployment.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261106a">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap" data-handbook data-hb-endpoint="{% url 'dojo:handbook_search' %}" data-hb-browse="{% url 'dojo:handbook' %}">
+  <header class="hb-hero">
+    <div class="hb-hero-copy">
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> The Django handbook · {{ chapter_total }} chapters</p>
+      <h1>Ask the handbook.<br><em>Get the whole answer.</em></h1>
+      <p class="hb-hero-lead">A complete, plain-language Django reference: {{ levels.0.count }} core chapters, {{ levels.1.count }} advanced deep dives, {{ levels.2.count }} lookup tables and {{ levels.3.count }} end-to-end recipes. Type the file, the error, or the thing you are trying to build.</p>
+    </div>
+    <div class="hb-hero-stats" aria-label="Handbook contents">
+      <div><strong>{{ chapter_total }}</strong><span>chapters</span></div>
+      <div><strong>{{ section_total }}</strong><span>answers</span></div>
+      <div><strong>{{ error_total }}</strong><span>error fixes</span></div>
+    </div>
+  </header>
+
+  <section class="hb-search-panel" aria-label="Search the Django handbook">
+    <form class="hb-search" method="get" action="{% url 'dojo:handbook' %}" role="search" data-hb-form>
+      <span class="hb-search-icon" aria-hidden="true">⌕</span>
+      <label class="sr-only" for="hb-q">Search the Django handbook</label>
+      <input id="hb-q" data-hb-input type="search" name="q" value="{{ query }}" placeholder="Try “forms”, “select_for_update”, “window function”, “CSP”…" autocomplete="off" spellcheck="false" autofocus>
+      <kbd class="hb-kbd" aria-hidden="true">/</kbd>
+      <button class="btn btn-primary hb-search-button" type="submit">Search</button>
+    </form>
+    <div class="hb-try" aria-label="Example searches">
+      <span>Try</span>
+      <button type="button" data-hb-try="forms">forms</button>
+      <button type="button" data-hb-try="NoReverseMatch">NoReverseMatch</button>
+      <button type="button" data-hb-try="select_related">select_related</button>
+      <button type="button" data-hb-try="csrf">csrf</button>
+      <button type="button" data-hb-try="migrations">migrations</button>
+      <button type="button" data-hb-try="static">static</button>
+    </div>
+  </section>
+
+  <nav class="hb-level-bar" aria-label="Filter by depth">
+    <span class="hb-level-label">Depth</span>
+    <a class="hb-level-chip {% if not level %}is-active{% endif %}" href="{% url 'dojo:handbook' %}{% if query %}?q={{ query|urlencode }}{% endif %}">All <span>{{ chapter_total }}</span></a>
+    {% for item in levels %}
+      <a class="hb-level-chip {% if level == item.name %}is-active{% endif %}" href="{% url 'dojo:handbook' %}?level={{ item.name|urlencode }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}">{{ item.name }} <span>{{ item.count }}</span></a>
+    {% endfor %}
+    <span class="hb-level-note">Core → advanced → reference → recipes</span>
+  </nav>
+
+  <section class="hb-results" data-hb-results aria-live="polite" aria-busy="false">
+    {% if searched %}
+      <template id="hb-idle-template">{% include "dojo/_handbook_idle.html" %}</template>
+      {% if too_short %}
+        <div class="hb-state">
+          <span class="hb-state-mark" aria-hidden="true">…</span>
+          <h2>One more character.</h2>
+          <p>Search starts at two characters. Try “forms”, “orm” or “csrf”.</p>
+        </div>
+      {% elif hits %}
+        <div class="hb-results-head">
+          <div>
+            <p class="hb-label">Search results</p>
+            <h2>{{ hits|length }} answer{{ hits|length|pluralize }} for “{{ query }}”</h2>
+          </div>
+          <a class="hb-clear" href="{% url 'dojo:handbook' %}">Clear search</a>
+        </div>
+        <div class="hb-result-list">
+          {% for hit in hits %}
+            <a class="hb-result" href="{% url 'dojo:handbook_chapter' hit.chapter.slug %}{% if hit.section %}#{{ hit.section.id }}{% endif %}">
+              <span class="hb-result-kind {% if hit.kind == 'chapter' %}is-chapter{% endif %}">{% if hit.kind == 'chapter' %}Chapter{% else %}Section{% endif %}</span>
+              <span class="hb-result-body">
+                <span class="hb-result-title">{{ hit.title|mark_query:query }}</span>
+                <span class="hb-result-meta">{{ hit.chapter.category }} · {{ hit.chapter.level }} · {% if hit.section %}{{ hit.chapter.title }}{% else %}Chapter {{ hit.chapter.number|stringformat:"02d" }}{% endif %}</span>
+                <span class="hb-result-snippet">{{ hit.snippet|mark_query:query }}</span>
+              </span>
+              <span class="hb-result-arrow" aria-hidden="true">→</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="hb-state">
+          <span class="hb-state-mark" aria-hidden="true">0</span>
+          <h2>No answer matched “{{ query }}”.</h2>
+          <p>Try the exception name, the Django file (`forms.py`, `urls.py`) or a shorter phrase. The official docs are linked at the end of every chapter.</p>
+          <div class="hb-state-actions">
+            <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Browse all chapters</a>
+            <a class="btn btn-ghost-dark" href="{% url 'dojo:search' %}?q={{ query|urlencode }}">Search the whole dojo</a>
+          </div>
+        </div>
+      {% endif %}
+    {% else %}
+      {% include "dojo/_handbook_idle.html" %}
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="{% static 'dojo/handbook.js' %}?v=20261106a"></script>
+{% endblock %}

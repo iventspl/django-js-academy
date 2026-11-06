@@ -1,5 +1,42 @@
 # Changelog
 
+## 4.27 — 2026-11-06
+
+### The Django super-handbook
+
+- Expanded **`/handbook/`** from a 21-chapter field manual into a full-framework reference:
+  - **81 chapters**, **349 answers**, **39 exception fixes**.
+  - **21 core**, **34 advanced**, **15 reference-table**, **11 recipe** chapters across 11 areas.
+- Advanced material now covers:
+  - ORM expressions, subqueries, `Exists`, `Case`/`When`, window functions and custom lookups;
+  - transactions, row locks, isolation, deadlocks and `on_commit`;
+  - model inheritance, custom fields, managers, multi-db routers and replica lag;
+  - zero-downtime migrations, `SeparateDatabaseAndState`, batched backfills and migration recovery;
+  - custom widgets, model/inline formsets, dynamic formsets and validation architecture;
+  - CBV MRO, generic-view hooks, streaming responses and custom error handlers;
+  - custom template tags, context processors, Jinja2 and loader performance;
+  - custom auth backends, object permissions, session hardening and MFA;
+  - CSP, SSRF, hostile uploads, secret rotation and supply-chain checks;
+  - pytest, factories, mocks, `on_commit` tests, browser/accessibility tests and CI;
+  - query profiling, indexes, load testing, django-stubs/mypy and Ruff;
+  - async views/ORM, ASGI, `sync_to_async`, middleware depth and caching/stampedes;
+  - Celery/queues, idempotency, outbox, storage/S3, email deliverability and Channels;
+  - DRF nested writes, scoping, schemas, versioning and throttling;
+  - production deployment, observability, i18n, PostgreSQL search and multi-tenancy;
+  - architecture patterns, internals, upgrade process, feature flags, payments/webhooks, HTMX and exports.
+- Added **15 reference chapters** with tables for settings, model fields, QuerySet methods/lookups, forms, templates, auth, admin, commands, exceptions, migrations, middleware, HTTP, URLs, databases and a glossary.
+- Added **11 end-to-end recipes**: accounts, CRUD with ownership, search, image upload, CSV/PDF export, transactional email, JSON API, first deploy, background job, tenant scoping and export recipes.
+- Added **level filters** (`Core`, `Advanced`, `Reference`, `Recipe`), chapter tags, reference tables rendered in-page, and per-section official reference links.
+- Added instant, dependency-free search with a no-JavaScript fallback. Type `forms`, `select_for_update`, `window function`, `CSP` or `NoReverseMatch`; results are chapter- and section-level.
+- Added the handbook to the Django sidebar, the home-page actions and global `/search/` (new “Django handbook” result group).
+- Handbook content lives in editable `dojo/content/handbook/*.json` files; no migration or database change is required.
+- Expanded tests for chapter completeness, levels, tables, search relevance, XSS-safe prose rendering, views, JSON search and global-search integration.
+
+### Verification
+
+- Django `check` passes.
+- Full test suite passes (**160 tests**).
+
 ## 4.26 — 2026-10-30
 
 ### JS workshops in every module

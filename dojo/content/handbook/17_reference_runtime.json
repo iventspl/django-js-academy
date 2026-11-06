@@ -1,0 +1,1194 @@
+{
+  "chapters": [
+    {
+      "slug": "middleware-reference",
+      "title": "Middleware reference",
+      "subtitle": "Built-ins, ordering and the callable contract",
+      "category": "Reference",
+      "order": 11,
+      "tags": [
+        "middleware",
+        "reference"
+      ],
+      "aliases": [
+        "built in middleware",
+        "securitymiddleware",
+        "sessionmiddleware",
+        "commonmiddleware",
+        "csrfviewmiddleware",
+        "authenticationmiddleware",
+        "messagemiddleware",
+        "xframeoptions",
+        "localemiddleware",
+        "gzipmiddleware",
+        "conditionalget",
+        "middleware order",
+        "get_response",
+        "middleware hook"
+      ],
+      "summary": "The default middleware stack, what each one does, why order matters, and the constructor/callable contract for writing your own.",
+      "quick_answer": "Requests run top-down, responses bottom-up. Sessions before auth, CSRF before reading POST, security early. A custom middleware is a factory receiving `get_response`, returning a callable that receives `request`.",
+      "sections": [
+        {
+          "id": "built-ins",
+          "title": "Built-in middleware",
+          "body": "The default stack plus the common optional ones.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Middleware",
+              "Job",
+              "Order note"
+            ],
+            "rows": [
+              [
+                "`SecurityMiddleware`",
+                "HTTPS/HSTS/headers",
+                "Early"
+              ],
+              [
+                "`SessionMiddleware`",
+                "Session store",
+                "Before auth"
+              ],
+              [
+                "`CommonMiddleware`",
+                "Host, slash, ETag",
+                "After sessions"
+              ],
+              [
+                "`CsrfViewMiddleware`",
+                "CSRF protection",
+                "Before POST reads"
+              ],
+              [
+                "`AuthenticationMiddleware`",
+                "Attaches `request.user`",
+                "After sessions"
+              ],
+              [
+                "`MessageMiddleware`",
+                "Flash messages",
+                "After sessions/auth"
+              ],
+              [
+                "`XFrameOptionsMiddleware`",
+                "Clickjacking header",
+                "Near the end"
+              ],
+              [
+                "`LocaleMiddleware`",
+                "Language activation",
+                "After sessions"
+              ],
+              [
+                "`GZipMiddleware`",
+                "Compress responses",
+                "Before response consumers"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "contract",
+          "title": "The callable contract",
+          "body": "Modern middleware is a class or factory. `process_request`/`process_response` are legacy hooks; use `__call__`.",
+          "code": "class TimingMiddleware:\n    def __init__(self, get_response):\n        self.get_response = get_response\n\n    def __call__(self, request):\n        started = time.perf_counter()\n        response = self.get_response(request)\n        response[\"Server-Timing\"] = f\"app;dur={(time.perf_counter() - started) * 1000:.1f}\"\n        return response",
+          "language": "python",
+          "note": "Call `get_response(request)` to continue the chain; return a response to short-circuit.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "ordering",
+          "title": "Ordering and performance",
+          "body": "Middleware runs on every request. A database query or network call here multiplies across the site. Auth depends on sessions; CSRF must see the POST body before anything consumes it.\n\nA maintenance-mode middleware near the top can return 503 before sessions or the database are touched.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Need",
+              "Place it"
+            ],
+            "rows": [
+              [
+                "Early block (maintenance)",
+                "Top"
+              ],
+              [
+                "Security headers",
+                "Near top"
+              ],
+              [
+                "Session/auth",
+                "Before views, after sessions"
+              ],
+              [
+                "Request timing",
+                "Around the view"
+              ],
+              [
+                "Response compression",
+                "Outer/early enough to see response"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Putting auth before sessions.",
+        "Doing a query on every request.",
+        "Buffering a streaming response.",
+        "Catching exceptions and returning 200.",
+        "Assuming middleware knows the resolved view."
+      ],
+      "checklist": [
+        "Order dependencies are documented.",
+        "Global code is measured and cheap.",
+        "Streaming responses are handled.",
+        "Exceptions are logged and re-raised.",
+        "Middleware has pass-through and short-circuit tests."
+      ],
+      "related": [
+        "middleware",
+        "middleware-async",
+        "internals"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/middleware/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "http-reference",
+      "title": "HTTP reference",
+      "subtitle": "Requests, responses, shortcuts and status codes",
+      "category": "Reference",
+      "order": 12,
+      "tags": [
+        "HTTP",
+        "reference"
+      ],
+      "aliases": [
+        "httprequest",
+        "httpresponse",
+        "jsonresponse",
+        "streaminghttpresponse",
+        "fileresponse",
+        "httpresponseRedirect",
+        "render",
+        "redirect",
+        "get_object_or_404",
+        "status code",
+        "request.GET",
+        "request.POST",
+        "request.FILES",
+        "request.headers",
+        "request.user",
+        "http404",
+        "httpresponseforbidden",
+        "httpresponsenotfound"
+      ],
+      "summary": "The request/response objects and shortcuts you use in every view, with the attributes that matter and the status codes that keep clients honest.",
+      "quick_answer": "A view receives `HttpRequest` and returns `HttpResponse` (or raises `Http404`). Use `render` for templates, `JsonResponse` for JSON, `redirect` for navigation, and `get_object_or_404` for missing objects.",
+      "sections": [
+        {
+          "id": "request",
+          "title": "HttpRequest",
+          "body": "The request is read-only from the view's perspective.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Attribute",
+              "Type",
+              "Use"
+            ],
+            "rows": [
+              [
+                "`method`",
+                "str",
+                "GET/POST/PUT/..."
+              ],
+              [
+                "`GET`",
+                "QueryDict",
+                "Query parameters"
+              ],
+              [
+                "`POST`",
+                "QueryDict",
+                "Form body"
+              ],
+              [
+                "`FILES`",
+                "MultiValueDict",
+                "Uploaded files"
+              ],
+              [
+                "`headers`",
+                "HttpHeaders",
+                "Case-insensitive headers"
+              ],
+              [
+                "`body`",
+                "bytes",
+                "Raw body (webhooks)"
+              ],
+              [
+                "`path` / `path_info`",
+                "str",
+                "Request path"
+              ],
+              [
+                "`user`",
+                "User",
+                "Auth middleware"
+              ],
+              [
+                "`session`",
+                "Session",
+                "Session middleware"
+              ],
+              [
+                "`content_type`",
+                "str",
+                "Body type"
+              ],
+              [
+                "`META`",
+                "dict",
+                "WSGI environ (legacy)"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "response",
+          "title": "Response classes",
+          "body": "Pick the class that matches the payload.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Class",
+              "Use for",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`HttpResponse`",
+                "Text/bytes",
+                "Set `content_type`"
+              ],
+              [
+                "`JsonResponse`",
+                "JSON",
+                "`safe=False` for lists"
+              ],
+              [
+                "`StreamingHttpResponse`",
+                "Generator/stream",
+                "No `Content-Length`"
+              ],
+              [
+                "`FileResponse`",
+                "File download",
+                "Streams the file"
+              ],
+              [
+                "`HttpResponseRedirect`",
+                "302 redirect",
+                "Use `redirect()`"
+              ],
+              [
+                "`HttpResponsePermanentRedirect`",
+                "301",
+                "SEO/permanent moves"
+              ],
+              [
+                "`HttpResponseBadRequest`",
+                "400",
+                "Malformed input"
+              ],
+              [
+                "`HttpResponseForbidden`",
+                "403",
+                "Permission denied"
+              ],
+              [
+                "`HttpResponseNotFound`",
+                "404",
+                "Missing object"
+              ],
+              [
+                "`HttpResponseNotAllowed`",
+                "405",
+                "Wrong method"
+              ],
+              [
+                "`HttpResponseServerError`",
+                "500",
+                "Unhandled error"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "shortcuts",
+          "title": "Shortcuts",
+          "body": "These encode the common response patterns.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Shortcut",
+              "Returns",
+              "Use"
+            ],
+            "rows": [
+              [
+                "`render(request, template, context)`",
+                "HttpResponse",
+                "Template response"
+              ],
+              [
+                "`redirect(to, *args, **kwargs)`",
+                "HttpResponseRedirect",
+                "URL/view/model"
+              ],
+              [
+                "`get_object_or_404(queryset, **kwargs)`",
+                "object or 404",
+                "Detail views"
+              ],
+              [
+                "`get_list_or_404(queryset, **kwargs)`",
+                "list or 404",
+                "Filtered lists"
+              ],
+              [
+                "`resolve_url(to)`",
+                "str",
+                "Normalize redirect target"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "status-codes",
+          "title": "Status codes that matter",
+          "body": "Use the code that describes the outcome; clients, caches and tests depend on it.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Code",
+              "Meaning",
+              "Django tool"
+            ],
+            "rows": [
+              [
+                "200",
+                "OK",
+                "`HttpResponse`"
+              ],
+              [
+                "201",
+                "Created",
+                "`JsonResponse(status=201)`"
+              ],
+              [
+                "204",
+                "No content",
+                "`HttpResponse(status=204)`"
+              ],
+              [
+                "301/302",
+                "Moved/Found",
+                "`redirect`"
+              ],
+              [
+                "400",
+                "Bad request",
+                "`HttpResponseBadRequest`"
+              ],
+              [
+                "401",
+                "Unauthenticated",
+                "Auth challenge"
+              ],
+              [
+                "403",
+                "Forbidden",
+                "`PermissionDenied`"
+              ],
+              [
+                "404",
+                "Not found",
+                "`Http404`"
+              ],
+              [
+                "405",
+                "Method not allowed",
+                "`HttpResponseNotAllowed`"
+              ],
+              [
+                "409",
+                "Conflict",
+                "State conflict"
+              ],
+              [
+                "422",
+                "Unprocessable",
+                "Validation errors (APIs)"
+              ],
+              [
+                "429",
+                "Too many requests",
+                "Throttle"
+              ],
+              [
+                "500",
+                "Server error",
+                "Unhandled exception"
+              ],
+              [
+                "503",
+                "Unavailable",
+                "Maintenance/overload"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Returning 200 for a missing object.",
+        "Using `request.GET[\"q\"]` without a default.",
+        "Returning HTML when the client expects JSON.",
+        "Setting a status after streaming has started.",
+        "Leaking exception details in a 500 response."
+      ],
+      "checklist": [
+        "Each branch returns a response or raises.",
+        "Status codes match outcomes.",
+        "JSON endpoints return JSON errors.",
+        "Uploads read `request.FILES`.",
+        "Streaming checks permissions before yielding."
+      ],
+      "related": [
+        "views",
+        "urls",
+        "errors"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/request-response/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "urls-reference",
+      "title": "URLs reference",
+      "subtitle": "path, include, converters, reverse and resolve",
+      "category": "Reference",
+      "order": 13,
+      "tags": [
+        "urls",
+        "routing",
+        "reference"
+      ],
+      "aliases": [
+        "path function",
+        "re_path",
+        "include",
+        "reverse",
+        "reverse_lazy",
+        "resolve",
+        "url converters",
+        "int converter",
+        "slug converter",
+        "uuid converter",
+        "app_name",
+        "namespace",
+        "append_slash",
+        "handler404",
+        "resolvermatch"
+      ],
+      "summary": "The URL API: route functions, converters, includes, namespaces and the reverse/resolve pair that keeps links and introspection honest.",
+      "quick_answer": "`path()` maps a route to a view; `include()` composes URLconfs; `name` + `reverse()` build URLs; `resolve()` inspects the match. Use converters instead of regex unless the pattern is genuinely irregular.",
+      "sections": [
+        {
+          "id": "functions",
+          "title": "Route functions",
+          "body": "The three functions you need.",
+          "code": "urlpatterns = [\n    path(\"\", views.home, name=\"home\"),\n    path(\"posts/<int:pk>/\", views.detail, name=\"post-detail\"),\n    path(\"blog/\", include(\"blog.urls\")),\n]",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Function",
+              "Use",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`path(route, view, name=...)`",
+                "Normal routes",
+                "Converters in `<...>`"
+              ],
+              [
+                "`re_path(regex, view, name=...)`",
+                "Irregular patterns",
+                "Named groups become kwargs"
+              ],
+              [
+                "`include(module_or_patterns)`",
+                "Compose URLconfs",
+                "Prefix + namespace"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "converters",
+          "title": "Converters",
+          "body": "Converters validate and convert the URL segment.",
+          "code": "",
+          "language": "python",
+          "note": "A custom converter uses `register_converter()` with `regex`, `to_python()` and `to_url()`.",
+          "table": {
+            "head": [
+              "Converter",
+              "Matches",
+              "Python type"
+            ],
+            "rows": [
+              [
+                "`str`",
+                "Non-empty, no `/`",
+                "str"
+              ],
+              [
+                "`int`",
+                "Digits",
+                "int"
+              ],
+              [
+                "`slug`",
+                "Letters/numbers/`-_`",
+                "str"
+              ],
+              [
+                "`uuid`",
+                "UUID",
+                "UUID"
+              ],
+              [
+                "`path`",
+                "Includes `/`",
+                "str"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "reverse",
+          "title": "reverse and resolve",
+          "body": "Build URLs from names; inspect a path's match.",
+          "code": "from django.urls import resolve, reverse\n\nreverse(\"blog:detail\", kwargs={\"slug\": \"django-forms\"})\nresolve(\"/blog/django-forms/\").view_name\nresolve(\"/blog/django-forms/\").kwargs",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "API",
+              "Purpose",
+              "Raises"
+            ],
+            "rows": [
+              [
+                "`reverse(name, args/kwargs)`",
+                "Build URL",
+                "`NoReverseMatch`"
+              ],
+              [
+                "`reverse_lazy(...)`",
+                "Lazy URL for class attrs",
+                "At access time"
+              ],
+              [
+                "`resolve(path)`",
+                "Match a path",
+                "`Resolver404`"
+              ],
+              [
+                "`get_resolver()`",
+                "Root resolver",
+                "—"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "namespaces",
+          "title": "Namespaces and handlers",
+          "body": "Namespaces keep app routes isolated; handlers choose the error views.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Concept",
+              "Example",
+              "Note"
+            ],
+            "rows": [
+              [
+                "`app_name`",
+                "`app_name = \"blog\"`",
+                "Required for namespace"
+              ],
+              [
+                "`namespace=`",
+                "`include((patterns, \"blog\"), namespace=\"blog\")`",
+                "Multiple app instances"
+              ],
+              [
+                "`{% url %}`",
+                "`{% url 'blog:detail' slug=post.slug %}`",
+                "Escapes output"
+              ],
+              [
+                "`handler404`",
+                "`handler404 = \"pages.views.not_found\"`",
+                "`DEBUG=False` only"
+              ],
+              [
+                "`APPEND_SLASH`",
+                "Redirect `/x` → `/x/`",
+                "GET/HEAD; not for POST"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Forgetting `app_name` and failing a namespaced reverse.",
+        "A catch-all route above specific routes.",
+        "Using `re_path` when a converter is enough.",
+        "Hard-coding internal URLs.",
+        "Relying on `APPEND_SLASH` for POST."
+      ],
+      "checklist": [
+        "Every route has a name.",
+        "Each app owns its URLconf.",
+        "Namespaces are consistent.",
+        "Links use `{% url %}`/`reverse()`.",
+        "404 handlers are tested."
+      ],
+      "related": [
+        "urls",
+        "urls-advanced",
+        "views"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/urls/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "database-reference",
+      "title": "Database reference",
+      "subtitle": "Backends, functions, lookups and transactions",
+      "category": "Reference",
+      "order": 14,
+      "tags": [
+        "database",
+        "PostgreSQL",
+        "reference"
+      ],
+      "aliases": [
+        "database backends",
+        "postgresql",
+        "sqlite",
+        "mysql",
+        "database functions",
+        "coalesce",
+        "concat",
+        "cast",
+        "trunc",
+        "extract",
+        "transactions",
+        "atomic",
+        "select_for_update",
+        "lookups",
+        "indexes",
+        "connection",
+        "query plan"
+      ],
+      "summary": "The database layer at a glance: supported backends, SQL functions, transaction API and the differences that bite when you move from SQLite to PostgreSQL.",
+      "quick_answer": "SQLite is fine for local development; use PostgreSQL for production. The ORM hides most SQL differences, not all: row locks, full-text search, JSON operators, window functions and constraints vary. Test on the database you deploy.",
+      "sections": [
+        {
+          "id": "backends",
+          "title": "Backends",
+          "body": "Django supports several databases; the feature set is not identical.",
+          "code": "",
+          "language": "python",
+          "note": "SQLite in tests can hide concurrency, constraint and query-plan problems. Run critical tests on PostgreSQL too.",
+          "table": {
+            "head": [
+              "Backend",
+              "Use",
+              "Watch out"
+            ],
+            "rows": [
+              [
+                "`sqlite3`",
+                "Local/dev, small single-user",
+                "Limited concurrency, no row locks"
+              ],
+              [
+                "`postgresql`",
+                "Production default",
+                "Best feature coverage"
+              ],
+              [
+                "`mysql`",
+                "Legacy/managed MySQL",
+                "Transaction/DDL differences"
+              ],
+              [
+                "`oracle`",
+                "Enterprise",
+                "Specific SQL/types"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "functions",
+          "title": "Database functions",
+          "body": "Use these to push work into the database.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Function",
+              "Purpose",
+              "Example"
+            ],
+            "rows": [
+              [
+                "`Coalesce`",
+                "First non-null",
+                "`Coalesce(\"nickname\", Value(\"\"))`"
+              ],
+              [
+                "`Concat`",
+                "Concatenate",
+                "`Concat(\"first\", Value(\" \"), \"last\")`"
+              ],
+              [
+                "`Lower` / `Upper`",
+                "Case conversion",
+                "`Lower(\"email\")`"
+              ],
+              [
+                "`Length`",
+                "String length",
+                "`Length(\"title\")`"
+              ],
+              [
+                "`Substr`",
+                "Substring",
+                "`Substr(\"title\", 1, 20)`"
+              ],
+              [
+                "`Cast`",
+                "Type conversion",
+                "`Cast(\"id\", CharField())`"
+              ],
+              [
+                "`Now`",
+                "Current timestamp",
+                "`Now()`"
+              ],
+              [
+                "`Trunc`",
+                "Date truncation",
+                "`Trunc(\"created_at\", \"month\")`"
+              ],
+              [
+                "`Extract`",
+                "Date part",
+                "`Extract(\"created_at\", \"year\")`"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "transactions",
+          "title": "Transactions and locks",
+          "body": "The API is small; the semantics depend on the database.",
+          "code": "",
+          "language": "python",
+          "note": "There is no cross-database transaction. Design around one database or an outbox.",
+          "table": {
+            "head": [
+              "API",
+              "Purpose",
+              "Note"
+            ],
+            "rows": [
+              [
+                "`transaction.atomic()`",
+                "Commit/rollback block",
+                "Nested = savepoint"
+              ],
+              [
+                "`select_for_update()`",
+                "Row lock",
+                "Inside `atomic()`; not SQLite"
+              ],
+              [
+                "`transaction.on_commit(fn)`",
+                "Run after commit",
+                "Not run on rollback"
+              ],
+              [
+                "`transaction.set_autocommit()`",
+                "Manual mode",
+                "Rare; easy to misuse"
+              ],
+              [
+                "`connection.queries`",
+                "SQL log in DEBUG",
+                "Use tests/toolbar"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "differences",
+          "title": "Portability differences",
+          "body": "These are the usual surprises when moving from SQLite to PostgreSQL.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Feature",
+              "SQLite",
+              "PostgreSQL"
+            ],
+            "rows": [
+              [
+                "Row locks",
+                "Ignored",
+                "`select_for_update` works"
+              ],
+              [
+                "Full-text search",
+                "No Django FTS",
+                "`SearchVector`/`SearchQuery`"
+              ],
+              [
+                "JSON operators",
+                "Basic",
+                "Rich `JSONField` lookups"
+              ],
+              [
+                "Window functions",
+                "Supported",
+                "Supported"
+              ],
+              [
+                "Concurrent index build",
+                "No",
+                "`CREATE INDEX CONCURRENTLY`"
+              ],
+              [
+                "Case-insensitive `LIKE`",
+                "ASCII only",
+                "`ILIKE`/citext"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Using SQLite for multi-user production.",
+        "Assuming row locks work on SQLite.",
+        "Testing only on SQLite and deploying PostgreSQL.",
+        "Using raw SQL that is backend-specific without tests.",
+        "Holding a transaction open across a network call."
+      ],
+      "checklist": [
+        "Production DB is PostgreSQL (or a deliberate alternative).",
+        "Concurrency-sensitive tests run on the production engine.",
+        "Backend-specific features are isolated.",
+        "Transactions are short.",
+        "A restore drill exists."
+      ],
+      "related": [
+        "models",
+        "orm",
+        "transactions-locking",
+        "multi-db"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/databases/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "glossary",
+      "title": "Django glossary",
+      "subtitle": "The vocabulary, in plain language",
+      "category": "Reference",
+      "order": 15,
+      "tags": [
+        "glossary",
+        "reference"
+      ],
+      "aliases": [
+        "glossary",
+        "terms",
+        "definitions",
+        "app",
+        "project",
+        "middleware",
+        "queryset",
+        "orm",
+        "migration",
+        "formset",
+        "csrf",
+        "wsgi",
+        "asgi",
+        "slug",
+        "tenant",
+        "reverse",
+        "signal",
+        "fixture",
+        "serializer",
+        "viewset"
+      ],
+      "summary": "The words that show up in every Django conversation, defined without assuming you already know the answer.",
+      "quick_answer": "If a term is missing, search the handbook for it; the chapter that owns the concept is more useful than a one-line definition.",
+      "sections": [
+        {
+          "id": "framework",
+          "title": "Framework terms",
+          "body": "Project, app, view, URLconf and the request path.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Term",
+              "Meaning"
+            ],
+            "rows": [
+              [
+                "Project",
+                "The whole site: settings, root URLs, deployment"
+              ],
+              [
+                "App",
+                "A reusable feature bundle with models/views/templates"
+              ],
+              [
+                "URLconf",
+                "The route table that maps paths to views"
+              ],
+              [
+                "View",
+                "A callable that takes a request and returns a response"
+              ],
+              [
+                "Middleware",
+                "A wrapper around every request/response"
+              ],
+              [
+                "WSGI",
+                "Sync Python web server interface"
+              ],
+              [
+                "ASGI",
+                "Async Python web server interface"
+              ],
+              [
+                "Reverse",
+                "Build a URL from a route name"
+              ],
+              [
+                "Namespace",
+                "A prefix that keeps app route names unique"
+              ],
+              [
+                "Fixture",
+                "Serialized data loaded into the DB for tests/seeding"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "data",
+          "title": "Data and ORM terms",
+          "body": "Models, queries, migrations and transactions.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Term",
+              "Meaning"
+            ],
+            "rows": [
+              [
+                "Model",
+                "Python class mapped to a database table"
+              ],
+              [
+                "Field",
+                "A column plus conversion/validation"
+              ],
+              [
+                "QuerySet",
+                "A lazy database query description"
+              ],
+              [
+                "ORM",
+                "Object-relational mapper"
+              ],
+              [
+                "N+1",
+                "One query for a list plus one per row"
+              ],
+              [
+                "Annotation",
+                "A computed value added per row"
+              ],
+              [
+                "Aggregation",
+                "A summary over many rows"
+              ],
+              [
+                "Migration",
+                "A versioned schema/data change"
+              ],
+              [
+                "Transaction",
+                "A group of writes that commit or roll back together"
+              ],
+              [
+                "Constraint",
+                "A database rule that protects an invariant"
+              ],
+              [
+                "Index",
+                "A lookup structure that speeds reads"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "web",
+          "title": "Web and security terms",
+          "body": "The browser-facing vocabulary.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Term",
+              "Meaning"
+            ],
+            "rows": [
+              [
+                "CSRF",
+                "A forged request from another site using your session"
+              ],
+              [
+                "XSS",
+                "Injecting executable script into a page"
+              ],
+              [
+                "SSRF",
+                "Making the server fetch an attacker-chosen URL"
+              ],
+              [
+                "CSP",
+                "Browser policy limiting scripts/styles/frames"
+              ],
+              [
+                "HSTS",
+                "Force HTTPS for future requests"
+              ],
+              [
+                "Slug",
+                "URL-safe short identifier"
+              ],
+              [
+                "Tenant",
+                "A customer/organisation isolated from others"
+              ],
+              [
+                "Idempotency",
+                "Safe to repeat without changing the result twice"
+              ],
+              [
+                "Outbox",
+                "A DB table of events published reliably later"
+              ],
+              [
+                "SLO",
+                "A target for reliability/latency"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Using “app” and “project” interchangeably.",
+        "Calling any string a slug.",
+        "Treating authentication as authorization.",
+        "Confusing a transaction with a lock."
+      ],
+      "checklist": [
+        "The team shares the same vocabulary.",
+        "Ambiguous terms link to the owning chapter.",
+        "New terms are added when the code introduces them."
+      ],
+      "related": [
+        "start",
+        "models",
+        "security"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/glossary/",
+      "level": "Reference",
+      "errors": []
+    }
+  ]
+}

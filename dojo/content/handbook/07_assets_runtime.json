@@ -1,0 +1,314 @@
+{
+  "chapters": [
+    {
+      "slug": "static-media",
+      "title": "Static files & media",
+      "subtitle": "CSS, JavaScript, uploads and object storage",
+      "category": "Assets & runtime",
+      "order": 1,
+      "aliases": [
+        "static",
+        "staticfiles",
+        "media",
+        "upload",
+        "filefield",
+        "imagefield",
+        "collectstatic",
+        "whitenoise",
+        "storage",
+        "s3",
+        "object storage",
+        "media_url",
+        "media_root",
+        "static_url",
+        "static_root",
+        "private files",
+        "download",
+        "image upload",
+        "pillow"
+      ],
+      "summary": "Static files are part of the site; media files are created by users. They have different storage, different serving rules and different security risks.",
+      "quick_answer": "Use `STATIC_URL`/`STATIC_ROOT` and `{% static %}` for code assets; run `collectstatic` and serve them through WhiteNoise or a CDN. Use `MEDIA_URL`/`MEDIA_ROOT` for uploads in development, object storage in production, and a permission-checked view for private files.",
+      "sections": [
+        {
+          "id": "static-vs-media",
+          "title": "Static vs media",
+          "body": "**Static files** are shipped with the code: CSS, JavaScript, fonts, icons. They change when you deploy. **Media files** are uploaded at runtime: avatars, PDFs, receipts. They change while the site is running.\n\nMixing them causes deployment bugs. `collectstatic` should never touch user uploads, and a user upload should never be served as if it were trusted application code.",
+          "code": "STATIC_URL = \"static/\"\nSTATIC_ROOT = BASE_DIR / \"staticfiles\"\nSTATICFILES_DIRS = [BASE_DIR / \"assets\"]\n\nMEDIA_URL = \"media/\"\nMEDIA_ROOT = BASE_DIR / \"media\"",
+          "language": "python"
+        },
+        {
+          "id": "development-and-production",
+          "title": "Development and production",
+          "body": "In development, `runserver` serves static files when `django.contrib.staticfiles` is installed. It does not serve media files unless you add a URL pattern. That convenience is not a production plan.\n\nIn production, run `collectstatic --noinput` during the release, then let WhiteNoise, Nginx or a CDN serve `STATIC_ROOT`. Never let Django serve static files in production; it is slow and easy to misconfigure.",
+          "code": "# urls.py — development only\nfrom django.conf import settings\nfrom django.conf.urls.static import static\n\nurlpatterns = [\n    # ...\n]\n\nif settings.DEBUG:\n    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)\n\n# production settings\nSTORAGES = {\n    \"default\": {\"BACKEND\": \"django.core.files.storage.FileSystemStorage\"},\n    \"staticfiles\": {\n        \"BACKEND\": \"django.contrib.staticfiles.storage.ManifestStaticFilesStorage\",\n    },\n}",
+          "language": "python",
+          "note": "The `static()` helper refuses to work when `DEBUG=False`. That is deliberate."
+        },
+        {
+          "id": "upload-fields",
+          "title": "Upload fields that behave",
+          "body": "`FileField` stores a path in the database and the bytes in storage. `ImageField` adds image validation and requires Pillow. `upload_to` can be a string or a callable; a callable lets you generate a path per instance and avoid collisions.\n\nA file input needs `enctype=\"multipart/form-data\"` and the view must pass `request.FILES` to the form. Validate size and type before saving.",
+          "code": "from pathlib import Path\nfrom uuid import uuid4\n\nfrom django.db import models\n\ndef document_path(instance, filename):\n    suffix = Path(filename).suffix.lower()\n    return f\"documents/{instance.owner_id}/{uuid4()}{suffix}\"\n\nclass Document(models.Model):\n    owner = models.ForeignKey(\"auth.User\", on_delete=models.CASCADE)\n    title = models.CharField(max_length=200)\n    file = models.FileField(upload_to=document_path)\n    uploaded_at = models.DateTimeField(auto_now_add=True)",
+          "language": "python"
+        },
+        {
+          "id": "storage",
+          "title": "Storage backends",
+          "body": "Django's storage API hides whether a file lives on disk or in S3. `default_storage.save()`, `.open()`, `.delete()` and `.url()` work across backends. Use `FileField(storage=...)` to choose a backend per field.\n\nOn a multi-server deployment, local disk is not shared. Object storage (S3, GCS, Azure Blob) is the normal answer; a shared volume only works when every process sees it.",
+          "code": "# settings.py — S3-compatible example (django-storages)\nSTORAGES = {\n    \"default\": {\n        \"BACKEND\": \"storages.backends.s3.S3Storage\",\n        \"OPTIONS\": {\n            \"bucket_name\": os.environ[\"AWS_STORAGE_BUCKET_NAME\"],\n            \"region_name\": os.environ.get(\"AWS_S3_REGION_NAME\"),\n            \"default_acl\": \"private\",\n            \"querystring_auth\": True,\n        },\n    },\n    \"staticfiles\": {\n        \"BACKEND\": \"django.contrib.staticfiles.storage.StaticFilesStorage\",\n    },\n}",
+          "language": "python",
+          "note": "Private object storage should return signed, expiring URLs, not public object URLs."
+        },
+        {
+          "id": "private-files",
+          "title": "Private files need a view, not a URL",
+          "body": "If a file belongs to a user or a tenant, `MEDIA_URL` is the wrong door: anyone with the URL can fetch it. Store the file privately, keep the key in the database, and stream it through a view that checks permission.\n\nFor large files, use `FileResponse` so Django streams instead of loading the whole file into memory. For object storage, redirect to a short-lived signed URL after the permission check.",
+          "code": "from django.http import FileResponse, Http404\nfrom django.shortcuts import get_object_or_404\nfrom django.contrib.auth.decorators import login_required\n\n@login_required\ndef download_document(request, pk):\n    document = get_object_or_404(Document, pk=pk, owner=request.user)\n    try:\n        handle = document.file.open(\"rb\")\n    except FileNotFoundError as exc:\n        raise Http404(\"File is missing\") from exc\n    return FileResponse(handle, as_attachment=True, filename=document.file.name.rsplit(\"/\", 1)[-1])",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Serving user uploads from `MEDIA_URL` when they should be private.",
+        "Forgetting `collectstatic` and getting unstyled pages in production.",
+        "Using local disk for uploads on a multi-server deployment.",
+        "Trusting the uploaded filename or content type without validation.",
+        "Storing huge files in the database instead of object storage."
+      ],
+      "checklist": [
+        "Static and media settings are separate.",
+        "`collectstatic` runs during release and WhiteNoise/CDN serves the result.",
+        "Uploads validate size and type server-side.",
+        "Private files go through a permission-checked view.",
+        "Storage works across every application server."
+      ],
+      "related": [
+        "settings",
+        "templates",
+        "security",
+        "deploy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/howto/static-files/"
+    },
+    {
+      "slug": "middleware",
+      "title": "Middleware",
+      "subtitle": "The request/response pipeline",
+      "category": "Assets & runtime",
+      "order": 2,
+      "aliases": [
+        "middleware",
+        "request lifecycle",
+        "get_response",
+        "process_request",
+        "process_response",
+        "ordering",
+        "security middleware",
+        "session middleware",
+        "common middleware",
+        "custom middleware",
+        "async middleware",
+        "request flow"
+      ],
+      "summary": "Middleware wraps every request and response. It is powerful, global and easy to misuse. Learn the callable contract and the ordering rules.",
+      "quick_answer": "A middleware is a callable that receives `get_response` and returns a callable receiving `request`. Call `get_response(request)` to continue the chain, or return a response early to short-circuit. Order matters: requests run top-down, responses bottom-up.",
+      "sections": [
+        {
+          "id": "the-pipeline",
+          "title": "The pipeline",
+          "body": "Django builds a chain: the outermost middleware calls the next, down to the view, then the response travels back out. `SecurityMiddleware` is first, `SessionMiddleware` and `CommonMiddleware` follow, `CsrfViewMiddleware` protects unsafe methods, `AuthenticationMiddleware` attaches `request.user`, and `MessageMiddleware` enables messages.\n\nA middleware can inspect the request before the view, replace the response after it, or return early. It cannot know which view will run unless it does extra resolution; prefer a decorator or a mixin for view-specific behaviour.",
+          "code": "MIDDLEWARE = [\n    \"django.middleware.security.SecurityMiddleware\",\n    \"django.contrib.sessions.middleware.SessionMiddleware\",\n    \"django.middleware.common.CommonMiddleware\",\n    \"django.middleware.csrf.CsrfViewMiddleware\",\n    \"django.contrib.auth.middleware.AuthenticationMiddleware\",\n    \"django.contrib.messages.middleware.MessageMiddleware\",\n    \"django.middleware.clickjacking.XFrameOptionsMiddleware\",\n]",
+          "language": "python"
+        },
+        {
+          "id": "write-one",
+          "title": "Write one",
+          "body": "The modern style is a callable factory. It receives `get_response` once, then returns a function that runs per request. Keep it small, avoid database queries on every static asset, and return a response only when you genuinely want to stop the chain.\n\nIf you need async support, write `async def __call__` or use `sync_to_async` carefully. Mixing blocking ORM calls into an async middleware blocks the event loop.",
+          "code": "import time\nimport logging\n\nlogger = logging.getLogger(__name__)\n\nclass RequestTimingMiddleware:\n    def __init__(self, get_response):\n        self.get_response = get_response\n\n    def __call__(self, request):\n        started = time.perf_counter()\n        response = self.get_response(request)\n        duration = (time.perf_counter() - started) * 1000\n        response[\"Server-Timing\"] = f\"app;dur={duration:.1f}\"\n        if duration > 500:\n            logger.warning(\"Slow request %s %.1fms\", request.path, duration)\n        return response",
+          "language": "python",
+          "note": "Add the dotted path to `MIDDLEWARE`. A middleware that raises on every request takes the whole site down."
+        },
+        {
+          "id": "ordering",
+          "title": "Ordering and short-circuiting",
+          "body": "Order is behaviour. `AuthenticationMiddleware` must run after `SessionMiddleware` because it reads the session. `CsrfViewMiddleware` must run before any middleware that reads the POST body. A custom maintenance-mode middleware near the top can return a 503 before sessions or the database are touched.\n\nResponses unwind in reverse order. If middleware A adds a header and middleware B replaces the response entirely, A may never see B's response. Keep cross-cutting concerns independent.",
+          "code": "# Requests: top -> bottom\n# Responses: bottom -> top\nMIDDLEWARE = [\n    \"myapp.middleware.MaintenanceModeMiddleware\",  # early exit\n    \"django.middleware.security.SecurityMiddleware\",\n    \"django.contrib.sessions.middleware.SessionMiddleware\",\n    \"django.middleware.common.CommonMiddleware\",\n    \"django.middleware.csrf.CsrfViewMiddleware\",\n    \"django.contrib.auth.middleware.AuthenticationMiddleware\",\n    \"myapp.middleware.RequestTimingMiddleware\",\n]",
+          "language": "python"
+        },
+        {
+          "id": "when-not-to-use",
+          "title": "When not to use middleware",
+          "body": "Middleware runs for every request, including the admin, health checks, static assets and error pages. If the behaviour is specific to one view, use a decorator. If it is specific to a model, use a service or signal. If it is specific to an API, use DRF authentication or permission classes.\n\nGlobal code is expensive to debug. Add middleware when the concern is genuinely global and cheap."
+        }
+      ],
+      "pitfalls": [
+        "Doing a database query in middleware on every request, including static files.",
+        "Placing `AuthenticationMiddleware` before `SessionMiddleware`.",
+        "Assuming middleware knows the resolved view without doing URL resolution.",
+        "Returning a response without calling `get_response()` and silently breaking the chain.",
+        "Forgetting that exceptions in middleware affect the entire site."
+      ],
+      "checklist": [
+        "The concern is genuinely global.",
+        "Ordering matches dependencies.",
+        "The middleware is cheap on static and health-check requests.",
+        "Exceptions are logged and do not take down unrelated pages.",
+        "It has tests for both the pass-through and short-circuit paths."
+      ],
+      "related": [
+        "views",
+        "security",
+        "async-cache"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/http/middleware/"
+    },
+    {
+      "slug": "async-cache",
+      "title": "Async, cache & sessions",
+      "subtitle": "Concurrency, repeated work and state between requests",
+      "category": "Assets & runtime",
+      "order": 3,
+      "aliases": [
+        "async",
+        "asyncio",
+        "await",
+        "cache",
+        "caching",
+        "redis",
+        "memcached",
+        "cache_page",
+        "sessions",
+        "session",
+        "session_engine",
+        "background tasks",
+        "celery",
+        "worker",
+        "concurrency",
+        "sync_to_async",
+        "asgi"
+      ],
+      "summary": "Where async views help, how the cache framework removes repeated work, and how sessions keep state without turning the database into a bottleneck.",
+      "quick_answer": "Use async views for I/O-bound work, but keep the ORM calls in sync threads unless you are using Django's async ORM APIs. Use `cache.get`/`cache.set` for expensive results, `cache_page` for whole responses, and a shared cache (Redis) when you run more than one process. Sessions are for small per-user state, not for domain data.",
+      "sections": [
+        {
+          "id": "async-views",
+          "title": "Async views: where they help",
+          "body": "An `async def` view runs on the event loop. It helps when the view awaits network I/O: an HTTP call, an email API, a slow third-party service. It does not make CPU work faster, and a blocking ORM call inside async code blocks the loop.\n\nDjango supports async views, async middleware and async ORM methods. For ordinary CRUD pages, a sync view is simpler and often faster. Measure before rewriting.",
+          "code": "import httpx\nfrom django.http import JsonResponse\n\nasync def weather(request, city):\n    async with httpx.AsyncClient(timeout=5) as client:\n        response = await client.get(f\"https://api.example.com/weather/{city}\")\n    return JsonResponse(response.json())",
+          "language": "python",
+          "note": "Do not call the sync ORM directly inside an async view. Use the async ORM API or `sync_to_async` with care."
+        },
+        {
+          "id": "cache",
+          "title": "The cache framework",
+          "body": "The cache stores a Python value under a key with a timeout. It is not a database and it can disappear at any time. Treat a cache miss as normal and never store the only copy of important data there.\n\nFor local development, `LocMemCache` is fine. For production with multiple workers, use Redis or Memcached so every process sees the same cache. `cache_page` caches a whole response; per-user pages need `vary_on_cookie` or a user-specific key.",
+          "code": "# settings.py\nCACHES = {\n    \"default\": {\n        \"BACKEND\": \"django.core.cache.backends.redis.RedisCache\",\n        \"LOCATION\": os.environ.get(\"REDIS_URL\", \"redis://127.0.0.1:6379/1\"),\n    }\n}\n\n# view\nfrom django.core.cache import cache\n\ndef dashboard(request):\n    key = f\"dashboard:{request.user.pk}\"\n    data = cache.get(key)\n    if data is None:\n        data = build_dashboard(request.user)\n        cache.set(key, data, timeout=60)\n    return render(request, \"dashboard.html\", data)\n\n# whole-page cache for an anonymous page\nfrom django.views.decorators.cache import cache_page\n\n@cache_page(60 * 5)\ndef pricing(request):\n    ...",
+          "language": "python",
+          "note": "Invalidate by key prefix, version or a short timeout. A cache with no invalidation plan is a source of stale bugs."
+        },
+        {
+          "id": "sessions",
+          "title": "Sessions",
+          "body": "Sessions store small per-user state between requests: a cart id, a banner dismissal, a preferred filter. The default backend stores session data in the database; cookie and cache backends are alternatives.\n\nDo not put large objects or sensitive domain data in the session. Store an id and fetch the row with proper authorization. Rotate the session key on login (`login()` does this) to prevent session fixation.",
+          "code": "# settings.py\nSESSION_ENGINE = \"django.contrib.sessions.backends.cached_db\"\nSESSION_COOKIE_AGE = 60 * 60 * 24 * 14\nSESSION_COOKIE_SECURE = True\nSESSION_COOKIE_HTTPONLY = True\nSESSION_COOKIE_SAMESITE = \"Lax\"\n\n# view\nrequest.session[\"cart_id\"] = cart.pk\ncart_id = request.session.get(\"cart_id\")\nrequest.session.pop(\"cart_id\", None)",
+          "language": "python"
+        },
+        {
+          "id": "background-work",
+          "title": "Background work is not a view",
+          "body": "A request should not wait for a slow email, PDF render or third-party sync. Put that work in a queue: Celery, RQ, Dramatiq, or a hosted job system. The view writes the intent and returns quickly.\n\nUse `transaction.on_commit()` to enqueue only after the database transaction commits. Otherwise a worker can pick up a job for a row that does not exist yet.",
+          "code": "from django.db import transaction\n\ndef create_order(request):\n    with transaction.atomic():\n        order = Order.objects.create(customer=request.user)\n        transaction.on_commit(lambda: send_order_confirmation.delay(order.pk))\n    return redirect(order)",
+          "language": "python",
+          "note": "A queue makes work retryable and observable. A thread started inside the request is neither."
+        }
+      ],
+      "pitfalls": [
+        "Using async for CPU-bound work and expecting a speedup.",
+        "Calling blocking ORM code inside an async view and blocking the event loop.",
+        "Using `LocMemCache` across multiple production workers; each worker gets its own cache.",
+        "Caching per-user pages without varying by user or cookie.",
+        "Putting large objects in the session cookie.",
+        "Sending email or generating PDFs inside the request cycle."
+      ],
+      "checklist": [
+        "Async is used for I/O, not CPU.",
+        "The production cache is shared across processes.",
+        "Cache keys and invalidation are explicit.",
+        "Sessions hold ids, not domain objects.",
+        "Slow side effects run in a queue after commit."
+      ],
+      "related": [
+        "views",
+        "middleware",
+        "deploy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/cache/"
+    },
+    {
+      "slug": "signals",
+      "title": "Signals",
+      "subtitle": "Decoupling with events, and the traps that follow",
+      "category": "Assets & runtime",
+      "order": 4,
+      "aliases": [
+        "signals",
+        "post_save",
+        "pre_save",
+        "post_delete",
+        "m2m_changed",
+        "receiver",
+        "dispatch_uid",
+        "transaction.on_commit",
+        "events",
+        "decoupling",
+        "signal handler",
+        "apps.ready"
+      ],
+      "summary": "Signals let one part of the app react to something else without importing it. They are useful for cross-cutting notifications and easy to turn into invisible, duplicated side effects.",
+      "quick_answer": "Connect handlers in `AppConfig.ready()`, use `dispatch_uid` to avoid duplicates, and defer side effects with `transaction.on_commit()`. If the behaviour is core to the model, call an explicit service instead of hiding it in a signal.",
+      "sections": [
+        {
+          "id": "built-in-signals",
+          "title": "The built-in signals",
+          "body": "`pre_save` and `post_save` fire around `Model.save()`. `pre_delete` and `post_delete` fire around delete. `m2m_changed` fires when a many-to-many relation changes. `request_started`, `request_finished` and `got_request_exception` cover the request cycle.\n\n`post_save` receives `created`, which is the difference between an insert and an update. Check it instead of guessing.",
+          "code": "from django.db.models.signals import post_save\nfrom django.dispatch import receiver\n\nfrom .models import User, Profile\n\n@receiver(post_save, sender=User, dispatch_uid=\"create_profile_for_new_user\")\ndef create_profile(sender, instance, created, **kwargs):\n    if created:\n        Profile.objects.create(user=instance)",
+          "language": "python"
+        },
+        {
+          "id": "connect-safely",
+          "title": "Connect safely",
+          "body": "Import the module that connects signals from `AppConfig.ready()`. Importing it from `models.py` can run twice, and connecting the same receiver twice fires it twice.\n\nUse `dispatch_uid` as a stable identity. Use `transaction.on_commit()` for external side effects so the email, webhook or job only happens after the row is actually committed.",
+          "code": "# notifications/apps.py\nfrom django.apps import AppConfig\n\nclass NotificationsConfig(AppConfig):\n    default_auto_field = \"django.db.models.BigAutoField\"\n    name = \"notifications\"\n\n    def ready(self):\n        from . import signals  # noqa: F401\n\n# notifications/signals.py\nfrom django.db import transaction\nfrom django.db.models.signals import post_save\nfrom django.dispatch import receiver\n\n@receiver(post_save, sender=Order, dispatch_uid=\"notify_paid_order\")\ndef notify_paid_order(sender, instance, created, **kwargs):\n    if instance.status == \"paid\":\n        transaction.on_commit(lambda: send_receipt.delay(instance.pk))",
+          "language": "python",
+          "note": "Set `default_auto_field` in the AppConfig before Django 7.0; the default changes over time."
+        },
+        {
+          "id": "why-signals-bite",
+          "title": "Why signals bite",
+          "body": "Signals are invisible from the call site. A developer calls `order.save()` and does not see that three other modules will send email, update analytics and call a webhook. Tests become surprising, ordering is implicit, and a failing receiver can break the save path.\n\nUse a signal when the sender genuinely should not know the receiver, and the reaction is optional or cross-cutting. Use an explicit service call when the reaction is part of the business rule. Document every signal in the app's README.",
+          "code": "# Explicit service: easier to read, test and reorder\nclass OrderService:\n    @staticmethod\n    def mark_paid(order):\n        order.status = \"paid\"\n        order.save(update_fields=[\"status\"])\n        send_receipt.delay(order.pk)\n        analytics.track(\"order_paid\", order_id=order.pk)\n        return order",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Connecting the same receiver twice and sending duplicate emails.",
+        "Doing external I/O in a signal before the transaction commits.",
+        "Raising an exception in a receiver and breaking the original save.",
+        "Hiding core business rules in signals where nobody can find them.",
+        "Importing the signal module from `models.py` instead of `AppConfig.ready()`."
+      ],
+      "checklist": [
+        "Handlers are connected once, from `ready()`, with `dispatch_uid`.",
+        "External side effects use `transaction.on_commit()`.",
+        "The signal's purpose is documented.",
+        "Core business rules remain explicit service calls."
+      ],
+      "related": [
+        "models",
+        "orm",
+        "async-cache"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/signals/"
+    }
+  ]
+}

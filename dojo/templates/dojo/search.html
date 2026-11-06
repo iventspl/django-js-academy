@@ -35,6 +35,27 @@
 
     {% if total_count %}
       <div class="search-groups">
+        {% if counts.handbook %}
+          <section class="search-group" aria-labelledby="search-handbook-title">
+            <div class="search-group-head">
+              <h2 id="search-handbook-title">Django handbook</h2>
+              <span>{{ counts.handbook }}</span>
+            </div>
+            <div class="search-result-list">
+              {% for hit in handbook_matches %}
+                <a class="search-result" href="{% url 'dojo:handbook_chapter' hit.chapter.slug %}">
+                  <span class="search-result-kind">Handbook</span>
+                  <span class="search-result-body">
+                    <strong>{{ hit.title }}</strong>
+                    <span>{{ hit.chapter.category }} · {{ hit.chapter.level }} · {{ hit.snippet }}</span>
+                  </span>
+                  <span class="search-result-arrow" aria-hidden="true">→</span>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
         {% if counts.topics %}
           <section class="search-group" aria-labelledby="search-topics-title">
             <div class="search-group-head">

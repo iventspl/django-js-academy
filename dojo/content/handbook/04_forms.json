@@ -1,0 +1,190 @@
+{
+  "chapters": [
+    {
+      "slug": "forms",
+      "title": "Forms",
+      "subtitle": "forms.py, ModelForm, validation, widgets, formsets and files",
+      "category": "Forms",
+      "order": 1,
+      "aliases": [
+        "forms",
+        "forms.py",
+        "form",
+        "modelform",
+        "formset",
+        "inlineformset",
+        "validation",
+        "cleaned_data",
+        "is_valid",
+        "clean",
+        "clean_field",
+        "widget",
+        "widgets",
+        "csrf",
+        "csrf_token",
+        "file upload",
+        "request.files",
+        "form errors",
+        "initial",
+        "bound form",
+        "unbound form",
+        "choices",
+        "modelchoicefield",
+        "managementform",
+        "form_valid",
+        "non_field_errors"
+      ],
+      "summary": "The complete forms.py working guide: a plain form end to end, the validation pipeline, ModelForm saves, widgets, formsets, files, and the exact fixes for the errors that stop a beginner.",
+      "quick_answer": "A form is a validation and rendering layer. Define fields in `forms.py`, bind it with `request.POST` and `request.FILES`, call `is_valid()`, then use `cleaned_data`. Use `ModelForm` when the shape matches a model; use a plain `Form` for everything else.",
+      "sections": [
+        {
+          "id": "thirty-second-answer",
+          "title": "The 30-second answer",
+          "body": "A **bound** form has data (`Form(request.POST)`); an **unbound** form does not (`Form()`). `is_valid()` runs validation and returns a boolean. `cleaned_data` exists only after validation succeeds. `form.errors` is a dictionary of lists of messages.\n\nA form does not save anything by itself. You decide what happens after `is_valid()`: send an email, create an object, redirect. `ModelForm.save()` is a convenience, not magic.",
+          "code": "form = ContactForm(request.POST or None)\nif request.method == \"POST\" and form.is_valid():\n    send_email(**form.cleaned_data)\n    return redirect(\"contact-success\")\nreturn render(request, \"contact.html\", {\"form\": form})",
+          "language": "python"
+        },
+        {
+          "id": "plain-form-end-to-end",
+          "title": "A plain Form, end to end",
+          "body": "Start with `forms.Form`, one field per input. Field arguments handle the common rules: `required`, `max_length`, `min_length`, `choices`, `initial`, `help_text`, `label`. Widgets control the HTML, not the validation.\n\nIn the view, use the POST/redirect/GET pattern: validate on POST, redirect on success, and render the bound form with errors on failure.",
+          "code": "# forms.py\nfrom django import forms\n\nclass ContactForm(forms.Form):\n    name = forms.CharField(max_length=80, label=\"Your name\")\n    email = forms.EmailField(label=\"Email address\")\n    topic = forms.ChoiceField(\n        choices=[\n            (\"support\", \"Support\"),\n            (\"billing\", \"Billing\"),\n            (\"other\", \"Something else\"),\n        ]\n    )\n    message = forms.CharField(\n        widget=forms.Textarea(attrs={\"rows\": 6, \"placeholder\": \"How can we help?\"}),\n        min_length=20,\n        max_length=4000,\n    )\n    consent = forms.BooleanField(label=\"I agree to be contacted\")\n\n# views.py\nfrom django.shortcuts import redirect, render\nfrom .forms import ContactForm\n\ndef contact(request):\n    form = ContactForm(request.POST or None)\n    if request.method == \"POST\" and form.is_valid():\n        # cleaned_data is typed and validated\n        send_contact_email(\n            name=form.cleaned_data[\"name\"],\n            email=form.cleaned_data[\"email\"],\n            topic=form.cleaned_data[\"topic\"],\n            message=form.cleaned_data[\"message\"],\n        )\n        return redirect(\"pages:contact_success\")\n    return render(request, \"pages/contact.html\", {\"form\": form})",
+          "language": "python",
+          "note": "`request.POST or None` keeps the form unbound on GET. Passing an empty QueryDict would make it bound and immediately invalid."
+        },
+        {
+          "id": "field-cheatsheet",
+          "title": "Fields and widgets at a glance",
+          "body": "A field validates and converts. A widget renders. Most form work is choosing the right pair.\n\n- `CharField` → `TextInput` (short text)\n- `EmailField` → `EmailInput` (email validation included)\n- `SlugField` → `TextInput` (URL-safe text)\n- `IntegerField`, `DecimalField` → `NumberInput`\n- `BooleanField` → `CheckboxInput`\n- `DateField`, `DateTimeField` → `DateInput`, `DateTimeInput`\n- `ChoiceField` → `Select` or `RadioSelect`\n- `ModelChoiceField` → `Select` populated from a queryset\n- `FileField`, `ImageField` → `FileInput` (needs `request.FILES`)\n\nPass `widget=forms.Textarea(attrs={\"rows\": 8})` when the default widget is wrong. Use `forms.HiddenInput` for values the user should not edit, but never trust a hidden field for authorization.",
+          "code": "class ProfileForm(forms.Form):\n    display_name = forms.CharField(max_length=80)\n    email = forms.EmailField(widget=forms.EmailInput(attrs={\"autocomplete\": \"email\"}))\n    bio = forms.CharField(required=False, widget=forms.Textarea(attrs={\"rows\": 6}))\n    birth_date = forms.DateField(widget=forms.DateInput(attrs={\"type\": \"date\"}))\n    favourite = forms.ChoiceField(\n        choices=[(\"django\", \"Django\"), (\"python\", \"Python\")],\n        widget=forms.RadioSelect,\n    )\n    avatar = forms.ImageField(required=False)",
+          "language": "python",
+          "note": "`ImageField` needs Pillow installed. A `ModelChoiceField` queryset is evaluated when the form is rendered, so keep it small or filter it per user."
+        },
+        {
+          "id": "validation-pipeline",
+          "title": "What is_valid() actually does",
+          "body": "This sequence explains most “why is my error not showing?” questions:\n\n1. For each field, `Field.clean(value)` runs `to_python()`, `validate()` and `run_validators()`.\n2. `Form._clean_fields()` stores successful values in `cleaned_data` and collects `ValidationError`s per field.\n3. `Form.clean()` runs your cross-field checks on the cleaned values.\n4. For a `ModelForm`, `_post_clean()` calls `instance.full_clean(exclude=...)` to apply model validation.\n5. `is_valid()` returns `not self.errors` and caches the result. Calling `is_valid()` twice does not re-run validation.\n\nIf a field fails in step 1, its value is not in `cleaned_data` when `clean()` runs. Guard with `.get()` or let the field error stand.",
+          "code": "# The simplified path Django follows\nfor name, field in self.fields.items():\n    try:\n        value = field.clean(self._raw_value(name))\n        self.cleaned_data[name] = value\n    except ValidationError as error:\n        self.add_error(name, error)\n\nself.cleaned_data = self.clean()  # your cross-field hook\nself._post_clean()               # ModelForm: model.full_clean()",
+          "language": "python",
+          "note": "`add_error(field, error)` removes that field from `cleaned_data`. That is deliberate: invalid data should not look cleaned."
+        },
+        {
+          "id": "custom-validation",
+          "title": "Field validation: clean_<field>, clean and add_error",
+          "body": "Use `clean_<fieldname>()` for one field. It receives the already-converted value and must return the value to keep. Use `clean()` for rules that involve several fields. Use `self.add_error(\"field\", \"message\")` to attach an error to a specific field; `raise ValidationError` inside `clean()` becomes a non-field error.\n\nValidators are reusable functions; `clean_<field>()` is form-specific. Prefer a validator when the same rule protects multiple forms or models.",
+          "code": "from django import forms\nfrom django.core.exceptions import ValidationError\n\ndef validate_no_profanity(value):\n    if \"badword\" in value.lower():\n        raise ValidationError(\"Please keep it civil.\")\n\nclass SignupForm(forms.Form):\n    email = forms.EmailField()\n    password = forms.CharField(widget=forms.PasswordInput)\n    confirm = forms.CharField(widget=forms.PasswordInput, label=\"Repeat password\")\n    username = forms.CharField(validators=[validate_no_profanity])\n\n    def clean_email(self):\n        email = self.cleaned_data[\"email\"].lower()\n        if User.objects.filter(email__iexact=email).exists():\n            raise ValidationError(\"An account with this email already exists.\")\n        return email\n\n    def clean(self):\n        cleaned = super().clean()\n        password = cleaned.get(\"password\")\n        confirm = cleaned.get(\"confirm\")\n        if password and confirm and password != confirm:\n            self.add_error(\"confirm\", \"The passwords do not match.\")\n        return cleaned",
+          "language": "python",
+          "note": "Do not raise `ValidationError` for a field error from `clean()` without a dict; it becomes a non-field error and may not appear next to the input."
+        },
+        {
+          "id": "modelform",
+          "title": "ModelForm: the 80% case",
+          "body": "`ModelForm` reads fields, labels, help text and validators from a model. Declare `fields` explicitly; `__all__` exposes every column, including ones you did not mean to let users edit. Use `exclude` only when the excluded list is short and stable.\n\n`form.save(commit=False)` gives you an unsaved instance so you can set fields the form should not control (author, tenant, timestamps). Call `form.save_m2m()` if the model has many-to-many fields and you used `commit=False`.",
+          "code": "from django import forms\nfrom .models import Post\n\nclass PostForm(forms.ModelForm):\n    class Meta:\n        model = Post\n        fields = [\"title\", \"slug\", \"body\", \"status\", \"tags\"]\n        widgets = {\n            \"body\": forms.Textarea(attrs={\"rows\": 14}),\n            \"status\": forms.Select(attrs={\"class\": \"select\"}),\n        }\n        labels = {\"body\": \"Article body\"}\n        help_texts = {\"slug\": \"Used in the URL. Lowercase, hyphens only.\"}\n\n    def clean_slug(self):\n        slug = self.cleaned_data[\"slug\"]\n        if slug in {\"admin\", \"new\", \"edit\"}:\n            raise forms.ValidationError(\"That slug is reserved.\")\n        return slug\n\n# view\ndef create_post(request):\n    form = PostForm(request.POST or None)\n    if request.method == \"POST\" and form.is_valid():\n        post = form.save(commit=False)\n        post.author = request.user\n        post.save()\n        form.save_m2m()\n        return redirect(\"blog:detail\", slug=post.slug)\n    return render(request, \"blog/post_form.html\", {\"form\": form})",
+          "language": "python",
+          "note": "ModelForm validation is not a substitute for database constraints. It runs in Python and can be bypassed by bulk operations."
+        },
+        {
+          "id": "initial-and-dynamic-fields",
+          "title": "Initial data, limited choices and disabled fields",
+          "body": "`initial` prefills an unbound form. `instance` binds a `ModelForm` to an existing row for editing. They are different: use `initial` for a new object with suggested values, and `instance` when the row already exists.\n\nTo limit a choice field to the current user, set the queryset in `__init__`. To make a field visible but not editable, set `disabled = True`; Django ignores submitted changes and uses the initial value. For a field that should not appear at all, remove it from `fields` or from `self.fields`.\n\nDynamic fields are fine, but add them before validation runs and document why they exist.",
+          "code": "class BookingForm(forms.ModelForm):\n    class Meta:\n        model = Booking\n        fields = [\"room\", \"starts_at\", \"guests\", \"notes\"]\n\n    def __init__(self, *args, user=None, **kwargs):\n        super().__init__(*args, **kwargs)\n        self.fields[\"room\"].queryset = Room.objects.filter(\n            owner=user, is_active=True\n        )\n        if self.instance.pk:\n            self.fields[\"starts_at\"].disabled = True\n\n# new object with suggested values\nform = BookingForm(initial={\"guests\": 2}, user=request.user)\n\n# edit an existing object\nform = BookingForm(instance=booking, user=request.user)\n\n# add a field that is not on the model\nself.fields[\"coupon\"] = forms.CharField(required=False)",
+          "language": "python",
+          "note": "If you filter a queryset by user, the view must pass the user explicitly. A form has no reliable access to the request unless you give it one."
+        },
+        {
+          "id": "widgets-and-rendering",
+          "title": "Widgets, CSS classes and manual rendering",
+          "body": "A field validates; a widget renders. Use `forms.TextInput`, `Textarea`, `Select`, `CheckboxInput`, `RadioSelect`, `FileInput`, `DateInput` and so on. Pass `attrs` for class, placeholder, autocomplete and rows.\n\nFor a whole form, set classes in `__init__` so you do not repeat them on every field. Render fields manually when the design needs labels above inputs, help text and errors in specific places. `{{ form.as_p }}` is for prototypes.",
+          "code": "class SignupForm(forms.Form):\n    email = forms.EmailField(\n        widget=forms.EmailInput(attrs={\"autocomplete\": \"email\"})\n    )\n\n    def __init__(self, *args, **kwargs):\n        super().__init__(*args, **kwargs)\n        for field in self.fields.values():\n            field.widget.attrs.setdefault(\"class\", \"input\")\n\n# template\n<form method=\"post\" novalidate>\n  {% csrf_token %}\n  {{ form.non_field_errors }}\n  {% for field in form %}\n    <div class=\"field {% if field.errors %}has-error{% endif %}\">\n      {{ field.label_tag }}\n      {{ field }}\n      {% for error in field.errors %}<p class=\"error\">{{ error }}</p>{% endfor %}\n      {% if field.help_text %}<p class=\"help\">{{ field.help_text }}</p>{% endif %}\n    </div>\n  {% endfor %}\n  <button type=\"submit\">Create account</button>\n</form>",
+          "language": "python"
+        },
+        {
+          "id": "formsets",
+          "title": "Formsets: many forms on one page",
+          "body": "A formset is a collection of the same form. `formset_factory` is for plain forms; `modelformset_factory` is for multiple model rows; `inlineformset_factory` is for children of one parent (order → items).\n\nThe management form is hidden bookkeeping. Render `{{ formset.management_form }}` inside the `<form>` or Django cannot tell how many forms were submitted. Set `extra`, `can_delete=True` and `max_num` deliberately.",
+          "code": "from django.forms import inlineformset_factory\nfrom django.shortcuts import get_object_or_404, redirect, render\n\nfrom .models import Order, OrderItem\n\nOrderItemFormSet = inlineformset_factory(\n    Order,\n    OrderItem,\n    fields=[\"product\", \"quantity\"],\n    extra=1,\n    can_delete=True,\n    min_num=1,\n    validate_min=True,\n)\n\n# view\ndef edit_order(request, pk):\n    order = get_object_or_404(Order, pk=pk)\n    formset = OrderItemFormSet(request.POST or None, instance=order)\n    if request.method == \"POST\" and formset.is_valid():\n        formset.save()\n        return redirect(\"orders:detail\", pk=order.pk)\n    return render(request, \"orders/edit.html\", {\"order\": order, \"formset\": formset})\n\n# template\n<form method=\"post\">\n  {% csrf_token %}\n  {{ formset.management_form }}\n  {% for form in formset %}\n    {{ form.as_p }}\n    {% if form.instance.pk %}{{ form.DELETE }}{% endif %}\n  {% endfor %}\n  <button type=\"submit\">Save items</button>\n</form>",
+          "language": "python",
+          "note": "“ManagementForm data is missing or has been tampered with” almost always means `{{ formset.management_form }}` is missing, outside the form, or the formset changed between GET and POST."
+        },
+        {
+          "id": "file-uploads",
+          "title": "Files: request.FILES and validation",
+          "body": "File inputs require `enctype=\"multipart/form-data\"`. Django puts uploaded files in `request.FILES`, not `request.POST`. A `FileField` in a bound form needs both: `UploadForm(request.POST, request.FILES)`.\n\nValidate size, content type and extension before saving. Client-side checks are UX, not security. Store files outside the source tree, give them non-guessable names, and serve private files through a permission-checked view, not `MEDIA_URL`.",
+          "code": "class UploadForm(forms.Form):\n    file = forms.FileField()\n\n    def clean_file(self):\n        uploaded = self.cleaned_data[\"file\"]\n        if uploaded.size > 5 * 1024 * 1024:\n            raise forms.ValidationError(\"Files must be 5 MB or smaller.\")\n        if uploaded.content_type not in {\"application/pdf\", \"image/png\", \"image/jpeg\"}:\n            raise forms.ValidationError(\"Use a PDF, PNG or JPEG.\")\n        return uploaded\n\n# view\nform = UploadForm(request.POST or None, request.FILES or None)\nif request.method == \"POST\" and form.is_valid():\n    uploaded = form.cleaned_data[\"file\"]\n    Document.objects.create(file=uploaded, owner=request.user)",
+          "language": "python"
+        },
+        {
+          "id": "debug-checklist",
+          "title": "If the form is not working",
+          "body": "Work through this list before changing random code:\n\n- Is the form **bound**? `Form()` on POST will always be invalid or empty.\n- Is `request.FILES` passed for a file upload?\n- Is the submit using `method=\"post\"` and does the form include `{% csrf_token %}`?\n- Are you rendering `field.errors` and `form.non_field_errors` anywhere?\n- Does the field name in HTML match the field name in `forms.py`?\n- Does `clean_<field>()` return a value? Returning `None` removes it from `cleaned_data`.\n- Is a `ModelForm` missing a required model field that is not in `fields`?\n- Are you redirecting after success, or re-rendering with the same POST data?",
+          "code": "def contact(request):\n    form = ContactForm(request.POST or None)\n    if request.method == \"POST\":\n        print(form.is_bound, form.errors.as_data())  # temporary debugging\n        if form.is_valid():\n            return redirect(\"success\")\n    return render(request, \"contact.html\", {\"form\": form})",
+          "language": "python",
+          "note": "Remove debugging prints before committing; use Django's logging or a debugger instead."
+        }
+      ],
+      "pitfalls": [
+        "Passing `request.POST` but forgetting `request.FILES` for an upload form.",
+        "Using `Form()` instead of `Form(request.POST)` on POST and wondering why `cleaned_data` is empty.",
+        "Putting `{% csrf_token %}` outside the `<form>` or forgetting it entirely.",
+        "Using `fields = \"__all__\"` on a ModelForm and letting users edit `is_staff` or `author`.",
+        "Forgetting to call `save_m2m()` after `save(commit=False)`.",
+        "Raising a plain `ValidationError` in `clean()` for a field-specific problem.",
+        "Rendering a formset without `{{ formset.management_form }}`."
+      ],
+      "checklist": [
+        "The form is bound with `request.POST` (and `request.FILES` when needed).",
+        "`is_valid()` is checked before `cleaned_data` is read.",
+        "Every field has a visible error path in the template.",
+        "`{% csrf_token %}` is inside every POST form.",
+        "ModelForm `fields` is explicit and minimal.",
+        "Formsets render the management form.",
+        "Uploads validate size and type server-side."
+      ],
+      "related": [
+        "models",
+        "views",
+        "templates",
+        "errors"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/forms/",
+      "errors": [
+        {
+          "error": "KeyError: 'fieldname' in cleaned_data",
+          "cause": "The field failed validation, so it was removed from cleaned_data. Reading it before checking is_valid() or without a guard raises KeyError.",
+          "fix": "Check form.is_valid() first and use cleaned_data.get(\"fieldname\"). Render field.errors so the real validation message is visible."
+        },
+        {
+          "error": "This field is required.",
+          "cause": "The browser sent an empty value, the input name does not match the form field, or the field is not inside the submitted form.",
+          "fix": "Inspect the rendered HTML name attribute, confirm the input is inside the form, and check whether the value is actually sent in the POST body."
+        },
+        {
+          "error": "CSRF verification failed. Request aborted.",
+          "cause": "The POST form has no {% csrf_token %}, the token is outside the form, or the request is cross-origin without a trusted origin.",
+          "fix": "Add {% csrf_token %} inside the form. For a separate frontend, send the X-CSRFToken header and configure CSRF_TRUSTED_ORIGINS."
+        },
+        {
+          "error": "ManagementForm data is missing or has been tampered with",
+          "cause": "The formset management form was not rendered, was rendered outside the form, or the number of forms changed without updating it.",
+          "fix": "Render {{ formset.management_form }} inside the form. When adding forms with JavaScript, update TOTAL_FORMS and INITIAL_FORMS."
+        },
+        {
+          "error": "Select a valid choice. That choice is not one of the available choices.",
+          "cause": "The submitted value is not in the field's choices, often because the queryset changed or the value is a string instead of a primary key.",
+          "fix": "Check the ChoiceField/ModelChoiceField queryset, the option value, and whether the related object still exists."
+        },
+        {
+          "error": "Cannot assign ...: instance is not saved / save() prohibited to prevent data loss",
+          "cause": "A ModelForm with commit=False was saved before required fields were set, or an unsaved related object was assigned.",
+          "fix": "Set the missing fields before save(), save the related object first, or use commit=True when no post-processing is needed."
+        },
+        {
+          "error": "The view didn't return an HttpResponse object",
+          "cause": "The POST branch called is_valid() and then returned None on the invalid path.",
+          "fix": "Return render(...) with the bound form after the POST branch, so invalid submissions get a response with errors."
+        }
+      ]
+    }
+  ]
+}

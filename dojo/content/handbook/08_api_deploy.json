@@ -1,0 +1,184 @@
+{
+  "chapters": [
+    {
+      "slug": "drf",
+      "title": "Django REST Framework",
+      "subtitle": "Serializers, viewsets, permissions and pagination",
+      "category": "API & deploy",
+      "order": 1,
+      "aliases": [
+        "drf",
+        "rest framework",
+        "api",
+        "serializer",
+        "modelserializer",
+        "viewset",
+        "modelviewset",
+        "router",
+        "apiview",
+        "permissions",
+        "pagination",
+        "authentication",
+        "token",
+        "jwt",
+        "throttling",
+        "json api",
+        "endpoint"
+      ],
+      "summary": "DRF is the standard toolkit for Django APIs. The core is small: serializers convert objects to JSON and back, viewsets group CRUD actions, routers generate URLs, and permissions guard each action.",
+      "quick_answer": "Install `djangorestframework`, add it to `INSTALLED_APPS`, define a `ModelSerializer` with explicit fields, expose it through a `ModelViewSet` and a router, and scope `get_queryset()` to the authenticated user. Never rely on the client to send only its own rows.",
+      "sections": [
+        {
+          "id": "install",
+          "title": "Install and wire",
+          "body": "DRF is a normal Django app. Add it to `INSTALLED_APPS`, include router URLs under `/api/`, and configure authentication and permissions globally or per view.\n\nA global default of `IsAuthenticated` is safer than an open API with a few protected endpoints. Public endpoints should opt out explicitly.",
+          "code": "pip install djangorestframework\n\nINSTALLED_APPS = [\n    # ...\n    \"rest_framework\",\n]\n\nREST_FRAMEWORK = {\n    \"DEFAULT_AUTHENTICATION_CLASSES\": [\n        \"rest_framework.authentication.SessionAuthentication\",\n    ],\n    \"DEFAULT_PERMISSION_CLASSES\": [\n        \"rest_framework.permissions.IsAuthenticated\",\n    ],\n    \"DEFAULT_PAGINATION_CLASS\": \"rest_framework.pagination.PageNumberPagination\",\n    \"PAGE_SIZE\": 20,\n}",
+          "language": "python"
+        },
+        {
+          "id": "serializers",
+          "title": "Serializers are the contract",
+          "body": "A serializer defines which fields enter and leave the API. `ModelSerializer` infers fields from the model, but you should list them explicitly. `read_only_fields` protects server-controlled values; `extra_kwargs` sets validation.\n\nValidation belongs in the serializer for API input. Do not let a client set `owner`, `tenant`, `is_staff` or `created_at` just because the model has those columns.",
+          "code": "from rest_framework import serializers\nfrom .models import Post\n\nclass PostSerializer(serializers.ModelSerializer):\n    author_email = serializers.EmailField(source=\"author.email\", read_only=True)\n\n    class Meta:\n        model = Post\n        fields = [\"id\", \"title\", \"slug\", \"body\", \"status\", \"author_email\", \"created_at\"]\n        read_only_fields = [\"id\", \"author_email\", \"created_at\"]\n\n    def validate_title(self, value):\n        if len(value.strip()) < 3:\n            raise serializers.ValidationError(\"Use at least three characters.\")\n        return value.strip()",
+          "language": "python"
+        },
+        {
+          "id": "viewsets",
+          "title": "ViewSets and routers",
+          "body": "A `ModelViewSet` gives list, create, retrieve, update, partial update and destroy. A router generates the URL patterns. Override `get_queryset()` to scope data; override `perform_create()` to set fields the client must not control.\n\nUse `APIView` or generic API views when the endpoint is not a simple CRUD shape. A viewset is a convenience, not a requirement.",
+          "code": "from rest_framework import viewsets\nfrom rest_framework.permissions import IsAuthenticated\nfrom .models import Post\nfrom .serializers import PostSerializer\n\nclass PostViewSet(viewsets.ModelViewSet):\n    serializer_class = PostSerializer\n    permission_classes = [IsAuthenticated]\n\n    def get_queryset(self):\n        return (\n            Post.objects.filter(author=self.request.user)\n            .select_related(\"author\")\n            .order_by(\"-created_at\")\n        )\n\n    def perform_create(self, serializer):\n        serializer.save(author=self.request.user)\n\n# urls.py\nfrom rest_framework.routers import DefaultRouter\nfrom .views import PostViewSet\n\nrouter = DefaultRouter()\nrouter.register(\"posts\", PostViewSet, basename=\"post\")\nurlpatterns = router.urls",
+          "language": "python"
+        },
+        {
+          "id": "permissions-and-scoping",
+          "title": "Permissions and scoping",
+          "body": "Authentication identifies the caller; permission classes decide whether the call is allowed; `get_queryset()` decides which rows exist for that caller. You need all three.\n\nA common leak is a correct `IsAuthenticated` permission with an unscoped queryset, letting one user read another user's rows. Add a test that proves user B gets a 404 for user A's object.",
+          "code": "from rest_framework.permissions import BasePermission, SAFE_METHODS\n\nclass IsOwnerOrReadOnly(BasePermission):\n    def has_object_permission(self, request, view, obj):\n        if request.method in SAFE_METHODS:\n            return True\n        return obj.author_id == request.user.id\n\nclass PostViewSet(viewsets.ModelViewSet):\n    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]\n\n    def get_queryset(self):\n        return Post.objects.filter(author=self.request.user)",
+          "language": "python",
+          "note": "Object permissions run after `get_object()`. If the queryset is unscoped, the object can still be fetched before the permission check."
+        },
+        {
+          "id": "pagination-and-versioning",
+          "title": "Pagination, filtering and versioning",
+          "body": "Paginate lists from day one; an unbounded list is a denial-of-service waiting for traffic. DRF's page-number pagination is fine for admin-style lists; cursor pagination is better for feeds and large tables because it does not drift when rows are inserted.\n\nAdd filtering explicitly with `django-filter` or a small `get_queryset()` parser. Version the API in the URL from the start (`/api/v1/`) so a breaking change does not break every client at once.",
+          "code": "from rest_framework.pagination import CursorPagination\n\nclass PostCursorPagination(CursorPagination):\n    page_size = 20\n    ordering = \"-created_at\"\n\nclass PostViewSet(viewsets.ModelViewSet):\n    pagination_class = PostCursorPagination\n\n# urls.py\nurlpatterns = [\n    path(\"api/v1/\", include(router.urls)),\n]",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Using `fields = \"__all__\"` and letting clients write server-controlled fields.",
+        "An authenticated viewset with an unscoped queryset.",
+        "Returning an unpaginated list of every row.",
+        "Putting business logic in the serializer's `create()` instead of a service.",
+        "Changing a response shape without versioning the API."
+      ],
+      "checklist": [
+        "Authentication and permission defaults are explicit.",
+        "`get_queryset()` is scoped to the caller.",
+        "Serializers list fields and mark server-controlled ones read-only.",
+        "Lists are paginated.",
+        "The API is versioned.",
+        "A cross-user access test exists."
+      ],
+      "related": [
+        "views",
+        "models",
+        "auth",
+        "security"
+      ],
+      "official": "https://www.django-rest-framework.org/"
+    },
+    {
+      "slug": "deploy",
+      "title": "Deployment",
+      "subtitle": "From runserver to a boring, observable release",
+      "category": "API & deploy",
+      "order": 2,
+      "aliases": [
+        "deploy",
+        "deployment",
+        "production",
+        "gunicorn",
+        "uvicorn",
+        "wsgi",
+        "asgi",
+        "whitenoise",
+        "nginx",
+        "docker",
+        "static",
+        "migrations",
+        "health check",
+        "logging",
+        "sentry",
+        "environment",
+        "release",
+        "scaling",
+        "workers",
+        "check --deploy"
+      ],
+      "summary": "A production Django deployment is mostly configuration: a real server, a real database, static files, migrations, secrets, health checks and logs. The framework is the easy part.",
+      "quick_answer": "Run Django behind Gunicorn or Uvicorn, set `DEBUG=False`, use a production database, run `migrate` and `collectstatic` in the release, serve static files through WhiteNoise or a CDN, and add health checks and error tracking. Never expose `runserver`.",
+      "sections": [
+        {
+          "id": "the-artifact",
+          "title": "The release artifact",
+          "body": "Pin dependencies in `requirements.txt` or a lockfile. Build one artifact (container image or virtualenv) and promote the same artifact through staging and production. Do not build separately on each host; drift is how “works on staging” happens.\n\nThe release command should be idempotent: install, migrate, collect static, check, restart. If it fails halfway, re-running it should be safe.",
+          "code": "# Dockerfile sketch\nFROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nRUN python manage.py collectstatic --noinput\nCMD [\"gunicorn\", \"config.wsgi:application\", \"--bind\", \"0.0.0.0:8000\", \"--workers\", \"3\", \"--timeout\", \"30\"]",
+          "language": "dockerfile"
+        },
+        {
+          "id": "server",
+          "title": "WSGI or ASGI",
+          "body": "`wsgi.py` is the synchronous entry point; Gunicorn is the common server. `asgi.py` supports async views and WebSockets; Uvicorn or Daphne is the server. Most CRUD sites are fine with WSGI.\n\nWorkers are processes. Start with `2 × CPU + 1` as a rough Gunicorn default, then measure. More workers increase memory and database connections; fewer workers queue requests. Set a request timeout so a stuck request does not hold a worker forever.",
+          "code": "gunicorn config.wsgi:application \\\n  --bind 0.0.0.0:8000 \\\n  --workers 3 \\\n  --timeout 30 \\\n  --access-logfile - \\\n  --error-logfile -\n\n# ASGI\nuvicorn config.asgi:application --host 0.0.0.0 --port 8000",
+          "language": "bash"
+        },
+        {
+          "id": "static-and-database",
+          "title": "Static files and the database",
+          "body": "Run `collectstatic` during the build or release, then serve `STATIC_ROOT` with WhiteNoise (simple) or Nginx/CDN (faster). User media belongs in object storage, not on the app server's disk.\n\nUse a managed PostgreSQL for multi-user production. Set `CONN_MAX_AGE` for persistent connections, but keep the total below the database's connection limit across all workers. Run migrations as a separate release step, not from every web worker at boot.",
+          "code": "# settings.py — WhiteNoise\nMIDDLEWARE = [\n    \"django.middleware.security.SecurityMiddleware\",\n    \"whitenoise.middleware.WhiteNoiseMiddleware\",\n    # ...\n]\nSTORAGES = {\n    \"default\": {\"BACKEND\": \"django.core.files.storage.FileSystemStorage\"},\n    \"staticfiles\": {\n        \"BACKEND\": \"whitenoise.storage.CompressedManifestStaticFilesStorage\",\n    },\n}\n\n# PostgreSQL with dj-database-url\nDATABASES = {\"default\": dj_database_url.config(conn_max_age=600, conn_health_checks=True)}",
+          "language": "python"
+        },
+        {
+          "id": "health-and-logs",
+          "title": "Health checks and logs",
+          "body": "A load balancer needs a cheap endpoint that proves the process is alive. A deeper check can prove the database is reachable, but do not make it expensive or expose internals publicly.\n\nSend logs to stdout in production and let the platform collect them. Log request IDs, status codes, durations and exceptions. Add error tracking (Sentry or similar) with `DEBUG=False`; otherwise a 500 is invisible until a user reports it.",
+          "code": "from django.db import connection\nfrom django.http import JsonResponse\n\ndef health(request):\n    return JsonResponse({\"status\": \"ok\"})\n\ndef ready(request):\n    with connection.cursor() as cursor:\n        cursor.execute(\"SELECT 1\")\n    return JsonResponse({\"status\": \"ready\"})\n\nLOGGING = {\n    \"version\": 1,\n    \"disable_existing_loggers\": False,\n    \"handlers\": {\"console\": {\"class\": \"logging.StreamHandler\"}},\n    \"root\": {\"handlers\": [\"console\"], \"level\": \"INFO\"},\n}",
+          "language": "python"
+        },
+        {
+          "id": "launch-checklist",
+          "title": "The launch checklist",
+          "body": "Before the first real user:\n\n- `DEBUG=False` and a real `SECRET_KEY`.\n- `ALLOWED_HOSTS` lists the exact hostnames.\n- HTTPS redirect, secure cookies and HSTS are on.\n- `migrate` and `collectstatic` run in the release.\n- Static files are served by WhiteNoise, Nginx or a CDN.\n- Uploads use object storage or a shared volume.\n- Health and readiness endpoints exist.\n- Logs and error tracking are connected.\n- Database backups are scheduled and restored at least once in a drill.\n- `python manage.py check --deploy` passes."
+        }
+      ],
+      "pitfalls": [
+        "Running `runserver` in production.",
+        "Running `migrate` from every web worker at boot and racing other workers.",
+        "Serving static files with Django instead of WhiteNoise or a web server.",
+        "Using SQLite for a multi-user production site.",
+        "Storing uploads on local disk behind a load balancer.",
+        "Having no health check, so a dead process keeps receiving traffic.",
+        "Skipping backups until the day the database is lost."
+      ],
+      "checklist": [
+        "`check --deploy` passes.",
+        "Release command is idempotent.",
+        "Migrations run once, before new workers take traffic.",
+        "Static files are collected and served efficiently.",
+        "Uploads are on shared/object storage.",
+        "Health, readiness, logs and error tracking are live.",
+        "A restore from backup has been tested."
+      ],
+      "related": [
+        "settings",
+        "static-media",
+        "security",
+        "migrations",
+        "commands"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/howto/deployment/"
+    }
+  ]
+}

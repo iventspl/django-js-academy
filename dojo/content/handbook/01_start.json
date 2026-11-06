@@ -1,0 +1,253 @@
+{
+  "chapters": [
+    {
+      "slug": "start",
+      "title": "Start a project",
+      "subtitle": "From an empty folder to a page you can open",
+      "category": "Start here",
+      "order": 1,
+      "aliases": [
+        "start",
+        "startproject",
+        "startapp",
+        "new project",
+        "first project",
+        "project layout",
+        "manage.py",
+        "runserver",
+        "django-admin",
+        "folder structure"
+      ],
+      "summary": "The smallest reliable path from an empty folder to a Django page: a project, one app, one URL, one view and one template.",
+      "quick_answer": "Run `django-admin startproject config .`, create an app with `python manage.py startapp core`, add `\"core\"` to `INSTALLED_APPS`, point a URL at a view, and render a template. Everything else is elaboration on those five moves.",
+      "sections": [
+        {
+          "id": "project-vs-app",
+          "title": "A project is the site; an app is a feature",
+          "body": "A **project** owns settings, the root URLconf, deployment and the database connection. An **app** is a reusable bundle of models, views, templates and migrations that does one job: `accounts`, `blog`, `billing`.\n\nYou can build a whole site in one app, but keep the boundary honest. If a folder could be lifted into another project without dragging the whole site with it, it is probably an app. If it only configures this site, it belongs in the project package."
+        },
+        {
+          "id": "create-it",
+          "title": "Create it from the terminal",
+          "body": "Create and activate a virtual environment first, then install Django. The trailing dot in `startproject config .` is important: it puts `manage.py` in the current folder and the settings in a `config/` package, so you do not get a pointless nested folder.",
+          "code": "python -m venv .venv\n\n# Windows PowerShell\n.\\.venv\\Scripts\\Activate.ps1\n\n# macOS / Linux\nsource .venv/bin/activate\n\npip install \"Django>=5.2,<6.2\"\ndjango-admin startproject config .\npython manage.py startapp core\npython manage.py runserver",
+          "language": "bash",
+          "note": "If `django-admin` is not on PATH, use `python -m django startproject config .` instead."
+        },
+        {
+          "id": "what-each-file-is-for",
+          "title": "What each file is for",
+          "body": "Do not memorise every file. Learn which file owns which decision.\n\n- `manage.py` — the command entry point; always run it from the folder that contains it.\n- `config/settings.py` — installed apps, database, templates, static files, security.\n- `config/urls.py` — the root route table.\n- `core/models.py` — database shape.\n- `core/views.py` — request handling.\n- `core/urls.py` — routes for this feature (create it yourself).\n- `core/templates/core/` — HTML for this feature.\n- `core/migrations/` — generated database history; commit it.",
+          "code": "myproject/\n├── manage.py\n├── config/\n│   ├── settings.py\n│   ├── urls.py\n│   ├── asgi.py\n│   └── wsgi.py\n├── core/\n│   ├── models.py\n│   ├── views.py\n│   ├── urls.py\n│   ├── admin.py\n│   ├── migrations/\n│   └── templates/core/\n└── .venv/",
+          "language": "text"
+        },
+        {
+          "id": "wire-the-first-page",
+          "title": "Wire your first page",
+          "body": "Three files make the request path visible. `config/urls.py` sends the root URL to the app; `core/urls.py` maps the empty path to a view; the view renders a template.",
+          "code": "# config/urls.py\nfrom django.contrib import admin\nfrom django.urls import include, path\n\nurlpatterns = [\n    path(\"admin/\", admin.site.urls),\n    path(\"\", include(\"core.urls\")),\n]\n\n# core/urls.py\nfrom django.urls import path\nfrom . import views\n\napp_name = \"core\"\nurlpatterns = [\n    path(\"\", views.home, name=\"home\"),\n]\n\n# core/views.py\nfrom django.shortcuts import render\n\ndef home(request):\n    return render(request, \"core/home.html\", {\"name\": \"friend\"})\n\n# core/templates/core/home.html\n<h1>Hello, {{ name }}.</h1>",
+          "language": "python",
+          "note": "Add `\"core\"` to `INSTALLED_APPS` before creating templates or models. Django needs the app config to discover them."
+        },
+        {
+          "id": "common-first-run-errors",
+          "title": "If it does not start",
+          "body": "Most first-run failures are one of these:\n\n- `ModuleNotFoundError: No module named 'config'` — you are in the wrong folder, or the project package is not on `sys.path`.\n- `TemplateDoesNotExist` — the app is missing from `INSTALLED_APPS`, or the template lives outside `templates/<app>/`.\n- `DisallowedHost` — add the host to `ALLOWED_HOSTS`; in development `127.0.0.1` and `localhost` are enough.\n- `no such table` — run `python manage.py migrate` before using auth, sessions or admin."
+        }
+      ],
+      "pitfalls": [
+        "Running `manage.py` from the parent folder creates a second database and a confusing `ModuleNotFoundError`.",
+        "Creating a custom user model after the first `migrate` is painful. Decide before you migrate.",
+        "Committing `.venv/`, `db.sqlite3` or `__pycache__/` because `.gitignore` was never added.",
+        "Using the development server (`runserver`) as a production server."
+      ],
+      "checklist": [
+        "Virtual environment active and Django installed.",
+        "Project package and at least one app created.",
+        "App added to `INSTALLED_APPS`.",
+        "Root URLconf includes the app URLconf.",
+        "Home page returns 200 in the browser.",
+        "`python manage.py check` passes."
+      ],
+      "related": [
+        "settings",
+        "urls",
+        "views"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/intro/tutorial01/"
+    },
+    {
+      "slug": "settings",
+      "title": "settings.py",
+      "subtitle": "The file that decides how the whole site behaves",
+      "category": "Start here",
+      "order": 2,
+      "aliases": [
+        "settings",
+        "settings.py",
+        "installed_apps",
+        "databases",
+        "secret_key",
+        "debug",
+        "allowed_hosts",
+        "base_dir",
+        "environment variables",
+        "config",
+        "time_zone",
+        "static_url",
+        "media_root",
+        "auth_user_model",
+        "email",
+        "smtp",
+        "send_mail",
+        "email_backend"
+      ],
+      "summary": "The settings that actually change behaviour, how to keep secrets out of code, and the environment-variable pattern that survives deployment.",
+      "quick_answer": "Keep `SECRET_KEY` and `DEBUG` in environment variables, set `ALLOWED_HOSTS` explicitly, add every feature app to `INSTALLED_APPS`, and treat `BASE_DIR` as the anchor for every path. Local defaults are fine only while `DEBUG=True`.",
+      "sections": [
+        {
+          "id": "the-five-that-matter-first",
+          "title": "The five settings that break a new project",
+          "body": "These five cause most “it worked yesterday” failures:\n\n- `SECRET_KEY` — signing and session security. Never commit a production key.\n- `DEBUG` — must be `False` in production. With `True`, Django shows tracebacks and settings.\n- `ALLOWED_HOSTS` — the hostnames Django will answer for. An empty list only works in debug mode.\n- `INSTALLED_APPS` — controls models, templates, admin and migrations.\n- `DATABASES` — where data lives. SQLite is perfect locally and a bad default for multi-user production.",
+          "code": "import os\nfrom pathlib import Path\n\nBASE_DIR = Path(__file__).resolve().parent.parent\n\nSECRET_KEY = os.environ.get(\"DJANGO_SECRET_KEY\", \"dev-only-change-me\")\nDEBUG = os.environ.get(\"DJANGO_DEBUG\", \"1\").lower() not in {\"0\", \"false\", \"no\"}\nALLOWED_HOSTS = [\n    host.strip()\n    for host in os.environ.get(\"DJANGO_ALLOWED_HOSTS\", \"127.0.0.1,localhost\").split(\",\")\n    if host.strip()\n]\n\nINSTALLED_APPS = [\n    \"django.contrib.admin\",\n    \"django.contrib.auth\",\n    \"django.contrib.contenttypes\",\n    \"django.contrib.sessions\",\n    \"django.contrib.messages\",\n    \"django.contrib.staticfiles\",\n    \"core\",\n]\n\nDATABASES = {\n    \"default\": {\n        \"ENGINE\": \"django.db.backends.sqlite3\",\n        \"NAME\": BASE_DIR / \"db.sqlite3\",\n    }\n}",
+          "language": "python"
+        },
+        {
+          "id": "paths",
+          "title": "Paths start at BASE_DIR",
+          "body": "`BASE_DIR` is the folder containing `manage.py`. Build every other path from it with the `/` operator. Never concatenate strings, and never assume the current working directory.\n\n`Path(__file__).resolve().parent.parent` means: this file → its folder → the project root. If you move `settings.py`, fix this line.",
+          "code": "BASE_DIR = Path(__file__).resolve().parent.parent\n\nSTATIC_URL = \"static/\"\nSTATIC_ROOT = BASE_DIR / \"staticfiles\"\nMEDIA_URL = \"media/\"\nMEDIA_ROOT = BASE_DIR / \"media\"\n\nTEMPLATES = [\n    {\n        \"BACKEND\": \"django.template.backends.django.DjangoTemplates\",\n        \"DIRS\": [BASE_DIR / \"templates\"],\n        \"APP_DIRS\": True,\n        \"OPTIONS\": {\n            \"context_processors\": [\n                \"django.template.context_processors.request\",\n                \"django.contrib.auth.context_processors.auth\",\n                \"django.contrib.messages.context_processors.messages\",\n            ],\n        },\n    },\n]",
+          "language": "python"
+        },
+        {
+          "id": "environment-variables",
+          "title": "Environment variables without a library",
+          "body": "A settings file should read configuration; it should not contain production secrets. Keep local defaults in code, override them from the environment, and fail loudly when a required value is missing.\n\nDo not use `os.environ[\"KEY\"]` for values that have a safe development default. Do use it when production cannot possibly work without the value.",
+          "code": "# .env is read by your shell, Docker, or a process manager.\n# Never commit the real file.\nDJANGO_DEBUG=0\nDJANGO_SECRET_KEY=replace-with-50-random-characters\nDJANGO_ALLOWED_HOSTS=example.com,www.example.com\nDATABASE_URL=postgres://app:secret@db:5432/app\n\n# settings.py\nif not DEBUG and SECRET_KEY.startswith(\"dev-only\"):\n    raise RuntimeError(\"Set DJANGO_SECRET_KEY before running in production\")\n\nif not DEBUG and not ALLOWED_HOSTS:\n    raise RuntimeError(\"Set DJANGO_ALLOWED_HOSTS before running in production\")",
+          "language": "python"
+        },
+        {
+          "id": "email",
+          "title": "Email: console in development, SMTP in production",
+          "body": "Django will not send email until you configure a backend. In development, the console backend prints the message in the terminal, which is perfect for testing password-reset links. In production, use SMTP or a transactional email API.\n\nSet `DEFAULT_FROM_EMAIL` to an address your provider allows. Do not send email inside a slow request; queue it after the transaction commits. `send_mail()` is the simple path; `EmailMultiAlternatives` adds an HTML alternative.",
+          "code": "# development\nEMAIL_BACKEND = \"django.core.mail.backends.console.EmailBackend\"\nDEFAULT_FROM_EMAIL = \"no-reply@example.com\"\n\n# production\nEMAIL_BACKEND = \"django.core.mail.backends.smtp.EmailBackend\"\nEMAIL_HOST = \"smtp.example.com\"\nEMAIL_PORT = 587\nEMAIL_USE_TLS = True\nEMAIL_HOST_USER = os.environ[\"EMAIL_HOST_USER\"]\nEMAIL_HOST_PASSWORD = os.environ[\"EMAIL_HOST_PASSWORD\"]\n\nfrom django.core.mail import send_mail\n\nsend_mail(\n    subject=\"Your receipt\",\n    message=\"Thanks for your order.\",\n    from_email=None,  # uses DEFAULT_FROM_EMAIL\n    recipient_list=[user.email],\n    fail_silently=False,\n)",
+          "language": "python",
+          "note": "If reset emails never arrive, check spam, the from address, SMTP credentials and whether the site URL in the email is reachable."
+        },
+        {
+          "id": "time-and-language",
+          "title": "Time zones, language and the admin",
+          "body": "Keep `USE_TZ = True`. Store aware UTC datetimes in the database and convert only at the edge (templates, forms, reports). `TIME_ZONE` controls the default display timezone, not the stored value.\n\nSet `LANGUAGE_CODE` for the interface language. Set `AUTH_USER_MODEL` before the first migration if you need a custom user. Set `DEFAULT_AUTO_FIELD` once so every app agrees on primary-key type.",
+          "code": "LANGUAGE_CODE = \"en-us\"\nTIME_ZONE = \"Europe/Warsaw\"\nUSE_I18N = True\nUSE_TZ = True\n\nAUTH_USER_MODEL = \"accounts.User\"  # only before the first migrate\nDEFAULT_AUTO_FIELD = \"django.db.models.BigAutoField\"",
+          "language": "python",
+          "note": "Changing `AUTH_USER_MODEL` after `migrate` has run is a migration project, not a one-line edit."
+        },
+        {
+          "id": "debug-never-in-production",
+          "title": "DEBUG is a security setting",
+          "body": "`DEBUG=True` exposes tracebacks, SQL, settings and source snippets. Error pages are helpful locally and dangerous publicly.\n\nRun `python manage.py check --deploy` with production settings. It flags missing `SECURE_SSL_REDIRECT`, insecure cookies, HSTS gaps, `DEBUG=True` and a weak secret key. Treat the output as a checklist, not a suggestion.",
+          "code": "python manage.py check --deploy",
+          "language": "bash"
+        }
+      ],
+      "pitfalls": [
+        "Leaving `DEBUG=True` on a public host.",
+        "Putting the production secret key in `settings.py` and committing it.",
+        "Using `ALLOWED_HOSTS = [\"*\"]` because the real hostname was not configured.",
+        "Changing `AUTH_USER_MODEL` after migrations already created the default user table.",
+        "Building file paths with string concatenation instead of `BASE_DIR`."
+      ],
+      "checklist": [
+        "`SECRET_KEY`, `DEBUG` and `ALLOWED_HOSTS` read from the environment.",
+        "Every feature app listed in `INSTALLED_APPS`.",
+        "Templates directory and `APP_DIRS` configured.",
+        "Static and media roots set.",
+        "`USE_TZ=True` and a deliberate `TIME_ZONE`.",
+        "`check --deploy` reviewed before launch."
+      ],
+      "related": [
+        "start",
+        "security",
+        "deploy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/settings/"
+    },
+    {
+      "slug": "commands",
+      "title": "Management commands",
+      "subtitle": "The terminal is part of the framework",
+      "category": "Start here",
+      "order": 3,
+      "aliases": [
+        "commands",
+        "manage.py",
+        "makemigrations",
+        "migrate",
+        "shell",
+        "dbshell",
+        "createsuperuser",
+        "collectstatic",
+        "test",
+        "check",
+        "custom command",
+        "basecommand",
+        "management command",
+        "runserver",
+        "startapp"
+      ],
+      "summary": "The commands worth memorising, the ones that save you in an incident, and how to add your own repeatable operation.",
+      "quick_answer": "`runserver` for development, `makemigrations` + `migrate` for schema, `shell` for exploration, `test` for confidence, `collectstatic` for deployment, and `check --deploy` before launch. Put repeated operations in a custom management command, not a wiki page.",
+      "sections": [
+        {
+          "id": "daily-commands",
+          "title": "The daily commands",
+          "body": "These are the commands you will type most often. Learn what each one changes.\n\n- `python manage.py runserver` — development server with autoreload.\n- `python manage.py makemigrations` — turn model changes into migration files.\n- `python manage.py migrate` — apply migrations to the database.\n- `python manage.py shell` — an interactive Python shell with Django configured.\n- `python manage.py test` — run the test suite.\n- `python manage.py createsuperuser` — create an admin account.\n- `python manage.py collectstatic` — copy static files to `STATIC_ROOT`.",
+          "code": "python manage.py runserver\npython manage.py makemigrations\npython manage.py migrate\npython manage.py shell\npython manage.py test\npython manage.py createsuperuser\npython manage.py collectstatic --noinput",
+          "language": "bash"
+        },
+        {
+          "id": "inspect-and-recover",
+          "title": "Inspect and recover",
+          "body": "When something is wrong, inspect before deleting. `showmigrations` tells you which files exist and which are applied. `sqlmigrate` shows the SQL a migration will run. `check` catches configuration problems without starting a server. `--plan` shows what `migrate` would do.",
+          "code": "python manage.py showmigrations\npython manage.py showmigrations blog\npython manage.py sqlmigrate blog 0002\npython manage.py migrate --plan\npython manage.py check\npython manage.py check --deploy\npython manage.py shell -c \"from blog.models import Post; print(Post.objects.count())\"",
+          "language": "bash",
+          "note": "`shell -c` is excellent for one-line checks in scripts and CI because it does not leave an interactive session open."
+        },
+        {
+          "id": "custom-command",
+          "title": "Write a custom command",
+          "body": "A management command is the right home for a repeatable operation: import a CSV, send a digest, clean expired rows. Django discovers commands in `<app>/management/commands/<name>.py`.\n\nThe class needs `help`, `add_arguments` and `handle`. Use `self.stdout.write` rather than `print`, and add `--dry-run` to anything destructive.",
+          "code": "# core/management/commands/prune_drafts.py\nfrom django.core.management.base import BaseCommand\nfrom django.utils import timezone\n\nfrom core.models import Post\n\n\nclass Command(BaseCommand):\n    help = \"Delete drafts older than the given number of days.\"\n\n    def add_arguments(self, parser):\n        parser.add_argument(\"--days\", type=int, default=30)\n        parser.add_argument(\"--dry-run\", action=\"store_true\")\n\n    def handle(self, *args, **options):\n        cutoff = timezone.now() - timezone.timedelta(days=options[\"days\"])\n        queryset = Post.objects.filter(status=\"draft\", updated_at__lt=cutoff)\n        count = queryset.count()\n        if options[\"dry_run\"]:\n            self.stdout.write(f\"Would delete {count} drafts.\")\n            return\n        queryset.delete()\n        self.stdout.write(self.style.SUCCESS(f\"Deleted {count} drafts.\"))",
+          "language": "python",
+          "note": "Create `management/__init__.py` and `management/commands/__init__.py`; without them the command is invisible."
+        },
+        {
+          "id": "deployment-commands",
+          "title": "Commands that belong in a deploy script",
+          "body": "A production release usually runs these in order: install dependencies, run `migrate`, run `collectstatic`, run `check --deploy`, then restart the application server. Do not run `makemigrations` on the production host; migration files belong in version control.\n\nKeep migrations backwards-compatible long enough for old and new application processes to overlap during a rolling deploy.",
+          "code": "pip install -r requirements.txt\npython manage.py migrate --noinput\npython manage.py collectstatic --noinput\npython manage.py check --deploy\ngunicorn config.wsgi:application --bind 0.0.0.0:8000",
+          "language": "bash"
+        }
+      ],
+      "pitfalls": [
+        "Running `makemigrations` on the production server instead of committing migration files.",
+        "Using `migrate --fake` without understanding the history; it hides drift instead of fixing it.",
+        "Writing a destructive command with no `--dry-run` and no confirmation.",
+        "Using `print()` in commands that may run under a process manager; use `self.stdout.write`."
+      ],
+      "checklist": [
+        "`check` passes before every deploy.",
+        "Migrations are generated locally and committed.",
+        "`collectstatic` runs as part of release.",
+        "Destructive commands support `--dry-run`.",
+        "Custom commands live under `management/commands/` with both `__init__.py` files."
+      ],
+      "related": [
+        "start",
+        "migrations",
+        "deploy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/django-admin/"
+    }
+  ]
+}

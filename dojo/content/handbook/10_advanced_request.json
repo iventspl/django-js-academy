@@ -1,0 +1,408 @@
+{
+  "chapters": [
+    {
+      "slug": "forms-advanced",
+      "title": "Advanced forms",
+      "subtitle": "Custom fields, dynamic formsets and validation architecture",
+      "category": "Forms",
+      "order": 2,
+      "level": "Advanced",
+      "tags": [
+        "forms",
+        "validation",
+        "formsets"
+      ],
+      "aliases": [
+        "custom field",
+        "custom widget",
+        "widget template",
+        "model formset",
+        "inline formset",
+        "dynamic formset",
+        "formset javascript",
+        "validation architecture",
+        "clean method",
+        "validator",
+        "disabled field",
+        "form prefix",
+        "empty form"
+      ],
+      "summary": "The forms layer when the basic Form is not enough: custom widgets, dynamic fields, model formsets, JavaScript-driven formsets and a validation design that stays testable.",
+      "quick_answer": "Keep validation in fields, validators and `clean()`; keep widgets presentation-only. Use `modelformset_factory`/`inlineformset_factory` for repeated rows, and always render the management form. For dynamic formsets, update `TOTAL_FORMS`/`INITIAL_FORMS` with JavaScript and validate the result server-side.",
+      "sections": [
+        {
+          "id": "custom-widgets",
+          "title": "Custom fields and widgets",
+          "body": "A field owns validation and conversion; a widget owns HTML. Subclass `forms.Widget` when you need a new control, and provide `template_name` plus `get_context()`/`format_value()`. Prefer `attrs` and a CSS class over a custom widget for styling.\n\nA custom field can reuse a widget while adding `to_python()`/`validate()`. Keep the widget free of business rules.",
+          "code": "class ColorInput(forms.Widget):\n    template_name = \"widgets/color.html\"\n    input_type = \"color\"\n\n    def format_value(self, value):\n        return value or \"#000000\"\n\nclass ColorField(forms.CharField):\n    widget = ColorInput\n\n    def validate(self, value):\n        super().validate(value)\n        if not re.fullmatch(r\"#[0-9a-fA-F]{6}\", value):\n            raise forms.ValidationError(\"Use a six-digit hex colour.\")",
+          "language": "python",
+          "note": "A widget template receives `widget`, `attrs` and `value`. Keep it a dumb renderer.",
+          "table": null,
+          "reference": "https://docs.djangoproject.com/en/stable/ref/forms/widgets/"
+        },
+        {
+          "id": "model-formsets",
+          "title": "Model formsets and inline formsets",
+          "body": "`modelformset_factory` edits many rows of one model. `inlineformset_factory` edits children of one parent and sets the foreign key for you. Use `extra=0` for existing data, `can_delete=True` when removal is allowed, and `min_num`/`validate_min` for a required set.\n\n`formset.save()` saves changed instances and deletes marked ones. Use `save(commit=False)` when you need to set fields first, then call `save_m2m()` if needed.",
+          "code": "from django.forms import inlineformset_factory\n\nOrderItemFormSet = inlineformset_factory(\n    Order,\n    OrderItem,\n    fields=[\"product\", \"quantity\"],\n    extra=0,\n    can_delete=True,\n    min_num=1,\n    validate_min=True,\n)\n\ndef edit_order(request, pk):\n    order = get_object_or_404(Order, pk=pk)\n    formset = OrderItemFormSet(request.POST or None, instance=order)\n    if request.method == \"POST\" and formset.is_valid():\n        formset.save()\n        return redirect(order)\n    return render(request, \"orders/edit.html\", {\"order\": order, \"formset\": formset})",
+          "language": "python",
+          "note": "An inline formset filters choices to the parent only if you pass `instance`; it does not automatically scope a `ModelChoiceField` to the tenant. Do that in `__init__`.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "dynamic-formsets",
+          "title": "Dynamic formsets and JavaScript",
+          "body": "The management form tells Django how many forms were submitted. When JavaScript adds a row, clone the empty form from `formset.empty_form`, replace `__prefix__`, and increment `TOTAL_FORMS`. When removing a row, either mark `DELETE` or decrement the count and remove the node.\n\nNever trust the client count. The server validates each submitted form and the management form; a tampered count is rejected.",
+          "code": "{{ formset.management_form }}\n<div id=\"items\">\n  {% for form in formset %}{{ form.as_div }}{% endfor %}\n</div>\n<template id=\"empty-form\">{{ formset.empty_form.as_div }}</template>\n\n<script>\nconst total = document.querySelector(\"#id_form-TOTAL_FORMS\");\nconst template = document.querySelector(\"#empty-form\").innerHTML;\ndocument.querySelector(\"#add\").addEventListener(\"click\", () => {\n  const index = Number(total.value);\n  document.querySelector(\"#items\").insertAdjacentHTML(\n    \"beforeend\",\n    template.replaceAll(\"__prefix__\", index)\n  );\n  total.value = index + 1;\n});\n</script>",
+          "language": "html",
+          "note": "Use a stable prefix. If you render two formsets on one page, give each a different `prefix`.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "validation-architecture",
+          "title": "Validation architecture",
+          "body": "Use three layers deliberately:\n\n- **Field validators** for reusable, single-value rules.\n- **`clean_<field>()`** for form-specific rules that need other data.\n- **`clean()`** for cross-field rules, and `Model.clean()` for invariants that must hold outside forms.\n\nDo not duplicate the same rule in all three. A validator can be shared by forms and models; a form-specific rule stays in the form.",
+          "code": "def validate_sku(value):\n    if not re.fullmatch(r\"[A-Z]{3}-\\d{4}\", value):\n        raise ValidationError(\"Use the format ABC-1234.\")\n\nclass ProductForm(forms.ModelForm):\n    sku = forms.CharField(validators=[validate_sku])\n\n    class Meta:\n        model = Product\n        fields = [\"sku\", \"name\", \"price\"]\n\n    def clean(self):\n        cleaned = super().clean()\n        if cleaned.get(\"price\", 0) < 0:\n            self.add_error(\"price\", \"Price cannot be negative.\")\n        return cleaned",
+          "language": "python",
+          "note": "`add_error()` removes the field from `cleaned_data`. Read other fields with `.get()` in `clean()`.",
+          "table": null,
+          "reference": "https://docs.djangoproject.com/en/stable/ref/forms/validation/"
+        },
+        {
+          "id": "form-performance",
+          "title": "Forms that do not query per field",
+          "body": "A `ModelChoiceField` evaluates its queryset when rendered. A form with 50 category fields can run 50 queries. Use `select_related`/`prefetch_related` on the queryset, or a single `ModelChoiceField` with a filtered queryset.\n\nFor large choice lists, use an autocomplete widget backed by an endpoint instead of rendering thousands of `<option>` elements.",
+          "code": "self.fields[\"product\"].queryset = (\n    Product.objects.filter(active=True)\n    .select_related(\"category\")\n    .only(\"id\", \"name\", \"category__name\")\n)",
+          "language": "python",
+          "note": "Measure with `assertNumQueries` in a form/view test. The template is part of the query count.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Putting business validation in a widget.",
+        "Rendering a formset without `management_form`.",
+        "Trusting `TOTAL_FORMS` from the client.",
+        "Using `extra=10` on a large existing table.",
+        "Forgetting to scope `ModelChoiceField` querysets to the current tenant/user.",
+        "Duplicating validation in forms and models with subtly different rules."
+      ],
+      "checklist": [
+        "Widgets are presentation-only; fields validate.",
+        "Formsets render the management form.",
+        "Dynamic formset JavaScript updates the management count.",
+        "ModelChoiceField querysets are scoped and efficient.",
+        "Validation rules live in one obvious layer."
+      ],
+      "related": [
+        "forms",
+        "models",
+        "views",
+        "testing"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/forms/modelforms/",
+      "errors": []
+    },
+    {
+      "slug": "views-advanced",
+      "title": "Advanced views",
+      "subtitle": "CBV MRO, mixins, streaming and custom errors",
+      "category": "Request path",
+      "order": 4,
+      "level": "Advanced",
+      "tags": [
+        "views",
+        "class-based views",
+        "streaming"
+      ],
+      "aliases": [
+        "cbv mro",
+        "method resolution order",
+        "mixin",
+        "generic view",
+        "dispatch",
+        "get queryset",
+        "get context data",
+        "form valid",
+        "streaming response",
+        "file response",
+        "custom 404",
+        "custom 500",
+        "method decorator"
+      ],
+      "summary": "What is actually happening inside a class-based view, how mixins compose, and when a streaming response beats rendering a giant string.",
+      "quick_answer": "A CBV is a callable object whose `dispatch()` chooses `get()`/`post()`. Mixins must come before the base view in the MRO and call `super()`. Use `StreamingHttpResponse`/`FileResponse` for large payloads; keep view logic small and move domain rules into services.",
+      "sections": [
+        {
+          "id": "mro",
+          "title": "MRO and mixins",
+          "body": "Python resolves methods left to right. `class PostUpdate(LoginRequiredMixin, UpdateView)` puts the mixin first, so its `dispatch()` runs before `UpdateView.dispatch()`. If you reverse the order, the login check may never run.\n\nA mixin should call `super()` and add one concern. If a mixin needs three unrelated hooks, it is probably a service or middleware.",
+          "code": "class AuditMixin:\n    def form_valid(self, form):\n        response = super().form_valid(form)\n        AuditLog.objects.create(\n            actor=self.request.user,\n            action=\"update\",\n            object_id=self.object.pk,\n        )\n        return response\n\nclass PostUpdate(LoginRequiredMixin, AuditMixin, UpdateView):\n    model = Post\n    fields = [\"title\", \"body\"]",
+          "language": "python",
+          "note": "MRO is not magic: read the class from left to right and check which method calls `super()`.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "generic-hooks",
+          "title": "The generic-view hooks that matter",
+          "body": "`get_queryset()` controls the rows; `get_object()` fetches one; `get_context_data()` adds template data; `form_valid()` handles a successful form; `get_success_url()` chooses where to go. Override the smallest hook and call `super()`.\n\nA `ListView` paginates with `paginate_by`; a `DetailView` uses `pk`/`slug` from the URL. The generic view is a convenience, not a requirement.",
+          "code": "class PostUpdate(LoginRequiredMixin, UpdateView):\n    model = Post\n    fields = [\"title\", \"body\"]\n    template_name = \"blog/post_form.html\"\n\n    def get_queryset(self):\n        return Post.objects.filter(author=self.request.user)\n\n    def get_context_data(self, **kwargs):\n        context = super().get_context_data(**kwargs)\n        context[\"is_edit\"] = True\n        return context\n\n    def form_valid(self, form):\n        form.instance.author = self.request.user\n        return super().form_valid(form)",
+          "language": "python",
+          "note": "Scoping `get_queryset()` to the current user turns another user's object into a 404, which is often safer than a 403.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "decorators",
+          "title": "Decorators on functions and methods",
+          "body": "Function views take decorators directly. Class-based views need `method_decorator` on `dispatch()` or on a specific method. Stack order matters: authentication before permission, and both before side effects.\n\nFor reusable view behaviour, a mixin is usually clearer than decorating every method.",
+          "code": "from django.utils.decorators import method_decorator\nfrom django.contrib.auth.decorators import login_required\n\n@method_decorator(login_required, name=\"dispatch\")\nclass Dashboard(TemplateView):\n    template_name = \"dashboard.html\"\n\n@method_decorator(require_POST, name=\"post\")\nclass DeletePost(DeleteView):\n    model = Post",
+          "language": "python",
+          "note": "`@method_decorator` on `dispatch` wraps every method. Apply it to `get`/`post` when only one method needs the rule.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "streaming",
+          "title": "Streaming and file responses",
+          "body": "`StreamingHttpResponse` sends an iterator of bytes; `FileResponse` streams a file and sets headers. Both avoid loading a large payload into memory. A generator that queries per chunk can still be slow; batch the queries.\n\nFor CSV exports, yield rows and set `Content-Disposition`. For private files, check permission before opening the file and never expose the storage path.",
+          "code": "import csv\nfrom django.http import FileResponse, StreamingHttpResponse\n\ndef export_orders(request):\n    def rows():\n        yield \"id,customer,total\\n\"\n        for order in Order.objects.filter(owner=request.user).iterator(chunk_size=500):\n            yield f\"{order.pk},{order.customer_id},{order.total}\\n\"\n\n    response = StreamingHttpResponse(rows(), content_type=\"text/csv\")\n    response[\"Content-Disposition\"] = 'attachment; filename=\"orders.csv\"'\n    return response\n\ndef download_invoice(request, pk):\n    invoice = get_object_or_404(Invoice, pk=pk, owner=request.user)\n    return FileResponse(invoice.file.open(\"rb\"), as_attachment=True)",
+          "language": "python",
+          "note": "Streaming responses cannot set a status code after the first byte. Do permission checks and validation before returning the response.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "error-handlers",
+          "title": "Custom 404 and 500 pages",
+          "body": "Django uses `handler404`, `handler500`, `handler403` and `handler400` from the root URLconf. The templates are `404.html`, `500.html`, `403.html` and `400.html` in the project templates directory.\n\nWith `DEBUG=False`, a 500 page hides the traceback. Log the exception and return a useful, branded page. Do not leak internal IDs or settings.",
+          "code": "# config/urls.py\nhandler404 = \"pages.views.not_found\"\nhandler500 = \"pages.views.server_error\"\n\n# pages/views.py\ndef not_found(request, exception):\n    return render(request, \"404.html\", status=404)",
+          "language": "python",
+          "note": "Custom handlers are only used when `DEBUG=False`. Test them with `override_settings(DEBUG=False)`.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Putting a mixin after the base view in the MRO.",
+        "Overriding `dispatch()` without calling `super()`.",
+        "Loading a 2 GB CSV into a Python list before responding.",
+        "Streaming after a permission check that can still fail mid-iteration.",
+        "Relying on custom error templates while `DEBUG=True`."
+      ],
+      "checklist": [
+        "Mixins are ordered correctly and call `super()`.",
+        "Querysets are scoped in `get_queryset()`.",
+        "Large exports stream and batch queries.",
+        "Private files are permission-checked before opening.",
+        "Error handlers are tested with `DEBUG=False`."
+      ],
+      "related": [
+        "views",
+        "urls",
+        "templates",
+        "middleware-async"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/class-based-views/",
+      "errors": []
+    },
+    {
+      "slug": "templates-advanced",
+      "title": "Advanced templates",
+      "subtitle": "Custom tags, context processors, Jinja and loader performance",
+      "category": "Request path",
+      "order": 5,
+      "level": "Advanced",
+      "tags": [
+        "templates",
+        "Jinja",
+        "performance"
+      ],
+      "aliases": [
+        "custom template tag",
+        "simple_tag",
+        "inclusion_tag",
+        "custom filter",
+        "context processor",
+        "jinja2",
+        "template loader",
+        "cached loader",
+        "template inheritance",
+        "block.super",
+        "template fragment",
+        "request context"
+      ],
+      "summary": "Extend the template language without turning templates into Python: custom tags and filters, context processors, Jinja2 and the loader settings that affect every render.",
+      "quick_answer": "Use `@register.simple_tag` for a value, `@register.inclusion_tag` for a fragment, and `@register.filter` for a single value transformation. Context processors add data to every template; keep them cheap. Add Jinja2 only when its syntax or ecosystem is worth a second engine.",
+      "sections": [
+        {
+          "id": "custom-tags",
+          "title": "Custom tags and filters",
+          "body": "A template tag lives in `<app>/templatetags/<name>.py`. `simple_tag` returns a value; `inclusion_tag` renders a small template; `filter` transforms one value. Tags can take `context=True` when they genuinely need the render context.\n\nReturn plain data, not HTML built by string concatenation. If you need markup, render a template and mark it safe deliberately.",
+          "code": "# blog/templatetags/blog_extras.py\nfrom django import template\n\nregister = template.Library()\n\n@register.filter\ndef reading_time(value):\n    words = len(str(value).split())\n    return max(1, round(words / 220))\n\n@register.simple_tag\ndef query_string(request, **kwargs):\n    params = request.GET.copy()\n    for key, value in kwargs.items():\n        params[key] = value\n    return params.urlencode()\n\n@register.inclusion_tag(\"blog/_tag_list.html\")\ndef tag_list(post):\n    return {\"tags\": post.tags.all()}",
+          "language": "python",
+          "note": "A template tag is still presentation code. Keep queries out of it or pass a prefetched object.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "context-processors",
+          "title": "Context processors",
+          "body": "A context processor returns a dict merged into every template context. It runs for every render, including errors and includes. Use it for cheap, truly global data: site name, feature flags, navigation counts.\n\nDo not run a query per request in a context processor unless you cache it. A context processor that raises takes down every page.",
+          "code": "# common/context_processors.py\ndef site_context(request):\n    return {\n        \"site_name\": \"Django Quest\",\n        \"support_email\": settings.SUPPORT_EMAIL,\n        \"current_path\": request.path,\n    }\n\nTEMPLATES[0][\"OPTIONS\"][\"context_processors\"].append(\n    \"common.context_processors.site_context\"\n)",
+          "language": "python",
+          "note": "The request context processor is already available; do not add a second copy.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "jinja",
+          "title": "Jinja2 as a second engine",
+          "body": "Django can run Django Templates and Jinja2 side by side. Jinja is faster for some workloads and has a richer expression language, but it is not a drop-in replacement: template tags, filters and some admin templates are Django-specific.\n\nUse Jinja for a new surface where its syntax helps, or for a performance-sensitive template. Do not migrate a working Django-template codebase for novelty.",
+          "code": "TEMPLATES = [\n    {\n        \"BACKEND\": \"django.template.backends.django.DjangoTemplates\",\n        \"DIRS\": [BASE_DIR / \"templates\"],\n        \"APP_DIRS\": True,\n    },\n    {\n        \"BACKEND\": \"django.template.backends.jinja2.Jinja2\",\n        \"DIRS\": [BASE_DIR / \"jinja2\"],\n        \"APP_DIRS\": True,\n        \"OPTIONS\": {\"environment\": \"config.jinja2.environment\"},\n    },\n]",
+          "language": "python",
+          "note": "Jinja templates do not see Django's `{% csrf_token %}` tag. Pass the token or use a small adapter.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "loader-performance",
+          "title": "Loader and fragment performance",
+          "body": "The cached template loader is enabled by default when `DEBUG=False`. In development, templates are reloaded on every change. Do not disable the cached loader in production to “fix” stale templates; deploy correctly.\n\n`{% cache %}` caches a fragment, not a whole response. Use it for expensive, user-independent fragments and include the user/tenant in the key when the fragment is personalised.",
+          "code": "{% load cache %}\n{% cache 300 \"sidebar\" request.user.pk %}\n  {% include \"includes/sidebar.html\" %}\n{% endcache %}",
+          "language": "html",
+          "note": "`{% cache %}` uses the configured cache. A fragment cached before a write can serve stale data; invalidate by key or keep the timeout short.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Doing database queries inside a `simple_tag` used in a loop.",
+        "Adding a context processor with a query on every request.",
+        "Marking template-tag output safe without escaping.",
+        "Assuming Jinja supports every Django template tag.",
+        "Caching a personalised fragment without the user in the key."
+      ],
+      "checklist": [
+        "Custom tags return data or render a template, not hand-built HTML.",
+        "Context processors are cheap and exception-safe.",
+        "Jinja is used deliberately, not as a default.",
+        "Cached fragments include user/tenant keys when needed.",
+        "Templates are tested with the real context."
+      ],
+      "related": [
+        "templates",
+        "views",
+        "caching-deep"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/howto/custom-template-tags/",
+      "errors": []
+    },
+    {
+      "slug": "urls-advanced",
+      "title": "Advanced URL routing",
+      "subtitle": "Custom converters, resolve(), i18n patterns and error handlers",
+      "category": "Request path",
+      "order": 6,
+      "level": "Advanced",
+      "tags": [
+        "urls",
+        "routing",
+        "i18n"
+      ],
+      "aliases": [
+        "custom path converter",
+        "register_converter",
+        "resolve",
+        "resolver_match",
+        "reverse_lazy",
+        "namespace",
+        "include",
+        "i18n_patterns",
+        "locale url",
+        "append slash",
+        "trailing slash",
+        "error handler",
+        "url pattern"
+      ],
+      "summary": "URLconf beyond path(): custom converters, reverse/resolve introspection, namespaced includes and locale-prefixed routes.",
+      "quick_answer": "Register a converter class with `register_converter()` when a route needs a domain type. Use `reverse()` to build URLs and `resolve()` to inspect the matched route. Namespaces keep apps isolated. Add `i18n_patterns()` only when public URLs should carry a language prefix.",
+      "sections": [
+        {
+          "id": "converters",
+          "title": "Custom path converters",
+          "body": "A converter has a regex, `to_python()` and `to_url()`. Register it once, then use `<name:value>` in routes. `to_url()` must produce a string that the regex matches.\n\nConverters are a good place for domain identifiers: order numbers, tenant slugs, date segments. They are not authorization checks; the view still scopes the object.",
+          "code": "class OrderNumberConverter:\n    regex = r\"[A-Z]{2}-\\d{6}\"\n\n    def to_python(self, value):\n        return value\n\n    def to_url(self, value):\n        return str(value)\n\nregister_converter(OrderNumberConverter, \"order\")\n\npath(\"orders/<order:number>/\", views.order_detail, name=\"order-detail\")\nreverse(\"order-detail\", kwargs={\"number\": \"AB-123456\"})",
+          "language": "python",
+          "note": "A converter that accepts too much pushes validation into the view. Keep the regex precise.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "resolve",
+          "title": "reverse() and resolve()",
+          "body": "`reverse()` turns a route name plus arguments into a URL. `resolve()` turns a path into a `ResolverMatch` with `view_name`, `kwargs`, `url_name` and `app_name`. `request.resolver_match` is the match for the current request.\n\nUse `resolve()` for breadcrumbs, analytics or middleware that needs the view name. Cache the result if it is called on every request.",
+          "code": "from django.urls import resolve, reverse\n\nurl = reverse(\"blog:detail\", kwargs={\"slug\": \"django-forms\"})\nmatch = resolve(\"/blog/django-forms/\")\nmatch.view_name      # \"blog:detail\"\nmatch.kwargs         # {\"slug\": \"django-forms\"}\nmatch.app_name       # \"blog\"\n\nrequest.resolver_match.url_name  # in a view or middleware",
+          "language": "python",
+          "note": "`reverse()` raises `NoReverseMatch`; do not catch it broadly. A missing route is a bug, not a user error.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "namespaces",
+          "title": "Namespaces and included URLconfs",
+          "body": "`include((patterns, app_name), namespace=...)` lets two instances of the same app coexist with different namespaces. This is common for multi-tenant or white-label sites.\n\nWith a namespace, `reverse(\"shop:detail\")` includes it. A missing `app_name` is the usual reason a namespaced reverse fails.",
+          "code": "# config/urls.py\nurlpatterns = [\n    path(\"shop/\", include((\"shop.urls\", \"shop\"), namespace=\"shop\")),\n    path(\"admin-shop/\", include((\"shop.urls\", \"shop_admin\"), namespace=\"shop_admin\")),\n]\n\n# shop/urls.py\napp_name = \"shop\"\nurlpatterns = [path(\"<slug:slug>/\", views.detail, name=\"detail\")]\n\nreverse(\"shop:detail\", kwargs={\"slug\": \"lamp\"})\nreverse(\"shop_admin:detail\", kwargs={\"slug\": \"lamp\"})",
+          "language": "python",
+          "note": "Two namespaces can share the same view functions. The namespace is part of the route identity.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "i18n-urls",
+          "title": "Locale-prefixed URLs",
+          "body": "`i18n_patterns()` wraps routes with a language prefix and activates the language from the URL. Keep language-independent routes (health, API, webhooks) outside the prefix.\n\nSet `LANGUAGE_CODE`, `LANGUAGES` and `LocaleMiddleware`. Use `{% get_current_language %}` and `{% language %}` in templates. Do not prefix API endpoints unless clients expect it.",
+          "code": "from django.conf.urls.i18n import i18n_patterns\nfrom django.urls import include, path\n\nurlpatterns = [\n    path(\"health/\", health),\n    path(\"api/\", include(\"api.urls\")),\n]\n\nurlpatterns += i18n_patterns(\n    path(\"\", include(\"pages.urls\")),\n    prefix_default_language=False,\n)",
+          "language": "python",
+          "note": "With `prefix_default_language=False`, the default language has no prefix and the other languages do. Test both shapes.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "slash-and-errors",
+          "title": "Trailing slashes, APPEND_SLASH and handlers",
+          "body": "`CommonMiddleware` redirects `/blog` to `/blog/` when `APPEND_SLASH=True` and the slashless route does not match. This only works for GET/HEAD; a POST to a slashless URL will lose its body on redirect. Generate canonical URLs with `{% url %}` instead of relying on the redirect.\n\nCustom error handlers live in the root URLconf and are used only when `DEBUG=False`.",
+          "code": "handler400 = \"pages.views.bad_request\"\nhandler403 = \"pages.views.permission_denied\"\nhandler404 = \"pages.views.not_found\"\nhandler500 = \"pages.views.server_error\"",
+          "language": "python",
+          "note": "A redirect from a POST is a bug. Always include the trailing slash in forms and links.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Using a broad converter regex and validating in the view.",
+        "Catching `NoReverseMatch` and returning a 200 page.",
+        "Forgetting `app_name` for a namespaced include.",
+        "Putting webhooks behind `i18n_patterns()`.",
+        "Relying on `APPEND_SLASH` for POST requests."
+      ],
+      "checklist": [
+        "Custom converters are precise and tested.",
+        "Every route has a name and namespace.",
+        "`reverse()` is used for internal links.",
+        "Locale prefixes cover only public pages.",
+        "Error handlers are tested with `DEBUG=False`."
+      ],
+      "related": [
+        "urls",
+        "views",
+        "i18n"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/http/urls/",
+      "errors": []
+    }
+  ]
+}

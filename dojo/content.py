@@ -19,9 +19,16 @@ class ContentError(ValueError):
 
 
 def content_fingerprint() -> str:
-    """Stable fingerprint of every JSON content file in the project."""
+    """Stable fingerprint of every seeded JSON content file in the project.
+
+    Handbook files are deliberately excluded: they are read directly by the
+    handbook loader and do not require a database reseed when edited.
+    """
     digest = hashlib.sha256()
+    handbook_dir = CONTENT_DIR / "handbook"
     for path in sorted(CONTENT_DIR.rglob("*.json")):
+        if path.is_relative_to(handbook_dir):
+            continue
         digest.update(path.relative_to(CONTENT_DIR).as_posix().encode("utf-8"))
         digest.update(path.read_bytes())
     return digest.hexdigest()

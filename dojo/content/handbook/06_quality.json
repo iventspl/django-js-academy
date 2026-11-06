@@ -1,0 +1,420 @@
+{
+  "chapters": [
+    {
+      "slug": "testing",
+      "title": "Testing",
+      "subtitle": "Tests that catch regressions without slowing you down",
+      "category": "Quality",
+      "order": 1,
+      "aliases": [
+        "testing",
+        "tests",
+        "tests.py",
+        "testcase",
+        "pytest",
+        "pytest-django",
+        "client",
+        "assertcontains",
+        "assertredirects",
+        "factory_boy",
+        "fixtures",
+        "test isolation",
+        "coverage",
+        "unit test",
+        "integration test",
+        "requestfactory"
+      ],
+      "summary": "A practical testing layer: what to test, how Django isolates database tests, and the patterns that keep a suite fast enough to run on every save.",
+      "quick_answer": "Use `TestCase` for database behaviour, `Client` for request/response tests, and `setUpTestData` for shared objects. Test the contract users depend on: status codes, redirects, validation errors, permissions and side effects.",
+      "sections": [
+        {
+          "id": "what-to-test",
+          "title": "Test behaviour, not implementation",
+          "body": "A good test describes something a user or another system depends on: “an anonymous user is redirected from the dashboard”, “an invalid email shows an error”, “only the author can edit a post”.\n\nAvoid asserting private method calls or exact HTML structure. Those tests break when you refactor and rarely catch real bugs. Assert status codes, database changes, redirects, messages and permission outcomes."
+        },
+        {
+          "id": "testcase-and-client",
+          "title": "TestCase and the test client",
+          "body": "`TestCase` wraps each test in a transaction and rolls it back, so tests do not leak data. `setUpTestData` runs once per class and is the right place for shared objects.\n\nThe test client simulates a browser: `self.client.get()`, `post()`, `login()`. Use `reverse()` instead of hard-coded URLs. `assertContains` checks rendered content; `assertRedirects` follows the redirect and checks the destination.",
+          "code": "from django.test import TestCase\nfrom django.urls import reverse\nfrom .models import Post\n\nclass PostViewTests(TestCase):\n    @classmethod\n    def setUpTestData(cls):\n        cls.post = Post.objects.create(title=\"Hello\", slug=\"hello\", published=True)\n\n    def test_list_shows_published_posts(self):\n        response = self.client.get(reverse(\"blog:list\"))\n        self.assertEqual(response.status_code, 200)\n        self.assertContains(response, \"Hello\")\n\n    def test_anonymous_user_is_redirected_from_create(self):\n        response = self.client.get(reverse(\"blog:create\"))\n        self.assertRedirects(response, f\"{reverse('login')}?next={reverse('blog:create')}\")",
+          "language": "python"
+        },
+        {
+          "id": "forms-and-permissions",
+          "title": "Forms, validation and permissions",
+          "body": "Test the invalid path as carefully as the happy path. A form that rejects bad input is the feature. For permissions, create two users and prove that the wrong one gets a 403 or a 404.\n\nUse `force_login` when the login flow itself is not under test; it is faster and keeps the test focused.",
+          "code": "from django.contrib.auth import get_user_model\nfrom django.test import TestCase\nfrom django.urls import reverse\n\nfrom .forms import SignupForm\n\nclass SignupTests(TestCase):\n    def test_passwords_must_match(self):\n        form = SignupForm(data={\n            \"email\": \"ada@example.com\",\n            \"password\": \"correct-horse-battery-staple\",\n            \"confirm\": \"different\",\n            \"username\": \"ada\",\n        })\n        self.assertFalse(form.is_valid())\n        self.assertIn(\"confirm\", form.errors)\n\n    def test_only_author_can_edit(self):\n        User = get_user_model()\n        author = User.objects.create_user(\"author\", password=\"x\")\n        other = User.objects.create_user(\"other\", password=\"x\")\n        post = Post.objects.create(title=\"Mine\", slug=\"mine\", author=author)\n        self.client.force_login(other)\n        response = self.client.get(reverse(\"blog:edit\", args=[post.pk]))\n        self.assertEqual(response.status_code, 404)",
+          "language": "python",
+          "note": "A 404 is often better than a 403 for another user's object: it does not reveal that the object exists."
+        },
+        {
+          "id": "speed-and-isolation",
+          "title": "Speed and isolation",
+          "body": "Django's `TestCase` is fast because it uses transactions. `TransactionTestCase` is slower and needed only when code commits transactions or tests `on_commit` callbacks.\n\nKeep fixtures small. Prefer factory functions over giant JSON fixtures. Use `override_settings` for settings that differ per test, and `@override_settings(EMAIL_BACKEND=\"django.core.mail.backends.locmem.EmailBackend\")` to assert emails without sending them.",
+          "code": "from django.core import mail\nfrom django.test import TestCase, override_settings\n\n@override_settings(EMAIL_BACKEND=\"django.core.mail.backends.locmem.EmailBackend\")\nclass EmailTests(TestCase):\n    def test_welcome_email_is_sent(self):\n        self.client.post(\"/signup/\", {\"email\": \"ada@example.com\"})\n        self.assertEqual(len(mail.outbox), 1)\n        self.assertIn(\"Welcome\", mail.outbox[0].subject)",
+          "language": "python"
+        },
+        {
+          "id": "pytest",
+          "title": "pytest-django and factories",
+          "body": "Django's test runner is enough. Many teams prefer pytest for fixtures, parametrisation and concise assertions; `pytest-django` supplies the `db`, `client` and `settings` fixtures.\n\n`factory_boy` builds model instances with sensible defaults and explicit overrides. It keeps tests readable when models have many required fields.",
+          "code": "# conftest.py\nimport pytest\n\n@pytest.fixture\ndef author(db):\n    from django.contrib.auth import get_user_model\n    return get_user_model().objects.create_user(\"ada\", password=\"x\")\n\n# test_posts.py\n@pytest.mark.django_db\ndef test_draft_is_hidden(client, author):\n    from blog.models import Post\n    Post.objects.create(title=\"Draft\", author=author, status=\"draft\")\n    response = client.get(\"/blog/\")\n    assert response.status_code == 200\n    assert b\"Draft\" not in response.content",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Testing implementation details and breaking every test on a refactor.",
+        "Using the production database instead of a test database.",
+        "Creating fixtures in `setUp()` that could be shared in `setUpTestData()`.",
+        "Only testing the happy path and missing permission regressions.",
+        "Using `TransactionTestCase` everywhere and making the suite crawl."
+      ],
+      "checklist": [
+        "Happy path, invalid input and permission failure are covered.",
+        "URLs are built with `reverse()`.",
+        "Email and external services are faked or overridden.",
+        "Tests run against a separate test database.",
+        "The suite is fast enough to run before every commit."
+      ],
+      "related": [
+        "forms",
+        "views",
+        "auth",
+        "deploy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/testing/"
+    },
+    {
+      "slug": "security",
+      "title": "Security",
+      "subtitle": "The defaults, the settings and the mistakes that still happen",
+      "category": "Quality",
+      "order": 2,
+      "aliases": [
+        "security",
+        "csrf",
+        "xss",
+        "sql injection",
+        "clickjacking",
+        "https",
+        "ssl",
+        "hsts",
+        "secrets",
+        "deployment checklist",
+        "secure settings",
+        "cookies",
+        "content security policy",
+        "csp",
+        "file upload security",
+        "permissions",
+        "owasp",
+        "vulnerability"
+      ],
+      "summary": "Django has strong defaults. Most incidents come from turning them off, skipping deployment settings, or trusting the wrong input. This is the practical checklist.",
+      "quick_answer": "Keep autoescaping, CSRF and the ORM. Set `DEBUG=False`, a real `SECRET_KEY`, explicit `ALLOWED_HOSTS`, HTTPS redirects, secure cookies and HSTS in production. Validate uploads, never trust a client-supplied path, and run `check --deploy`.",
+      "sections": [
+        {
+          "id": "deployment-checklist",
+          "title": "The production baseline",
+          "body": "These settings are not optional on a public site. They cover transport, cookies, framing and host validation.\n\n`SECURE_PROXY_SSL_HEADER` is only correct when a trusted proxy terminates TLS and overwrites the header. Without that trust, an attacker can spoof `X-Forwarded-Proto`.",
+          "code": "DEBUG = False\nSECRET_KEY = os.environ[\"DJANGO_SECRET_KEY\"]\nALLOWED_HOSTS = [\"example.com\", \"www.example.com\"]\n\nSECURE_SSL_REDIRECT = True\nSESSION_COOKIE_SECURE = True\nCSRF_COOKIE_SECURE = True\nSECURE_HSTS_SECONDS = 31536000\nSECURE_HSTS_INCLUDE_SUBDOMAINS = True\nSECURE_HSTS_PRELOAD = True\nSECURE_CONTENT_TYPE_NOSNIFF = True\nX_FRAME_OPTIONS = \"DENY\"\n\n# Only behind a trusted reverse proxy:\nSECURE_PROXY_SSL_HEADER = (\"HTTP_X_FORWARDED_PROTO\", \"https\")",
+          "language": "python",
+          "note": "Enable HSTS only after HTTPS works on every subdomain; it is hard to undo for returning visitors."
+        },
+        {
+          "id": "csrf",
+          "title": "CSRF: the token is not optional",
+          "body": "Cross-Site Request Forgery tricks a logged-in browser into submitting a request to your site. Django's CSRF middleware rejects unsafe methods without a valid token.\n\nRender `{% csrf_token %}` inside every POST form. For JavaScript clients, read the `csrftoken` cookie and send `X-CSRFToken`. Never disable CSRF for convenience, and never use `@csrf_exempt` on a state-changing endpoint without an equivalent protection.",
+          "code": "<form method=\"post\">\n  {% csrf_token %}\n  {{ form.as_p }}\n  <button type=\"submit\">Save</button>\n</form>\n\n// fetch with the cookie\nfetch(\"/api/orders/\", {\n  method: \"POST\",\n  headers: {\n    \"Content-Type\": \"application/json\",\n    \"X-CSRFToken\": getCookie(\"csrftoken\"),\n  },\n  body: JSON.stringify(payload),\n});",
+          "language": "html"
+        },
+        {
+          "id": "xss",
+          "title": "XSS: autoescaping is the default",
+          "body": "Django escapes variable output in templates. The vulnerability appears when you turn that off with `|safe`, `{% autoescape off %}`, or by building HTML in Python and marking it safe.\n\nIf users submit rich text, sanitise it on the server with a maintained library (for example `nh3` or `bleach`) and keep a Content Security Policy as a second layer. Do not rely on a client-side sanitizer.",
+          "code": "# Dangerous: user input marked safe\n{{ comment.body|safe }}\n\n# Safer: escape, then add only the formatting you control\n{{ comment.body|escape|linebreaksbr }}\n\n# For rich text, sanitise on write:\nimport nh3\nclean_html = nh3.clean(raw_html, tags={\"p\", \"strong\", \"em\", \"ul\", \"li\", \"a\"})",
+          "language": "python"
+        },
+        {
+          "id": "sql-and-orm",
+          "title": "SQL injection and raw queries",
+          "body": "The ORM parameterises queries. Injection appears when you interpolate user input into `raw()`, `extra()` or `cursor.execute()`.\n\nPass parameters separately, even when the value “looks like a number”. If you must build dynamic column names or ordering, validate against an allowlist; parameters cannot bind identifiers.",
+          "code": "# Safe\nPost.objects.raw(\"SELECT * FROM blog_post WHERE slug = %s\", [slug])\n\nwith connection.cursor() as cursor:\n    cursor.execute(\"SELECT title FROM blog_post WHERE id = %s\", [post_id])\n\n# Unsafe\nPost.objects.raw(f\"SELECT * FROM blog_post WHERE slug = '{slug}'\")",
+          "language": "python"
+        },
+        {
+          "id": "uploads-and-files",
+          "title": "Uploads are hostile input",
+          "body": "A file upload is not a string. Validate size, content type and extension on the server, store the file outside the web root or in object storage, and serve private files through a permission-checked view.\n\nNever trust the client-supplied filename. Django's storage layer normalises names, but you should still generate your own. Do not serve user uploads with `MEDIA_URL` if they are private.",
+          "code": "def clean_file(self):\n    uploaded = self.cleaned_data[\"file\"]\n    if uploaded.size > 10 * 1024 * 1024:\n        raise ValidationError(\"Maximum size is 10 MB.\")\n    if uploaded.content_type not in ALLOWED_TYPES:\n        raise ValidationError(\"Unsupported file type.\")\n    return uploaded\n\n# store under a generated key, not the original filename\nkey = f\"documents/{uuid.uuid4()}{Path(uploaded.name).suffix.lower()}\"\nstored = default_storage.save(key, uploaded)",
+          "language": "python"
+        },
+        {
+          "id": "secrets-dependencies",
+          "title": "Secrets, dependencies and the boring parts",
+          "body": "Keep secrets in the environment or a secret manager, not in git. Rotate any key that has been committed; removing it from the latest commit is not enough because history remains.\n\nPin dependencies and update deliberately. Run `pip-audit` or your platform's vulnerability scanner in CI. Keep Django on a supported patch release; security fixes are backported only to supported series.",
+          "code": "pip install pip-audit\npip-audit -r requirements.txt\npython manage.py check --deploy",
+          "language": "bash"
+        }
+      ],
+      "pitfalls": [
+        "Shipping with `DEBUG=True`.",
+        "Using `|safe` on user-generated content.",
+        "Disabling CSRF for an API endpoint that changes state.",
+        "Serving private uploads directly from `MEDIA_URL`.",
+        "Trusting `X-Forwarded-Proto` without a trusted proxy.",
+        "Committing a secret and only deleting it from the latest commit.",
+        "Running an unsupported Django version with known CVEs."
+      ],
+      "checklist": [
+        "`DEBUG=False`, real secret, explicit hosts.",
+        "HTTPS redirect, secure cookies and HSTS configured.",
+        "Every POST form has CSRF protection.",
+        "No unreviewed `|safe` or raw SQL interpolation.",
+        "Uploads validated and stored outside the web root.",
+        "Dependencies audited and Django patched.",
+        "`check --deploy` passes."
+      ],
+      "related": [
+        "settings",
+        "forms",
+        "static-media",
+        "deploy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/security/"
+    },
+    {
+      "slug": "errors",
+      "title": "Error decoder",
+      "subtitle": "The exception, the cause, the fix",
+      "category": "Quality",
+      "order": 3,
+      "aliases": [
+        "errors",
+        "error",
+        "exception",
+        "traceback",
+        "debugging",
+        "noreversematch",
+        "templatedoesnotexist",
+        "fielderror",
+        "operationalerror",
+        "integrityerror",
+        "doesnotexist",
+        "multipleobjectsreturned",
+        "improperlyconfigured",
+        "disallowedhost",
+        "csrftoken",
+        "migration error",
+        "modulenotfounderror",
+        "app_label",
+        "no such table",
+        "syntaxerror"
+      ],
+      "summary": "A lookup table for the exceptions that stop a Django project, with the exact place to look and the fix that usually works.",
+      "quick_answer": "Read the last line of the traceback, then the first line that points at your own code. The exception type tells you which layer failed: import, URL, template, query, migration or request. Fix the cause, not the symptom.",
+      "sections": [
+        {
+          "id": "read-a-traceback",
+          "title": "How to read a traceback",
+          "body": "Read from the bottom up. The last line is the exception. The frame above it is where it was raised. Keep moving up until you find the first frame in your own code; that is usually where the bad input or configuration entered.\n\nIn development, Django's technical 500 page shows the traceback, local variables, SQL and settings. In production, `DEBUG=False` hides all of it; use logging and an error tracker instead."
+        },
+        {
+          "id": "decode",
+          "title": "The decoder",
+          "body": "The table below covers the errors beginners hit most often. If the exact message is not here, search the exception class and the first line of the message; the surrounding traceback usually names the app and file."
+        },
+        {
+          "id": "debugging-routine",
+          "title": "A five-minute debugging routine",
+          "body": "1. Reproduce it with the smallest possible request or command.\n2. Write down the expected result and the actual result.\n3. Find the first frame in your code.\n4. Inspect the data at that boundary: form input, query parameters, settings, migration state.\n5. Change one thing. Re-run. If it works, add a test that would have caught it.\n\nFor template errors, temporarily render `{{ form.errors }}` or add `{% debug %}`. For query errors, print `queryset.query`. For migration errors, run `showmigrations --plan` before touching files.",
+          "code": "python manage.py check\npython manage.py showmigrations --plan\npython manage.py shell -c \"from blog.models import Post; print(Post.objects.all().query)\"\npython manage.py test blog.tests.PostViewTests.test_list_shows_published_posts -v 2",
+          "language": "bash"
+        }
+      ],
+      "pitfalls": [
+        "Googling the last line without reading the frame in your own code.",
+        "Deleting the database because a migration is inconsistent.",
+        "Adding `|safe` to make an HTML error disappear.",
+        "Catching `Exception` and returning a 200 response.",
+        "Changing many things at once and losing track of which fix worked."
+      ],
+      "checklist": [
+        "The full traceback was read, not just the last line.",
+        "The failing layer is identified: import, URL, template, ORM, migration or request.",
+        "The smallest reproduction is known.",
+        "The fix has a regression test."
+      ],
+      "related": [
+        "urls",
+        "templates",
+        "orm",
+        "migrations",
+        "forms"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/faq/",
+      "errors": [
+        {
+          "error": "ModuleNotFoundError: No module named 'myapp'",
+          "cause": "The app is not installed, you are in the wrong directory, or the virtual environment is not active.",
+          "fix": "Activate the venv, run commands from the folder containing manage.py, and confirm the app is on sys.path and in INSTALLED_APPS."
+        },
+        {
+          "error": "django.core.exceptions.ImproperlyConfigured: Requested setting ..., but settings are not configured",
+          "cause": "A module imports Django models or settings before Django is configured, often in a standalone script.",
+          "fix": "Set DJANGO_SETTINGS_MODULE and call django.setup() before importing app modules, or run the code through manage.py shell or a management command."
+        },
+        {
+          "error": "NoReverseMatch: Reverse for 'post-detail' not found",
+          "cause": "The route name is misspelled, the namespace is missing, the URLconf is not included, or required arguments were not supplied.",
+          "fix": "Check app_name and include(), use 'blog:post-detail' if namespaced, and pass the exact kwargs or args the route expects."
+        },
+        {
+          "error": "TemplateDoesNotExist: blog/post_list.html",
+          "cause": "The template path is wrong, the app is not in INSTALLED_APPS, or the template directory is not configured.",
+          "fix": "Confirm the file lives at blog/templates/blog/post_list.html, the app is installed, and APP_DIRS or TEMPLATES['DIRS'] includes the directory."
+        },
+        {
+          "error": "FieldError: Cannot resolve keyword 'author_name' into field",
+          "cause": "A filter uses a field or lookup that does not exist on the model.",
+          "fix": "Use the real field path (author__name for a relation), check related_name, and remember that reverse relations use the accessor name."
+        },
+        {
+          "error": "OperationalError: no such table: blog_post",
+          "cause": "Migrations have not been applied, or the database file is not the one you think it is.",
+          "fix": "Run python manage.py migrate. Check DATABASES['default']['NAME'] and confirm you are in the right project directory."
+        },
+        {
+          "error": "IntegrityError: UNIQUE constraint failed",
+          "cause": "A unique field or UniqueConstraint was violated, often by a duplicate create or a race.",
+          "fix": "Check for an existing row first, use get_or_create or update_or_create, and catch IntegrityError to return a form error where appropriate."
+        },
+        {
+          "error": "Post.DoesNotExist / get() returned more than one Post",
+          "cause": "get() found zero or multiple rows. get() is strict by design.",
+          "fix": "Use get_object_or_404 for a missing object; use filter().first() when multiple rows are possible; add a unique constraint if the query should return one row."
+        },
+        {
+          "error": "RelatedObjectDoesNotExist: User has no profile",
+          "cause": "A reverse one-to-one relation was accessed before the related row existed.",
+          "fix": "Use getattr(user, 'profile', None), create the profile in a signal or service, or model the relation as nullable."
+        },
+        {
+          "error": "DisallowedHost: Invalid HTTP_HOST header",
+          "cause": "The request host is not in ALLOWED_HOSTS.",
+          "fix": "Add the exact hostname (without scheme or path) to ALLOWED_HOSTS, including the LAN IP when testing from a phone."
+        },
+        {
+          "error": "CSRF verification failed. Request aborted.",
+          "cause": "The form is missing {% csrf_token %}, the token is outside the form, or the origin is not trusted.",
+          "fix": "Add the token inside the form; for a separate frontend, send X-CSRFToken and configure CSRF_TRUSTED_ORIGINS with scheme and host."
+        },
+        {
+          "error": "django.db.migrations.exceptions.NodeNotFoundError / InconsistentMigrationHistory",
+          "cause": "A migration dependency is missing or the database records migrations in an order that no longer matches the files.",
+          "fix": "Run showmigrations --plan, restore the missing migration file from version control, or recover from a backup. Avoid deleting migration files that have been applied."
+        },
+        {
+          "error": "ValueError: Dependency on app with no migrations: accounts",
+          "cause": "A migration depends on an app that has models but no migrations.",
+          "fix": "Run makemigrations for that app and commit the generated initial migration before migrating the dependent app."
+        },
+        {
+          "error": "RuntimeError: Model class ... doesn't declare an explicit app_label",
+          "cause": "A model module is imported outside an installed app, often because the app is missing from INSTALLED_APPS or the import path is wrong.",
+          "fix": "Add the app to INSTALLED_APPS and import models through the app's models module, not a copied file."
+        },
+        {
+          "error": "The view didn't return an HttpResponse object",
+          "cause": "A view branch returns None, usually after an invalid form submission.",
+          "fix": "Return render(...) after the POST branch so invalid input gets a response with errors."
+        },
+        {
+          "error": "TemplateSyntaxError: Invalid block tag / unclosed tag",
+          "cause": "A template tag is misspelled or a block, if, for or with tag was not closed.",
+          "fix": "Check the tag name and closing tag; use {% load %} for custom tags; run the template through the test client to get the exact line."
+        },
+        {
+          "error": "TransactionManagementError: You can't execute queries until the end of the 'atomic' block",
+          "cause": "An exception was caught inside an atomic block, the transaction was marked for rollback, and code continued to query.",
+          "fix": "Let the exception leave the atomic block, wrap the optional work in its own savepoint, or roll back before continuing."
+        },
+        {
+          "error": "OperationalError: deadlock detected",
+          "cause": "Two transactions each hold a lock the other needs; PostgreSQL aborted one.",
+          "fix": "Keep transactions short, lock rows in a consistent order, and retry the whole transaction with bounded backoff."
+        },
+        {
+          "error": "OperationalError: database is locked",
+          "cause": "SQLite allows one writer; a long transaction or a second writer is holding the lock.",
+          "fix": "Use PostgreSQL for concurrent production writes, shorten transactions, and enable WAL mode if you must stay on SQLite."
+        },
+        {
+          "error": "IntegrityError: NOT NULL constraint failed",
+          "cause": "A non-nullable column received NULL, often because a field was added without a default or a script skipped validation.",
+          "fix": "Set the value, add a default/backfill migration, or make the field nullable deliberately."
+        },
+        {
+          "error": "IntegrityError: FOREIGN KEY constraint failed",
+          "cause": "A related row does not exist, or the parent was deleted while children still reference it.",
+          "fix": "Create the parent first, use the right `on_delete`, and check the order of bulk operations."
+        },
+        {
+          "error": "DataError: value too long for type character varying(N)",
+          "cause": "A string exceeds the database column length; PostgreSQL enforces it even if SQLite did not.",
+          "fix": "Validate length in the form/model, widen the column with a migration, and test on the production database."
+        },
+        {
+          "error": "ProgrammingError: column ... does not exist",
+          "cause": "The database schema is behind the models, or a migration was faked/skipped.",
+          "fix": "Run `migrate`, compare `showmigrations` with the DB, and avoid `--fake` as a repair tool."
+        },
+        {
+          "error": "AppRegistryNotReady: Apps aren't loaded yet",
+          "cause": "Django models were imported before `django.setup()` or before the app registry was populated.",
+          "fix": "Set `DJANGO_SETTINGS_MODULE`, call `django.setup()`, then import models. In a script, do it at the top."
+        },
+        {
+          "error": "RuntimeError: populate() isn't reentrant",
+          "cause": "The app registry was being loaded when code triggered another population, often via an import in `ready()`.",
+          "fix": "Move the import inside `ready()` and avoid importing models/apps at module import time in startup code."
+        },
+        {
+          "error": "SuspiciousFileOperation: The joined path is located outside of the base path",
+          "cause": "A file name or storage key tried to escape its directory with `..` or an absolute path.",
+          "fix": "Generate a safe filename, validate the key, and never pass a client path directly to storage."
+        },
+        {
+          "error": "RequestDataTooBig: Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE",
+          "cause": "A POST body is larger than the configured in-memory limit.",
+          "fix": "Raise the limit only for the endpoint that needs it, or stream large uploads directly to object storage."
+        },
+        {
+          "error": "TooManyFieldsSent: The number of GET/POST parameters exceeded settings.DATA_UPLOAD_MAX_NUMBER_FIELDS",
+          "cause": "A form or malicious request sent more fields than the configured maximum.",
+          "fix": "Raise `DATA_UPLOAD_MAX_NUMBER_FIELDS` for legitimate large forms, or split the form; do not disable the limit globally."
+        },
+        {
+          "error": "PermissionDenied (403)",
+          "cause": "A permission check failed, or a view raised `PermissionDenied` intentionally.",
+          "fix": "Check authentication, model permission and object ownership. Return 404 instead of 403 if existence is sensitive."
+        },
+        {
+          "error": "ValueError: Related model 'app.Model' cannot be resolved",
+          "cause": "A string reference in a FK/M2M points at an app/model that is not installed or is misspelled.",
+          "fix": "Check `INSTALLED_APPS`, the app label and the model name. Use `settings.AUTH_USER_MODEL` for the user."
+        },
+        {
+          "error": "LookupError: No installed app with label 'blog'",
+          "cause": "An app label used by a migration, fixture or `apps.get_model()` does not exist in `INSTALLED_APPS`.",
+          "fix": "Add the app, correct the label, or restore the missing migration dependency."
+        },
+        {
+          "error": "MultipleObjectsReturned: get() returned more than one ...",
+          "cause": "`get()` matched multiple rows; the query assumed uniqueness that the schema does not enforce.",
+          "fix": "Use `filter().first()` if many rows are valid, or add a unique constraint if exactly one should exist."
+        }
+      ]
+    }
+  ]
+}

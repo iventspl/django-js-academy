@@ -1,0 +1,225 @@
+/* Django Handbook — instant, dependency-free search. */
+(function () {
+  "use strict";
+
+  const root = document.querySelector("[data-handbook]");
+  if (!root) return;
+
+  const form = root.querySelector("[data-hb-form]");
+  const input = root.querySelector("[data-hb-input]");
+  const results = root.querySelector("[data-hb-results]");
+  const endpoint = root.dataset.hbEndpoint;
+  const idleTemplate = document.getElementById("hb-idle-template");
+  if (!form || !input || !results || !endpoint) return;
+
+  const initialResults = results.innerHTML;
+  const idleMarkup = idleTemplate ? idleTemplate.innerHTML : initialResults;
+  let debounceTimer = null;
+  let controller = null;
+  let lastRendered = null;
+
+  const escapeHTML = (value) =>
+    String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+
+  const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const highlight = (value, query) => {
+    const escaped = escapeHTML(value);
+    const terms = String(query)
+      .trim()
+      .split(/\s+/)
+      .filter((term) => term.length >= 2)
+      .map(escapeRegExp);
+    if (!terms.length) return escaped;
+    return escaped.replace(new RegExp(`(${terms.join("|")})`, "gi"), "<mark>$1</mark>");
+  };
+
+  const pad = (number) => String(number).padStart(2, "0");
+
+  const resultMarkup = (result) => {
+    const kind = result.kind === "chapter" ? "Chapter" : "Section";
+    const kindClass = result.kind === "chapter" ? " is-chapter" : "";
+    const meta =
+      result.kind === "chapter"
+        ? `${escapeHTML(result.category)} · ${escapeHTML(result.level)} · Chapter ${pad(result.chapter_number)}`
+        : `${escapeHTML(result.category)} · ${escapeHTML(result.level)} · ${escapeHTML(result.chapter)}`;
+    return `
+      <a class="hb-result" href="${escapeHTML(result.url)}">
+        <span class="hb-result-kind${kindClass}">${kind}</span>
+        <span class="hb-result-body">
+          <span class="hb-result-title">${highlight(result.title, input.value)}</span>
+          <span class="hb-result-meta">${meta}</span>
+          <span class="hb-result-snippet">${highlight(result.snippet, input.value)}</span>
+        </span>
+        <span class="hb-result-arrow" aria-hidden="true">→</span>
+      </a>`;
+  };
+
+  const showIdle = () => {
+    results.innerHTML = idleMarkup;
+    results.setAttribute("aria-busy", "false");
+    lastRendered = "";
+  };
+
+  const showTooShort = () => {
+    results.innerHTML = `
+      <div class="hb-state">
+        <span class="hb-state-mark" aria-hidden="true">…</span>
+        <h2>One more character.</h2>
+        <p>Search starts at two characters. Try “forms”, “orm” or “csrf”.</p>
+      </div>`;
+    results.setAttribute("aria-busy", "false");
+    lastRendered = "";
+  };
+
+  const showEmpty = (query) => {
+    results.innerHTML = `
+      <div class="hb-state">
+        <span class="hb-state-mark" aria-hidden="true">0</span>
+        <h2>No answer matched “${escapeHTML(query)}”.</h2>
+        <p>Try the exception name, the Django file (<code>forms.py</code>, <code>urls.py</code>) or a shorter phrase. The official docs are linked at the end of every chapter.</p>
+        <div class="hb-state-actions">
+          <a class="btn btn-primary" href="${escapeHTML(root.dataset.hbBrowse || "/handbook/")}">Browse all chapters</a>
+        </div>
+      </div>`;
+    results.setAttribute("aria-busy", "false");
+    lastRendered = "";
+  };
+
+  const showResults = (data) => {
+    if (!data.count) {
+      showEmpty(data.query);
+      return;
+    }
+    const rows = data.results.map(resultMarkup).join("");
+    results.innerHTML = `
+      <div class="hb-results-head">
+        <div>
+          <p class="hb-label">Search results</p>
+          <h2>${data.count} answer${data.count === 1 ? "" : "s"} for “${escapeHTML(data.query)}”</h2>
+        </div>
+        <a class="hb-clear" href="${escapeHTML(root.dataset.hbBrowse || "/handbook/")}">Clear search</a>
+      </div>
+      <div class="hb-result-list">${rows}</div>`;
+    results.setAttribute("aria-busy", "false");
+    lastRendered = data.query;
+  };
+
+  const setBusy = (busy) => {
+    results.setAttribute("aria-busy", busy ? "true" : "false");
+  };
+
+  const syncUrl = (query) => {
+    try {
+      const url = new URL(window.location.href);
+      if (query) {
+        url.searchParams.set("q", query);
+      } else {
+        url.searchParams.delete("q");
+      }
+      window.history.replaceState({}, "", url);
+    } catch (_) {
+      /* The search still works if history is unavailable. */
+    }
+  };
+
+  const runSearch = async (query) => {
+    syncUrl(query);
+    if (!query) {
+      showIdle();
+      return;
+    }
+    if (query.length < 2) {
+      showTooShort();
+      return;
+    }
+    if (query === lastRendered) return;
+
+    if (controller) controller.abort();
+    controller = new AbortController();
+    setBusy(true);
+
+    try {
+      const response = await fetch(`${endpoint}?q=${encodeURIComponent(query)}`, {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`Search returned ${response.status}`);
+      const data = await response.json();
+      if (query !== input.value.trim()) return; // A newer keystroke won the race.
+      showResults(data);
+    } catch (error) {
+      if (error.name === "AbortError") return;
+      results.innerHTML = `
+        <div class="hb-state">
+          <span class="hb-state-mark" aria-hidden="true">!</span>
+          <h2>Search is unavailable.</h2>
+          <p>Press Enter to run a normal page search.</p>
+        </div>`;
+      results.setAttribute("aria-busy", "false");
+    }
+  };
+
+  const schedule = () => {
+    window.clearTimeout(debounceTimer);
+    const query = input.value.trim();
+    if (!query) {
+      syncUrl("");
+      showIdle();
+      return;
+    }
+    debounceTimer = window.setTimeout(() => runSearch(query), 140);
+  };
+
+  input.addEventListener("input", schedule);
+
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      input.value = "";
+      schedule();
+      input.focus();
+    }
+  });
+
+  form.addEventListener("submit", (event) => {
+    if (!endpoint) return;
+    event.preventDefault();
+    window.clearTimeout(debounceTimer);
+    runSearch(input.value.trim());
+  });
+
+  document.querySelectorAll("[data-hb-try]").forEach((button) => {
+    button.addEventListener("click", () => {
+      input.value = button.dataset.hbTry || "";
+      schedule();
+      input.focus();
+      input.select();
+    });
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.key !== "/") return;
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      (target.closest("input, textarea, select, [contenteditable=true]") ||
+        target.closest(".hb-search"))
+    ) {
+      return;
+    }
+    event.preventDefault();
+    input.focus();
+    input.select();
+  });
+
+  // Keep the initial server-rendered results; only fetch when the user edits.
+  if (input.value.trim().length >= 2) {
+    lastRendered = input.value.trim();
+  }
+})();

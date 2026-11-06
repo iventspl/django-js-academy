@@ -2,7 +2,7 @@
 
 A local-first learning game for Python, Django, JavaScript and applied AI. It mixes multiple-choice quiz runs, open flashcards (fiszki), spaced repetition, explanations, coding challenges and a progress notebook — with a deliberately polished interface that runs the same way on macOS and Windows.
 
-No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.26 JS workshops, the 4.25 extended modules, the 4.24 practical examples and plain-language glossary, the 4.23 full MVC project walkthroughs, the 4.22 mobile layout, the 4.21 cross-platform learner tools, the 4.20 local Wi-Fi mode and earlier releases.
+No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.27 Django handbook, the 4.26 JS workshops, the 4.25 extended modules, the 4.24 practical examples and plain-language glossary, the 4.23 full MVC project walkthroughs, the 4.22 mobile layout, the 4.21 cross-platform learner tools, the 4.20 local Wi-Fi mode and earlier releases.
 
 ## What is inside
 
@@ -11,6 +11,7 @@ No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHAN
 - **34 real-world cheatsheets** covering permissions, uploads, private storage, email, webhooks, N+1 queries, search, migrations, deployment, LLM gateways, RAG, evals, prompt injection, ADRs, HTMX, typing, and tooling.
 - **6 application blueprints** for SaaS, marketplace, booking, CMS, support desk, and mobile API products — with data models, starter code, build order, and production traps.
 - **8 Architecture Studio labs** for AI document assistants, tool-using agents, multi-tenant SaaS, webhook platforms, marketplace ledgers, real-time fan-out, analytics pipelines, and legacy modernization.
+- **Django handbook** — a super-reference with **81 searchable chapters, 349 answers and 39 exception fixes**. It covers core Django, advanced ORM and SQL, transactions, formsets, class-based views, auth, admin, security, testing, performance, typing, middleware, caching, async, background jobs, storage, email, Channels, DRF, deployment, observability, i18n, PostgreSQL search, multi-tenancy, internals and upgrades — plus 15 lookup-table reference chapters and 11 end-to-end recipes. Open `/handbook/` and type `forms`, `select_for_update`, `window function`, `CSP` or `NoReverseMatch`.
 - **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 22 modules, 137 lessons, 152 quiz questions, 140 flashcards, 2 full project walkthroughs (17 steps), 13 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 64-term glossary, 30 interview questions, and XP/streaks.
 - **AI Academy** — a 12-month applied AI engineering path with 8 modules, 42 lessons, 48 quiz questions, 40 concept cards, 55 glossary terms, 12 real projects and a career map.
 - **Release radar** with current Django versions, LTS windows, CVE summaries, and source links to the official release notes.
@@ -18,7 +19,7 @@ No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHAN
 - **Explanations for every quiz answer**, often with a code sample, so a wrong answer still teaches something.
 - **Learning-friendly scoring:** +10 XP for a correct answer, +2 XP for a useful miss, completion bonuses for strong runs.
 - **Progress notebook:** accuracy, mastery per topic, XP levels, daily streak, 28-day activity heatmap, quiz history, and achievements.
-- **Global search** at `/search/` (and in the Django sidebar) across questions, flashcards, recipes, blueprints, architecture labs, and release notes.
+- **Global search** at `/search/` (and in the Django sidebar) across questions, flashcards, recipes, blueprints, architecture labs, release notes, and the Django handbook.
 - **Adaptive practice:** retry only the questions missed in a run, or launch a weak-spot run built from questions you have answered but never answered correctly.
 - **Keyboard-friendly study:** `1`–`4` to choose or rate, `Enter` to submit, `Space` to flip a card.
 - **Responsive layout** with reduced-motion support and no external fonts, CDNs, or telemetry.
@@ -167,6 +168,21 @@ The interface is designed for phones and small tablets:
 
 Every path has **5 beginner, 5 intermediate, and 5 advanced questions**, so you can start easy and still find sharp edges later.
 
+## The Django handbook
+
+The **Django handbook** at `/handbook/` is the “open it and type the thing that is broken” companion to the quizzes. It is a comprehensive, plain-language reference, not a link dump:
+
+- **81 chapters / 349 answers / 39 exception fixes**, organised into 11 areas: start here, request path, data, forms, users and admin, quality, assets and runtime, API and deploy, architecture, recipes and reference.
+- **21 core chapters**, **34 advanced deep dives**, **15 reference tables** and **11 end-to-end recipes**.
+- Advanced coverage includes ORM expressions, subqueries, window functions, transactions and row locks, multi-db, zero-downtime migrations, advanced forms/formsets, CBV internals, custom template tags, custom auth backends, security hardening (CSP/SSRF/uploads/supply chain), pytest/mocks/browser tests, performance and query plans, django-stubs, async ORM/ASGI, caching and stampedes, Celery/outbox, S3 storage, email deliverability, Channels, DRF schemas/versioning, PostgreSQL full-text search, multi-tenancy, architecture patterns, internals, upgrades, feature flags, payments/webhooks, HTMX and exports.
+- Reference chapters give you fast lookup tables for settings, model fields, QuerySet methods and lookups, forms/widgets, template tags/filters, auth, admin, commands, exceptions, migrations, middleware, HTTP, URLs, databases and a glossary.
+- Type `forms` and you get the whole forms chapter plus the specific sections for `ModelForm`, formsets, validation, widgets, field types, file uploads and the “form is not working” checklist.
+- Type `NoReverseMatch`, `FieldError`, `no such table` or `CSRF` and the **Error decoder** gives you the cause and the fix.
+- Every chapter starts with a short answer, then gives copyable code, the traps, a pre-flight checklist, related chapters, and a link to the official docs. Sections can also carry direct reference tables and per-section official links.
+- Search is instant and works without JavaScript (normal form submit). The same chapters also appear in the global `/search/` results.
+
+The prose lives in `dojo/content/handbook/*.json`, so it can be edited or extended without a database migration.
+
 ## The field guide
 
 The **Field guide** in the sidebar is the “real work” companion to the quizzes:
@@ -235,7 +251,7 @@ All three study surfaces — **Django**, **JavaScript** and **AI** — now expos
 | Weak-spot practice | ✓ | ✓ | ✓ |
 | Reset progress | ✓ | ✓ | ✓ |
 | Flashcards + scheduling | ✓ | ✓ | ✓ |
-| Reading/reference library | Field guide | Components | Code library |
+| Reading/reference library | Field guide + handbook | Components | Code library |
 
 Notes are stored locally per platform; the progress export deliberately does not include note bodies.
 
@@ -552,7 +568,7 @@ python manage.py seed_content              # validate + upsert everything
 python manage.py seed_content --if-changed # skip when the content fingerprint is unchanged
 ```
 
-`seed_content` is idempotent: it updates existing rows by key and keeps choice IDs stable where possible. The command stores a fingerprint of all JSON files, and the launcher uses `--if-changed` so a normal start does not overwrite admin edits. When you edit content, the fingerprint changes and the next seed applies your JSON updates.
+`seed_content` is idempotent: it updates existing rows by key and keeps choice IDs stable where possible. The command stores a fingerprint of all seeded JSON files (handbook chapters are excluded because they are read directly, not seeded), and the launcher uses `--if-changed` so a normal start does not overwrite admin edits. When you edit quiz content, the fingerprint changes and the next seed applies your JSON updates.
 
 ### Editing the field guide
 
@@ -564,6 +580,22 @@ The practical content lives in `dojo/content/field_guide/`:
 - `releases.json` — `series` and `notes` arrays, plus `reviewed_on`. Release notes require `version`, `kind`, `released_on`, `headline`, `summary`, `why_it_matters`, `action`, and an HTTPS `source_url`.
 
 The release radar is deliberately a curated snapshot. Update `releases.json` when you verify new official notes, and keep the `reviewed_on` date honest.
+
+### Editing the Django handbook
+
+The handbook lives in `dojo/content/handbook/`, split across numbered files (`01_start.json` … `18_recipes.json`). Each file contains a `chapters` array. No migration or seed is needed: the loader reads and validates the files, and a restart picks up edits.
+
+A chapter requires `slug`, `title`, `subtitle`, `category`, `order`, `level`, `tags`, `aliases`, `summary`, `quick_answer`, `sections`, `pitfalls`, `checklist`, optional `errors`, `related` and `official`. `level` is one of `Core`, `Advanced`, `Reference` or `Recipe`. A section requires `id`, `title` and `body`; optional `code`, `language`, `note`, `table` (`head` + `rows`) and `reference`. `body` supports paragraphs, `-` / `1.` lists, `` `inline code` ``, `**bold**` and `[links](https://example.com)`.
+
+Reference tables are first-class content, so a chapter like `settings-reference` stays a lookup page rather than a wall of prose. Every section can also carry its own official `reference` URL.
+
+To validate after editing, run the handbook tests:
+
+```bash
+python manage.py test dojo.tests.HandbookContentTests
+```
+
+The loader rejects duplicate slugs or anchors, unknown categories, missing related chapters, insecure official links and malformed sections.
 
 ### Edycja treści JS Akademii
 

@@ -149,6 +149,10 @@
             <span class="nav-glyph" aria-hidden="true">?</span>
             <span>Quiz run</span>
           </a>
+          <a class="nav-link {% if active_nav == 'handbook' %}is-active{% endif %}" href="{% url 'dojo:handbook' %}">
+            <span class="nav-glyph" aria-hidden="true">¶</span>
+            <span>Django handbook</span>
+          </a>
           <a class="nav-link {% if active_nav == 'flashcards' %}is-active{% endif %}" href="{% url 'dojo:flashcards' %}">
             <span class="nav-glyph" aria-hidden="true">▣</span>
             <span>Fiszki</span>
@@ -176,7 +180,7 @@
         </nav>
         <form class="dojo-nav-search" action="{% url 'dojo:search' %}" method="get">
           <label class="sr-only" for="dojo-nav-q">Search Django Quest</label>
-          <input id="dojo-nav-q" name="q" type="search" value="{{ request.GET.q|default:'' }}" placeholder="Search the dojo…">
+          <input id="dojo-nav-q" name="q" type="search" value="{{ request.GET.q|default:'' }}" placeholder="Search dojo or handbook…">
           <button type="submit" aria-label="Search">⌕</button>
         </form>
       {% endif %}
@@ -242,5 +246,6 @@
       </footer>
     </main>
   </div>
+  {% block extra_js %}{% endblock %}
 </body>
 </html>

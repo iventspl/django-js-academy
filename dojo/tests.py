@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .content import load_bundles
+from .handbook import chapter_map, load_chapters, render_prose, search_handbook
 from .models import (
     AppBlueprint,
     ArchitectureCase,
@@ -584,6 +585,162 @@ class SearchTests(SeededTestCase):
         response = self.client.get(reverse("dojo:home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("dojo:search"))
+
+    def test_search_finds_handbook_chapters(self):
+        response = self.client.get(reverse("dojo:search"), {"q": "forms"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Django handbook")
+        self.assertGreaterEqual(response.context["counts"]["handbook"], 1)
+        self.assertContains(response, reverse("dojo:handbook_chapter", args=["forms"]))
+
+
+class HandbookContentTests(TestCase):
+    def test_every_chapter_is_complete(self):
+        chapters = load_chapters()
+        self.assertGreaterEqual(len(chapters), 80)
+        self.assertGreaterEqual(sum(len(chapter["sections"]) for chapter in chapters), 330)
+        levels = {chapter["level"] for chapter in chapters}
+        self.assertEqual(levels, {"Core", "Advanced", "Reference", "Recipe"})
+        for chapter in chapters:
+            self.assertGreaterEqual(len(chapter["sections"]), 2, chapter["slug"])
+            self.assertGreaterEqual(len(chapter["pitfalls"]), 3, chapter["slug"])
+            self.assertGreaterEqual(len(chapter["checklist"]), 3, chapter["slug"])
+            for section in chapter["sections"]:
+                self.assertTrue(section["body"], f"{chapter['slug']}#{section['id']}")
+                if section["table"]:
+                    for row in section["table"]["rows"]:
+                        self.assertEqual(len(row), len(section["table"]["head"]))
+            self.assertTrue(chapter["official"].startswith("https://"))
+        slugs = [chapter["slug"] for chapter in chapters]
+        self.assertEqual(len(slugs), len(set(slugs)))
+
+    def test_reference_and_recipe_material_exists(self):
+        chapters = load_chapters()
+        self.assertGreaterEqual(sum(1 for chapter in chapters if chapter["level"] == "Reference"), 15)
+        self.assertGreaterEqual(sum(1 for chapter in chapters if chapter["level"] == "Recipe"), 10)
+        self.assertIn("queryset-reference", chapter_map())
+        self.assertIn("recipe-auth", chapter_map())
+
+    def test_forms_chapter_covers_the_working_parts(self):
+        chapter = chapter_map()["forms"]
+        anchors = {section["id"] for section in chapter["sections"]}
+        self.assertGreaterEqual(len(chapter["sections"]), 8)
+        self.assertGreaterEqual(len(chapter["errors"]), 6)
+        self.assertTrue(
+            {
+                "plain-form-end-to-end",
+                "field-cheatsheet",
+                "validation-pipeline",
+                "modelform",
+                "initial-and-dynamic-fields",
+                "formsets",
+                "file-uploads",
+            }
+            <= anchors
+        )
+
+    def test_related_links_resolve(self):
+        by_slug = chapter_map()
+        for chapter in load_chapters():
+            for related in chapter["related"]:
+                self.assertIn(related, by_slug)
+
+    def test_search_prioritises_forms(self):
+        hits = search_handbook("forms")
+        self.assertTrue(hits)
+        self.assertEqual(hits[0]["chapter"]["slug"], "forms")
+        titles = " ".join(hit["title"] for hit in hits)
+        self.assertIn("ModelForm", titles)
+        self.assertIn("Formsets", titles)
+        self.assertNotIn("settings.py", {hit["chapter"]["title"] for hit in hits})
+
+    def test_search_finds_an_exception_name(self):
+        hits = search_handbook("NoReverseMatch")
+        self.assertTrue(hits)
+        self.assertIn(hits[0]["chapter"]["slug"], {"errors", "urls"})
+
+    def test_search_finds_advanced_and_reference_topics(self):
+        locking = search_handbook("select_for_update")
+        self.assertTrue(locking)
+        self.assertEqual(locking[0]["chapter"]["slug"], "transactions-locking")
+        search = search_handbook("SearchVector")
+        self.assertTrue(search)
+        self.assertIn(search[0]["chapter"]["slug"], {"search-postgres", "orm-expressions"})
+
+    def test_search_needs_two_characters(self):
+        self.assertEqual(search_handbook("f"), [])
+        self.assertEqual(search_handbook(""), [])
+
+    def test_prose_escapes_html_but_keeps_inline_markup(self):
+        rendered = render_prose("<script>alert(1)</script> **bold** `x<y`")
+        self.assertNotIn("<script>", rendered)
+        self.assertIn("&lt;script&gt;", rendered)
+        self.assertIn("<strong>bold</strong>", rendered)
+        self.assertIn("<code>x&lt;y</code>", rendered)
+
+    def test_prose_renders_bullet_lists(self):
+        rendered = render_prose("- one\n- two")
+        self.assertIn("<ul><li>one</li><li>two</li></ul>", rendered)
+
+
+class HandbookViewTests(TestCase):
+    def test_handbook_home_renders(self):
+        response = self.client.get(reverse("dojo:handbook"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ask the handbook")
+        self.assertContains(response, "forms.py")
+        self.assertContains(response, "Django handbook")
+
+    def test_handbook_search_renders_results(self):
+        response = self.client.get(reverse("dojo:handbook"), {"q": "forms"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "answers for")
+        self.assertContains(response, "#modelform")
+        self.assertContains(response, "#formsets")
+
+    def test_handbook_search_json(self):
+        response = self.client.get(reverse("dojo:handbook_search"), {"q": "forms"})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertGreaterEqual(payload["count"], 4)
+        self.assertEqual(payload["results"][0]["chapter"], "Forms")
+        self.assertTrue(payload["results"][0]["url"].startswith("/handbook/forms/"))
+
+    def test_chapter_renders_sections_and_official_link(self):
+        response = self.client.get(reverse("dojo:handbook_chapter", args=["forms"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Short answer")
+        self.assertContains(response, "What is_valid() actually does")
+        self.assertContains(response, "Error fixes")
+        self.assertContains(response, "https://docs.djangoproject.com/en/stable/topics/forms/")
+
+    def test_unknown_chapter_is_404(self):
+        response = self.client.get(reverse("dojo:handbook_chapter", args=["not-a-chapter"]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_reference_chapter_renders_a_table(self):
+        response = self.client.get(reverse("dojo:handbook_chapter", args=["queryset-reference"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Query methods")
+        self.assertContains(response, 'class="hb-table"')
+        self.assertContains(response, "select_related")
+
+    def test_level_filter_narrows_the_index(self):
+        response = self.client.get(reverse("dojo:handbook"), {"level": "Reference"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "QuerySet reference")
+        self.assertNotContains(response, "Start a project")
+
+    def test_recipe_chapter_renders(self):
+        response = self.client.get(reverse("dojo:handbook_chapter", args=["recipe-auth"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Signup, login, logout and password reset")
+        self.assertContains(response, "UserCreationForm")
+
+    def test_handbook_is_in_sidebar(self):
+        response = self.client.get(reverse("dojo:home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("dojo:handbook"))
 
 
 class AdaptivePracticeTests(SeededTestCase):

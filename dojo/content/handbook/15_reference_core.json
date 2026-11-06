@@ -1,0 +1,1524 @@
+{
+  "chapters": [
+    {
+      "slug": "settings-reference",
+      "title": "Settings reference",
+      "subtitle": "The settings you actually touch",
+      "category": "Reference",
+      "order": 1,
+      "tags": [
+        "settings",
+        "configuration"
+      ],
+      "aliases": [
+        "settings reference",
+        "debug",
+        "secret key",
+        "allowed hosts",
+        "installed apps",
+        "middleware",
+        "databases",
+        "caches",
+        "templates",
+        "static_url",
+        "media_root",
+        "auth_user_model",
+        "session cookie",
+        "csrf trusted origins",
+        "secure ssl redirect",
+        "email backend",
+        "language code",
+        "time zone",
+        "default auto field"
+      ],
+      "summary": "A lookup table for the settings that change behaviour, security or deployment. Defaults are not repeated; this is the map of what to set and why.",
+      "quick_answer": "Keep `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS` and database credentials in the environment. Set `AUTH_USER_MODEL` before the first migration. Treat `SECURE_*`, `SESSION_COOKIE_*` and `CSRF_*` as one security group, not isolated knobs.",
+      "sections": [
+        {
+          "id": "core",
+          "title": "Core and project",
+          "body": "These define the project's identity and the apps/middleware that are loaded.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Setting",
+              "What it does",
+              "Set it when"
+            ],
+            "rows": [
+              [
+                "`SECRET_KEY`",
+                "Signs sessions, tokens and password resets",
+                "Always; from env in production"
+              ],
+              [
+                "`DEBUG`",
+                "Shows tracebacks and settings",
+                "`False` in production"
+              ],
+              [
+                "`ALLOWED_HOSTS`",
+                "Hostnames Django will answer",
+                "Always; no wildcard in production"
+              ],
+              [
+                "`INSTALLED_APPS`",
+                "Apps, models, templates, admin",
+                "Every feature app"
+              ],
+              [
+                "`MIDDLEWARE`",
+                "Request/response chain order",
+                "Any non-default middleware"
+              ],
+              [
+                "`ROOT_URLCONF`",
+                "Root URLconf module",
+                "Non-default project layout"
+              ],
+              [
+                "`WSGI_APPLICATION` / `ASGI_APPLICATION`",
+                "Server entry point",
+                "Deploying"
+              ],
+              [
+                "`DEFAULT_AUTO_FIELD`",
+                "Default PK type for new models",
+                "Once per project"
+              ],
+              [
+                "`BASE_DIR`",
+                "Project root anchor",
+                "Every path setting"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "security",
+          "title": "Security",
+          "body": "These work together. Turning on one without the others leaves a gap.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Setting",
+              "Effect",
+              "Production default"
+            ],
+            "rows": [
+              [
+                "`SECURE_SSL_REDIRECT`",
+                "Redirect HTTP to HTTPS",
+                "True"
+              ],
+              [
+                "`SESSION_COOKIE_SECURE`",
+                "Session cookie only over HTTPS",
+                "True"
+              ],
+              [
+                "`CSRF_COOKIE_SECURE`",
+                "CSRF cookie only over HTTPS",
+                "True"
+              ],
+              [
+                "`SECURE_HSTS_SECONDS`",
+                "HSTS max-age",
+                "31536000 after HTTPS is stable"
+              ],
+              [
+                "`SECURE_HSTS_INCLUDE_SUBDOMAINS`",
+                "HSTS for subdomains",
+                "Only if all subdomains are HTTPS"
+              ],
+              [
+                "`SECURE_HSTS_PRELOAD`",
+                "Ask browsers to preload",
+                "After a successful HSTS rollout"
+              ],
+              [
+                "`SECURE_PROXY_SSL_HEADER`",
+                "Trust a proxy's proto header",
+                "Only behind a trusted proxy"
+              ],
+              [
+                "`SECURE_CONTENT_TYPE_NOSNIFF`",
+                "Block MIME sniffing",
+                "True"
+              ],
+              [
+                "`X_FRAME_OPTIONS`",
+                "Clickjacking protection",
+                "`DENY`"
+              ],
+              [
+                "`CSRF_TRUSTED_ORIGINS`",
+                "Trusted cross-origin POST origins",
+                "Separate frontend only"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "data-services",
+          "title": "Database, cache, email and static",
+          "body": "The services the app talks to. Keep credentials out of code.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Setting",
+              "What it controls",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`DATABASES`",
+                "Connections and aliases",
+                "PostgreSQL in production"
+              ],
+              [
+                "`CONN_MAX_AGE`",
+                "Persistent DB connections",
+                "Keep under DB limits"
+              ],
+              [
+                "`CACHES`",
+                "Cache backends",
+                "Redis/Memcached across workers"
+              ],
+              [
+                "`SESSION_ENGINE`",
+                "Where sessions live",
+                "DB or cache"
+              ],
+              [
+                "`EMAIL_BACKEND`",
+                "How email is sent",
+                "SMTP/API in production"
+              ],
+              [
+                "`DEFAULT_FROM_EMAIL`",
+                "Default sender",
+                "A domain you control"
+              ],
+              [
+                "`STATIC_URL` / `STATIC_ROOT`",
+                "Static file URL and collect target",
+                "WhiteNoise/CDN"
+              ],
+              [
+                "`MEDIA_URL` / `MEDIA_ROOT`",
+                "Upload URLs and local storage",
+                "Object storage in production"
+              ],
+              [
+                "`STORAGES`",
+                "Default and static storage backends",
+                "Manifest/S3 in production"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "auth-i18n",
+          "title": "Auth, sessions and i18n",
+          "body": "Identity, cookies and locale. Changing these after launch has migration and UX consequences.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Setting",
+              "Effect",
+              "Watch out"
+            ],
+            "rows": [
+              [
+                "`AUTH_USER_MODEL`",
+                "Custom user model",
+                "Set before first migrate"
+              ],
+              [
+                "`AUTHENTICATION_BACKENDS`",
+                "How users authenticate",
+                "Order matters"
+              ],
+              [
+                "`SESSION_COOKIE_AGE`",
+                "Session lifetime",
+                "Shorter for admin"
+              ],
+              [
+                "`SESSION_COOKIE_HTTPONLY`",
+                "JS cannot read session cookie",
+                "True"
+              ],
+              [
+                "`SESSION_COOKIE_SAMESITE`",
+                "Cross-site cookie policy",
+                "`Lax` is a good default"
+              ],
+              [
+                "`LANGUAGE_CODE`",
+                "Default language",
+                "Set with `LANGUAGES`"
+              ],
+              [
+                "`TIME_ZONE`",
+                "Display time zone",
+                "Store UTC with `USE_TZ=True`"
+              ],
+              [
+                "`USE_TZ`",
+                "Aware datetimes",
+                "True"
+              ],
+              [
+                "`USE_I18N`",
+                "Translation machinery",
+                "True if translating"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Changing `AUTH_USER_MODEL` after migrations.",
+        "`ALLOWED_HOSTS=['*']` because the real host was not configured.",
+        "Setting `SECURE_SSL_REDIRECT` without trusting the proxy header correctly.",
+        "Committing production secrets.",
+        "Using SQLite for multi-user production."
+      ],
+      "checklist": [
+        "Production settings load from the environment.",
+        "Security settings are a deliberate group.",
+        "Database/cache/email are reachable and monitored.",
+        "Static/media storage is production-ready.",
+        "`check --deploy` passes."
+      ],
+      "related": [
+        "settings",
+        "security",
+        "deploy-hardening"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/settings/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "model-fields-reference",
+      "title": "Model fields reference",
+      "subtitle": "Fields, relations, options and Meta",
+      "category": "Reference",
+      "order": 2,
+      "tags": [
+        "models",
+        "fields",
+        "reference"
+      ],
+      "aliases": [
+        "model field",
+        "charfield",
+        "textfield",
+        "decimalfield",
+        "datetimefield",
+        "foreignkey",
+        "onetoone",
+        "manytomany",
+        "on_delete",
+        "related_name",
+        "field options",
+        "null blank",
+        "meta options",
+        "db_index",
+        "unique",
+        "choices",
+        "upload_to",
+        "validators"
+      ],
+      "summary": "The field types and options that appear in real models, with the database/Python distinction that causes most schema bugs.",
+      "quick_answer": "Choose the narrowest field that fits. `null` is about the database; `blank` is about form validation. Use `DecimalField` for money, `DateTimeField` with `USE_TZ=True` for time, and a deliberate `on_delete` for every relation.",
+      "sections": [
+        {
+          "id": "scalar-fields",
+          "title": "Scalar fields",
+          "body": "The basic column types. Prefer `CharField` with a max length for short text and `TextField` for long text.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Field",
+              "Python type",
+              "Use for"
+            ],
+            "rows": [
+              [
+                "`AutoField` / `BigAutoField`",
+                "int",
+                "Primary keys (default is BigAutoField)"
+              ],
+              [
+                "`CharField(max_length=...)`",
+                "str",
+                "Short text with a limit"
+              ],
+              [
+                "`TextField()`",
+                "str",
+                "Long text"
+              ],
+              [
+                "`EmailField()`",
+                "str",
+                "Email addresses"
+              ],
+              [
+                "`SlugField()`",
+                "str",
+                "URL-safe slug"
+              ],
+              [
+                "`URLField()`",
+                "str",
+                "HTTP(S) URL"
+              ],
+              [
+                "`IntegerField` / `BigIntegerField`",
+                "int",
+                "Whole numbers"
+              ],
+              [
+                "`PositiveIntegerField`",
+                "int",
+                "Non-negative integers"
+              ],
+              [
+                "`DecimalField(max_digits, decimal_places)`",
+                "Decimal",
+                "Money and exact decimals"
+              ],
+              [
+                "`FloatField()`",
+                "float",
+                "Approximate scientific values"
+              ],
+              [
+                "`BooleanField(default=...)`",
+                "bool",
+                "True/false"
+              ],
+              [
+                "`DateField` / `DateTimeField`",
+                "date/datetime",
+                "Dates and timestamps"
+              ],
+              [
+                "`TimeField` / `DurationField`",
+                "time/timedelta",
+                "Time of day / duration"
+              ],
+              [
+                "`UUIDField(default=uuid4)`",
+                "UUID",
+                "Public identifiers"
+              ],
+              [
+                "`JSONField()`",
+                "dict/list",
+                "Flexible structured data"
+              ],
+              [
+                "`BinaryField()`",
+                "bytes",
+                "Small binary blobs"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "relation-fields",
+          "title": "Relationship fields",
+          "body": "Relations are database constraints plus Python descriptors. Set `on_delete` and `related_name` deliberately.",
+          "code": "author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name=\"posts\")\nprofile = models.OneToOneField(User, on_delete=models.CASCADE, related_name=\"profile\")\ntags = models.ManyToManyField(Tag, blank=True, related_name=\"posts\")",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Field",
+              "Relationship",
+              "Required decisions"
+            ],
+            "rows": [
+              [
+                "`ForeignKey(to, on_delete=...)`",
+                "Many-to-one",
+                "`on_delete`, `related_name`, `null`"
+              ],
+              [
+                "`OneToOneField(to, on_delete=...)`",
+                "One-to-one",
+                "`related_name`, uniqueness"
+              ],
+              [
+                "`ManyToManyField(to)`",
+                "Many-to-many",
+                "`related_name`, through model, blank"
+              ],
+              [
+                "`through=`",
+                "Explicit join model",
+                "Extra fields and constraints"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "field-options",
+          "title": "Common field options",
+          "body": "These options are shared across most fields. They are not interchangeable.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Option",
+              "Meaning",
+              "Common mistake"
+            ],
+            "rows": [
+              [
+                "`null=True`",
+                "Database NULL allowed",
+                "Using it on `CharField` and creating two empty states"
+              ],
+              [
+                "`blank=True`",
+                "Form validation allows empty",
+                "Assuming it makes the database nullable"
+              ],
+              [
+                "`default=`",
+                "Value for new rows",
+                "Using a mutable list/dict directly"
+              ],
+              [
+                "`choices=`",
+                "Allowed values",
+                "Forgetting `TextChoices` for labels"
+              ],
+              [
+                "`unique=True`",
+                "Database uniqueness",
+                "Relying on form validation only"
+              ],
+              [
+                "`db_index=True`",
+                "Index this column",
+                "Indexing everything"
+              ],
+              [
+                "`editable=False`",
+                "Hidden from ModelForm/admin",
+                "Expecting it to be hidden in APIs"
+              ],
+              [
+                "`validators=[]`",
+                "Extra validation",
+                "Validators do not run on `save()`"
+              ],
+              [
+                "`help_text=`",
+                "Form/admin hint",
+                "Putting secrets or internal notes there"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "meta",
+          "title": "Meta options",
+          "body": "Meta changes table-level behaviour. It is code, not a comment.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Option",
+              "Effect",
+              "Watch out"
+            ],
+            "rows": [
+              [
+                "`ordering`",
+                "Default queryset order",
+                "Every query pays; pagination needs a tiebreaker"
+              ],
+              [
+                "`indexes`",
+                "Extra indexes",
+                "Write/storage cost"
+              ],
+              [
+                "`constraints`",
+                "Unique/check guarantees",
+                "IntegrityError on violation"
+              ],
+              [
+                "`db_table`",
+                "Explicit table name",
+                "Hard to rename later"
+              ],
+              [
+                "`verbose_name` / `verbose_name_plural`",
+                "Admin labels",
+                "Useful for non-English UI"
+              ],
+              [
+                "`permissions`",
+                "Extra auth permissions",
+                "Not object-level"
+              ],
+              [
+                "`abstract`",
+                "No table; copy fields",
+                "Cannot be queried"
+              ],
+              [
+                "`proxy`",
+                "Same table, different behaviour",
+                "Cannot add fields"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "`null=True` on a string field and two empty states.",
+        "Using `CASCADE` for a reference that must survive.",
+        "Storing money in `FloatField`.",
+        "Forgetting that validators do not run on `save()`.",
+        "Adding a custom user after the first migration."
+      ],
+      "checklist": [
+        "Each field is the narrowest type that fits.",
+        "`null`/`blank` are deliberate.",
+        "Every relation has `on_delete` and `related_name`.",
+        "Invariants have constraints.",
+        "Money uses `DecimalField`."
+      ],
+      "related": [
+        "models",
+        "migrations",
+        "models-advanced"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/models/fields/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "queryset-reference",
+      "title": "QuerySet reference",
+      "subtitle": "Methods, lookups, aggregation and optimization",
+      "category": "Reference",
+      "order": 3,
+      "tags": [
+        "ORM",
+        "QuerySet",
+        "reference"
+      ],
+      "aliases": [
+        "queryset methods",
+        "filter",
+        "exclude",
+        "get",
+        "values",
+        "values_list",
+        "select_related",
+        "prefetch_related",
+        "annotate",
+        "aggregate",
+        "count",
+        "exists",
+        "update",
+        "bulk_create",
+        "bulk_update",
+        "iterator",
+        "explain",
+        "lookups",
+        "icontains",
+        "isnull",
+        "range",
+        "regex",
+        "F",
+        "Q"
+      ],
+      "summary": "A fast lookup for the QuerySet methods and field lookups you use daily, plus the optimization methods that keep query counts predictable.",
+      "quick_answer": "QuerySets are lazy. Use `filter`/`exclude`/`get`, `select_related` for FK/O2O, `prefetch_related` for M2M/reverse, `annotate` for per-row calculations and `aggregate` for one-row summaries. Call `.explain()` when a query is slow.",
+      "sections": [
+        {
+          "id": "methods",
+          "title": "Query methods",
+          "body": "These return QuerySets unless marked otherwise. Chain them before evaluation.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Method",
+              "Returns",
+              "Use for"
+            ],
+            "rows": [
+              [
+                "`all()`",
+                "QuerySet",
+                "Start a query"
+              ],
+              [
+                "`filter(**kwargs)`",
+                "QuerySet",
+                "AND conditions"
+              ],
+              [
+                "`exclude(**kwargs)`",
+                "QuerySet",
+                "NOT conditions"
+              ],
+              [
+                "`get(**kwargs)`",
+                "object",
+                "Exactly one row; raises DoesNotExist/MultipleObjectsReturned"
+              ],
+              [
+                "`first()` / `last()`",
+                "object/None",
+                "One row with ordering"
+              ],
+              [
+                "`order_by(*fields)`",
+                "QuerySet",
+                "Sort; `-field` desc"
+              ],
+              [
+                "`distinct()`",
+                "QuerySet",
+                "Remove duplicates"
+              ],
+              [
+                "`values(*fields)`",
+                "QuerySet[dict]",
+                "Rows as dictionaries"
+              ],
+              [
+                "`values_list(*fields, flat=True)`",
+                "QuerySet[tuple/str]",
+                "Rows as tuples or flat values"
+              ],
+              [
+                "`count()`",
+                "int",
+                "COUNT(*)"
+              ],
+              [
+                "`exists()`",
+                "bool",
+                "Cheap presence check"
+              ],
+              [
+                "`update(**kwargs)`",
+                "int",
+                "Bulk SQL UPDATE; no save/signals"
+              ],
+              [
+                "`delete()`",
+                "tuple",
+                "Bulk delete; cascades"
+              ],
+              [
+                "`get_or_create` / `update_or_create`",
+                "tuple",
+                "Idempotent upsert pattern"
+              ],
+              [
+                "`bulk_create` / `bulk_update`",
+                "list/int",
+                "Batch writes; no save/signals"
+              ],
+              [
+                "`iterator(chunk_size=...)`",
+                "iterator",
+                "Stream large result sets"
+              ],
+              [
+                "`explain()`",
+                "str",
+                "Database query plan"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "lookups",
+          "title": "Field lookups",
+          "body": "Append `__lookup` to a field. Related fields use `__` to join (`author__email`).",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Lookup",
+              "Example",
+              "Meaning"
+            ],
+            "rows": [
+              [
+                "`exact`",
+                "`status__exact=\"draft\"`",
+                "Equals (default)"
+              ],
+              [
+                "`iexact`",
+                "`email__iexact=value`",
+                "Case-insensitive equals"
+              ],
+              [
+                "`contains` / `icontains`",
+                "`title__icontains=\"django\"`",
+                "Substring"
+              ],
+              [
+                "`startswith` / `istartswith`",
+                "`slug__startswith=\"a\"`",
+                "Prefix"
+              ],
+              [
+                "`endswith` / `iendswith`",
+                "`email__iendswith=\".com\"`",
+                "Suffix"
+              ],
+              [
+                "`in`",
+                "`status__in=[...]`",
+                "Membership"
+              ],
+              [
+                "`gt` / `gte` / `lt` / `lte`",
+                "`views__gte=10`",
+                "Comparison"
+              ],
+              [
+                "`range`",
+                "`created_at__range=(a, b)`",
+                "Inclusive range"
+              ],
+              [
+                "`isnull`",
+                "`published_at__isnull=True`",
+                "NULL check"
+              ],
+              [
+                "`regex` / `iregex`",
+                "`slug__regex=r\"^a\"`",
+                "Regex (backend-dependent)"
+              ],
+              [
+                "`year` / `month` / `day`",
+                "`created_at__year=2026`",
+                "Date parts"
+              ],
+              [
+                "`date`",
+                "`created_at__date=today`",
+                "Date extraction"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "aggregation",
+          "title": "Aggregation and expressions",
+          "body": "`aggregate()` returns one dict; `annotate()` adds a value per row.",
+          "code": "from django.db.models import Avg, Count, F, Q, Sum\n\nPost.objects.aggregate(total=Count(\"id\"), avg_views=Avg(\"view_count\"))\nAuthor.objects.annotate(post_count=Count(\"posts\"), total_views=Sum(\"posts__view_count\"))\nPost.objects.filter(Q(status=\"draft\") | Q(published_at__isnull=True))\nPost.objects.filter(view_count__gte=F(\"like_count\"))",
+          "language": "python",
+          "note": "`Count(..., distinct=True)` prevents double counting across multiple joins.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "optimization",
+          "title": "Optimization methods",
+          "body": "These change the query shape, not the result. Measure before and after.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Method",
+              "Problem it solves",
+              "Caveat"
+            ],
+            "rows": [
+              [
+                "`select_related`",
+                "N+1 for FK/O2O",
+                "SQL join; not for M2M/reverse"
+              ],
+              [
+                "`prefetch_related`",
+                "N+1 for M2M/reverse",
+                "Second query; filter with `Prefetch`"
+              ],
+              [
+                "`only()` / `defer()`",
+                "Fetch fewer columns",
+                "Deferred access causes another query"
+              ],
+              [
+                "`values()` / `values_list()`",
+                "Avoid model instantiation",
+                "No model methods"
+              ],
+              [
+                "`iterator()`",
+                "Large result sets",
+                "Cannot reuse the queryset"
+              ],
+              [
+                "`exists()`",
+                "Presence check",
+                "Cheaper than `count()`"
+              ],
+              [
+                "`explain()`",
+                "Query plan",
+                "Use production-like data"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Calling `len()` on a QuerySet repeatedly.",
+        "Using `get()` where multiple rows are valid.",
+        "Forgetting `select_related` in a loop.",
+        "Filtering on an annotation alias in the same query on every backend.",
+        "Using `update()` and expecting signals/save()."
+      ],
+      "checklist": [
+        "Query count is known for the page.",
+        "FK/O2O data is selected.",
+        "M2M/reverse data is prefetched.",
+        "Large sets use `iterator()`.",
+        "Slow queries are explained."
+      ],
+      "related": [
+        "orm",
+        "orm-expressions",
+        "performance"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/models/querysets/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "forms-reference",
+      "title": "Forms reference",
+      "subtitle": "Fields, widgets, formsets and validation hooks",
+      "category": "Reference",
+      "order": 4,
+      "tags": [
+        "forms",
+        "reference"
+      ],
+      "aliases": [
+        "form fields",
+        "form widgets",
+        "choicefield",
+        "modelchoicefield",
+        "filefield",
+        "formsets",
+        "managementform",
+        "cleaned_data",
+        "is_valid",
+        "add_error",
+        "as_p",
+        "as_div",
+        "form prefix",
+        "empty form",
+        "validation hooks"
+      ],
+      "summary": "The forms API in one place: field types, widgets, form methods, formset management and the validation order.",
+      "quick_answer": "A field validates and converts; a widget renders. Use `is_valid()` before `cleaned_data`, render `field.errors` and `non_field_errors`, and always include `management_form` for a formset.",
+      "sections": [
+        {
+          "id": "fields",
+          "title": "Field types",
+          "body": "Fields define conversion and validation. Pass `required=False` for optional inputs.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Field",
+              "HTML input",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`CharField`",
+                "text",
+                "`max_length`, `min_length`, `strip`"
+              ],
+              [
+                "`EmailField`",
+                "email",
+                "Email validation"
+              ],
+              [
+                "`SlugField`",
+                "text",
+                "URL-safe validation"
+              ],
+              [
+                "`URLField`",
+                "url",
+                "HTTP(S) URL"
+              ],
+              [
+                "`IntegerField`",
+                "number",
+                "Whole number"
+              ],
+              [
+                "`DecimalField`",
+                "number",
+                "`max_digits`, `decimal_places`"
+              ],
+              [
+                "`FloatField`",
+                "number",
+                "Approximate"
+              ],
+              [
+                "`BooleanField`",
+                "checkbox",
+                "`required=False` for optional consent"
+              ],
+              [
+                "`DateField` / `DateTimeField`",
+                "date/datetime-local",
+                "Parses to date/datetime"
+              ],
+              [
+                "`ChoiceField`",
+                "select",
+                "`choices` required"
+              ],
+              [
+                "`MultipleChoiceField`",
+                "select multiple",
+                "Returns a list"
+              ],
+              [
+                "`ModelChoiceField`",
+                "select",
+                "Queryset-backed"
+              ],
+              [
+                "`FileField` / `ImageField`",
+                "file",
+                "Needs `request.FILES`"
+              ],
+              [
+                "`JSONField`",
+                "textarea",
+                "Parses JSON"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "widgets",
+          "title": "Widgets",
+          "body": "Widgets control rendering, not validation. Pass `attrs` for classes and HTML attributes.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Widget",
+              "Renders",
+              "Use for"
+            ],
+            "rows": [
+              [
+                "`TextInput`",
+                "`<input type=text>`",
+                "Short text"
+              ],
+              [
+                "`Textarea`",
+                "`<textarea>`",
+                "Long text"
+              ],
+              [
+                "`Select`",
+                "`<select>`",
+                "One choice"
+              ],
+              [
+                "`SelectMultiple`",
+                "`<select multiple>`",
+                "Many choices"
+              ],
+              [
+                "`CheckboxInput`",
+                "`<input type=checkbox>`",
+                "Boolean"
+              ],
+              [
+                "`RadioSelect`",
+                "radio group",
+                "Small choice set"
+              ],
+              [
+                "`CheckboxSelectMultiple`",
+                "checkbox group",
+                "Multi-select"
+              ],
+              [
+                "`DateInput` / `DateTimeInput`",
+                "date/datetime",
+                "Date pickers"
+              ],
+              [
+                "`FileInput`",
+                "file",
+                "Uploads"
+              ],
+              [
+                "`HiddenInput`",
+                "hidden",
+                "Server-controlled values"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "form-api",
+          "title": "Form API",
+          "body": "The methods and attributes you use in views and templates.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "API",
+              "What it does",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`is_valid()`",
+                "Runs validation, returns bool",
+                "Caches the result"
+              ],
+              [
+                "`errors`",
+                "Dict of field → list",
+                "Available after validation"
+              ],
+              [
+                "`cleaned_data`",
+                "Converted values",
+                "Only valid fields"
+              ],
+              [
+                "`as_p()` / `as_div()` / `as_table()`",
+                "Quick rendering",
+                "Prototype only"
+              ],
+              [
+                "`add_error(field, msg)`",
+                "Attach an error",
+                "Removes field from cleaned_data"
+              ],
+              [
+                "`has_changed()`",
+                "Compare to initial",
+                "Useful for edit forms"
+              ],
+              [
+                "`save(commit=False)`",
+                "ModelForm unsaved instance",
+                "Call `save_m2m()`"
+              ],
+              [
+                "`management_form`",
+                "Formset bookkeeping",
+                "Must be inside `<form>`"
+              ],
+              [
+                "`empty_form`",
+                "Template for JS-added rows",
+                "Replace `__prefix__`"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "validation-order",
+          "title": "Validation order",
+          "body": "This is the sequence that explains most “why is my error missing?” questions.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Step",
+              "Hook",
+              "If it fails"
+            ],
+            "rows": [
+              [
+                "1. Field conversion",
+                "`to_python()`",
+                "Field error"
+              ],
+              [
+                "2. Field validation",
+                "`validate()` + validators",
+                "Field error"
+              ],
+              [
+                "3. Form field hook",
+                "`clean_<field>()`",
+                "Field error"
+              ],
+              [
+                "4. Cross-field hook",
+                "`clean()`",
+                "Non-field or `add_error`"
+              ],
+              [
+                "5. Model validation",
+                "`Model.clean()` via ModelForm",
+                "Field/non-field"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Reading `cleaned_data` before `is_valid()`.",
+        "Forgetting `request.FILES`.",
+        "Rendering errors nowhere.",
+        "Using `fields = \"__all__\"` on a ModelForm.",
+        "Omitting the formset management form."
+      ],
+      "checklist": [
+        "Fields and widgets are paired deliberately.",
+        "Validation order is understood.",
+        "Errors are rendered per field and non-field.",
+        "Formsets render management form.",
+        "ModelForm fields are explicit."
+      ],
+      "related": [
+        "forms",
+        "forms-advanced",
+        "templates"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/forms/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "templates-reference",
+      "title": "Template reference",
+      "subtitle": "Tags, filters, loaders and context",
+      "category": "Reference",
+      "order": 5,
+      "tags": [
+        "templates",
+        "DTL",
+        "reference"
+      ],
+      "aliases": [
+        "template tags",
+        "template filters",
+        "dtl tags",
+        "for tag",
+        "if tag",
+        "url tag",
+        "static tag",
+        "csrf_token",
+        "block",
+        "extends",
+        "include",
+        "with",
+        "autoescape",
+        "date filter",
+        "default filter",
+        "truncatechars",
+        "template loader"
+      ],
+      "summary": "The Django Template Language tags and filters you will actually use, plus the loader/context settings that affect every render.",
+      "quick_answer": "Use `{% extends %}` for layout, `{% include %}` for fragments, `{% url %}` for links, `{% static %}` for assets and `{% csrf_token %}` in POST forms. Output is autoescaped; `|safe` is an explicit trust decision.",
+      "sections": [
+        {
+          "id": "tags",
+          "title": "Tags",
+          "body": "Tags control flow, inheritance, URLs and rendering.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Tag",
+              "Purpose",
+              "Example"
+            ],
+            "rows": [
+              [
+                "`{% extends %}`",
+                "Inherit a base template",
+                "`{% extends \"base.html\" %}`"
+              ],
+              [
+                "`{% block %}`",
+                "Override a section",
+                "`{% block content %}`"
+              ],
+              [
+                "`{% include %}`",
+                "Render a fragment",
+                "`{% include \"_row.html\" %}`"
+              ],
+              [
+                "`{% for %}` / `{% empty %}`",
+                "Loop with empty state",
+                "`{% for post in posts %}`"
+              ],
+              [
+                "`{% if %}` / `{% elif %}` / `{% else %}`",
+                "Conditionals",
+                "`{% if user.is_authenticated %}`"
+              ],
+              [
+                "`{% url %}`",
+                "Reverse a route",
+                "`{% url 'blog:detail' slug=post.slug %}`"
+              ],
+              [
+                "`{% static %}`",
+                "Static URL",
+                "`{% static 'css/app.css' %}`"
+              ],
+              [
+                "`{% csrf_token %}`",
+                "CSRF hidden input",
+                "Inside every POST form"
+              ],
+              [
+                "`{% with %}`",
+                "Alias a value",
+                "`{% with total=items|length %}`"
+              ],
+              [
+                "`{% load %}`",
+                "Load tag libraries",
+                "`{% load static %}`"
+              ],
+              [
+                "`{% translate %}`",
+                "Translate a string",
+                "`{% translate \"Save\" %}`"
+              ],
+              [
+                "`{% cache %}`",
+                "Cache a fragment",
+                "`{% cache 300 \"nav\" %}`"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "filters",
+          "title": "Filters",
+          "body": "Filters transform one value. They do not replace view logic.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Filter",
+              "Effect",
+              "Example"
+            ],
+            "rows": [
+              [
+                "`default`",
+                "Fallback for falsey",
+                "`{{ name|default:\"Anonymous\" }}`"
+              ],
+              [
+                "`default_if_none`",
+                "Fallback only for None",
+                "`{{ bio|default_if_none:\"\" }}`"
+              ],
+              [
+                "`date`",
+                "Format a date",
+                "`{{ created_at|date:\"j M Y\" }}`"
+              ],
+              [
+                "`time`",
+                "Format a time",
+                "`{{ starts_at|time:\"H:i\" }}`"
+              ],
+              [
+                "`floatformat`",
+                "Round decimals",
+                "`{{ price|floatformat:2 }}`"
+              ],
+              [
+                "`length`",
+                "Length",
+                "`{{ posts|length }}`"
+              ],
+              [
+                "`join`",
+                "Join a list",
+                "`{{ tags|join:\", \" }}`"
+              ],
+              [
+                "`truncatechars`",
+                "Truncate by chars",
+                "`{{ title|truncatechars:80 }}`"
+              ],
+              [
+                "`truncatewords`",
+                "Truncate by words",
+                "`{{ body|truncatewords:30 }}`"
+              ],
+              [
+                "`linebreaks`",
+                "Paragraphs",
+                "`{{ body|linebreaks }}`"
+              ],
+              [
+                "`slugify`",
+                "URL slug",
+                "`{{ title|slugify }}`"
+              ],
+              [
+                "`safe`",
+                "Disable escaping",
+                "Only for trusted HTML"
+              ],
+              [
+                "`escape`",
+                "Force escaping",
+                "`{{ value|escape }}`"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "loaders-context",
+          "title": "Loaders and context",
+          "body": "Templates are discovered through `DIRS` and app template dirs. The cached loader is enabled when `DEBUG=False`. Context processors add data to every render.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Setting / hook",
+              "Effect",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`TEMPLATES['DIRS']`",
+                "Project template directories",
+                "Use `BASE_DIR / \"templates\"`"
+              ],
+              [
+                "`APP_DIRS`",
+                "Look in app `templates/`",
+                "Usually True"
+              ],
+              [
+                "Cached loader",
+                "Parse templates once",
+                "Default in production"
+              ],
+              [
+                "`context_processors`",
+                "Global context",
+                "Keep cheap"
+              ],
+              [
+                "`{% include ... only %}`",
+                "Isolate context",
+                "Explicit dependencies"
+              ],
+              [
+                "`{% block.super %}`",
+                "Keep parent block content",
+                "Useful for additions"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Using `|safe` on user input.",
+        "Hard-coding URLs instead of `{% url %}`.",
+        "Forgetting `{% csrf_token %}`.",
+        "Putting queries in template tags.",
+        "Assuming a context processor is free."
+      ],
+      "checklist": [
+        "Base template owns the layout.",
+        "Every POST form has CSRF.",
+        "URLs/static paths are reversed.",
+        "User data is escaped.",
+        "Context processors are cheap."
+      ],
+      "related": [
+        "templates",
+        "templates-advanced",
+        "forms"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/templates/builtins/",
+      "level": "Reference",
+      "errors": []
+    }
+  ]
+}

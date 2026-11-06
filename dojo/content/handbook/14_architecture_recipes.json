@@ -1,0 +1,711 @@
+{
+  "chapters": [
+    {
+      "slug": "architecture-patterns",
+      "title": "Application architecture",
+      "subtitle": "Apps, services, boundaries and ADRs",
+      "category": "Architecture",
+      "order": 2,
+      "level": "Advanced",
+      "tags": [
+        "architecture",
+        "services",
+        "ADRs"
+      ],
+      "aliases": [
+        "service layer",
+        "selector",
+        "domain model",
+        "fat model",
+        "apps boundaries",
+        "hexagonal",
+        "ports and adapters",
+        "dependency inversion",
+        "ADR",
+        "architecture decision record",
+        "modular monolith",
+        "coupling",
+        "cohesion"
+      ],
+      "summary": "Django gives you apps, models and views; it does not give you a domain architecture. Use services, selectors and explicit boundaries to keep a growing codebase changeable.",
+      "quick_answer": "Keep views thin, models focused on data and invariants, and put multi-step use cases in a service function. Use selectors for read queries. Record consequential decisions as ADRs and enforce boundaries with imports and tests.",
+      "sections": [
+        {
+          "id": "boundaries",
+          "title": "App boundaries and the dependency rule",
+          "body": "A Django app should own a coherent domain: billing, catalog, accounts. It should not import another app's internal modules freely. Depend on a small public surface (services, selectors, events), not on private helpers.\n\nWhen two apps need the same utility, move it to a shared `common` app only if it is genuinely generic. A `utils.py` that imports everything is a new monolith.",
+          "code": "billing/\n  models.py\n  services.py      # public use cases\n  selectors.py     # public read queries\n  gateways.py      # provider adapters\n  tests/\n\ncatalog/\n  models.py\n  services.py\n  selectors.py\n\n# billing/services.py\ndef start_subscription(account, plan, gateway) -> Subscription: ...",
+          "language": "text",
+          "note": "A public module is a promise. Rename/refactor it with the same care as an API endpoint.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "services-selectors",
+          "title": "Services and selectors",
+          "body": "A service is a write use case: it validates, changes state, emits side effects after commit and returns a result. A selector is a read query: it returns a queryset or a small DTO, already scoped and optimized.\n\nDo not create a service for every model method. Create one when the operation spans models, transactions or external systems.",
+          "code": "# catalog/selectors.py\ndef published_posts_for(tenant):\n    return (\n        Post.objects.filter(tenant=tenant, status=\"published\")\n        .select_related(\"author\")\n        .order_by(\"-published_at\")\n    )\n\n# billing/services.py\ndef start_subscription(*, account, plan, gateway):\n    with transaction.atomic():\n        subscription = Subscription.objects.create(account=account, plan=plan, status=\"pending\")\n        transaction.on_commit(lambda: gateway.start(subscription.pk))\n    return subscription",
+          "language": "python",
+          "note": "Pass keyword-only arguments for services with several parameters. It makes call sites readable and refactors safer.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "dtos-events",
+          "title": "DTOs and domain events",
+          "body": "Returning ORM objects from every service couples callers to the schema. A small dataclass/DTO at a module boundary makes the contract explicit and testable.\n\nDomain events (`OrderPlaced`, `InvoicePaid`) let other apps react without a direct import. An outbox makes the event reliable; an in-process signal is not a delivery guarantee.",
+          "code": "@dataclass(frozen=True)\nclass CheckoutResult:\n    order_id: int\n    total: Decimal\n    redirect_url: str\n\n@dataclass(frozen=True)\nclass OrderPlaced:\n    order_id: int\n    customer_id: int",
+          "language": "python",
+          "note": "Do not turn every internal function into a DTO. Use them where a boundary is real.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "adrs",
+          "title": "ADRs and fitness functions",
+          "body": "An Architecture Decision Record captures context, decision, alternatives and consequences. Store it next to the code. A future maintainer needs to know why the team chose schema-per-tenant or a queue, not just what the code does.\n\nFitness functions are automated checks that enforce a boundary: no imports from `catalog` into `billing`, no queries in templates, no cross-tenant access. A lint rule or a test is stronger than a wiki page.",
+          "code": "# tests/test_architecture.py\nimport ast\nfrom pathlib import Path\n\ndef test_billing_does_not_import_catalog_models():\n    for path in Path(\"billing\").rglob(\"*.py\"):\n        tree = ast.parse(path.read_text())\n        for node in ast.walk(tree):\n            if isinstance(node, ast.ImportFrom) and node.module:\n                assert not node.module.startswith(\"catalog.models\"), path",
+          "language": "python",
+          "note": "Start with one or two fitness functions. A hundred rules will be disabled on day two.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "A `utils.py` that imports every app and becomes impossible to test.",
+        "Putting multi-step use cases in views or model `save()`.",
+        "Returning ORM objects across every boundary.",
+        "Using signals as a reliable event bus.",
+        "Architecture documents that nobody updates."
+      ],
+      "checklist": [
+        "Apps own coherent domains and expose a public surface.",
+        "Multi-step writes live in services.",
+        "Read queries live in selectors and are scoped.",
+        "Consequential decisions have ADRs.",
+        "At least one fitness function enforces a boundary."
+      ],
+      "related": [
+        "models-advanced",
+        "testing-advanced",
+        "multi-tenancy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/",
+      "errors": []
+    },
+    {
+      "slug": "internals",
+      "title": "Django internals",
+      "subtitle": "App registry, request lifecycle, settings and checks",
+      "category": "Architecture",
+      "order": 3,
+      "level": "Advanced",
+      "tags": [
+        "internals",
+        "request lifecycle",
+        "checks"
+      ],
+      "aliases": [
+        "app registry",
+        "apps.ready",
+        "request lifecycle",
+        "settings object",
+        "django.setup",
+        "checks framework",
+        "system check",
+        "middleware chain",
+        "handler",
+        "wsgi handler",
+        "asgi handler",
+        "import order",
+        "app config"
+      ],
+      "summary": "What happens between `manage.py` and a response: app loading, settings, URL resolution, middleware, the view and the response. Knowing the order makes configuration bugs obvious.",
+      "quick_answer": "Django populates the app registry, loads settings, builds the middleware chain, resolves the URL, calls the view and unwinds the response. `AppConfig.ready()` runs once during startup; use it for registration, not queries. System checks run before the server starts.",
+      "sections": [
+        {
+          "id": "startup",
+          "title": "Startup and the app registry",
+          "body": "`django.setup()` configures settings, populates the app registry and imports each app's models. `AppConfig.ready()` runs after models are loaded. Importing models from `ready()` is safe; querying the database is not (the app may be starting before migrations run).\n\nSignals should be connected in `ready()`, not at import time in `models.py`, to avoid double registration.",
+          "code": "# catalog/apps.py\nfrom django.apps import AppConfig\n\nclass CatalogConfig(AppConfig):\n    default_auto_field = \"django.db.models.BigAutoField\"\n    name = \"catalog\"\n\n    def ready(self):\n        from . import signals  # noqa: F401",
+          "language": "python",
+          "note": "`default_auto_field` prevents a deprecation warning and keeps new models consistent.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "request-lifecycle",
+          "title": "The request lifecycle",
+          "body": "A request enters through WSGI/ASGI, passes the middleware chain, is matched by the URL resolver, dispatched to the view, and returns through the middleware in reverse. Exceptions can be handled by middleware or become a 404/500 response.\n\n`request.resolver_match` is available after URL resolution. Middleware that runs before resolution cannot know the view name unless it resolves the path itself.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Stage",
+              "What runs",
+              "Typical use"
+            ],
+            "rows": [
+              [
+                "Server",
+                "WSGI/ASGI handler",
+                "Process/thread/event loop"
+              ],
+              [
+                "Middleware (in)",
+                "Security, sessions, CSRF, auth",
+                "Headers, session, user, protection"
+              ],
+              [
+                "URL resolver",
+                "Root URLconf → include",
+                "Choose the view"
+              ],
+              [
+                "View",
+                "Function or CBV dispatch",
+                "Business logic + response"
+              ],
+              [
+                "Middleware (out)",
+                "Reverse order",
+                "Headers, timing, compression"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "settings",
+          "title": "The settings object",
+          "body": "`settings` is a lazy object. Accessing a setting before `DJANGO_SETTINGS_MODULE` is configured raises `ImproperlyConfigured`. In scripts, set the environment variable and call `django.setup()` before importing app modules.\n\n`override_settings` swaps values in tests. Some settings are read at import time; changing them after startup may not take effect.",
+          "code": "import os\nos.environ.setdefault(\"DJANGO_SETTINGS_MODULE\", \"config.settings\")\n\nimport django\ndjango.setup()\n\nfrom django.conf import settings\nprint(settings.DATABASES[\"default\"][\"ENGINE\"])",
+          "language": "python",
+          "note": "Never import Django models before `django.setup()` in a standalone script.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "checks",
+          "title": "The system checks framework",
+          "body": "`manage.py check` runs registered checks before the server starts. Django's own checks cover models, URLs, admin, security and deployment. You can register a custom check with `@register` and return `Error`, `Warning` or `Info`.\n\nUse checks for configuration invariants: missing env vars, an invalid storage backend, a required middleware. Do not use them for database queries.",
+          "code": "from django.core.checks import Error, Warning, register\n\n@register()\ndef check_support_email(app_configs, **kwargs):\n    from django.conf import settings\n    if not getattr(settings, \"SUPPORT_EMAIL\", \"\"):\n        return [Warning(\"SUPPORT_EMAIL is not set\", id=\"config.W001\")]\n    return []",
+          "language": "python",
+          "note": "Warnings are easy to ignore. Promote a check to `Error` only when the app genuinely cannot start.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "handlers",
+          "title": "WSGI, ASGI and handler classes",
+          "body": "`WSGIHandler` and `ASGIHandler` load middleware and the URLconf, then call the view. `get_wsgi_application()` / `get_asgi_application()` return the callable your server imports. They must run after settings are configured.\n\nASGI adds the lifespan protocol and long-lived connections. A WSGI-only server cannot serve WebSockets.",
+          "code": "# config/wsgi.py\nimport os\nfrom django.core.wsgi import get_wsgi_application\nos.environ.setdefault(\"DJANGO_SETTINGS_MODULE\", \"config.settings\")\napplication = get_wsgi_application()",
+          "language": "python",
+          "note": "A server command references `config.wsgi:application`; a typo here is a startup failure, not a request error.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Querying the database in `AppConfig.ready()`.",
+        "Importing models before `django.setup()` in scripts.",
+        "Connecting signals twice by importing from `models.py`.",
+        "Assuming middleware knows the resolved view before URL resolution.",
+        "Using checks for slow queries or network calls."
+      ],
+      "checklist": [
+        "Startup order is understood by the team.",
+        "`ready()` is side-effect-light.",
+        "Settings are configured before app imports.",
+        "Custom checks are fast and actionable.",
+        "WSGI/ASGI entry points match the server command."
+      ],
+      "related": [
+        "settings",
+        "middleware",
+        "signals",
+        "deploy-hardening"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/internals/",
+      "errors": []
+    },
+    {
+      "slug": "upgrade-django",
+      "title": "Upgrading Django",
+      "subtitle": "LTS cadence, deprecations and a safe upgrade",
+      "category": "Start here",
+      "order": 4,
+      "level": "Advanced",
+      "tags": [
+        "upgrade",
+        "LTS",
+        "maintenance"
+      ],
+      "aliases": [
+        "upgrade django",
+        "django version",
+        "lts",
+        "deprecation",
+        "release notes",
+        "removed in django",
+        "upgrade path",
+        "django 5.2",
+        "django 6.0",
+        "django 6.1",
+        "security release",
+        "pin version"
+      ],
+      "summary": "Django ships feature releases every eight months and security patches for supported series. Upgrade deliberately: read the release notes, remove deprecations, test on the target version and keep a rollback path.",
+      "quick_answer": "Stay on a supported patch. Read the release notes for every version you cross, fix deprecation warnings before the removal release, run the test suite on the target version, and deploy with a rollback plan. Never jump multiple major versions without reading each step.",
+      "sections": [
+        {
+          "id": "cadence",
+          "title": "Release cadence and support",
+          "body": "Django has feature releases roughly every eight months. Every third feature release is LTS. Security fixes land on supported feature releases and the current LTS. A version that is “working fine” can still be unsupported and unsafe.\n\nPin an exact version (`Django==6.1.2`) or a narrow range. Test the patch upgrade in CI; patch releases are intended to be drop-in but can change behaviour.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Series",
+              "Kind",
+              "Upgrade stance"
+            ],
+            "rows": [
+              [
+                "5.2",
+                "LTS",
+                "Long support; good default for conservative teams"
+              ],
+              [
+                "6.0",
+                "Feature",
+                "Short support; upgrade before extended support ends"
+              ],
+              [
+                "6.1",
+                "Feature",
+                "Current stable; read the release notes"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "deprecations",
+          "title": "Deprecations and removed APIs",
+          "body": "Django warns before removing an API. Run with warnings enabled and fix deprecations on the version before the removal. A deprecation warning is a scheduled breakage, not noise.\n\nCommon upgrade work: settings renamed/removed, `CheckConstraint.check` → `condition`, storage settings → `STORAGES`, `django.utils.timezone.utc` removal, `ugettext` → `gettext`, and third-party packages that lag.",
+          "code": "python -W error::DeprecationWarning manage.py test\npython manage.py check --deploy",
+          "language": "bash",
+          "note": "Turning every deprecation into an error can be noisy from dependencies. Scope the warning filter to your apps if needed.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "process",
+          "title": "A safe upgrade process",
+          "body": "1. Read the release notes and “backwards incompatible changes”.\n2. Create a branch and upgrade the pin.\n3. Run `pip check`, the full test suite and `makemigrations --check`.\n4. Run the app in staging with production-like data.\n5. Deploy with a rollback image and a database backup.\n6. Watch error rates and latency after the deploy.",
+          "code": "pip install -U \"Django==6.1.2\"\npip check\npython manage.py check\npython manage.py makemigrations --check --dry-run\npython manage.py test",
+          "language": "bash",
+          "note": "A Django upgrade is also a dependency upgrade. Check django-stubs, DRF, Channels, Celery and storage backends.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "compatibility",
+          "title": "Compatibility and rollback",
+          "body": "Third-party packages are the usual blocker. Check their supported Django versions before upgrading. If a package is unmaintained, replace it before it blocks a security patch.\n\nA rollback plan includes the previous container image, a database backup and awareness of irreversible migrations. If a migration is destructive, keep the old column until the new version is proven.",
+          "code": "# CI matrix\npython -m pip install \"Django~=5.2.0\"\npython manage.py test\npython -m pip install \"Django~=6.1.0\"\npython manage.py test",
+          "language": "bash",
+          "note": "Testing only the newest Django hides the LTS compatibility you promised. Test both if you support both.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Running an unsupported Django series with known CVEs.",
+        "Skipping release notes and discovering a removed API in production.",
+        "Upgrading Django without upgrading django-stubs/DRF/Channels.",
+        "No rollback image or database backup.",
+        "Treating deprecation warnings as harmless."
+      ],
+      "checklist": [
+        "Django is on a supported patch.",
+        "Release notes for every crossed version were read.",
+        "Deprecations are fixed before removal.",
+        "Dependencies support the target Django.",
+        "Staging and rollback plans exist."
+      ],
+      "related": [
+        "deploy-hardening",
+        "commands",
+        "security"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/releases/",
+      "errors": []
+    },
+    {
+      "slug": "feature-flags",
+      "title": "Feature flags",
+      "subtitle": "Safe rollout, experiments and cleanup",
+      "category": "Architecture",
+      "order": 4,
+      "level": "Advanced",
+      "tags": [
+        "feature flags",
+        "rollout",
+        "experiments"
+      ],
+      "aliases": [
+        "feature flag",
+        "feature toggle",
+        "canary",
+        "percentage rollout",
+        "experiment",
+        "a/b test",
+        "kill switch",
+        "flag cleanup",
+        "launchdarkly",
+        "unleash"
+      ],
+      "summary": "A feature flag separates deploy from release. Used well, it reduces risk; used badly, it creates a permanent maze of dead branches.",
+      "quick_answer": "Store flags with an owner and expiry, evaluate them server-side, log exposure, and remove the flag after rollout. A kill switch is a flag with an operational owner; an experiment needs a hypothesis and a metric.",
+      "sections": [
+        {
+          "id": "model",
+          "title": "A flag model that stays honest",
+          "body": "At minimum: key, description, enabled, rollout percentage, allowed users/tenants, owner, created/expires. Evaluate deterministically per user (hash of user id + key) so a user does not flip between variants.\n\nCache the flag configuration, but invalidate on change. A flag service outage should fail closed or open according to the feature's risk.",
+          "code": "class FeatureFlag(models.Model):\n    key = models.SlugField(unique=True)\n    description = models.TextField()\n    enabled = models.BooleanField(default=False)\n    rollout_percent = models.PositiveSmallIntegerField(default=0)\n    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)\n    expires_on = models.DateField(null=True, blank=True)\n\ndef is_enabled(key, user):\n    flag = cache.get_or_set(f\"flag:{key}\", lambda: FeatureFlag.objects.get(key=key), 60)\n    if not flag.enabled:\n        return False\n    bucket = int(hashlib.sha256(f\"{key}:{user.pk}\".encode()).hexdigest(), 16) % 100\n    return bucket < flag.rollout_percent",
+          "language": "python",
+          "note": "A percentage rollout is not a random coin flip per request; it must be stable for the same user.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "rollout",
+          "title": "Rollout and experiments",
+          "body": "Roll out internally, then a small percentage, then everyone. Watch error rate, latency and the product metric at each step. A canary without a comparison metric is just a slower deploy.\n\nAn A/B experiment needs a hypothesis, a primary metric, a sample-size plan and a stop rule. Do not peek daily and stop when the graph looks good.",
+          "code": "if is_enabled(\"new-checkout\", request.user):\n    return new_checkout(request)\nreturn legacy_checkout(request)",
+          "language": "python",
+          "note": "Log the variant with the conversion event. Without exposure logging, the experiment cannot be analyzed.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "cleanup",
+          "title": "Cleanup is part of the feature",
+          "body": "A flag that stays after 100% rollout is technical debt. Add an expiry date and a cleanup task. Remove the old branch, the flag checks and the flag row in one change.\n\nKeep a small set of permanent operational kill switches (payments, signup, email) with owners and runbooks. Those are not experiments.",
+          "code": "# Cleanup checklist\n# 1. Flag at 100% for a full release cycle.\n# 2. Remove the old code path.\n# 3. Remove the flag checks and the database row.\n# 4. Delete the experiment dashboard.",
+          "language": "text",
+          "note": "A flag with no owner and no expiry is a permanent branch. Treat it as a bug.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Evaluating flags only on the client; users can bypass them.",
+        "Random per-request rollout that flips a user between variants.",
+        "No exposure logging, making experiments unanalyzable.",
+        "Flags that never expire.",
+        "A flag service outage taking down checkout."
+      ],
+      "checklist": [
+        "Flags have owners and expiry dates.",
+        "Evaluation is server-side and deterministic.",
+        "Exposure is logged with the outcome metric.",
+        "Kill switches have runbooks.",
+        "Cleanup is scheduled."
+      ],
+      "related": [
+        "architecture-patterns",
+        "deploy-hardening",
+        "testing-advanced"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/",
+      "errors": []
+    },
+    {
+      "slug": "payments-webhooks",
+      "title": "Payments & webhooks",
+      "subtitle": "Idempotency, signatures, state machines and reconciliation",
+      "category": "Architecture",
+      "order": 5,
+      "level": "Advanced",
+      "tags": [
+        "payments",
+        "webhooks",
+        "reliability"
+      ],
+      "aliases": [
+        "stripe",
+        "payment",
+        "webhook",
+        "signature",
+        "idempotency key",
+        "reconciliation",
+        "refund",
+        "dispute",
+        "chargeback",
+        "outbox",
+        "state machine",
+        "payment intent",
+        "provider event",
+        "retry webhook"
+      ],
+      "summary": "Payments are a distributed system with money. Treat provider webhooks as untrusted, retryable events, keep a local state machine and reconcile against the provider.",
+      "quick_answer": "Verify the webhook signature, dedupe by provider event id, apply transitions through a state machine, and reconcile periodically. Use the provider's idempotency key for charges. Never trust an amount or status sent by the client.",
+      "sections": [
+        {
+          "id": "idempotency",
+          "title": "Idempotency is the core requirement",
+          "body": "A network timeout does not mean the charge failed. Retrying without an idempotency key can charge twice. Generate a key per checkout attempt and persist it with the order; reuse it on retry.\n\nThe provider's event id is the dedupe key for webhooks. Store it before applying the event, ideally in the same transaction as the state change.",
+          "code": "def create_payment(order):\n    key = f\"order:{order.pk}:attempt:{order.payment_attempt}\"\n    return gateway.charge(\n        amount=order.total,\n        currency=order.currency,\n        idempotency_key=key,\n        metadata={\"order_id\": order.pk},\n    )",
+          "language": "python",
+          "note": "Do not generate a new idempotency key on every retry; that defeats the purpose.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "webhooks",
+          "title": "Verify and dedupe webhooks",
+          "body": "Verify the signature against the raw request body, not the parsed JSON. Reject stale timestamps to reduce replay. Return 2xx quickly and enqueue the processing; the provider will retry non-2xx and timeouts.\n\nAn endpoint that does slow work inline will time out and trigger duplicate deliveries. Idempotency makes the duplicates harmless.",
+          "code": "import json\nfrom django.http import HttpResponse, HttpResponseBadRequest\nfrom django.views.decorators.csrf import csrf_exempt\n\n@csrf_exempt\ndef provider_webhook(request):\n    payload = request.body\n    signature = request.headers.get(\"X-Provider-Signature\", \"\")\n    if not gateway.verify(payload, signature):\n        return HttpResponseBadRequest(\"bad signature\")\n    event = json.loads(payload)\n    if not ProcessedEvent.objects.filter(event_id=event[\"id\"]).exists():\n        process_provider_event.delay(event)\n    return HttpResponse(status=200)",
+          "language": "python",
+          "note": "`csrf_exempt` is correct for a signature-verified webhook. The signature is the authentication.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "state-machine",
+          "title": "A payment state machine",
+          "body": "Model the allowed transitions explicitly: `pending → authorized → captured → refunded`, with failure/dispute branches. Reject impossible transitions instead of overwriting status. Store provider ids and raw events for audit.\n\nStatus is not a boolean. A `paid` flag cannot represent partial refunds, disputes or delayed capture.",
+          "code": "class Payment(models.Model):\n    status = models.CharField(max_length=20, default=\"pending\")\n    provider_id = models.CharField(max_length=120, blank=True)\n    amount = models.DecimalField(max_digits=10, decimal_places=2)\n\n    def transition(self, new_status):\n        allowed = {\n            \"pending\": {\"authorized\", \"failed\"},\n            \"authorized\": {\"captured\", \"voided\"},\n            \"captured\": {\"refunded\", \"disputed\"},\n        }\n        if new_status not in allowed.get(self.status, set()):\n            raise ValueError(f\"Invalid transition {self.status} -> {new_status}\")\n        self.status = new_status\n        self.save(update_fields=[\"status\"])",
+          "language": "python",
+          "note": "Store money as `Decimal`, never `float`. Keep currency with the amount.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "reconciliation",
+          "title": "Reconciliation and disputes",
+          "body": "Webhooks can be missed. A daily reconciliation job fetches provider events or settlement reports and compares them with local payments. Alert on mismatches; do not silently “fix” them.\n\nRefunds, chargebacks and disputes are part of the model. A refund is a new ledger entry, not a deletion of the original payment.",
+          "code": "def reconcile(day):\n    provider_events = gateway.list_events(day)\n    for event in provider_events:\n        apply_event_if_new(event)\n    local = Payment.objects.filter(created_at__date=day)\n    return compare_totals(local, provider_events)",
+          "language": "python",
+          "note": "Reconciliation is read-only until a human or a tested rule decides what to do with a mismatch.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Trusting a client-supplied amount or status.",
+        "Charging without an idempotency key.",
+        "Parsing the webhook body before verifying the signature.",
+        "Doing slow work inline and timing out the provider.",
+        "Using a boolean `paid` field for a complex lifecycle.",
+        "No reconciliation job."
+      ],
+      "checklist": [
+        "Charges use a persisted idempotency key.",
+        "Webhook signatures are verified against the raw body.",
+        "Events are deduped by provider id.",
+        "Payment transitions are explicit.",
+        "A reconciliation job runs and alerts on mismatches."
+      ],
+      "related": [
+        "transactions-locking",
+        "background-jobs",
+        "security-hardening"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/",
+      "errors": []
+    },
+    {
+      "slug": "htmx",
+      "title": "HTMX with Django",
+      "subtitle": "Partials, CSRF, out-of-band swaps and history",
+      "category": "Request path",
+      "order": 7,
+      "level": "Advanced",
+      "tags": [
+        "HTMX",
+        "frontend",
+        "server-driven"
+      ],
+      "aliases": [
+        "htmx",
+        "hx-get",
+        "hx-post",
+        "hx-target",
+        "hx-swap",
+        "partial",
+        "fragment",
+        "out of band",
+        "hx-swap-oob",
+        "hx-push-url",
+        "csrf header",
+        "hypermedia",
+        "server driven ui",
+        "progressive enhancement"
+      ],
+      "summary": "HTMX keeps the HTML on the server and lets the browser request fragments. The Django work is small: detect the request, return the right partial, include CSRF and keep URLs/history coherent.",
+      "quick_answer": "Render a full page for a normal request and a fragment for an `HX-Request`. Use `hx-target`/`hx-swap` deliberately, send CSRF via `hx-headers`, and use `hx-push-url` plus a full-page fallback for navigation.",
+      "sections": [
+        {
+          "id": "partials",
+          "title": "Full page vs partial",
+          "body": "An HTMX request includes `HX-Request: true`. The view can return the same template with a different base or a dedicated fragment. Keep one source of truth for the fragment; do not duplicate markup.\n\nA navigation link should still work without JavaScript. Progressive enhancement is the point.",
+          "code": "def post_list(request):\n    posts = Post.objects.filter(published=True).select_related(\"author\")\n    template = \"blog/_post_list.html\" if request.headers.get(\"HX-Request\") else \"blog/list.html\"\n    return render(request, template, {\"posts\": posts})\n\n# template\n<button hx-get=\"{% url 'blog:list' %}\" hx-target=\"#post-list\" hx-swap=\"innerHTML\">\n  Refresh\n</button>\n<div id=\"post-list\">{% include \"blog/_post_list.html\" %}</div>",
+          "language": "python",
+          "note": "A fragment endpoint is still a view. Apply the same permissions and query scoping as the full page.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "forms-csrf",
+          "title": "Forms and CSRF",
+          "body": "HTMX submits normal forms. Include `{% csrf_token %}`; for a button with `hx-post`, add `hx-headers='{\"X-CSRFToken\": \"{{ csrf_token }}\"}'` or use a global `hx-headers` on `<body>`.\n\nReturn the form with errors and a 422/400 status when validation fails; HTMX swaps the response by default. Use `hx-target` to the form container so errors appear in place.",
+          "code": "<body hx-headers='{\"X-CSRFToken\": \"{{ csrf_token }}\"}'>\n  <form hx-post=\"{% url 'blog:create' %}\" hx-target=\"#post-form\" hx-swap=\"outerHTML\">\n    {% csrf_token %}\n    <div id=\"post-form\">{{ form.as_p }}</div>\n    <button type=\"submit\">Save</button>\n  </form>\n</body>",
+          "language": "html",
+          "note": "A 200 response with errors will still swap. Return 422 if your client code checks `HX-Reswap`/status.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "oob-history",
+          "title": "Out-of-band swaps and history",
+          "body": "`hx-swap-oob` updates a second part of the page (a counter, a toast) in the same response. The OOB element must have a matching id. Use it sparingly; too many OOB updates make the response hard to reason about.\n\n`hx-push-url` updates the address bar. The URL must return the full page on a direct load. `hx-boost` enhances links and forms while preserving normal navigation.",
+          "code": "<div id=\"cart-count\" hx-swap-oob=\"true\">{{ cart_count }}</div>\n<a hx-get=\"{% url 'shop:detail' product.slug %}\" hx-target=\"#main\" hx-push-url=\"true\">\n  {{ product.name }}\n</a>",
+          "language": "html",
+          "note": "An OOB element that is missing from the page is silently ignored. Test the full page after a swap.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "testing",
+          "title": "Testing HTMX flows",
+          "body": "Test both shapes: a normal request returns the full page, an `HX-Request` returns the fragment. Assert the fragment does not contain the full layout and that permissions still apply. Use a browser test for the swap/history behaviour.\n\nA fragment endpoint that leaks another tenant's rows is a data breach, even if the UI never links to it.",
+          "code": "def test_list_fragment(self):\n    response = self.client.get(\"/blog/\", HTTP_HX_REQUEST=\"true\")\n    self.assertTemplateUsed(response, \"blog/_post_list.html\")\n    self.assertNotContains(response, \"<html\")",
+          "language": "python",
+          "note": "Django's test client passes custom headers with the `HTTP_` prefix.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Duplicating fragment markup in full-page and partial templates.",
+        "Forgetting CSRF on `hx-post`.",
+        "Returning a full page for an HTMX request and swapping it into a div.",
+        "Pushing a URL that does not work on direct load.",
+        "Skipping permission checks on fragment endpoints."
+      ],
+      "checklist": [
+        "Every HTMX endpoint works without JavaScript.",
+        "Fragments have a single source of truth.",
+        "CSRF is sent for unsafe methods.",
+        "Pushed URLs return full pages.",
+        "Fragment endpoints enforce permissions."
+      ],
+      "related": [
+        "views",
+        "templates",
+        "urls-advanced"
+      ],
+      "official": "https://htmx.org/docs/",
+      "errors": []
+    },
+    {
+      "slug": "exports",
+      "title": "CSV, PDF & exports",
+      "subtitle": "Streaming, formatting and large exports",
+      "category": "Recipes",
+      "order": 1,
+      "level": "Recipe",
+      "tags": [
+        "exports",
+        "CSV",
+        "PDF"
+      ],
+      "aliases": [
+        "csv export",
+        "pdf export",
+        "streaming response",
+        "openpyxl",
+        "xlsx",
+        "reportlab",
+        "weasyprint",
+        "large export",
+        "background export",
+        "download file",
+        "spreadsheet",
+        "formula injection",
+        "attachment"
+      ],
+      "summary": "Exports are a data boundary: encode safely, stream instead of buffering, and move large jobs out of the request. CSV formula injection is a real vulnerability.",
+      "quick_answer": "Stream CSV rows with `StreamingHttpResponse`, generate XLSX/PDF in a worker for large exports, set `Content-Disposition: attachment`, and escape cells that begin with `=`, `+`, `-` or `@` to prevent spreadsheet formula injection.",
+      "sections": [
+        {
+          "id": "csv",
+          "title": "Streaming CSV",
+          "body": "`csv.writer` writing to a generator-backed response keeps memory flat. Batch the queryset with `.iterator(chunk_size=500)`. Include a header row and set the correct content type and filename.\n\nDo not build the entire CSV in a list; a million rows will exhaust the worker.",
+          "code": "import csv\nfrom django.http import StreamingHttpResponse\n\nclass Echo:\n    def write(self, value):\n        return value\n\ndef export_orders(request):\n    writer = csv.writer(Echo())\n    queryset = Order.objects.filter(owner=request.user).select_related(\"customer\")\n\n    def rows():\n        yield writer.writerow([\"id\", \"customer\", \"total\", \"status\"])\n        for order in queryset.iterator(chunk_size=500):\n            yield writer.writerow([order.pk, order.customer.email, order.total, order.status])\n\n    response = StreamingHttpResponse(rows(), content_type=\"text/csv\")\n    response[\"Content-Disposition\"] = 'attachment; filename=\"orders.csv\"'\n    return response",
+          "language": "python",
+          "note": "The `Echo` class adapts `csv.writer` to a streaming response. A normal `StringIO` buffers the whole file.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "formula-injection",
+          "title": "CSV formula injection",
+          "body": "Spreadsheets treat cells starting with `=`, `+`, `-` or `@` as formulas. A customer name like `=HYPERLINK(...)` can exfiltrate data or run commands when opened. Prefix dangerous cells with an apostrophe or a tab, and document the choice.\n\nThis is not a Django bug; it is a spreadsheet format hazard. Escape on export, not only on input.",
+          "code": "DANGEROUS = (\"=\", \"+\", \"-\", \"@\", \"\\t\", \"\\r\")\n\ndef safe_cell(value):\n    text = str(value)\n    return \"'\" + text if text.startswith(DANGEROUS) else text",
+          "language": "python",
+          "note": "Numbers that legitimately start with `-` need a product decision; escaping them changes the displayed value.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "xlsx-pdf",
+          "title": "XLSX and PDF",
+          "body": "For XLSX, `openpyxl` can write a workbook to a `BytesIO` for small files. For large workbooks, use `write_only=True` or generate in a worker and store the result. For PDFs, render HTML with a headless browser or a library such as WeasyPrint; keep fonts and CSS self-contained.\n\nA PDF generator is a CPU-heavy dependency. Run it outside the request if it takes more than a second or two.",
+          "code": "from io import BytesIO\nfrom openpyxl import Workbook\nfrom django.http import HttpResponse\n\ndef export_xlsx(request):\n    workbook = Workbook(write_only=True)\n    sheet = workbook.create_sheet(\"Orders\")\n    sheet.append([\"id\", \"total\", \"status\"])\n    for order in Order.objects.filter(owner=request.user).iterator(chunk_size=500):\n        sheet.append([order.pk, float(order.total), order.status])\n    buffer = BytesIO()\n    workbook.save(buffer)\n    response = HttpResponse(\n        buffer.getvalue(),\n        content_type=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\",\n    )\n    response[\"Content-Disposition\"] = 'attachment; filename=\"orders.xlsx\"'\n    return response",
+          "language": "python",
+          "note": "`float(Decimal)` loses precision. For money, export a string or use a numeric cell with the correct number format.",
+          "table": null,
+          "reference": ""
+        },
+        {
+          "id": "large-exports",
+          "title": "Large exports as a job",
+          "body": "A 500k-row export should not occupy a web worker. Create an `ExportJob` row, enqueue a task, write the file to storage, and email or notify the user with a short-lived download link.\n\nThe job needs progress, failure state and cleanup. A stale export file is a data-retention issue.",
+          "code": "@shared_task(bind=True)\ndef build_export(self, job_id):\n    job = ExportJob.objects.get(pk=job_id)\n    path = f\"exports/{job.pk}.csv\"\n    with default_storage.open(path, \"w\") as handle:\n        write_csv(handle, job.queryset())\n    job.file.name = path\n    job.status = \"ready\"\n    job.save(update_fields=[\"file\", \"status\"])",
+          "language": "python",
+          "note": "Scope the export query to the requesting user/tenant and store that scope in the job, not in a global variable.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Building a huge CSV in memory.",
+        "Forgetting `Content-Disposition` and rendering the file in the browser.",
+        "Leaving CSV formula injection unescaped.",
+        "Running a multi-minute export in the request.",
+        "Exporting rows without tenant/user scoping."
+      ],
+      "checklist": [
+        "Exports stream or run in a worker.",
+        "Filenames and content types are correct.",
+        "Formula-injection cells are escaped.",
+        "Export queries are scoped.",
+        "Old export files have a retention policy."
+      ],
+      "related": [
+        "views-advanced",
+        "background-jobs",
+        "storage-files"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/howto/outputting-csv/",
+      "errors": []
+    }
+  ]
+}

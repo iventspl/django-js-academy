@@ -1,0 +1,1202 @@
+{
+  "chapters": [
+    {
+      "slug": "auth-reference",
+      "title": "Auth reference",
+      "subtitle": "Users, permissions, views and decorators",
+      "category": "Reference",
+      "order": 6,
+      "tags": [
+        "auth",
+        "permissions",
+        "reference"
+      ],
+      "aliases": [
+        "auth api",
+        "authenticate",
+        "login",
+        "logout",
+        "login_required",
+        "permission_required",
+        "loginrequiredmixin",
+        "permissionrequiredmixin",
+        "has_perm",
+        "groups",
+        "permissions",
+        "password reset view",
+        "loginview",
+        "logoutview",
+        "auth views",
+        "user model"
+      ],
+      "summary": "A compact map of Django's auth API: user creation, login/logout, permission checks, built-in views and the mixins that protect class-based views.",
+      "quick_answer": "Create users with `create_user`, log in with `authenticate` + `login`, protect views with `login_required`/`LoginRequiredMixin`, and check permissions with `has_perm`. Object-level rules are your responsibility or a library's.",
+      "sections": [
+        {
+          "id": "api",
+          "title": "Core API",
+          "body": "These functions and methods cover most auth work.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "API",
+              "Purpose",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`authenticate(request, ...)`",
+                "Check credentials",
+                "Returns user or None"
+              ],
+              [
+                "`login(request, user)`",
+                "Start a session",
+                "Rotates session key"
+              ],
+              [
+                "`logout(request)`",
+                "Flush the session",
+                "Redirect after"
+              ],
+              [
+                "`get_user_model()`",
+                "Get the user model",
+                "Use instead of importing `User`"
+              ],
+              [
+                "`create_user(...)`",
+                "Create with hashed password",
+                "Use `create_superuser` for admin"
+              ],
+              [
+                "`set_password(raw)`",
+                "Hash and set",
+                "Save after"
+              ],
+              [
+                "`check_password(raw)`",
+                "Verify",
+                "Handles hashing"
+              ],
+              [
+                "`has_perm(perm)`",
+                "Model permission",
+                "`app.codename`"
+              ],
+              [
+                "`has_module_perms(app)`",
+                "Any permission in app",
+                "Admin-style check"
+              ],
+              [
+                "`get_all_permissions()`",
+                "All granted perms",
+                "Useful for UI"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "views",
+          "title": "Built-in auth views",
+          "body": "Use these instead of reimplementing password flows.",
+          "code": "from django.contrib.auth import views as auth_views\nfrom django.urls import path\n\nurlpatterns = [\n    path(\"login/\", auth_views.LoginView.as_view(), name=\"login\"),\n    path(\"logout/\", auth_views.LogoutView.as_view(), name=\"logout\"),\n    path(\"password-reset/\", auth_views.PasswordResetView.as_view(), name=\"password_reset\"),\n]",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "View",
+              "URL name convention",
+              "Purpose"
+            ],
+            "rows": [
+              [
+                "`LoginView`",
+                "`login`",
+                "Username/password login"
+              ],
+              [
+                "`LogoutView`",
+                "`logout`",
+                "Logout (POST in modern Django)"
+              ],
+              [
+                "`PasswordChangeView`",
+                "`password_change`",
+                "Change while logged in"
+              ],
+              [
+                "`PasswordChangeDoneView`",
+                "`password_change_done`",
+                "Confirmation"
+              ],
+              [
+                "`PasswordResetView`",
+                "`password_reset`",
+                "Send reset email"
+              ],
+              [
+                "`PasswordResetDoneView`",
+                "`password_reset_done`",
+                "Email sent page"
+              ],
+              [
+                "`PasswordResetConfirmView`",
+                "`password_reset_confirm`",
+                "Set new password"
+              ],
+              [
+                "`PasswordResetCompleteView`",
+                "`password_reset_complete`",
+                "Success page"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "protection",
+          "title": "Decorators and mixins",
+          "body": "Protect the view before the side effect, not after.",
+          "code": "",
+          "language": "python",
+          "note": "For object-level rules, check the object explicitly. Model permissions are global.",
+          "table": {
+            "head": [
+              "Tool",
+              "Use on",
+              "Behaviour"
+            ],
+            "rows": [
+              [
+                "`@login_required`",
+                "Function view",
+                "Redirect to login with `next`"
+              ],
+              [
+                "`@permission_required(perm)`",
+                "Function view",
+                "403 or redirect"
+              ],
+              [
+                "`@user_passes_test(fn)`",
+                "Function view",
+                "Custom predicate"
+              ],
+              [
+                "`LoginRequiredMixin`",
+                "CBV",
+                "Must be first in MRO"
+              ],
+              [
+                "`PermissionRequiredMixin`",
+                "CBV",
+                "Model permission"
+              ],
+              [
+                "`UserPassesTestMixin`",
+                "CBV",
+                "Custom predicate"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "models",
+          "title": "Models and settings",
+          "body": "The auth data model and the settings that shape it.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Object / setting",
+              "Purpose",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`User`",
+                "Default user",
+                "Swap before first migrate"
+              ],
+              [
+                "`Group`",
+                "Permission bundle",
+                "Roles"
+              ],
+              [
+                "`Permission`",
+                "Model-level permission",
+                "add/change/delete/view"
+              ],
+              [
+                "`AUTH_USER_MODEL`",
+                "Custom user",
+                "Set before migrate"
+              ],
+              [
+                "`AUTHENTICATION_BACKENDS`",
+                "Credential backends",
+                "Order matters"
+              ],
+              [
+                "`LOGIN_URL` / `LOGIN_REDIRECT_URL`",
+                "Auth redirects",
+                "Set explicitly"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Storing raw passwords.",
+        "Using `is_staff` for business authorization.",
+        "Forgetting object-level ownership checks.",
+        "Redirecting to an unvalidated `next`.",
+        "Changing `AUTH_USER_MODEL` after migrating."
+      ],
+      "checklist": [
+        "Passwords use Django's auth APIs.",
+        "Every private view is protected.",
+        "Object ownership is checked on writes.",
+        "Auth views and redirects are configured.",
+        "Custom user decision documented."
+      ],
+      "related": [
+        "auth",
+        "auth-advanced",
+        "admin"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/auth/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "admin-reference",
+      "title": "Admin reference",
+      "subtitle": "ModelAdmin, inlines, actions and templates",
+      "category": "Reference",
+      "order": 7,
+      "tags": [
+        "admin",
+        "reference"
+      ],
+      "aliases": [
+        "modeladmin",
+        "list_display",
+        "list_filter",
+        "search_fields",
+        "readonly_fields",
+        "prepopulated_fields",
+        "autocomplete_fields",
+        "raw_id_fields",
+        "inlines",
+        "tabularinline",
+        "stackedinline",
+        "admin actions",
+        "admin templates",
+        "has_change_permission",
+        "admin site"
+      ],
+      "summary": "The admin options that turn a default changelist into a usable internal tool, and the hooks that keep it safe.",
+      "quick_answer": "Start with `list_display`, `list_filter` and `search_fields`. Add `list_select_related` for speed, inlines for owned children, actions for bulk work, and permission overrides for sensitive models.",
+      "sections": [
+        {
+          "id": "modeladmin",
+          "title": "ModelAdmin options",
+          "body": "These are the most-used attributes and methods.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Option",
+              "Effect",
+              "Watch out"
+            ],
+            "rows": [
+              [
+                "`list_display`",
+                "Changelist columns",
+                "Methods can cause N+1"
+              ],
+              [
+                "`list_filter`",
+                "Sidebar filters",
+                "Queries per filter"
+              ],
+              [
+                "`search_fields`",
+                "Search box",
+                "Index large text"
+              ],
+              [
+                "`ordering`",
+                "Default order",
+                "Use an indexed field"
+              ],
+              [
+                "`list_select_related`",
+                "Join FK/O2O",
+                "Speeds changelist"
+              ],
+              [
+                "`list_per_page`",
+                "Rows per page",
+                "Bound it"
+              ],
+              [
+                "`date_hierarchy`",
+                "Date drill-down",
+                "Index the date"
+              ],
+              [
+                "`readonly_fields`",
+                "Non-editable fields",
+                "Audit columns"
+              ],
+              [
+                "`fields` / `fieldsets`",
+                "Form layout",
+                "Explicit is safer"
+              ],
+              [
+                "`prepopulated_fields`",
+                "Slug from title",
+                "Only for text fields"
+              ],
+              [
+                "`autocomplete_fields`",
+                "Searchable FK",
+                "Related admin needs `search_fields`"
+              ],
+              [
+                "`raw_id_fields`",
+                "ID widget for FK",
+                "Large related tables"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "inlines-actions",
+          "title": "Inlines and actions",
+          "body": "Inlines edit children on the parent page; actions operate on selected rows.",
+          "code": "class OrderItemInline(admin.TabularInline):\n    model = OrderItem\n    extra = 0\n    autocomplete_fields = [\"product\"]\n\n@admin.register(Order)\nclass OrderAdmin(admin.ModelAdmin):\n    list_display = [\"id\", \"customer\", \"status\", \"total\"]\n    list_select_related = [\"customer\"]\n    inlines = [OrderItemInline]\n    actions = [\"mark_paid\"]\n\n    @admin.action(description=\"Mark selected orders as paid\")\n    def mark_paid(self, request, queryset):\n        updated = queryset.filter(status=\"pending\").update(status=\"paid\")\n        self.message_user(request, f\"Updated {updated} orders.\")",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "API",
+              "Purpose",
+              "Note"
+            ],
+            "rows": [
+              [
+                "`TabularInline`",
+                "Compact child rows",
+                "Set `extra=0`"
+              ],
+              [
+                "`StackedInline`",
+                "Expanded child forms",
+                "Better for many fields"
+              ],
+              [
+                "`extra`",
+                "Empty forms",
+                "Large values slow the page"
+              ],
+              [
+                "`can_delete`",
+                "Allow removal",
+                "Explicit"
+              ],
+              [
+                "`autocomplete_fields`",
+                "Searchable child FK",
+                "Needs target search"
+              ],
+              [
+                "`@admin.action`",
+                "Bulk action",
+                "POST + CSRF"
+              ],
+              [
+                "`message_user`",
+                "Feedback",
+                "Use `messages.SUCCESS`"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "permissions-templates",
+          "title": "Permissions and templates",
+          "body": "The admin is staff-only, but model permissions still apply. Override `has_*_permission` for object rules and custom templates for layout.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Hook / template",
+              "Purpose",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`has_add_permission`",
+                "Control adding",
+                "Check object/tenant"
+              ],
+              [
+                "`has_change_permission`",
+                "Control editing",
+                "Object-level rules"
+              ],
+              [
+                "`has_delete_permission`",
+                "Control deleting",
+                "Often more restrictive"
+              ],
+              [
+                "`get_queryset`",
+                "Scope visible rows",
+                "Tenant/user filter"
+              ],
+              [
+                "`change_list_template`",
+                "Custom changelist",
+                "Add links/stats"
+              ],
+              [
+                "`change_form_template`",
+                "Custom edit page",
+                "Risky but possible"
+              ],
+              [
+                "`admin.site.site_header`",
+                "Branding",
+                "Set once"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "A query in `list_display`.",
+        "Exposing the admin without HTTPS/VPN.",
+        "Letting staff edit audit fields.",
+        "Unbounded inlines on a large relation.",
+        "Using the admin as the public UI."
+      ],
+      "checklist": [
+        "Changelists are fast and scoped.",
+        "Inlines are bounded.",
+        "Actions are idempotent and confirmed.",
+        "Sensitive models have permission overrides.",
+        "Admin access is protected."
+      ],
+      "related": [
+        "admin",
+        "admin-advanced",
+        "auth"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/admin/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "commands-reference",
+      "title": "Commands reference",
+      "subtitle": "Built-in commands and custom command API",
+      "category": "Reference",
+      "order": 8,
+      "tags": [
+        "commands",
+        "CLI",
+        "reference"
+      ],
+      "aliases": [
+        "manage.py commands",
+        "runserver",
+        "migrate",
+        "makemigrations",
+        "shell",
+        "dbshell",
+        "collectstatic",
+        "createsuperuser",
+        "dumpdata",
+        "loaddata",
+        "inspectdb",
+        "sendtestemail",
+        "clearsessions",
+        "basecommand",
+        "add_arguments",
+        "handle"
+      ],
+      "summary": "The commands you will use weekly, the options that matter, and the small API for writing your own repeatable operation.",
+      "quick_answer": "Use `runserver` for development, `makemigrations`/`migrate` for schema, `shell`/`dbshell` for inspection, `collectstatic` for deployment, and `check --deploy` before launch. Put repeatable operations in `management/commands/`.",
+      "sections": [
+        {
+          "id": "built-in",
+          "title": "Built-in commands",
+          "body": "These ship with Django or its contrib apps.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Command",
+              "Purpose",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`startproject` / `startapp`",
+                "Scaffold",
+                "Use once"
+              ],
+              [
+                "`runserver`",
+                "Development server",
+                "Never in production"
+              ],
+              [
+                "`shell`",
+                "Python shell with Django",
+                "`-c` for one-liners"
+              ],
+              [
+                "`dbshell`",
+                "Database CLI",
+                "Needs client installed"
+              ],
+              [
+                "`makemigrations`",
+                "Generate migrations",
+                "Review before commit"
+              ],
+              [
+                "`migrate`",
+                "Apply migrations",
+                "`--plan`, `--database`"
+              ],
+              [
+                "`sqlmigrate`",
+                "Show SQL",
+                "Inspect before deploy"
+              ],
+              [
+                "`showmigrations`",
+                "List/applied state",
+                "Debug history"
+              ],
+              [
+                "`squashmigrations`",
+                "Compress history",
+                "Review generated file"
+              ],
+              [
+                "`collectstatic`",
+                "Copy static files",
+                "Release step"
+              ],
+              [
+                "`createsuperuser`",
+                "Admin account",
+                "Interactive"
+              ],
+              [
+                "`check`",
+                "System checks",
+                "`--deploy` for production"
+              ],
+              [
+                "`test`",
+                "Run tests",
+                "Use a test DB"
+              ],
+              [
+                "`dumpdata` / `loaddata`",
+                "Fixtures",
+                "Careful with FKs"
+              ],
+              [
+                "`sendtestemail`",
+                "Verify email config",
+                "Fast SMTP check"
+              ],
+              [
+                "`clearsessions`",
+                "Delete expired sessions",
+                "Cron job"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "options",
+          "title": "Global options",
+          "body": "Options accepted by most commands.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Option",
+              "Effect",
+              "Use when"
+            ],
+            "rows": [
+              [
+                "`--settings=module`",
+                "Override settings",
+                "Alternate environments"
+              ],
+              [
+                "`--pythonpath=path`",
+                "Add to sys.path",
+                "Scripted runs"
+              ],
+              [
+                "`--verbosity=0..3`",
+                "Output level",
+                "CI/scripts"
+              ],
+              [
+                "`--noinput`",
+                "Never prompt",
+                "Deploys/CI"
+              ],
+              [
+                "`--database=alias`",
+                "Target DB",
+                "Multi-db"
+              ],
+              [
+                "`--dry-run`",
+                "Preview",
+                "Custom commands should support it"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "custom",
+          "title": "Custom command API",
+          "body": "Commands live in `<app>/management/commands/<name>.py` and subclass `BaseCommand`.",
+          "code": "from django.core.management.base import BaseCommand, CommandError\n\nclass Command(BaseCommand):\n    help = \"Delete drafts older than N days.\"\n\n    def add_arguments(self, parser):\n        parser.add_argument(\"--days\", type=int, default=30)\n        parser.add_argument(\"--dry-run\", action=\"store_true\")\n\n    def handle(self, *args, **options):\n        if options[\"days\"] < 0:\n            raise CommandError(\"--days must be non-negative\")\n        count = 0\n        if not options[\"dry_run\"]:\n            count = delete_old_drafts(options[\"days\"])\n        self.stdout.write(self.style.SUCCESS(f\"Deleted {count} drafts.\"))",
+          "language": "python",
+          "note": "Create `management/__init__.py` and `management/commands/__init__.py` or the command will not be discovered.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Running `makemigrations` on production.",
+        "Using `--fake` to hide schema drift.",
+        "Writing destructive commands without `--dry-run`.",
+        "Using `print()` instead of `self.stdout.write`.",
+        "Forgetting the management package `__init__.py` files."
+      ],
+      "checklist": [
+        "Deploy commands are scripted and idempotent.",
+        "Destructive commands support dry-run.",
+        "Migrations are generated locally.",
+        "`check --deploy` runs before launch.",
+        "Custom commands are tested."
+      ],
+      "related": [
+        "commands",
+        "migrations",
+        "deploy"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/django-admin/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "exceptions-reference",
+      "title": "Exceptions reference",
+      "subtitle": "What each exception means and where to look",
+      "category": "Reference",
+      "order": 9,
+      "tags": [
+        "exceptions",
+        "debugging",
+        "reference"
+      ],
+      "aliases": [
+        "exceptions",
+        "django exceptions",
+        "noreversematch",
+        "templatedoesnotexist",
+        "fielderror",
+        "integrityerror",
+        "operationalerror",
+        "improperlyconfigured",
+        "permissiondenied",
+        "http404",
+        "disallowedhost",
+        "transactionmanagementerror",
+        "validationerror",
+        "doesnotexist",
+        "multipleobjectsreturned",
+        "migration error"
+      ],
+      "summary": "A decoder for the exception classes that stop a Django project, with the layer that raised them and the first place to look.",
+      "quick_answer": "Read the last line, then the first frame in your code. The exception class tells you the layer: import/config, URL, template, ORM, migration or HTTP. Fix the cause, not the traceback line.",
+      "sections": [
+        {
+          "id": "core",
+          "title": "Core and configuration",
+          "body": "These usually mean startup/configuration or a missing object.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Exception",
+              "Typical cause",
+              "First check"
+            ],
+            "rows": [
+              [
+                "`ImproperlyConfigured`",
+                "Settings/import order",
+                "`DJANGO_SETTINGS_MODULE`, `django.setup()`"
+              ],
+              [
+                "`AppRegistryNotReady`",
+                "Model imported before setup",
+                "Move imports after `django.setup()`"
+              ],
+              [
+                "`ValidationError`",
+                "Invalid data",
+                "Which field/hook raised it"
+              ],
+              [
+                "`PermissionDenied`",
+                "Authorization failed",
+                "User, permission, object rule"
+              ],
+              [
+                "`Http404`",
+                "Object missing",
+                "Queryset filter/`get_object_or_404`"
+              ],
+              [
+                "`ObjectDoesNotExist`",
+                "`.get()` found nothing",
+                "Handle with `first()`/404"
+              ],
+              [
+                "`MultipleObjectsReturned`",
+                "`.get()` found many",
+                "Add uniqueness or use `filter()`"
+              ],
+              [
+                "`FieldDoesNotExist`",
+                "Bad field name/path",
+                "Model fields and `related_name`"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "http-url",
+          "title": "HTTP, URL and templates",
+          "body": "Request-shaped failures: routing, permissions, templates and host validation.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Exception",
+              "Typical cause",
+              "First check"
+            ],
+            "rows": [
+              [
+                "`NoReverseMatch`",
+                "Route name/args missing",
+                "`app_name`, namespace, kwargs"
+              ],
+              [
+                "`Resolver404`",
+                "No URL matched",
+                "Root URLconf/include"
+              ],
+              [
+                "`TemplateDoesNotExist`",
+                "Wrong path/app missing",
+                "`INSTALLED_APPS`, `DIRS`, template path"
+              ],
+              [
+                "`TemplateSyntaxError`",
+                "Bad tag/unclosed block",
+                "Line in the template"
+              ],
+              [
+                "`DisallowedHost`",
+                "Host not in `ALLOWED_HOSTS`",
+                "Exact hostname"
+              ],
+              [
+                "`SuspiciousOperation`",
+                "Bad host/path/upload",
+                "The specific subclass"
+              ],
+              [
+                "`RequestDataTooBig`",
+                "Body over limit",
+                "`DATA_UPLOAD_MAX_MEMORY_SIZE`"
+              ],
+              [
+                "`TooManyFieldsSent`",
+                "Too many POST fields",
+                "`DATA_UPLOAD_MAX_NUMBER_FIELDS`"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "database",
+          "title": "Database and transactions",
+          "body": "These can be schema, concurrency or data-integrity problems.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Exception",
+              "Typical cause",
+              "First check"
+            ],
+            "rows": [
+              [
+                "`OperationalError: no such table`",
+                "Migrations not applied",
+                "`migrate`, DB path"
+              ],
+              [
+                "`IntegrityError`",
+                "Unique/FK/check violation",
+                "Constraint and duplicate data"
+              ],
+              [
+                "`DataError`",
+                "Value too long/out of range",
+                "Field limits"
+              ],
+              [
+                "`ProgrammingError`",
+                "Bad SQL/column",
+                "Migrations and query"
+              ],
+              [
+                "`TransactionManagementError`",
+                "Query outside atomic/locked state",
+                "`atomic()` scope"
+              ],
+              [
+                "`NotSupportedError`",
+                "Backend lacks feature",
+                "Database vendor"
+              ],
+              [
+                "`DatabaseError`",
+                "Generic DB failure",
+                "Logs/driver detail"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "migrations",
+          "title": "Migrations",
+          "body": "History and dependency failures. Stop and inspect before deleting files.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Exception",
+              "Typical cause",
+              "First check"
+            ],
+            "rows": [
+              [
+                "`NodeNotFoundError`",
+                "Missing dependency",
+                "`showmigrations --plan`"
+              ],
+              [
+                "`InconsistentMigrationHistory`",
+                "Applied out of order",
+                "DB history vs files"
+              ],
+              [
+                "`AmbiguityError`",
+                "Two leaf nodes",
+                "Merge migrations"
+              ],
+              [
+                "`CircularDependencyError`",
+                "Migrations depend on each other",
+                "Split the change"
+              ],
+              [
+                "`ValueError: Dependency on app with no migrations`",
+                "App has models, no initial migration",
+                "`makemigrations <app>`"
+              ]
+            ]
+          },
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Googling the last line without reading your frame.",
+        "Deleting the database to fix a migration.",
+        "Adding `|safe` to hide an HTML error.",
+        "Catching every exception and returning 200.",
+        "Using `--fake` without understanding history."
+      ],
+      "checklist": [
+        "The failing layer is identified.",
+        "The smallest reproduction is known.",
+        "The cause is fixed, not the symptom.",
+        "A regression test was added."
+      ],
+      "related": [
+        "errors",
+        "urls",
+        "orm",
+        "migrations",
+        "forms"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/exceptions/",
+      "level": "Reference",
+      "errors": []
+    },
+    {
+      "slug": "migrations-reference",
+      "title": "Migrations reference",
+      "subtitle": "Commands, operations and data migrations",
+      "category": "Reference",
+      "order": 10,
+      "tags": [
+        "migrations",
+        "reference"
+      ],
+      "aliases": [
+        "migration operations",
+        "createmodel",
+        "addfield",
+        "removefield",
+        "alterfield",
+        "renamefield",
+        "runpython",
+        "runsql",
+        "separatedatabaseandstate",
+        "addindex",
+        "addconstraint",
+        "squashmigrations",
+        "showmigrations",
+        "sqlmigrate",
+        "migrate --fake",
+        "data migration"
+      ],
+      "summary": "The migration commands, operation classes and patterns you need to read or write a migration without guessing.",
+      "quick_answer": "Migrations are Python files with dependencies and operations. Generate with `makemigrations`, inspect with `sqlmigrate`, apply with `migrate`. Use `RunPython` for data, `SeparateDatabaseAndState` for state/DB divergence, and never edit an applied migration.",
+      "sections": [
+        {
+          "id": "commands",
+          "title": "Commands",
+          "body": "The migration workflow from creation to recovery.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Command",
+              "Purpose",
+              "Notes"
+            ],
+            "rows": [
+              [
+                "`makemigrations`",
+                "Create migration files",
+                "Review the diff"
+              ],
+              [
+                "`makemigrations --check`",
+                "Fail if models drift",
+                "CI guard"
+              ],
+              [
+                "`migrate`",
+                "Apply migrations",
+                "`--plan`, `--database`"
+              ],
+              [
+                "`sqlmigrate`",
+                "Print SQL",
+                "Inspect before deploy"
+              ],
+              [
+                "`showmigrations`",
+                "List state",
+                "`--plan` for order"
+              ],
+              [
+                "`squashmigrations`",
+                "Compress history",
+                "Review generated replacement"
+              ],
+              [
+                "`migrate app 0002`",
+                "Roll back to 0002",
+                "Can lose data"
+              ],
+              [
+                "`migrate --fake`",
+                "Mark without running",
+                "Recovery only"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "operations",
+          "title": "Operation classes",
+          "body": "These are the operations you will see in generated files.",
+          "code": "",
+          "language": "python",
+          "note": "",
+          "table": {
+            "head": [
+              "Operation",
+              "Changes",
+              "Reversible"
+            ],
+            "rows": [
+              [
+                "`CreateModel`",
+                "New table",
+                "Yes"
+              ],
+              [
+                "`DeleteModel`",
+                "Drop table",
+                "Yes (if state kept)"
+              ],
+              [
+                "`AddField`",
+                "New column",
+                "Yes"
+              ],
+              [
+                "`RemoveField`",
+                "Drop column",
+                "Yes (data lost)"
+              ],
+              [
+                "`AlterField`",
+                "Type/null/default",
+                "Usually"
+              ],
+              [
+                "`RenameField`",
+                "Column rename",
+                "Yes"
+              ],
+              [
+                "`AlterModelTable`",
+                "Table rename",
+                "Yes"
+              ],
+              [
+                "`AddIndex` / `RemoveIndex`",
+                "Indexes",
+                "Yes"
+              ],
+              [
+                "`AddConstraint` / `RemoveConstraint`",
+                "Constraints",
+                "Yes"
+              ],
+              [
+                "`RunPython`",
+                "Data/code",
+                "Only with reverse"
+              ],
+              [
+                "`RunSQL`",
+                "Raw SQL",
+                "Only with reverse SQL"
+              ],
+              [
+                "`SeparateDatabaseAndState`",
+                "State vs DB",
+                "Depends"
+              ]
+            ]
+          },
+          "reference": ""
+        },
+        {
+          "id": "patterns",
+          "title": "Patterns and caveats",
+          "body": "The operations that need a plan.",
+          "code": "# Data migration with historical model\ndef forwards(apps, schema_editor):\n    Order = apps.get_model(\"shop\", \"Order\")\n    Order.objects.filter(status=\"\").update(status=\"pending\")\n\nclass Migration(migrations.Migration):\n    dependencies = [(\"shop\", \"0004_order_status\")]\n    operations = [migrations.RunPython(forwards, migrations.RunPython.noop)]\n\n# State/DB divergence\nmigrations.SeparateDatabaseAndState(\n    state_operations=[migrations.AddField(...)],\n    database_operations=[migrations.RunSQL(...)],\n)",
+          "language": "python",
+          "note": "`RunPython.noop` is acceptable only when the data change genuinely cannot be reversed.",
+          "table": null,
+          "reference": ""
+        }
+      ],
+      "pitfalls": [
+        "Editing an applied migration.",
+        "Importing live models in a data migration.",
+        "Adding a non-nullable field without a default.",
+        "Using `--fake` to hide drift.",
+        "Running a giant backfill in one transaction."
+      ],
+      "checklist": [
+        "Generated migration reviewed.",
+        "Data migration uses historical models.",
+        "Destructive changes have a backup.",
+        "CI runs `makemigrations --check`.",
+        "Production plan handles old and new code."
+      ],
+      "related": [
+        "migrations",
+        "migrations-advanced",
+        "models"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/migration-operations/",
+      "level": "Reference",
+      "errors": []
+    }
+  ]
+}
