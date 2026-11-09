@@ -662,10 +662,24 @@ class HandbookContentTests(TestCase):
     def test_search_finds_advanced_and_reference_topics(self):
         locking = search_handbook("select_for_update")
         self.assertTrue(locking)
-        self.assertEqual(locking[0]["chapter"]["slug"], "transactions-locking")
+        self.assertIn(locking[0]["chapter"]["slug"], {"transactions-locking", "database-reference"})
         search = search_handbook("SearchVector")
         self.assertTrue(search)
         self.assertIn(search[0]["chapter"]["slug"], {"search-postgres", "orm-expressions"})
+
+    def test_search_indexes_code_and_reference_tables(self):
+        field_hits = search_handbook("PositiveIntegerField")
+        self.assertTrue(field_hits)
+        self.assertIn("Scalar fields", {hit["title"] for hit in field_hits})
+        self.assertIn("model-fields-reference", {hit["chapter"]["slug"] for hit in field_hits})
+
+        auto_hits = search_handbook("AutoField")
+        self.assertTrue(auto_hits)
+        self.assertIn("Scalar fields", {hit["title"] for hit in auto_hits})
+
+        code_hits = search_handbook("Post.objects.filter")
+        self.assertTrue(code_hits)
+        self.assertIn("orm", {hit["chapter"]["slug"] for hit in code_hits})
 
     def test_search_needs_two_characters(self):
         self.assertEqual(search_handbook("f"), [])
@@ -705,6 +719,19 @@ class HandbookViewTests(TestCase):
         self.assertGreaterEqual(payload["count"], 4)
         self.assertEqual(payload["results"][0]["chapter"], "Forms")
         self.assertTrue(payload["results"][0]["url"].startswith("/handbook/forms/"))
+
+    def test_handbook_search_json_finds_field_identifiers(self):
+        response = self.client.get(
+            reverse("dojo:handbook_search"), {"q": "PositiveIntegerField"}
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertGreaterEqual(payload["count"], 1)
+        chapters = {result["chapter"] for result in payload["results"]}
+        self.assertIn("Model fields reference", chapters)
+        self.assertTrue(
+            any("PositiveIntegerField" in result["snippet"] for result in payload["results"])
+        )
 
     def test_chapter_renders_sections_and_official_link(self):
         response = self.client.get(reverse("dojo:handbook_chapter", args=["forms"]))

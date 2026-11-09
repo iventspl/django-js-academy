@@ -27,7 +27,7 @@
 - Added **15 reference chapters** with tables for settings, model fields, QuerySet methods/lookups, forms, templates, auth, admin, commands, exceptions, migrations, middleware, HTTP, URLs, databases and a glossary.
 - Added **11 end-to-end recipes**: accounts, CRUD with ownership, search, image upload, CSV/PDF export, transactional email, JSON API, first deploy, background job, tenant scoping and export recipes.
 - Added **level filters** (`Core`, `Advanced`, `Reference`, `Recipe`), chapter tags, reference tables rendered in-page, and per-section official reference links.
-- Added instant, dependency-free search with a no-JavaScript fallback. Type `forms`, `select_for_update`, `window function`, `CSP` or `NoReverseMatch`; results are chapter- and section-level.
+- Added instant, dependency-free search with a no-JavaScript fallback. It now indexes **code snippets and reference-table cells** as well as prose, so identifiers such as `PositiveIntegerField`, `AutoField` and `Post.objects.filter` resolve. Exact chapter/section titles outrank passing code mentions, and snippets come from the matching code/table. Type `forms`, `PositiveIntegerField`, `select_for_update`, `window function`, `CSP` or `NoReverseMatch`; results are chapter- and section-level.
 - Added the handbook to the Django sidebar, the home-page actions and global `/search/` (new “Django handbook” result group).
 - Handbook content lives in editable `dojo/content/handbook/*.json` files; no migration or database change is required.
 - Expanded tests for chapter completeness, levels, tables, search relevance, XSS-safe prose rendering, views, JSON search and global-search integration.
@@ -35,7 +35,7 @@
 ### Verification
 
 - Django `check` passes.
-- Full test suite passes (**160 tests**).
+- Full test suite passes (**162 tests**).
 
 ## 4.26 — 2026-10-30
 

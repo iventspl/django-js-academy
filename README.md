@@ -11,7 +11,7 @@ No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHAN
 - **34 real-world cheatsheets** covering permissions, uploads, private storage, email, webhooks, N+1 queries, search, migrations, deployment, LLM gateways, RAG, evals, prompt injection, ADRs, HTMX, typing, and tooling.
 - **6 application blueprints** for SaaS, marketplace, booking, CMS, support desk, and mobile API products — with data models, starter code, build order, and production traps.
 - **8 Architecture Studio labs** for AI document assistants, tool-using agents, multi-tenant SaaS, webhook platforms, marketplace ledgers, real-time fan-out, analytics pipelines, and legacy modernization.
-- **Django handbook** — a super-reference with **81 searchable chapters, 349 answers and 39 exception fixes**. It covers core Django, advanced ORM and SQL, transactions, formsets, class-based views, auth, admin, security, testing, performance, typing, middleware, caching, async, background jobs, storage, email, Channels, DRF, deployment, observability, i18n, PostgreSQL search, multi-tenancy, internals and upgrades — plus 15 lookup-table reference chapters and 11 end-to-end recipes. Open `/handbook/` and type `forms`, `select_for_update`, `window function`, `CSP` or `NoReverseMatch`.
+- **Django handbook** — a super-reference with **81 searchable chapters, 349 answers and 39 exception fixes**. It covers core Django, advanced ORM and SQL, transactions, formsets, class-based views, auth, admin, security, testing, performance, typing, middleware, caching, async, background jobs, storage, email, Channels, DRF, deployment, observability, i18n, PostgreSQL search, multi-tenancy, internals and upgrades — plus 15 lookup-table reference chapters and 11 end-to-end recipes. Open `/handbook/` and type `forms`, `PositiveIntegerField`, `select_for_update`, `window function`, `CSP` or `NoReverseMatch`.
 - **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 22 modules, 137 lessons, 152 quiz questions, 140 flashcards, 2 full project walkthroughs (17 steps), 13 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 64-term glossary, 30 interview questions, and XP/streaks.
 - **AI Academy** — a 12-month applied AI engineering path with 8 modules, 42 lessons, 48 quiz questions, 40 concept cards, 55 glossary terms, 12 real projects and a career map.
 - **Release radar** with current Django versions, LTS windows, CVE summaries, and source links to the official release notes.
@@ -19,7 +19,7 @@ No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHAN
 - **Explanations for every quiz answer**, often with a code sample, so a wrong answer still teaches something.
 - **Learning-friendly scoring:** +10 XP for a correct answer, +2 XP for a useful miss, completion bonuses for strong runs.
 - **Progress notebook:** accuracy, mastery per topic, XP levels, daily streak, 28-day activity heatmap, quiz history, and achievements.
-- **Global search** at `/search/` (and in the Django sidebar) across questions, flashcards, recipes, blueprints, architecture labs, release notes, and the Django handbook.
+- **Global search** at `/search/` (and in the Django sidebar) across questions, flashcards, recipes, blueprints, architecture labs, release notes, and the Django handbook — including code snippets and reference-table identifiers.
 - **Adaptive practice:** retry only the questions missed in a run, or launch a weak-spot run built from questions you have answered but never answered correctly.
 - **Keyboard-friendly study:** `1`–`4` to choose or rate, `Enter` to submit, `Space` to flip a card.
 - **Responsive layout** with reduced-motion support and no external fonts, CDNs, or telemetry.
@@ -177,7 +177,7 @@ The **Django handbook** at `/handbook/` is the “open it and type the thing tha
 - Advanced coverage includes ORM expressions, subqueries, window functions, transactions and row locks, multi-db, zero-downtime migrations, advanced forms/formsets, CBV internals, custom template tags, custom auth backends, security hardening (CSP/SSRF/uploads/supply chain), pytest/mocks/browser tests, performance and query plans, django-stubs, async ORM/ASGI, caching and stampedes, Celery/outbox, S3 storage, email deliverability, Channels, DRF schemas/versioning, PostgreSQL full-text search, multi-tenancy, architecture patterns, internals, upgrades, feature flags, payments/webhooks, HTMX and exports.
 - Reference chapters give you fast lookup tables for settings, model fields, QuerySet methods and lookups, forms/widgets, template tags/filters, auth, admin, commands, exceptions, migrations, middleware, HTTP, URLs, databases and a glossary.
 - Type `forms` and you get the whole forms chapter plus the specific sections for `ModelForm`, formsets, validation, widgets, field types, file uploads and the “form is not working” checklist.
-- Type `NoReverseMatch`, `FieldError`, `no such table` or `CSRF` and the **Error decoder** gives you the cause and the fix.
+- Type `PositiveIntegerField`, `AutoField`, `Post.objects.filter` or `select_for_update` and search finds the identifier inside code examples and reference tables, with a snippet from the match.
 - Every chapter starts with a short answer, then gives copyable code, the traps, a pre-flight checklist, related chapters, and a link to the official docs. Sections can also carry direct reference tables and per-section official links.
 - Search is instant and works without JavaScript (normal form submit). The same chapters also appear in the global `/search/` results.
 
@@ -664,7 +664,7 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **140 tests** in total.
+The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **162 tests** in total, including handbook search, code-identifier indexing and reference-table rendering.
 
 You can also run Django's deployment check before hosting anything:
 

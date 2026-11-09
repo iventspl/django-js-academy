@@ -264,15 +264,21 @@ def load_chapters() -> tuple[dict, ...]:
             for section in chapter["sections"]:
                 words += len(_plain(section["body"]).split())
                 words += len(_plain(section["note"]).split())
+                table_text = ""
                 if section["table"]:
-                    words += sum(len(_plain(cell).split()) for row in section["table"]["rows"] for cell in row)
+                    table_text = " ".join(
+                        cell
+                        for row in section["table"]["rows"]
+                        for cell in row
+                    )
+                    words += len(_plain(table_text).split())
+                section["table_text"] = table_text
+                section["search_title"] = _normalize(section["title"])
+                section["search_body"] = _normalize(section["body"] + " " + section["note"])
+                section["search_code"] = _normalize(section["code"])
+                section["search_table"] = _normalize(table_text)
             chapter["read_minutes"] = max(1, round(words / 210))
             chapter["word_count"] = words
-            table_text = " ".join(
-                " ".join(cell for row in section["table"]["rows"] for cell in row)
-                for section in chapter["sections"]
-                if section["table"]
-            )
             chapter["search_text"] = _normalize(
                 " ".join(
                     [
@@ -283,9 +289,17 @@ def load_chapters() -> tuple[dict, ...]:
                         chapter["level"],
                         " ".join(chapter["tags"]),
                         " ".join(chapter["aliases"]),
-                        " ".join(section["title"] + " " + section["body"] for section in chapter["sections"]),
+                        " ".join(
+                            section["search_title"]
+                            + " "
+                            + section["search_body"]
+                            + " "
+                            + section["search_code"]
+                            + " "
+                            + section["search_table"]
+                            for section in chapter["sections"]
+                        ),
                         " ".join(chapter["pitfalls"]),
-                        table_text,
                     ]
                 )
             )
@@ -352,17 +366,36 @@ def _chapter_score(chapter: dict, query: str) -> int:
 
 
 def _section_score(section: dict, query: str) -> int:
-    title = _normalize(section["title"])
+    title = section["search_title"]
     if title == query:
-        return 185
+        return 260
     if title.startswith(query):
-        return 120
+        return 220
     if query in title:
-        return 85
-    body = _normalize(section["body"] + " " + section["note"])
-    if _contains_word(body, query):
+        return 180
+
+    # Identifiers live in code and reference tables. A word match is stronger
+    # than a substring match, but both should beat a passing prose mention.
+    code = section["search_code"]
+    table = section["search_table"]
+    if _contains_word(code, query) or _contains_word(table, query):
+        return 150
+    if query in code or query in table:
+        return 120
+    if _contains_word(section["search_body"], query):
         return 28
     return 0
+
+
+def _section_snippet(section: dict, query: str) -> str:
+    for field in ("body", "table_text", "code", "note"):
+        value = section.get(field, "")
+        if not value:
+            continue
+        normalized = _normalize(value)
+        if _contains_word(normalized, query) or query in normalized:
+            return _snippet(value, query)
+    return _snippet(section["body"], query)
 
 
 def search_handbook(query: str, limit: int = 24) -> list[dict]:
@@ -384,6 +417,9 @@ def search_handbook(query: str, limit: int = 24) -> list[dict]:
             continue
 
         chapter_score = _chapter_score(chapter, query)
+        # If the query names the chapter itself, its own sections should rank
+        # above passing code mentions in unrelated chapters.
+        chapter_boost = 90 if chapter_score >= 190 else 35 if chapter_score >= 120 else 0
         section_hits: list[tuple[int, dict]] = []
         for section in chapter["sections"]:
             score = 0
@@ -392,7 +428,7 @@ def search_handbook(query: str, limit: int = 24) -> list[dict]:
             # Body-only mentions are useful inside the matching chapter, but
             # they should not flood results from unrelated chapters.
             if score and (score >= 85 or chapter_score):
-                section_hits.append((score, section))
+                section_hits.append((score + chapter_boost, section))
 
         if chapter_score:
             hits.append(
@@ -402,7 +438,7 @@ def search_handbook(query: str, limit: int = 24) -> list[dict]:
                     "section": None,
                     "title": chapter["title"],
                     "snippet": _snippet(chapter["summary"], query),
-                    "score": chapter_score + min(18, len(section_hits) * 2),
+                    "score": chapter_score + (100 if chapter_score >= 190 else 0) + min(18, len(section_hits) * 2),
                 }
             )
         for score, section in sorted(section_hits, key=lambda pair: pair[0], reverse=True)[:5]:
@@ -412,7 +448,7 @@ def search_handbook(query: str, limit: int = 24) -> list[dict]:
                     "chapter": chapter,
                     "section": section,
                     "title": section["title"],
-                    "snippet": _snippet(section["body"], query),
+                    "snippet": _section_snippet(section, query),
                     "score": score,
                 }
             )
@@ -423,6 +459,14 @@ def search_handbook(query: str, limit: int = 24) -> list[dict]:
 
 def count_matches(query: str) -> int:
     return len(search_handbook(query, limit=200))
+
+
+def _best_section_score(chapter: dict, variants: set[str]) -> int:
+    best = 0
+    for section in chapter["sections"]:
+        for variant in variants:
+            best = max(best, _section_score(section, variant))
+    return best
 
 
 def chapter_hits(query: str, limit: int = 6) -> list[dict]:
@@ -438,6 +482,8 @@ def chapter_hits(query: str, limit: int = 6) -> list[dict]:
             for variant in variants:
                 if variant != query:
                     score = max(score, _chapter_score(chapter, variant))
+        if not score and _best_section_score(chapter, variants) >= 85:
+            score = 60
         if score:
             ranked.append((score, chapter))
     ranked.sort(key=lambda pair: (-pair[0], pair[1]["number"]))

@@ -28,7 +28,7 @@
     <form class="hb-search" method="get" action="{% url 'dojo:handbook' %}" role="search" data-hb-form>
       <span class="hb-search-icon" aria-hidden="true">⌕</span>
       <label class="sr-only" for="hb-q">Search the Django handbook</label>
-      <input id="hb-q" data-hb-input type="search" name="q" value="{{ query }}" placeholder="Try “forms”, “select_for_update”, “window function”, “CSP”…" autocomplete="off" spellcheck="false" autofocus>
+      <input id="hb-q" data-hb-input type="search" name="q" value="{{ query }}" placeholder="Try “forms”, “PositiveIntegerField”, “CSP”…" autocomplete="off" spellcheck="false" autofocus>
       <kbd class="hb-kbd" aria-hidden="true">/</kbd>
       <button class="btn btn-primary hb-search-button" type="submit">Search</button>
     </form>
@@ -37,6 +37,7 @@
       <button type="button" data-hb-try="forms">forms</button>
       <button type="button" data-hb-try="NoReverseMatch">NoReverseMatch</button>
       <button type="button" data-hb-try="select_related">select_related</button>
+      <button type="button" data-hb-try="PositiveIntegerField">PositiveIntegerField</button>
       <button type="button" data-hb-try="csrf">csrf</button>
       <button type="button" data-hb-try="migrations">migrations</button>
       <button type="button" data-hb-try="static">static</button>
