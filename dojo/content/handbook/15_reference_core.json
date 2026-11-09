@@ -313,7 +313,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/settings/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "django-fundamentals"
     },
     {
       "slug": "model-fields-reference",
@@ -628,7 +629,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/models/fields/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "models-orm"
     },
     {
       "slug": "queryset-reference",
@@ -936,7 +938,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/models/querysets/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "models-orm"
     },
     {
       "slug": "forms-reference",
@@ -1252,7 +1255,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/forms/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "views-forms-templates"
     },
     {
       "slug": "templates-reference",
@@ -1518,7 +1522,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/templates/builtins/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "views-forms-templates"
     }
   ]
 }

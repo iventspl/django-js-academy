@@ -1,0 +1,91 @@
+{% extends "dojo/base.html" %}
+{% load static handbook_extras %}
+
+{% block title %}Error explainer · Django handbook{% endblock %}
+{% block body_class %}page-handbook page-handbook-traceback{% endblock %}
+{% block meta_description %}Paste a Django traceback and find the likely cause, fix and relevant handbook chapter.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109c">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-traceback-wrap">
+  <header class="hb-traceback-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Error explainer · local only</p>
+    <h1>Paste the traceback.<br><em>Find the fix.</em></h1>
+    <p class="hb-hero-lead">The last line names the exception. The frames above it show where your code entered. Paste the error and the handbook will find the closest decoder entry, chapter and section.</p>
+    <a class="hb-back" href="{% url 'dojo:handbook' %}">← Back to the handbook</a>
+  </header>
+
+  <form class="hb-traceback-form" method="post" action="{% url 'dojo:handbook_traceback' %}">
+    {% csrf_token %}
+    <label for="hb-traceback-input">Traceback or error output</label>
+    <textarea id="hb-traceback-input" name="traceback" rows="10" spellcheck="false" placeholder="Traceback (most recent call last):&#10;  File &quot;views.py&quot;, line 42, in post_detail&#10;    ...&#10;django.urls.exceptions.NoReverseMatch: Reverse for 'post-detail' not found.">{{ raw }}</textarea>
+    <div class="hb-traceback-actions">
+      <button class="btn btn-primary" type="submit">Explain this error <span aria-hidden="true">→</span></button>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_chapter' 'errors' %}">Browse the Error decoder</a>
+    </div>
+  </form>
+
+  {% if submitted %}
+    <section class="hb-traceback-results" aria-live="polite">
+      {% if terms %}
+        <div class="hb-traceback-terms">
+          <span class="hb-label">Detected</span>
+          {% for term in terms %}<code>{{ term }}</code>{% endfor %}
+        </div>
+      {% endif %}
+
+      {% if hits %}
+        <div class="hb-results-head">
+          <div>
+            <p class="hb-label">Likely answers</p>
+            <h2>{{ hits|length }} match{{ hits|length|pluralize:"es" }} for this traceback</h2>
+          </div>
+        </div>
+        <div class="hb-result-list">
+          {% for hit in hits %}
+            <a class="hb-result" href="{% url 'dojo:handbook_chapter' hit.chapter.slug %}{% if hit.section %}#{{ hit.section.id }}{% endif %}">
+              <span class="hb-result-kind {% if hit.kind == 'chapter' %}is-chapter{% endif %}">{% if hit.kind == 'chapter' %}Chapter{% else %}Section{% endif %}</span>
+              <span class="hb-result-body">
+                <span class="hb-result-title">{{ hit.title }}</span>
+                <span class="hb-result-meta">{{ hit.chapter.category }} · {{ hit.chapter.level }} · {{ hit.chapter.title }}</span>
+                <span class="hb-result-snippet">{{ hit.snippet }}</span>
+              </span>
+              <span class="hb-result-arrow" aria-hidden="true">→</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="hb-state">
+          <span class="hb-state-mark" aria-hidden="true">?</span>
+          {% if terms %}
+            <h2>No decoder entry matched {{ terms|join:", " }}.</h2>
+            <p>Try searching the exception name directly, or paste a shorter part of the output.</p>
+          {% else %}
+            <h2>No exception name found.</h2>
+            <p>Paste the last few lines of the traceback, including the final <code>Exception: message</code> line.</p>
+          {% endif %}
+          {% if suggestions %}
+            <div class="hb-suggestions">
+              <p class="hb-label">Did you mean</p>
+              <div class="hb-suggestion-list">
+                {% for suggestion in suggestions %}
+                  <a href="{% url 'dojo:handbook_chapter' suggestion.chapter.slug %}{% if suggestion.section %}#{{ suggestion.section.id }}{% endif %}">
+                    <strong>{{ suggestion.term }}</strong>
+                    <span>{{ suggestion.chapter.title }}</span>
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+          <div class="hb-state-actions">
+            <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Search the handbook</a>
+          </div>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

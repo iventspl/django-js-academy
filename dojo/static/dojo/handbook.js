@@ -42,14 +42,16 @@
   const pad = (number) => String(number).padStart(2, "0");
 
   const resultMarkup = (result) => {
-    const kind = result.kind === "chapter" ? "Chapter" : "Section";
-    const kindClass = result.kind === "chapter" ? " is-chapter" : "";
+    const kinds = { chapter: "Chapter", section: "Section", symbol: "Symbol" };
+    const kind = kinds[result.kind] || "Answer";
+    const kindClass =
+      result.kind === "chapter" ? " is-chapter" : result.kind === "symbol" ? " is-symbol" : "";
     const meta =
       result.kind === "chapter"
         ? `${escapeHTML(result.category)} · ${escapeHTML(result.level)} · Chapter ${pad(result.chapter_number)}`
         : `${escapeHTML(result.category)} · ${escapeHTML(result.level)} · ${escapeHTML(result.chapter)}`;
     return `
-      <a class="hb-result" href="${escapeHTML(result.url)}">
+      <a class="hb-result" href="${escapeHTML(result.url)}" data-hb-result>
         <span class="hb-result-kind${kindClass}">${kind}</span>
         <span class="hb-result-body">
           <span class="hb-result-title">${highlight(result.title, input.value)}</span>
@@ -77,14 +79,46 @@
     lastRendered = "";
   };
 
-  const showEmpty = (query) => {
+  const showEmpty = (query, suggestions = [], filtered = false, rawCount = 0) => {
+    const suggestionsMarkup =
+      !filtered && suggestions.length
+        ? `
+        <div class="hb-suggestions">
+          <p class="hb-label">Did you mean</p>
+          <div class="hb-suggestion-list">
+            ${suggestions
+              .map(
+                (item) => `
+                  <a href="${escapeHTML(item.url)}">
+                    <strong>${escapeHTML(item.term)}</strong>
+                    <span>${escapeHTML(item.chapter)}</span>
+                  </a>`,
+              )
+              .join("")}
+          </div>
+        </div>`
+        : "";
+    const clearUrl = new URL(window.location.href);
+    clearUrl.searchParams.delete("level");
+    clearUrl.searchParams.delete("kind");
+    const heading = filtered
+      ? "No results match these filters."
+      : `No answer matched “${escapeHTML(query)}”.`;
+    const body = filtered
+      ? `“${escapeHTML(query)}” has ${rawCount} answer${rawCount === 1 ? "" : "s"}, but none fit the current depth or result type.`
+      : "Try the exception name, the Django file (<code>forms.py</code>, <code>urls.py</code>) or a shorter phrase. The official docs are linked at the end of every chapter.";
     results.innerHTML = `
       <div class="hb-state">
         <span class="hb-state-mark" aria-hidden="true">0</span>
-        <h2>No answer matched “${escapeHTML(query)}”.</h2>
-        <p>Try the exception name, the Django file (<code>forms.py</code>, <code>urls.py</code>) or a shorter phrase. The official docs are linked at the end of every chapter.</p>
+        <h2>${heading}</h2>
+        <p>${body}</p>
+        ${suggestionsMarkup}
         <div class="hb-state-actions">
-          <a class="btn btn-primary" href="${escapeHTML(root.dataset.hbBrowse || "/handbook/")}">Browse all chapters</a>
+          ${
+            filtered
+              ? `<a class="btn btn-primary" href="${escapeHTML(clearUrl.pathname + clearUrl.search)}">Clear filters</a>`
+              : `<a class="btn btn-primary" href="${escapeHTML(root.dataset.hbBrowse || "/handbook/")}">Browse all chapters</a>`
+          }
         </div>
       </div>`;
     results.setAttribute("aria-busy", "false");
@@ -93,7 +127,7 @@
 
   const showResults = (data) => {
     if (!data.count) {
-      showEmpty(data.query);
+      showEmpty(data.query, data.suggestions || [], data.filtered, data.raw_count || 0);
       return;
     }
     const rows = data.results.map(resultMarkup).join("");
@@ -145,7 +179,13 @@
     setBusy(true);
 
     try {
-      const response = await fetch(`${endpoint}?q=${encodeURIComponent(query)}`, {
+      const params = new URLSearchParams({ q: query });
+      const current = new URL(window.location.href);
+      for (const key of ["level", "kind"]) {
+        const value = current.searchParams.get(key);
+        if (value) params.set(key, value);
+      }
+      const response = await fetch(`${endpoint}?${params.toString()}`, {
         headers: { Accept: "application/json" },
         signal: controller.signal,
       });
@@ -200,6 +240,46 @@
       input.focus();
       input.select();
     });
+  });
+
+  const resultLinks = () => Array.from(results.querySelectorAll("[data-hb-result]"));
+
+  const focusResult = (direction) => {
+    const links = resultLinks();
+    if (!links.length) return;
+    let index = links.indexOf(document.activeElement);
+    if (index === -1) index = direction > 0 ? -1 : links.length;
+    index = Math.min(links.length - 1, Math.max(0, index + direction));
+    links.forEach((link) => link.classList.remove("is-focused"));
+    links[index].classList.add("is-focused");
+    links[index].focus({ preventScroll: true });
+    links[index].scrollIntoView({ block: "nearest" });
+  };
+
+  document.addEventListener("keydown", (event) => {
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      input.focus();
+      input.select();
+      return;
+    }
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const active = document.activeElement;
+    const onResult = active instanceof Element && active.closest("[data-hb-result]");
+    if (event.key === "ArrowDown" && (active === input || onResult)) {
+      event.preventDefault();
+      focusResult(1);
+      return;
+    }
+    if (event.key === "ArrowUp" && (active === input || onResult)) {
+      event.preventDefault();
+      focusResult(-1);
+      return;
+    }
+    if (event.key === "Escape" && onResult) {
+      event.preventDefault();
+      input.focus();
+    }
   });
 
   document.addEventListener("keydown", (event) => {

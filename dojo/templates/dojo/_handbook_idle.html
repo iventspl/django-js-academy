@@ -1,4 +1,45 @@
 {% load handbook_extras %}
+{% if continue_chapter or read_count or bookmarked_chapters %}
+  <section class="hb-reading-band" aria-labelledby="hb-reading-title">
+    <div class="hb-reading-copy">
+      <p class="hb-label">Your reading · {{ read_count }}/{{ chapter_total }} chapters read</p>
+      {% if continue_chapter %}
+        <h2 id="hb-reading-title">Continue where you left off.</h2>
+        <p>{{ continue_chapter.title }} — {{ continue_chapter.subtitle }}</p>
+      {% else %}
+        <h2 id="hb-reading-title">Keep the handbook close.</h2>
+        <p>You have marked {{ read_count }} chapter{{ read_count|pluralize }} read. Bookmark a page to return to it quickly.</p>
+      {% endif %}
+    </div>
+    <div class="hb-reading-actions">
+      {% if continue_chapter %}
+        <a class="btn btn-primary" href="{% url 'dojo:handbook_chapter' continue_chapter.slug %}">Continue reading <span aria-hidden="true">→</span></a>
+      {% endif %}
+      {% if bookmarked_chapters %}
+        <a class="btn btn-ghost-dark" href="#hb-bookmarks">Bookmarks <span aria-hidden="true">▣</span></a>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}
+
+{% if bookmarked_chapters %}
+  <section class="hb-bookmarks" id="hb-bookmarks" aria-labelledby="hb-bookmarks-title">
+    <div class="hb-bookmarks-head">
+      <p class="hb-label">Bookmarks</p>
+      <h2 id="hb-bookmarks-title">{{ bookmarked_chapters|length }} saved chapter{{ bookmarked_chapters|length|pluralize }}.</h2>
+    </div>
+    <div class="hb-bookmark-list">
+      {% for chapter in bookmarked_chapters %}
+        <a href="{% url 'dojo:handbook_chapter' chapter.slug %}">
+          <span>{{ chapter.number|stringformat:"02d" }}</span>
+          <strong>{{ chapter.title }}</strong>
+          <small>{{ chapter.category }}</small>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+
 <div class="hb-idle">
   <div class="hb-idle-head">
     <div>
@@ -26,6 +67,7 @@
                   <span>{{ chapter.subtitle }}</span>
                 </span>
                 <span class="hb-chapter-time">{{ chapter.read_minutes }}m</span>
+                {% if chapter.slug in read_slugs %}<span class="hb-chapter-read" title="Read">✓</span>{% endif %}
               </a>
             </li>
           {% endfor %}

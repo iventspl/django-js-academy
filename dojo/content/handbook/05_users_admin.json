@@ -92,7 +92,8 @@
         "security",
         "testing"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/auth/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/auth/",
+      "quiz_topic": "auth-security-testing"
     },
     {
       "slug": "admin",
@@ -170,7 +171,8 @@
         "orm",
         "security"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/admin/"
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/admin/",
+      "quiz_topic": "admin-internal-tools"
     }
   ]
 }

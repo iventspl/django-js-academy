@@ -88,7 +88,8 @@
         "security",
         "deploy"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/howto/static-files/"
+      "official": "https://docs.djangoproject.com/en/stable/howto/static-files/",
+      "quiz_topic": "files-email-storage"
     },
     {
       "slug": "middleware",
@@ -160,7 +161,8 @@
         "security",
         "async-cache"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/http/middleware/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/http/middleware/",
+      "quiz_topic": "performance-async-deploy"
     },
     {
       "slug": "async-cache",
@@ -242,7 +244,8 @@
         "middleware",
         "deploy"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/cache/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/cache/",
+      "quiz_topic": "performance-async-deploy"
     },
     {
       "slug": "signals",
@@ -308,7 +311,8 @@
         "orm",
         "async-cache"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/signals/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/signals/",
+      "quiz_topic": "performance-async-deploy"
     }
   ]
 }

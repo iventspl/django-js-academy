@@ -76,7 +76,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/auth/default/",
       "level": "Recipe",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "auth-security-testing"
     },
     {
       "slug": "recipe-crud",
@@ -157,7 +158,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/class-based-views/",
       "level": "Recipe",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "views-forms-templates"
     },
     {
       "slug": "recipe-search",
@@ -238,7 +240,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/pagination/",
       "level": "Recipe",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "search-postgres"
     },
     {
       "slug": "recipe-upload",
@@ -319,7 +322,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/http/file-uploads/",
       "level": "Recipe",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "files-email-storage"
     },
     {
       "slug": "recipe-export",
@@ -396,7 +400,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/howto/outputting-csv/",
       "level": "Recipe",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "files-email-storage"
     },
     {
       "slug": "recipe-email",
@@ -473,7 +478,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/email/",
       "level": "Recipe",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "files-email-storage"
     },
     {
       "slug": "recipe-api",
@@ -552,7 +558,8 @@
       ],
       "official": "https://www.django-rest-framework.org/tutorial/quickstart/",
       "level": "Recipe",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "apis-drf"
     },
     {
       "slug": "recipe-deploy",
@@ -630,7 +637,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/howto/deployment/checklist/",
       "level": "Recipe",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "performance-async-deploy"
     },
     {
       "slug": "recipe-background",
@@ -708,7 +716,8 @@
       ],
       "official": "https://docs.celeryq.dev/en/stable/django/first-steps-with-django.html",
       "level": "Recipe",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "tasks-realtime"
     },
     {
       "slug": "recipe-multi-tenant",
@@ -787,7 +796,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/db/",
       "level": "Recipe",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "architecture-saas"
     }
   ]
 }

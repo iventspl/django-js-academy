@@ -8,10 +8,12 @@ a migration.
 
 from __future__ import annotations
 
+import difflib
 import html
 import json
 import re
 import unicodedata
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
@@ -35,6 +37,24 @@ CATEGORY_ORDER = (
 )
 
 LEVELS = ("Core", "Advanced", "Reference", "Recipe")
+SEARCH_KINDS = ("symbol", "chapter", "section")
+DEFAULT_REVIEWED_ON = date(2026, 11, 9)
+DEFAULT_DJANGO_MIN = "5.2"
+DEFAULT_DJANGO_MAX = "6.1"
+STALE_AFTER_DAYS = 365
+COVERAGE_GAPS = (
+    "Messages framework",
+    "Sitemaps",
+    "Syndication feeds",
+    "Content types",
+    "Sites framework",
+    "Flatpages and redirects",
+    "Humanize",
+    "GIS / GeoDjango",
+    "Forms media and widget assets",
+    "Signing and serialization",
+    "Validators and the checks framework",
+)
 
 REQUIRED_CHAPTER_FIELDS = (
     "slug",
@@ -87,6 +107,20 @@ def _variant_set(query: str) -> set[str]:
     if query.endswith(".py"):
         variants.add(query[:-3])
     return {variant for variant in variants if len(variant) >= 2}
+
+
+def _parse_version(value: str, field: str, context: str) -> tuple[int, int]:
+    if not re.fullmatch(r"\d+\.\d+", value):
+        raise HandbookError(f"{context}: {field} must look like 5.2")
+    major, minor = value.split(".", 1)
+    return int(major), int(minor)
+
+
+def _parse_reviewed_on(value: str, context: str) -> date:
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise HandbookError(f"{context}: reviewed_on must be YYYY-MM-DD") from exc
 
 
 def _clean_table(value, context: str) -> dict | None:
@@ -181,6 +215,13 @@ def load_chapters() -> tuple[dict, ...]:
                 "aliases": _clean_list(item.get("aliases", []), "aliases", context),
                 "level": str(item.get("level", "Core")).strip() or "Core",
                 "tags": _clean_list(item.get("tags", []), "tags", context),
+                "quiz_topic": str(item.get("quiz_topic", "")).strip(),
+                "reviewed_on": _parse_reviewed_on(
+                    str(item.get("reviewed_on", DEFAULT_REVIEWED_ON.isoformat())),
+                    context,
+                ),
+                "django_min": str(item.get("django_min", DEFAULT_DJANGO_MIN)).strip(),
+                "django_max": str(item.get("django_max", DEFAULT_DJANGO_MAX)).strip(),
                 "quick_answer": _clean_text(item["quick_answer"], "quick_answer", context),
                 "sections": [],
                 "pitfalls": _clean_list(item["pitfalls"], "pitfalls", context, allow_empty=False),
@@ -194,6 +235,14 @@ def load_chapters() -> tuple[dict, ...]:
                 raise HandbookError(f"{context}: unknown category {chapter['category']!r}")
             if chapter["level"] not in LEVELS:
                 raise HandbookError(f"{context}: unknown level {chapter['level']!r}")
+            min_version = _parse_version(chapter["django_min"], "django_min", context)
+            max_version = _parse_version(chapter["django_max"], "django_max", context)
+            if min_version > max_version:
+                raise HandbookError(f"{context}: django_min is newer than django_max")
+            chapter["django_min_tuple"] = min_version
+            chapter["django_max_tuple"] = max_version
+            chapter["review_age_days"] = max(0, (date.today() - chapter["reviewed_on"]).days)
+            chapter["is_stale"] = chapter["review_age_days"] > STALE_AFTER_DAYS
             if not chapter["official"].startswith(
                 (
                     "https://docs.djangoproject.com/",
@@ -348,6 +397,189 @@ def _contains_word(haystack: str, needle: str) -> bool:
     return re.search(rf"(?<![a-z0-9]){re.escape(needle)}(?![a-z0-9])", haystack) is not None
 
 
+def _extract_symbols(cell: str) -> list[tuple[str, str]]:
+    """Pull identifiers out of a reference-table's first column."""
+    symbols: list[tuple[str, str]] = []
+    for span in re.findall(r"`([^`]+)`", cell):
+        value = span.strip()
+        if value.startswith("{%") and value.endswith("%}"):
+            value = value[2:-2].strip()
+        for part in re.split(r"\s+/\s+|\s+or\s+", value):
+            part = part.strip(" ,")
+            key = _normalize(part)
+            if len(part) >= 2 and len(key) >= 2 and len(part) <= 80:
+                symbols.append((part, key))
+    return symbols
+
+
+@lru_cache(maxsize=1)
+def symbol_index() -> tuple[dict, ...]:
+    """A compact identifier index built from the reference tables.
+
+    The first column of a reference table is the symbol name: ``PositiveIntegerField``,
+    ``select_for_update``, ``AUTH_USER_MODEL``, ``LoginRequiredMixin`` and so on.
+    """
+    entries: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+    for chapter in load_chapters():
+        for section in chapter["sections"]:
+            if not section["table"]:
+                continue
+            for row in section["table"]["rows"]:
+                if not row:
+                    continue
+                row_text = " · ".join(row)
+                for display, key in _extract_symbols(row[0]):
+                    marker = (key, chapter["slug"], section["id"])
+                    if marker in seen:
+                        continue
+                    seen.add(marker)
+                    entries.append(
+                        {
+                            "symbol": display,
+                            "key": key,
+                            "chapter": chapter,
+                            "section": section,
+                            "snippet": row_text,
+                        }
+                    )
+    return tuple(entries)
+
+
+def symbol_hits(query: str, limit: int = 8, exact_only: bool = False) -> list[dict]:
+    query = _normalize(query)
+    if len(query) < 3 or " " in query:
+        return []
+    hits: list[dict] = []
+    for entry in symbol_index():
+        key = entry["key"]
+        if key == query:
+            score = 430
+        elif exact_only:
+            continue
+        elif key.startswith(query):
+            score = 300
+        elif query in key:
+            score = 220
+        else:
+            continue
+        hits.append(
+            {
+                "kind": "symbol",
+                "symbol": entry["symbol"],
+                "chapter": entry["chapter"],
+                "section": entry["section"],
+                "title": entry["symbol"],
+                "snippet": _snippet(entry["snippet"], query),
+                "score": score,
+            }
+        )
+    hits.sort(key=lambda hit: (-hit["score"], hit["chapter"]["number"], hit["title"]))
+    return hits[:limit]
+
+
+@lru_cache(maxsize=1)
+def suggestion_index() -> dict[str, dict]:
+    """Searchable terms for typo suggestions: symbols and chapter names/aliases."""
+    entries: dict[str, dict] = {}
+    for chapter in load_chapters():
+        for value in [chapter["title"], *chapter["aliases"]]:
+            key = _normalize(value)
+            if len(key) >= 3 and key not in entries:
+                entries[key] = {
+                    "term": value,
+                    "chapter": chapter,
+                    "section": None,
+                }
+    for entry in symbol_index():
+        entries.setdefault(
+            entry["key"],
+            {
+                "term": entry["symbol"],
+                "chapter": entry["chapter"],
+                "section": entry["section"],
+            },
+        )
+    return entries
+
+
+def suggest_terms(query: str, limit: int = 5) -> list[dict]:
+    query = _normalize(query)
+    if len(query) < 3:
+        return []
+    candidates = suggestion_index()
+    matches = difflib.get_close_matches(query, candidates.keys(), n=limit, cutoff=0.72)
+    suggestions = []
+    for match in matches:
+        entry = candidates[match]
+        suggestions.append(
+            {
+                "term": entry["term"],
+                "chapter": entry["chapter"],
+                "section": entry["section"],
+            }
+        )
+    return suggestions
+
+
+def filter_hits(hits: list[dict], level: str = "", kind: str = "") -> list[dict]:
+    if level:
+        hits = [hit for hit in hits if hit["chapter"]["level"] == level]
+    if kind:
+        hits = [hit for hit in hits if hit["kind"] == kind]
+    return hits
+
+
+_TRACEBACK_EXCEPTION = re.compile(
+    r"\b([A-Za-z_][\w.]*(?:Error|Exception|Warning|NoReverseMatch|DoesNotExist|"
+    r"MultipleObjectsReturned|PermissionDenied|DisallowedHost|ImproperlyConfigured|"
+    r"AppRegistryNotReady|SuspiciousFileOperation|RequestDataTooBig|TooManyFieldsSent|"
+    r"TemplateSyntaxError|FieldError))\b"
+)
+
+
+def extract_exception_terms(traceback_text: str) -> list[str]:
+    """Pull likely exception names out of a pasted traceback or error log."""
+    terms: list[str] = []
+    for match in _TRACEBACK_EXCEPTION.finditer(traceback_text):
+        term = match.group(1).split(".")[-1]
+        if term not in terms:
+            terms.append(term)
+    if terms:
+        return terms[:4]
+
+    for line in reversed([line.strip() for line in traceback_text.splitlines() if line.strip()]):
+        if ":" not in line:
+            continue
+        candidate = line.split(":", 1)[0].strip().split(".")[-1]
+        if candidate and len(candidate) >= 3:
+            return [candidate[:80]]
+        break
+    return []
+
+
+def traceback_hits(traceback_text: str, limit: int = 8) -> tuple[list[str], list[dict]]:
+    terms = extract_exception_terms(traceback_text)
+    hits: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+    for term in terms:
+        for hit in search_handbook(term, limit=12):
+            if hit["kind"] == "symbol":
+                continue
+            section = hit["section"]
+            marker = (
+                hit["chapter"]["slug"],
+                section["id"] if section else "",
+                hit["title"],
+            )
+            if marker in seen:
+                continue
+            seen.add(marker)
+            hits.append(hit)
+    hits.sort(key=lambda hit: (-hit["score"], hit["chapter"]["number"]))
+    return terms, hits[:limit]
+
+
 def _chapter_score(chapter: dict, query: str) -> int:
     if query == chapter["search_title"]:
         return 240
@@ -409,8 +641,12 @@ def search_handbook(query: str, limit: int = 24) -> list[dict]:
         return []
     variants = _variant_set(query)
     tokens = query.split()
+    chapter_exact = any(
+        query == chapter["search_title"] or query in chapter["search_aliases"]
+        for chapter in load_chapters()
+    )
 
-    hits: list[dict] = []
+    hits: list[dict] = symbol_hits(query, exact_only=chapter_exact)
     for chapter in load_chapters():
         search_text = chapter["search_text"]
         if not all(token in search_text for token in tokens):
@@ -503,6 +739,72 @@ def chapter_url(chapter: dict, section: dict | None = None) -> str:
     if section:
         url += f"#{section['id']}"
     return url
+
+
+def chapter_markdown(chapter: dict) -> str:
+    """Render a chapter as portable Markdown for export or LLM context."""
+    lines = [
+        f"# {chapter['title']}",
+        "",
+        f"*{chapter['subtitle']}*",
+        "",
+        chapter["summary"],
+        "",
+        f"- Level: {chapter['level']}",
+        f"- Reviewed: {chapter['reviewed_on'].isoformat()}",
+        f"- Django: {chapter['django_min']} – {chapter['django_max']}",
+        f"- Official docs: {chapter['official']}",
+        "",
+        "## Short answer",
+        "",
+        chapter["quick_answer"],
+        "",
+    ]
+    for section in chapter["sections"]:
+        lines.extend([f"## {section['title']}", "", section["body"], ""])
+        if section["table"]:
+            head = section["table"]["head"]
+            lines.append("| " + " | ".join(_md_cell(cell) for cell in head) + " |")
+            lines.append("| " + " | ".join("---" for _ in head) + " |")
+            for row in section["table"]["rows"]:
+                lines.append("| " + " | ".join(_md_cell(cell) for cell in row) + " |")
+            lines.append("")
+        if section["code"]:
+            fence = "~~~" if "```" in section["code"] else "```"
+            lines.extend([f"{fence}{section['language']}", section["code"], fence, ""])
+        if section["note"]:
+            lines.extend([f"> **Note:** {section['note']}", ""])
+    if chapter["pitfalls"]:
+        lines.extend(["## The traps", ""])
+        lines.extend([f"- {item}" for item in chapter["pitfalls"]])
+        lines.append("")
+    if chapter["checklist"]:
+        lines.extend(["## Before you move on", ""])
+        lines.extend([f"- {item}" for item in chapter["checklist"]])
+        lines.append("")
+    if chapter["errors"]:
+        lines.extend(["## Error fixes", ""])
+        for error in chapter["errors"]:
+            lines.extend(
+                [
+                    f"### {error['error']}",
+                    "",
+                    f"**Why it happens:** {error['cause']}",
+                    "",
+                    f"**Fix:** {error['fix']}",
+                    "",
+                ]
+            )
+    if chapter["related"]:
+        lines.extend(["## Related", ""])
+        for related in chapter["related"]:
+            lines.append(f"- `{related}`")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _md_cell(value: str) -> str:
+    return str(value).replace("|", "\\|").replace("\n", " ").strip()
 
 
 # ---------------------------------------------------------------------------

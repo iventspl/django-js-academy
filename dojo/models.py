@@ -570,6 +570,54 @@ class ArchitectureCase(models.Model):
         return reverse("dojo:architecture_case", args=[self.key])
 
 
+class HandbookProgress(models.Model):
+    """Local reading state for a handbook chapter.
+
+    ``is_read`` and ``is_bookmarked`` are explicit learner actions;
+    ``last_seen_at`` lets the handbook offer a useful "continue reading"
+    entry point without turning a visit into a completion signal.
+    """
+
+    learner = models.ForeignKey(
+        Learner, on_delete=models.CASCADE, related_name="handbook_progress"
+    )
+    chapter_slug = models.SlugField(max_length=80)
+    is_read = models.BooleanField(default=False)
+    is_bookmarked = models.BooleanField(default=False)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-last_seen_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "chapter_slug"],
+                name="unique_dojo_handbook_progress",
+            )
+        ]
+        indexes = [models.Index(fields=["learner", "last_seen_at"])]
+
+    def __str__(self) -> str:
+        return self.chapter_slug
+
+
+class HandbookSearchLog(models.Model):
+    """Local record of searches with no answer, used to find content gaps."""
+
+    query = models.CharField(max_length=200)
+    hits = models.PositiveIntegerField(default=0)
+    count = models.PositiveIntegerField(default=1)
+    first_seen = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-last_seen"]
+        indexes = [models.Index(fields=["-last_seen"])]
+
+    def __str__(self) -> str:
+        return f"{self.query} ({self.count})"
+
+
 class StudyNote(models.Model):
     learner = models.ForeignKey(
         Learner, on_delete=models.CASCADE, related_name="study_notes"

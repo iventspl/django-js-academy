@@ -99,7 +99,8 @@
         "forms",
         "admin"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/db/models/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/models/",
+      "quiz_topic": "models-orm"
     },
     {
       "slug": "migrations",
@@ -185,7 +186,8 @@
         "commands",
         "deploy"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/migrations/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/migrations/",
+      "quiz_topic": "models-orm"
     },
     {
       "slug": "orm",
@@ -287,7 +289,8 @@
         "views",
         "admin"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/db/queries/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/queries/",
+      "quiz_topic": "models-orm"
     }
   ]
 }

@@ -6,7 +6,7 @@
 {% block meta_description %}A plain-language, searchable Django manual: forms, models, ORM, URLs, templates, migrations, errors and deployment.{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261106a">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109c">
 {% endblock %}
 
 {% block content %}
@@ -29,6 +29,8 @@
       <span class="hb-search-icon" aria-hidden="true">⌕</span>
       <label class="sr-only" for="hb-q">Search the Django handbook</label>
       <input id="hb-q" data-hb-input type="search" name="q" value="{{ query }}" placeholder="Try “forms”, “PositiveIntegerField”, “CSP”…" autocomplete="off" spellcheck="false" autofocus>
+      {% if level %}<input type="hidden" name="level" value="{{ level }}">{% endif %}
+      {% if kind %}<input type="hidden" name="kind" value="{{ kind }}">{% endif %}
       <kbd class="hb-kbd" aria-hidden="true">/</kbd>
       <button class="btn btn-primary hb-search-button" type="submit">Search</button>
     </form>
@@ -42,16 +44,28 @@
       <button type="button" data-hb-try="migrations">migrations</button>
       <button type="button" data-hb-try="static">static</button>
     </div>
+    <a class="hb-explain-link" href="{% url 'dojo:handbook_traceback' %}">Have a traceback? Let the explainer read it <span aria-hidden="true">→</span></a>
   </section>
 
   <nav class="hb-level-bar" aria-label="Filter by depth">
     <span class="hb-level-label">Depth</span>
-    <a class="hb-level-chip {% if not level %}is-active{% endif %}" href="{% url 'dojo:handbook' %}{% if query %}?q={{ query|urlencode }}{% endif %}">All <span>{{ chapter_total }}</span></a>
+    <a class="hb-level-chip {% if not level %}is-active{% endif %}" href="?{% hb_query level='' %}">All <span>{{ chapter_total }}</span></a>
     {% for item in levels %}
-      <a class="hb-level-chip {% if level == item.name %}is-active{% endif %}" href="{% url 'dojo:handbook' %}?level={{ item.name|urlencode }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}">{{ item.name }} <span>{{ item.count }}</span></a>
+      <a class="hb-level-chip {% if level == item.name %}is-active{% endif %}" href="?{% hb_query level=item.name %}">{{ item.name }} <span>{{ item.count }}</span></a>
     {% endfor %}
     <span class="hb-level-note">Core → advanced → reference → recipes</span>
+    <a class="hb-coverage-link" href="{% url 'dojo:handbook_coverage' %}">Coverage &amp; gaps →</a>
   </nav>
+
+  {% if searched %}
+    <nav class="hb-kind-bar" aria-label="Filter by result type">
+      <span class="hb-kind-label">Show</span>
+      <a class="hb-kind-chip {% if not kind %}is-active{% endif %}" href="?{% hb_query kind='' %}">Everything</a>
+      <a class="hb-kind-chip {% if kind == 'symbol' %}is-active{% endif %}" href="?{% hb_query kind='symbol' %}">Symbols</a>
+      <a class="hb-kind-chip {% if kind == 'chapter' %}is-active{% endif %}" href="?{% hb_query kind='chapter' %}">Chapters</a>
+      <a class="hb-kind-chip {% if kind == 'section' %}is-active{% endif %}" href="?{% hb_query kind='section' %}">Sections</a>
+    </nav>
+  {% endif %}
 
   <section class="hb-results" data-hb-results aria-live="polite" aria-busy="false">
     {% if searched %}
@@ -73,7 +87,7 @@
         <div class="hb-result-list">
           {% for hit in hits %}
             <a class="hb-result" href="{% url 'dojo:handbook_chapter' hit.chapter.slug %}{% if hit.section %}#{{ hit.section.id }}{% endif %}">
-              <span class="hb-result-kind {% if hit.kind == 'chapter' %}is-chapter{% endif %}">{% if hit.kind == 'chapter' %}Chapter{% else %}Section{% endif %}</span>
+              <span class="hb-result-kind {% if hit.kind == 'chapter' %}is-chapter{% elif hit.kind == 'symbol' %}is-symbol{% endif %}">{% if hit.kind == 'chapter' %}Chapter{% elif hit.kind == 'symbol' %}Symbol{% else %}Section{% endif %}</span>
               <span class="hb-result-body">
                 <span class="hb-result-title">{{ hit.title|mark_query:query }}</span>
                 <span class="hb-result-meta">{{ hit.chapter.category }} · {{ hit.chapter.level }} · {% if hit.section %}{{ hit.chapter.title }}{% else %}Chapter {{ hit.chapter.number|stringformat:"02d" }}{% endif %}</span>
@@ -86,12 +100,33 @@
       {% else %}
         <div class="hb-state">
           <span class="hb-state-mark" aria-hidden="true">0</span>
-          <h2>No answer matched “{{ query }}”.</h2>
-          <p>Try the exception name, the Django file (`forms.py`, `urls.py`) or a shorter phrase. The official docs are linked at the end of every chapter.</p>
-          <div class="hb-state-actions">
-            <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Browse all chapters</a>
-            <a class="btn btn-ghost-dark" href="{% url 'dojo:search' %}?q={{ query|urlencode }}">Search the whole dojo</a>
-          </div>
+          {% if raw_hit_count and filters_active %}
+            <h2>No results match these filters.</h2>
+            <p>“{{ query }}” has {{ raw_hit_count }} answer{{ raw_hit_count|pluralize }}, but none fit the current depth or result type.</p>
+            <div class="hb-state-actions">
+              <a class="btn btn-primary" href="?{% hb_query kind='' level='' %}">Clear filters</a>
+            </div>
+          {% else %}
+            <h2>No answer matched “{{ query }}”.</h2>
+            <p>Try the exception name, the Django file (`forms.py`, `urls.py`) or a shorter phrase. The official docs are linked at the end of every chapter.</p>
+            {% if suggestions %}
+              <div class="hb-suggestions">
+                <p class="hb-label">Did you mean</p>
+                <div class="hb-suggestion-list">
+                  {% for suggestion in suggestions %}
+                    <a href="{% url 'dojo:handbook_chapter' suggestion.chapter.slug %}{% if suggestion.section %}#{{ suggestion.section.id }}{% endif %}">
+                      <strong>{{ suggestion.term }}</strong>
+                      <span>{{ suggestion.chapter.title }}{% if suggestion.section %} · {{ suggestion.section.title }}{% endif %}</span>
+                    </a>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+            <div class="hb-state-actions">
+              <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Browse all chapters</a>
+              <a class="btn btn-ghost-dark" href="{% url 'dojo:search' %}?q={{ query|urlencode }}">Search the whole dojo</a>
+            </div>
+          {% endif %}
         </div>
       {% endif %}
     {% else %}
@@ -102,5 +137,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script defer src="{% static 'dojo/handbook.js' %}?v=20261106a"></script>
+<script defer src="{% static 'dojo/handbook.js' %}?v=20261109c"></script>
 {% endblock %}

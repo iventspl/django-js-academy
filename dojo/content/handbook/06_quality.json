@@ -82,7 +82,8 @@
         "auth",
         "deploy"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/testing/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/testing/",
+      "quiz_topic": "auth-security-testing"
     },
     {
       "slug": "security",
@@ -181,7 +182,8 @@
         "static-media",
         "deploy"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/security/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/security/",
+      "quiz_topic": "auth-security-testing"
     },
     {
       "slug": "errors",
@@ -414,7 +416,8 @@
           "cause": "`get()` matched multiple rows; the query assumed uniqueness that the schema does not enforce.",
           "fix": "Use `filter().first()` if many rows are valid, or add a unique constraint if exactly one should exist."
         }
-      ]
+      ],
+      "quiz_topic": "auth-security-testing"
     }
   ]
 }

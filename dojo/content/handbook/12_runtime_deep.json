@@ -89,7 +89,8 @@
         "performance"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/http/middleware/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "performance-async-deploy"
     },
     {
       "slug": "caching-deep",
@@ -182,7 +183,8 @@
         "deploy-hardening"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/cache/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "performance-async-deploy"
     },
     {
       "slug": "async-deep",
@@ -285,7 +287,8 @@
         "realtime-channels"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/async/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "performance-async-deploy"
     },
     {
       "slug": "background-jobs",
@@ -402,7 +405,8 @@
         "observability"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/tasks/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "tasks-realtime"
     },
     {
       "slug": "storage-files",
@@ -496,7 +500,8 @@
         "deploy-hardening"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/files/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "files-email-storage"
     },
     {
       "slug": "email-deliverability",
@@ -592,7 +597,8 @@
         "observability"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/email/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "files-email-storage"
     },
     {
       "slug": "realtime-channels",
@@ -683,7 +689,8 @@
         "observability"
       ],
       "official": "https://channels.readthedocs.io/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "tasks-realtime"
     }
   ]
 }

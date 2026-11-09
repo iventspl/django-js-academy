@@ -1,6 +1,8 @@
 from django.contrib import admin
 
 from .models import (
+    HandbookProgress,
+    HandbookSearchLog,
     StudyNote,
     AppBlueprint,
     ArchitectureCase,
@@ -118,3 +120,18 @@ class StudyNoteAdmin(admin.ModelAdmin):
     list_display = ("title", "learner", "topic", "is_bookmarked", "updated_at")
     list_filter = ("is_bookmarked", "topic")
     search_fields = ("title", "body")
+
+
+@admin.register(HandbookProgress)
+class HandbookProgressAdmin(admin.ModelAdmin):
+    list_display = ("chapter_slug", "learner", "is_read", "is_bookmarked", "last_seen_at")
+    list_filter = ("is_read", "is_bookmarked")
+    search_fields = ("chapter_slug",)
+    readonly_fields = ("last_seen_at", "read_at")
+
+
+@admin.register(HandbookSearchLog)
+class HandbookSearchLogAdmin(admin.ModelAdmin):
+    list_display = ("query", "count", "hits", "last_seen")
+    search_fields = ("query",)
+    readonly_fields = ("query", "hits", "count", "first_seen", "last_seen")

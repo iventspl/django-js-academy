@@ -93,7 +93,8 @@
         "testing"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/auth/customizing/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "auth-security-testing"
     },
     {
       "slug": "admin-advanced",
@@ -184,7 +185,8 @@
         "security"
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/contrib/admin/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "admin-internal-tools"
     },
     {
       "slug": "security-hardening",
@@ -291,7 +293,8 @@
         "deploy-hardening"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/security/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "security-architecture"
     },
     {
       "slug": "testing-advanced",
@@ -396,7 +399,8 @@
         "typing"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/testing/advanced/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "auth-security-testing"
     },
     {
       "slug": "performance",
@@ -504,7 +508,8 @@
         "deploy-hardening"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/db/optimization/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "performance-async-deploy"
     },
     {
       "slug": "typing",
@@ -596,7 +601,8 @@
         "deploy-hardening"
       ],
       "official": "https://github.com/typeddjango/django-stubs",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "python-typing-tooling"
     }
   ]
 }

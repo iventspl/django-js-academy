@@ -86,7 +86,8 @@
         "auth",
         "security"
       ],
-      "official": "https://www.django-rest-framework.org/"
+      "official": "https://www.django-rest-framework.org/",
+      "quiz_topic": "apis-drf"
     },
     {
       "slug": "deploy",
@@ -178,7 +179,8 @@
         "migrations",
         "commands"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/howto/deployment/"
+      "official": "https://docs.djangoproject.com/en/stable/howto/deployment/",
+      "quiz_topic": "performance-async-deploy"
     }
   ]
 }

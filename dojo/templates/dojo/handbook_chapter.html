@@ -6,7 +6,11 @@
 {% block meta_description %}{{ chapter.summary }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261106a">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109c">
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="{% static 'dojo/handbook-chapter.js' %}?v=20261109c"></script>
 {% endblock %}
 
 {% block content %}
@@ -24,7 +28,7 @@
     </nav>
   </details>
 
-  <div class="hb-chapter-grid">
+  <div class="hb-chapter-grid" data-handbook-chapter>
     <aside class="hb-toc" aria-label="Chapter contents">
       <a class="hb-back" href="{% url 'dojo:handbook' %}">← All chapters</a>
       <p class="hb-toc-label">{{ chapter.category }}</p>
@@ -51,10 +55,30 @@
           <span class="hb-level hb-level-{{ chapter.level|lower }}">{{ chapter.level }}</span>
           {% for tag in chapter.tags %}<span class="hb-tag">{{ tag }}</span>{% endfor %}
         </div>
+        <div class="hb-reading-actions">
+          {% if progress.is_read %}<span class="hb-read-badge">Read</span>{% endif %}
+          <form method="post" action="{% url 'dojo:handbook_read' chapter.slug %}">
+            {% csrf_token %}
+            <button class="hb-action {% if progress.is_read %}is-active{% endif %}" type="submit">
+              {% if progress.is_read %}Mark unread{% else %}Mark as read{% endif %}
+            </button>
+          </form>
+          <form method="post" action="{% url 'dojo:handbook_bookmark' chapter.slug %}">
+            {% csrf_token %}
+            <button class="hb-action {% if progress.is_bookmarked %}is-active{% endif %}" type="submit" aria-pressed="{% if progress.is_bookmarked %}true{% else %}false{% endif %}">
+              {% if progress.is_bookmarked %}Bookmarked{% else %}Bookmark{% endif %}
+            </button>
+          </form>
+          <a class="hb-action" href="{% url 'dojo:handbook_markdown' chapter.slug %}">Markdown</a>
+        </div>
         <div class="hb-meta-row">
           <span>{{ chapter.read_minutes }} min read</span>
           <span>{{ chapter.sections|length }} sections</span>
-          <span>Django 5.2 – 6.1</span>
+          <span>Reviewed {{ chapter.reviewed_on|date:"j M Y" }}</span>
+          <span>Django {{ chapter.django_min }} – {{ chapter.django_max }}</span>
+          {% if version_warning %}
+            <span class="hb-version-warning">Running Django {{ runtime_version }} outside this range</span>
+          {% endif %}
           <a href="{{ chapter.official }}" target="_blank" rel="noopener noreferrer">Official docs <span aria-hidden="true">↗</span></a>
         </div>
       </header>
@@ -63,6 +87,16 @@
         <span class="hb-quick-label" id="hb-quick-title">Short answer</span>
         <div class="hb-prose">{{ chapter.quick_answer|prose }}</div>
       </section>
+
+      {% if chapter.slug == "errors" %}
+        <aside class="hb-traceback-teaser">
+          <div>
+            <p class="hb-label">Have a full traceback?</p>
+            <p>Paste the output and let the explainer pick the exception, cause and chapter.</p>
+          </div>
+          <a class="btn btn-primary" href="{% url 'dojo:handbook_traceback' %}">Open the error explainer <span aria-hidden="true">→</span></a>
+        </aside>
+      {% endif %}
 
       {% for section in chapter.sections %}
         <section class="hb-section" id="{{ section.id }}">
@@ -168,6 +202,20 @@
             {% endfor %}
           </div>
         </section>
+      {% endif %}
+
+      {% if practice_topic %}
+        <aside class="hb-practice">
+          <div>
+            <p class="hb-label">Practice this chapter</p>
+            <h2>Turn reading into recall.</h2>
+            <p>{{ practice_topic.name }} has {{ practice_topic.question_count }} quiz questions and {{ practice_topic.flashcard_count }} flashcards tied to this material.</p>
+          </div>
+          <div class="hb-practice-actions">
+            <a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}?topic={{ practice_topic.slug }}">Quiz this topic <span aria-hidden="true">→</span></a>
+            <a class="btn btn-ghost-dark" href="{% url 'dojo:flashcards_study' practice_topic.slug %}">Review cards <span aria-hidden="true">▣</span></a>
+          </div>
+        </aside>
       {% endif %}
 
       <aside class="hb-source">

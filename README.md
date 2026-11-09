@@ -178,6 +178,11 @@ The **Django handbook** at `/handbook/` is the “open it and type the thing tha
 - Reference chapters give you fast lookup tables for settings, model fields, QuerySet methods and lookups, forms/widgets, template tags/filters, auth, admin, commands, exceptions, migrations, middleware, HTTP, URLs, databases and a glossary.
 - Type `forms` and you get the whole forms chapter plus the specific sections for `ModelForm`, formsets, validation, widgets, field types, file uploads and the “form is not working” checklist.
 - Type `PositiveIntegerField`, `AutoField`, `Post.objects.filter` or `select_for_update` and search finds the identifier inside code examples and reference tables, with a snippet from the match.
+- Search also has a **symbol index**, **typo suggestions**, **result-type/depth filters** and keyboard navigation (`/` or `Ctrl/Cmd+K`, arrow keys, Enter). Relevant chapters map to a quiz topic and flashcards, so you can practise the material immediately after reading.
+- **Reading progress and bookmarks** are stored locally. The handbook landing page offers “continue reading”, a read count and saved chapters; every chapter has “Mark as read” and “Bookmark” actions.
+- The **Error explainer** at `/handbook/traceback/` accepts a pasted traceback, extracts the exception class and links the closest decoder entry.
+- Every chapter carries a **review date** and a **Django version range**; the header warns if the running Django falls outside it. The **Coverage report** at `/handbook/coverage/` shows chapters, sections, tables, latest review and known gaps.
+- Chapters export as clean Markdown at `/handbook/<slug>.md` (for example `/handbook/forms.md`), and the chapter page has print styles.
 - Every chapter starts with a short answer, then gives copyable code, the traps, a pre-flight checklist, related chapters, and a link to the official docs. Sections can also carry direct reference tables and per-section official links.
 - Search is instant and works without JavaScript (normal form submit). The same chapters also appear in the global `/search/` results.
 
@@ -583,11 +588,19 @@ The release radar is deliberately a curated snapshot. Update `releases.json` whe
 
 ### Editing the Django handbook
 
-The handbook lives in `dojo/content/handbook/`, split across numbered files (`01_start.json` … `18_recipes.json`). Each file contains a `chapters` array. No migration or seed is needed: the loader reads and validates the files, and a restart picks up edits.
+The handbook lives in `dojo/content/handbook/`, split across numbered files (`01_start.json` … `18_recipes.json`). Each file contains a `chapters` array. Content edits need no seed: the loader reads and validates the files, and a restart picks them up. The optional reading-progress tables use the normal Django migrations.
 
-A chapter requires `slug`, `title`, `subtitle`, `category`, `order`, `level`, `tags`, `aliases`, `summary`, `quick_answer`, `sections`, `pitfalls`, `checklist`, optional `errors`, `related` and `official`. `level` is one of `Core`, `Advanced`, `Reference` or `Recipe`. A section requires `id`, `title` and `body`; optional `code`, `language`, `note`, `table` (`head` + `rows`) and `reference`. `body` supports paragraphs, `-` / `1.` lists, `` `inline code` ``, `**bold**` and `[links](https://example.com)`.
+A chapter requires `slug`, `title`, `subtitle`, `category`, `order`, `level`, `tags`, `aliases`, `summary`, `quick_answer`, `sections`, `pitfalls`, `checklist`, optional `quiz_topic`, `reviewed_on` (`YYYY-MM-DD`), `django_min`, `django_max`, `errors`, `related` and `official`. `level` is one of `Core`, `Advanced`, `Reference` or `Recipe`. `quiz_topic` links a chapter to a quiz path and flashcard deck. A section requires `id`, `title` and `body`; optional `code`, `language`, `note`, `table` (`head` + `rows`) and `reference`. `body` supports paragraphs, `-` / `1.` lists, `` `inline code` ``, `**bold**` and `[links](https://example.com)`.
 
-Reference tables are first-class content, so a chapter like `settings-reference` stays a lookup page rather than a wall of prose. Every section can also carry its own official `reference` URL.
+Reference tables are first-class content, so a chapter like `settings-reference` stays a lookup page rather than a wall of prose. The first column of each reference table is also indexed as searchable symbols (`PositiveIntegerField`, `select_for_update`, `AUTH_USER_MODEL`, …), which is what powers exact identifier search and typo suggestions.
+
+Validate the book, review dates and optional official links:
+
+```bash
+python manage.py check_handbook
+python manage.py check_handbook --links
+python manage.py handbook_gaps      # zero-result searches
+```
 
 To validate after editing, run the handbook tests:
 
@@ -664,7 +677,7 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **162 tests** in total, including handbook search, code-identifier indexing and reference-table rendering.
+The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **176 tests** in total, including handbook search, symbol indexing, typo suggestions, filters, practice links, reading progress, the error explainer and reference-table rendering.
 
 You can also run Django's deployment check before hosting anything:
 

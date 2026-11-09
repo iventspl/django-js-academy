@@ -106,7 +106,8 @@
         "performance"
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/models/expressions/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "models-orm"
     },
     {
       "slug": "transactions-locking",
@@ -201,7 +202,8 @@
         "background-jobs"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/db/transactions/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "models-orm"
     },
     {
       "slug": "models-advanced",
@@ -339,7 +341,8 @@
         "orm-expressions"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/db/models/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "models-orm"
     },
     {
       "slug": "multi-db",
@@ -430,7 +433,8 @@
         "multi-tenancy"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/db/multi-db/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "models-orm"
     },
     {
       "slug": "migrations-advanced",
@@ -523,7 +527,8 @@
         "transactions-locking"
       ],
       "official": "https://docs.djangoproject.com/en/stable/howto/writing-migrations/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "models-orm"
     }
   ]
 }

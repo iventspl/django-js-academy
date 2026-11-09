@@ -27,6 +27,13 @@
 - Added **15 reference chapters** with tables for settings, model fields, QuerySet methods/lookups, forms, templates, auth, admin, commands, exceptions, migrations, middleware, HTTP, URLs, databases and a glossary.
 - Added **11 end-to-end recipes**: accounts, CRUD with ownership, search, image upload, CSV/PDF export, transactional email, JSON API, first deploy, background job, tenant scoping and export recipes.
 - Added **level filters** (`Core`, `Advanced`, `Reference`, `Recipe`), chapter tags, reference tables rendered in-page, and per-section official reference links.
+- Added a **symbol index** built from the reference tables: `PositiveIntegerField`, `AutoField`, `AUTH_USER_MODEL`, `LoginRequiredMixin` and similar identifiers resolve directly to the owning table/section.
+- Added typo suggestions (`PositveIntegerField` → `PositiveIntegerField`), result-type filters (symbol/chapter/section), depth filters, `Ctrl/Cmd+K` focus, arrow-key result navigation and target-section highlighting.
+- Mapped relevant chapters to their nearest quiz topic and flashcard deck, with **Practice this chapter** actions on the chapter page.
+- Added local **reading progress and bookmarks** (read/unread, bookmark, continue reading, read count) backed by a new `HandbookProgress` model.
+- Added the **Error explainer** at `/handbook/traceback/`: paste a traceback, extract the exception class and surface the closest decoder entry.
+- Added **review dates and Django version ranges** to every chapter, with a runtime version warning and a `/handbook/coverage/` report.
+- Added **Markdown export** (`/handbook/<slug>.md`), print styles, `check_handbook --links/--max-age` validation and a local **zero-result search log** with `handbook_gaps`.
 - Added instant, dependency-free search with a no-JavaScript fallback. It now indexes **code snippets and reference-table cells** as well as prose, so identifiers such as `PositiveIntegerField`, `AutoField` and `Post.objects.filter` resolve. Exact chapter/section titles outrank passing code mentions, and snippets come from the matching code/table. Type `forms`, `PositiveIntegerField`, `select_for_update`, `window function`, `CSP` or `NoReverseMatch`; results are chapter- and section-level.
 - Added the handbook to the Django sidebar, the home-page actions and global `/search/` (new “Django handbook” result group).
 - Handbook content lives in editable `dojo/content/handbook/*.json` files; no migration or database change is required.
@@ -35,7 +42,7 @@
 ### Verification
 
 - Django `check` passes.
-- Full test suite passes (**162 tests**).
+- Full test suite passes (**176 tests**).
 
 ## 4.26 — 2026-10-30
 

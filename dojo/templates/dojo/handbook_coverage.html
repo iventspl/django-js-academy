@@ -1,0 +1,78 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Coverage & gaps · Django handbook{% endblock %}
+{% block body_class %}page-handbook page-handbook-coverage{% endblock %}
+{% block meta_description %}Coverage report for the Django handbook: chapters, sections, reference tables, review dates and known gaps.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109c">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-coverage-wrap">
+  <header class="hb-traceback-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Coverage report</p>
+    <h1>What is covered.<br><em>What is next.</em></h1>
+    <p class="hb-hero-lead">A local, honest snapshot of the handbook: where the chapters are, when they were reviewed, and which Django areas still need a dedicated answer.</p>
+    <a class="hb-back" href="{% url 'dojo:handbook' %}">← Back to the handbook</a>
+  </header>
+
+  <div class="hb-coverage-stats" aria-label="Coverage summary">
+    <div><strong>{{ chapter_total }}</strong><span>chapters</span></div>
+    <div><strong>{{ section_total }}</strong><span>answers</span></div>
+    <div><strong>{{ error_total }}</strong><span>error fixes</span></div>
+    <div><strong>{{ stale_chapters|length }}</strong><span>stale reviews</span></div>
+  </div>
+
+  <section class="hb-coverage-panel" aria-labelledby="coverage-table-title">
+    <div class="hb-coverage-head">
+      <p class="hb-label hb-label-light">By area</p>
+      <h2 id="coverage-table-title">The map</h2>
+    </div>
+    <div class="hb-table-wrap">
+      <table class="hb-table">
+        <thead>
+          <tr><th>Area</th><th>Chapters</th><th>Sections</th><th>Tables</th><th>Latest review</th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td><strong>{{ row.name }}</strong></td>
+              <td>{{ row.chapters }}</td>
+              <td>{{ row.sections }}</td>
+              <td>{{ row.tables }}</td>
+              <td>{{ row.latest_review|date:"j M Y" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="hb-coverage-panel" aria-labelledby="coverage-gaps-title">
+    <div class="hb-coverage-head">
+      <p class="hb-label hb-label-light">Known gaps</p>
+      <h2 id="coverage-gaps-title">Next chapters worth writing</h2>
+    </div>
+    <ul class="hb-gap-list">
+      {% for gap in gaps %}<li>{{ gap }}</li>{% endfor %}
+    </ul>
+    <p class="hb-coverage-note">Also check <code>python manage.py handbook_gaps</code> for real zero-result searches. The list above is the editorial backlog, not a claim that these topics are absent from the whole book — several are covered inside larger chapters.</p>
+  </section>
+
+  {% if stale_chapters %}
+    <section class="hb-coverage-panel" aria-labelledby="coverage-stale-title">
+      <div class="hb-coverage-head">
+        <p class="hb-label hb-label-light">Review queue</p>
+        <h2 id="coverage-stale-title">Chapters older than a year</h2>
+      </div>
+      <ul class="hb-gap-list">
+        {% for chapter in stale_chapters %}
+          <li><a href="{% url 'dojo:handbook_chapter' chapter.slug %}">{{ chapter.title }}</a> — reviewed {{ chapter.reviewed_on|date:"j M Y" }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

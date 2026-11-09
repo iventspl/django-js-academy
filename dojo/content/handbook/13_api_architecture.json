@@ -104,7 +104,8 @@
         "testing-advanced"
       ],
       "official": "https://www.django-rest-framework.org/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "apis-drf"
     },
     {
       "slug": "deploy-hardening",
@@ -224,7 +225,8 @@
         "performance"
       ],
       "official": "https://docs.djangoproject.com/en/stable/howto/deployment/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "performance-async-deploy"
     },
     {
       "slug": "observability",
@@ -356,7 +358,8 @@
         "background-jobs"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/logging/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "platform-engineering"
     },
     {
       "slug": "i18n",
@@ -461,7 +464,8 @@
         "urls-advanced"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/i18n/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "django-fundamentals"
     },
     {
       "slug": "search-postgres",
@@ -555,7 +559,8 @@
         "multi-tenancy"
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/contrib/postgres/search/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "search-postgres"
     },
     {
       "slug": "multi-tenancy",
@@ -675,7 +680,8 @@
         "multi-db"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/db/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "architecture-saas"
     }
   ]
 }

@@ -91,7 +91,8 @@
         "multi-tenancy"
       ],
       "official": "https://docs.djangoproject.com/en/stable/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "architecture-boundaries"
     },
     {
       "slug": "internals",
@@ -228,7 +229,8 @@
         "deploy-hardening"
       ],
       "official": "https://docs.djangoproject.com/en/stable/internals/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "django-fundamentals"
     },
     {
       "slug": "upgrade-django",
@@ -343,7 +345,8 @@
         "security"
       ],
       "official": "https://docs.djangoproject.com/en/stable/releases/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "modern-django-releases"
     },
     {
       "slug": "feature-flags",
@@ -423,7 +426,8 @@
         "testing-advanced"
       ],
       "official": "https://docs.djangoproject.com/en/stable/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "platform-engineering"
     },
     {
       "slug": "payments-webhooks",
@@ -518,7 +522,8 @@
         "security-hardening"
       ],
       "official": "https://docs.djangoproject.com/en/stable/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "distributed-reliability"
     },
     {
       "slug": "htmx",
@@ -612,7 +617,8 @@
         "urls-advanced"
       ],
       "official": "https://htmx.org/docs/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "htmx-server-driven-ui"
     },
     {
       "slug": "exports",
@@ -705,7 +711,8 @@
         "storage-files"
       ],
       "official": "https://docs.djangoproject.com/en/stable/howto/outputting-csv/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "files-email-storage"
     }
   ]
 }

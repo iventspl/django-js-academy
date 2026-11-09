@@ -161,7 +161,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/middleware/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "performance-async-deploy"
     },
     {
       "slug": "http-reference",
@@ -495,7 +496,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/request-response/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "views-forms-templates"
     },
     {
       "slug": "urls-reference",
@@ -707,7 +709,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/urls/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "views-forms-templates"
     },
     {
       "slug": "database-reference",
@@ -957,7 +960,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/databases/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "models-orm"
     },
     {
       "slug": "glossary",

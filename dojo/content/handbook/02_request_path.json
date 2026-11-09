@@ -82,7 +82,8 @@
         "templates",
         "errors"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/http/urls/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/http/urls/",
+      "quiz_topic": "views-forms-templates"
     },
     {
       "slug": "views",
@@ -182,7 +183,8 @@
         "templates",
         "middleware"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/http/views/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/http/views/",
+      "quiz_topic": "views-forms-templates"
     },
     {
       "slug": "templates",
@@ -276,7 +278,8 @@
         "forms",
         "static-media"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/templates/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/templates/",
+      "quiz_topic": "views-forms-templates"
     }
   ]
 }

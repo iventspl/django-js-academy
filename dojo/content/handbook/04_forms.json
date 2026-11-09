@@ -184,7 +184,8 @@
           "cause": "The POST branch called is_valid() and then returned None on the invalid path.",
           "fix": "Return render(...) with the bound form after the POST branch, so invalid submissions get a response with errors."
         }
-      ]
+      ],
+      "quiz_topic": "views-forms-templates"
     }
   ]
 }

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from io import StringIO
 
 from django.core.management import call_command
 from django.test import TestCase
@@ -6,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .content import load_bundles
-from .handbook import chapter_map, load_chapters, render_prose, search_handbook
+from .handbook import chapter_map, load_chapters, render_prose, search_handbook, suggest_terms
 from .models import (
     AppBlueprint,
     ArchitectureCase,
@@ -14,6 +15,8 @@ from .models import (
     Cheatsheet,
     Flashcard,
     FlashcardReview,
+    HandbookProgress,
+    HandbookSearchLog,
     Learner,
     Question,
     ReleaseNote,
@@ -657,7 +660,7 @@ class HandbookContentTests(TestCase):
     def test_search_finds_an_exception_name(self):
         hits = search_handbook("NoReverseMatch")
         self.assertTrue(hits)
-        self.assertIn(hits[0]["chapter"]["slug"], {"errors", "urls"})
+        self.assertIn(hits[0]["chapter"]["slug"], {"errors", "urls", "exceptions-reference"})
 
     def test_search_finds_advanced_and_reference_topics(self):
         locking = search_handbook("select_for_update")
@@ -670,6 +673,8 @@ class HandbookContentTests(TestCase):
     def test_search_indexes_code_and_reference_tables(self):
         field_hits = search_handbook("PositiveIntegerField")
         self.assertTrue(field_hits)
+        self.assertEqual(field_hits[0]["kind"], "symbol")
+        self.assertEqual(field_hits[0]["title"], "PositiveIntegerField")
         self.assertIn("Scalar fields", {hit["title"] for hit in field_hits})
         self.assertIn("model-fields-reference", {hit["chapter"]["slug"] for hit in field_hits})
 
@@ -680,6 +685,12 @@ class HandbookContentTests(TestCase):
         code_hits = search_handbook("Post.objects.filter")
         self.assertTrue(code_hits)
         self.assertIn("orm", {hit["chapter"]["slug"] for hit in code_hits})
+
+    def test_search_suggests_a_corrected_identifier(self):
+        suggestions = suggest_terms("PositveIntegerField")
+        self.assertTrue(suggestions)
+        self.assertIn("PositiveIntegerField", {suggestion["term"] for suggestion in suggestions})
+        self.assertEqual(search_handbook("PositveIntegerField"), [])
 
     def test_search_needs_two_characters(self):
         self.assertEqual(search_handbook("f"), [])
@@ -695,6 +706,22 @@ class HandbookContentTests(TestCase):
     def test_prose_renders_bullet_lists(self):
         rendered = render_prose("- one\n- two")
         self.assertIn("<ul><li>one</li><li>two</li></ul>", rendered)
+
+    def test_check_handbook_command_reports_a_valid_book(self):
+        output = StringIO()
+        call_command("check_handbook", stdout=output)
+        text = output.getvalue()
+        self.assertIn("Chapters: 81", text)
+        self.assertIn("Handbook is valid", text)
+
+    def test_markdown_export_contains_the_chapter(self):
+        response = self.client.get(reverse("dojo:handbook_markdown", args=["forms"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/markdown", response["Content-Type"])
+        body = response.content.decode()
+        self.assertTrue(body.startswith("# Forms"))
+        self.assertIn("## Short answer", body)
+        self.assertIn("```python", body)
 
 
 class HandbookViewTests(TestCase):
@@ -727,6 +754,7 @@ class HandbookViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertGreaterEqual(payload["count"], 1)
+        self.assertEqual(payload["results"][0]["kind"], "symbol")
         chapters = {result["chapter"] for result in payload["results"]}
         self.assertIn("Model fields reference", chapters)
         self.assertTrue(
@@ -740,6 +768,15 @@ class HandbookViewTests(TestCase):
         self.assertContains(response, "What is_valid() actually does")
         self.assertContains(response, "Error fixes")
         self.assertContains(response, "https://docs.djangoproject.com/en/stable/topics/forms/")
+        self.assertContains(response, "Reviewed 9 Nov 2026")
+        self.assertContains(response, "Django 5.2 – 6.1")
+
+    def test_coverage_page_renders(self):
+        response = self.client.get(reverse("dojo:handbook_coverage"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Coverage report")
+        self.assertContains(response, "Known gaps")
+        self.assertContains(response, "81")
 
     def test_unknown_chapter_is_404(self):
         response = self.client.get(reverse("dojo:handbook_chapter", args=["not-a-chapter"]))
@@ -758,16 +795,123 @@ class HandbookViewTests(TestCase):
         self.assertContains(response, "QuerySet reference")
         self.assertNotContains(response, "Start a project")
 
+    def test_kind_filter_narrows_search_results(self):
+        response = self.client.get(
+            reverse("dojo:handbook"),
+            {"q": "PositiveIntegerField", "kind": "symbol"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "PositiveIntegerField")
+        self.assertContains(response, "Symbol")
+        self.assertNotContains(response, "Choose the narrowest field")
+
+    def test_search_json_returns_suggestions_for_a_typo(self):
+        response = self.client.get(
+            reverse("dojo:handbook_search"), {"q": "PositveIntegerField"}
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["count"], 0)
+        self.assertIn(
+            "PositiveIntegerField",
+            {suggestion["term"] for suggestion in payload["suggestions"]},
+        )
+
+    def test_zero_result_search_is_logged(self):
+        self.client.get(reverse("dojo:handbook_search"), {"q": "xyz-not-real"})
+        self.client.get(reverse("dojo:handbook_search"), {"q": "xyz-not-real"})
+        row = HandbookSearchLog.objects.get(query="xyz-not-real")
+        self.assertEqual(row.count, 2)
+
+        output = StringIO()
+        call_command("handbook_gaps", stdout=output)
+        self.assertIn("xyz-not-real", output.getvalue())
+
     def test_recipe_chapter_renders(self):
         response = self.client.get(reverse("dojo:handbook_chapter", args=["recipe-auth"]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Signup, login, logout and password reset")
         self.assertContains(response, "UserCreationForm")
 
+    def test_traceback_explainer_finds_the_exception(self):
+        get_response = self.client.get(reverse("dojo:handbook_traceback"))
+        self.assertEqual(get_response.status_code, 200)
+        self.assertContains(get_response, "Paste the traceback")
+
+        response = self.client.post(
+            reverse("dojo:handbook_traceback"),
+            {
+                "traceback": (
+                    "Traceback (most recent call last):\n"
+                    "  File \"views.py\", line 42, in post_detail\n"
+                    "django.urls.exceptions.NoReverseMatch: Reverse for 'post-detail' not found."
+                )
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "NoReverseMatch")
+        self.assertContains(response, "Likely answers")
+
+    def test_traceback_explainer_handles_unstructured_text(self):
+        response = self.client.post(
+            reverse("dojo:handbook_traceback"), {"traceback": "something went wrong"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No exception name found")
+
     def test_handbook_is_in_sidebar(self):
         response = self.client.get(reverse("dojo:home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("dojo:handbook"))
+
+
+class HandbookPracticeTests(SeededTestCase):
+    def test_chapter_links_to_quiz_topic_and_flashcards(self):
+        response = self.client.get(reverse("dojo:handbook_chapter", args=["forms"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Practice this chapter")
+        self.assertContains(response, "/quiz/?topic=views-forms-templates")
+        self.assertContains(response, "/flashcards/views-forms-templates/")
+
+    def test_every_mapped_quiz_topic_exists(self):
+        slugs = set(Topic.objects.values_list("slug", flat=True))
+        mapped = {chapter["quiz_topic"] for chapter in load_chapters() if chapter["quiz_topic"]}
+        self.assertEqual(mapped - slugs, set())
+
+
+class HandbookProgressTests(SeededTestCase):
+    def test_visiting_a_chapter_creates_progress_and_continue_link(self):
+        self.client.get(reverse("dojo:handbook_chapter", args=["models"]))
+        progress = HandbookProgress.objects.get(chapter_slug="models")
+        self.assertFalse(progress.is_read)
+        response = self.client.get(reverse("dojo:handbook"))
+        self.assertContains(response, "Continue where you left off.")
+        self.assertContains(response, "Continue reading")
+
+    def test_mark_read_and_bookmark_toggle(self):
+        self.client.get(reverse("dojo:handbook_chapter", args=["forms"]))
+        response = self.client.post(reverse("dojo:handbook_read", args=["forms"]))
+        self.assertRedirects(response, reverse("dojo:handbook_chapter", args=["forms"]))
+        progress = HandbookProgress.objects.get(chapter_slug="forms")
+        self.assertTrue(progress.is_read)
+        self.assertIsNotNone(progress.read_at)
+
+        self.client.post(reverse("dojo:handbook_bookmark", args=["forms"]))
+        progress.refresh_from_db()
+        self.assertTrue(progress.is_bookmarked)
+        landing = self.client.get(reverse("dojo:handbook"))
+        self.assertContains(landing, "Bookmarks")
+        self.assertContains(landing, "1 saved chapter")
+
+    def test_progress_endpoints_404_for_unknown_chapter(self):
+        self.assertEqual(
+            self.client.post(reverse("dojo:handbook_read", args=["not-real"])).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.post(reverse("dojo:handbook_bookmark", args=["not-real"])).status_code,
+            404,
+        )
 
 
 class AdaptivePracticeTests(SeededTestCase):

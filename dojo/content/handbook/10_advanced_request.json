@@ -103,7 +103,8 @@
         "testing"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/forms/modelforms/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "views-forms-templates"
     },
     {
       "slug": "views-advanced",
@@ -207,7 +208,8 @@
         "middleware-async"
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/class-based-views/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "views-forms-templates"
     },
     {
       "slug": "templates-advanced",
@@ -299,7 +301,8 @@
         "caching-deep"
       ],
       "official": "https://docs.djangoproject.com/en/stable/howto/custom-template-tags/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "views-forms-templates"
     },
     {
       "slug": "urls-advanced",
@@ -402,7 +405,8 @@
         "i18n"
       ],
       "official": "https://docs.djangoproject.com/en/stable/topics/http/urls/",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "views-forms-templates"
     }
   ]
 }

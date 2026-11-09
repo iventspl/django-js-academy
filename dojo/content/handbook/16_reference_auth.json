@@ -276,7 +276,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/contrib/auth/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "auth-security-testing"
     },
     {
       "slug": "admin-reference",
@@ -514,7 +515,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/contrib/admin/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "admin-internal-tools"
     },
     {
       "slug": "commands-reference",
@@ -726,7 +728,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/django-admin/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "django-fundamentals"
     },
     {
       "slug": "exceptions-reference",
@@ -995,7 +998,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/exceptions/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "auth-security-testing"
     },
     {
       "slug": "migrations-reference",
@@ -1196,7 +1200,8 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/migration-operations/",
       "level": "Reference",
-      "errors": []
+      "errors": [],
+      "quiz_topic": "models-orm"
     }
   ]
 }

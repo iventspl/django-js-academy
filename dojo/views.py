@@ -15,12 +15,18 @@ from .field_guide import load_releases
 from .forms import QuizSetupForm
 from .handbook import (
     LEVELS,
+    SEARCH_KINDS,
+    COVERAGE_GAPS,
     categories as handbook_categories,
     chapter_hits,
     chapter_map,
+    chapter_markdown,
+    filter_hits,
     level_summary,
     load_chapters,
     search_handbook,
+    suggest_terms,
+    traceback_hits,
 )
 from .models import (
     AppBlueprint,
@@ -29,6 +35,8 @@ from .models import (
     Cheatsheet,
     DIFFICULTY_CHOICES,
     Flashcard,
+    HandbookProgress,
+    HandbookSearchLog,
     Learner,
     Question,
     ReleaseNote,
@@ -190,42 +198,137 @@ def handbook(request: HttpRequest) -> HttpResponse:
     level = request.GET.get("level", "").strip()
     if level not in LEVELS:
         level = ""
+    kind = request.GET.get("kind", "").strip()
+    if kind not in SEARCH_KINDS:
+        kind = ""
     search_ready = len(query) >= 2
-    hits = search_handbook(query) if search_ready else []
+    raw_hits = search_handbook(query) if search_ready else []
+    if search_ready and not raw_hits:
+        _log_handbook_gap(query)
+    hits = filter_hits(raw_hits, level=level, kind=kind)
+    suggestions = suggest_terms(query) if search_ready and not raw_hits else []
     chapters = load_chapters()
     visible_chapters = [chapter for chapter in chapters if not level or chapter["level"] == level]
+    learner = Learner.local()
+    progress_rows = list(HandbookProgress.objects.filter(learner=learner))
+    by_slug = chapter_map()
+    read_slugs = {row.chapter_slug for row in progress_rows if row.is_read}
+    bookmarked_chapters = [
+        by_slug[row.chapter_slug]
+        for row in progress_rows
+        if row.is_bookmarked and row.chapter_slug in by_slug
+    ]
+    continue_chapter = None
+    for row in progress_rows:
+        if not row.is_read and row.chapter_slug in by_slug:
+            continue_chapter = by_slug[row.chapter_slug]
+            break
     return render(
         request,
         "dojo/handbook.html",
         {
             "query": query,
             "level": level,
+            "kind": kind,
             "levels": level_summary(),
             "searched": bool(query),
             "too_short": 0 < len(query) < 2,
             "search_ready": search_ready,
             "hits": hits,
+            "raw_hit_count": len(raw_hits),
+            "filters_active": bool(level or kind),
+            "suggestions": suggestions,
             "categories": handbook_categories(level or None),
             "visible_total": len(visible_chapters),
             "chapter_total": len(chapters),
             "section_total": sum(len(chapter["sections"]) for chapter in chapters),
             "error_total": sum(len(chapter["errors"]) for chapter in chapters),
+            "read_count": len(read_slugs),
+            "read_slugs": read_slugs,
+            "bookmarked_chapters": bookmarked_chapters,
+            "continue_chapter": continue_chapter,
             "active_nav": "handbook",
         },
     )
 
 
 @require_GET
+def handbook_coverage(request: HttpRequest) -> HttpResponse:
+    chapters = load_chapters()
+    rows = []
+    for category in handbook_categories():
+        category_chapters = category["chapters"]
+        rows.append(
+            {
+                "name": category["name"],
+                "chapters": len(category_chapters),
+                "sections": sum(len(chapter["sections"]) for chapter in category_chapters),
+                "tables": sum(
+                    1
+                    for chapter in category_chapters
+                    for section in chapter["sections"]
+                    if section["table"]
+                ),
+                "latest_review": max(chapter["reviewed_on"] for chapter in category_chapters),
+            }
+        )
+    return render(
+        request,
+        "dojo/handbook_coverage.html",
+        {
+            "rows": rows,
+            "levels": level_summary(),
+            "chapter_total": len(chapters),
+            "section_total": sum(len(chapter["sections"]) for chapter in chapters),
+            "error_total": sum(len(chapter["errors"]) for chapter in chapters),
+            "stale_chapters": [chapter for chapter in chapters if chapter["is_stale"]],
+            "gaps": COVERAGE_GAPS,
+            "active_nav": "handbook",
+        },
+    )
+
+
+def _handbook_url(hit_or_suggestion: dict) -> str:
+    chapter = hit_or_suggestion["chapter"]
+    section = hit_or_suggestion.get("section")
+    url = reverse("dojo:handbook_chapter", args=[chapter["slug"]])
+    if section:
+        url = f"{url}#{section['id']}"
+    return url
+
+
+def _log_handbook_gap(query: str) -> None:
+    """Record a local zero-result query, merging repeats."""
+    query = query.strip()[:200]
+    if len(query) < 2:
+        return
+    row = HandbookSearchLog.objects.filter(query__iexact=query).first()
+    if row is None:
+        HandbookSearchLog.objects.create(query=query)
+        return
+    row.count += 1
+    row.hits = 0
+    row.save(update_fields=["count", "hits", "last_seen"])
+
+
+@require_GET
 def handbook_search(request: HttpRequest) -> HttpResponse:
     query = request.GET.get("q", "").strip()
-    hits = search_handbook(query) if len(query) >= 2 else []
+    level = request.GET.get("level", "").strip()
+    if level not in LEVELS:
+        level = ""
+    kind = request.GET.get("kind", "").strip()
+    if kind not in SEARCH_KINDS:
+        kind = ""
+    raw_hits = search_handbook(query) if len(query) >= 2 else []
+    if len(query) >= 2 and not raw_hits:
+        _log_handbook_gap(query)
+    hits = filter_hits(raw_hits, level=level, kind=kind)
+    suggestions = suggest_terms(query) if len(query) >= 2 and not raw_hits else []
     results = []
     for hit in hits:
         chapter = hit["chapter"]
         section = hit["section"]
-        url = reverse("dojo:handbook_chapter", args=[chapter["slug"]])
-        if section:
-            url = f"{url}#{section['id']}"
         results.append(
             {
                 "kind": hit["kind"],
@@ -236,10 +339,52 @@ def handbook_search(request: HttpRequest) -> HttpResponse:
                 "level": chapter["level"],
                 "section": section["title"] if section else "",
                 "snippet": hit["snippet"],
-                "url": url,
+                "url": _handbook_url(hit),
             }
         )
-    return JsonResponse({"query": query, "count": len(results), "results": results})
+    return JsonResponse(
+        {
+            "query": query,
+            "count": len(results),
+            "raw_count": len(raw_hits),
+            "filtered": bool(raw_hits and not hits),
+            "results": results,
+            "suggestions": [
+                {
+                    "term": suggestion["term"],
+                    "chapter": suggestion["chapter"]["title"],
+                    "url": _handbook_url(suggestion),
+                }
+                for suggestion in suggestions
+            ],
+        }
+    )
+
+
+@require_http_methods(["GET", "POST"])
+def handbook_traceback(request: HttpRequest) -> HttpResponse:
+    raw = ""
+    terms: list[str] = []
+    hits: list[dict] = []
+    suggestions: list[dict] = []
+    if request.method == "POST":
+        raw = request.POST.get("traceback", "")[:20000].strip()
+        if raw:
+            terms, hits = traceback_hits(raw)
+            if not hits and terms:
+                suggestions = suggest_terms(terms[0])
+    return render(
+        request,
+        "dojo/handbook_traceback.html",
+        {
+            "raw": raw,
+            "terms": terms,
+            "hits": hits,
+            "suggestions": suggestions,
+            "submitted": request.method == "POST",
+            "active_nav": "handbook",
+        },
+    )
 
 
 @require_GET
@@ -255,6 +400,19 @@ def handbook_chapter(request: HttpRequest, slug: str) -> HttpResponse:
         for related_slug in chapter["related"]
         if related_slug in by_slug
     ]
+    practice_topic = None
+    if chapter["quiz_topic"]:
+        practice_topic = Topic.objects.filter(slug=chapter["quiz_topic"]).first()
+    learner = Learner.local()
+    progress, _ = HandbookProgress.objects.get_or_create(
+        learner=learner, chapter_slug=slug
+    )
+    progress.save(update_fields=["last_seen_at"])
+    runtime_version = django.get_version()
+    runtime_tuple = tuple(int(part) for part in runtime_version.split(".")[:2])
+    version_warning = not (
+        chapter["django_min_tuple"] <= runtime_tuple <= chapter["django_max_tuple"]
+    )
     return render(
         request,
         "dojo/handbook_chapter.html",
@@ -263,9 +421,53 @@ def handbook_chapter(request: HttpRequest, slug: str) -> HttpResponse:
             "previous_chapter": chapters[index - 1] if index > 0 else None,
             "next_chapter": chapters[index + 1] if index + 1 < len(chapters) else None,
             "related_chapters": related,
+            "practice_topic": practice_topic,
+            "progress": progress,
+            "runtime_version": runtime_version,
+            "version_warning": version_warning,
             "active_nav": "handbook",
         },
     )
+
+
+@require_GET
+def handbook_markdown(request: HttpRequest, slug: str) -> HttpResponse:
+    chapter = chapter_map().get(slug)
+    if chapter is None:
+        raise Http404("Handbook chapter not found")
+    response = HttpResponse(
+        chapter_markdown(chapter),
+        content_type="text/markdown; charset=utf-8",
+    )
+    response["Content-Disposition"] = f'inline; filename="{slug}.md"'
+    return response
+
+
+@require_POST
+def handbook_read(request: HttpRequest, slug: str) -> HttpResponse:
+    chapter = next((item for item in load_chapters() if item["slug"] == slug), None)
+    if chapter is None:
+        raise Http404("Handbook chapter not found")
+    progress, _ = HandbookProgress.objects.get_or_create(
+        learner=Learner.local(), chapter_slug=slug
+    )
+    progress.is_read = not progress.is_read
+    progress.read_at = timezone.now() if progress.is_read else None
+    progress.save(update_fields=["is_read", "read_at", "last_seen_at"])
+    return redirect("dojo:handbook_chapter", slug=slug)
+
+
+@require_POST
+def handbook_bookmark(request: HttpRequest, slug: str) -> HttpResponse:
+    chapter = next((item for item in load_chapters() if item["slug"] == slug), None)
+    if chapter is None:
+        raise Http404("Handbook chapter not found")
+    progress, _ = HandbookProgress.objects.get_or_create(
+        learner=Learner.local(), chapter_slug=slug
+    )
+    progress.is_bookmarked = not progress.is_bookmarked
+    progress.save(update_fields=["is_bookmarked", "last_seen_at"])
+    return redirect("dojo:handbook_chapter", slug=slug)
 
 
 @require_http_methods(["GET", "POST"])

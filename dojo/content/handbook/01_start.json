@@ -74,7 +74,8 @@
         "urls",
         "views"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/intro/tutorial01/"
+      "official": "https://docs.djangoproject.com/en/stable/intro/tutorial01/",
+      "quiz_topic": "django-fundamentals"
     },
     {
       "slug": "settings",
@@ -170,7 +171,8 @@
         "security",
         "deploy"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/ref/settings/"
+      "official": "https://docs.djangoproject.com/en/stable/ref/settings/",
+      "quiz_topic": "django-fundamentals"
     },
     {
       "slug": "commands",
@@ -247,7 +249,8 @@
         "migrations",
         "deploy"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/ref/django-admin/"
+      "official": "https://docs.djangoproject.com/en/stable/ref/django-admin/",
+      "quiz_topic": "django-fundamentals"
     }
   ]
 }
