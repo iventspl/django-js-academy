@@ -23,6 +23,11 @@ def mark_query(value, query):
     return mark_safe(highlight(value, query))
 
 
+@register.filter
+def note_for(notes, section_id):
+    return notes.get(section_id) if notes else None
+
+
 @register.simple_tag(takes_context=True)
 def hb_query(context, **kwargs):
     """Return the current query string with keys replaced or removed.

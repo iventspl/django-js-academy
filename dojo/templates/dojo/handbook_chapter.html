@@ -6,7 +6,7 @@
 {% block meta_description %}{{ chapter.summary }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109c">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109d">
 {% endblock %}
 
 {% block extra_js %}
@@ -70,6 +70,7 @@
             </button>
           </form>
           <a class="hb-action" href="{% url 'dojo:handbook_markdown' chapter.slug %}">Markdown</a>
+          <a class="hb-action" href="{% url 'dojo:handbook_notes' %}">Notes</a>
         </div>
         <div class="hb-meta-row">
           <span>{{ chapter.read_minutes }} min read</span>
@@ -138,6 +139,24 @@
           {% if section.reference %}
             <a class="hb-ref-link" href="{{ section.reference }}" target="_blank" rel="noopener noreferrer">Open the official reference <span aria-hidden="true">↗</span></a>
           {% endif %}
+          {% with note=section_notes|note_for:section.id %}
+            <details class="hb-section-note" {% if note %}open{% endif %}>
+              <summary>
+                <span>{% if note %}Your note{% else %}Add a note{% endif %}</span>
+                {% if note.is_bookmarked %}<span class="hb-note-bookmark" aria-label="Bookmarked">★</span>{% endif %}
+              </summary>
+              <form method="post" action="{% url 'dojo:handbook_note' chapter.slug section.id %}">
+                {% csrf_token %}
+                <label class="sr-only" for="note-{{ section.id }}">Note for {{ section.title }}</label>
+                <textarea id="note-{{ section.id }}" name="body" rows="4" placeholder="What clicked? What will you try in code?">{{ note.body|default:"" }}</textarea>
+                <div class="hb-note-actions">
+                  <label class="hb-note-check"><input type="checkbox" name="bookmarked" {% if note.is_bookmarked %}checked{% endif %}> Bookmark this section</label>
+                  <button class="btn btn-primary btn-small" type="submit">Save note</button>
+                </div>
+                <p class="hb-note-hint">Clear the text and uncheck the bookmark to delete.</p>
+              </form>
+            </details>
+          {% endwith %}
         </section>
       {% endfor %}
 
@@ -207,12 +226,16 @@
       {% if practice_topic %}
         <aside class="hb-practice">
           <div>
-            <p class="hb-label">Practice this chapter</p>
-            <h2>Turn reading into recall.</h2>
-            <p>{{ practice_topic.name }} has {{ practice_topic.question_count }} quiz questions and {{ practice_topic.flashcard_count }} flashcards tied to this material.</p>
+            <p class="hb-label">Checkpoint</p>
+            <h2>Three questions. Then move on.</h2>
+            <p>{{ practice_topic.name }} has {{ practice_topic.question_count }} quiz questions and {{ practice_topic.flashcard_count }} flashcards tied to this material. The checkpoint gives you three questions, not a full exam.</p>
           </div>
           <div class="hb-practice-actions">
-            <a class="btn btn-primary" href="{% url 'dojo:quiz_setup' %}?topic={{ practice_topic.slug }}">Quiz this topic <span aria-hidden="true">→</span></a>
+            <form method="post" action="{% url 'dojo:handbook_checkpoint' chapter.slug %}">
+              {% csrf_token %}
+              <button class="btn btn-primary" type="submit">Start 3-question checkpoint <span aria-hidden="true">→</span></button>
+            </form>
+            <a class="btn btn-ghost-dark" href="{% url 'dojo:quiz_setup' %}?topic={{ practice_topic.slug }}">Full topic quiz</a>
             <a class="btn btn-ghost-dark" href="{% url 'dojo:flashcards_study' practice_topic.slug %}">Review cards <span aria-hidden="true">▣</span></a>
           </div>
         </aside>

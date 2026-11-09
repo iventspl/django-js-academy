@@ -36,6 +36,7 @@ from .models import (
     DIFFICULTY_CHOICES,
     Flashcard,
     HandbookProgress,
+    HandbookNote,
     HandbookSearchLog,
     Learner,
     Question,
@@ -50,6 +51,7 @@ from .services import (
     award_flashcard,
     complete_attempt,
     create_attempt,
+    create_attempt_from_questions,
     create_retry_attempt,
     create_weak_spot_attempt,
     dashboard_stats,
@@ -408,6 +410,10 @@ def handbook_chapter(request: HttpRequest, slug: str) -> HttpResponse:
         learner=learner, chapter_slug=slug
     )
     progress.save(update_fields=["last_seen_at"])
+    section_notes = {
+        note.section_id: note
+        for note in HandbookNote.objects.filter(learner=learner, chapter_slug=slug)
+    }
     runtime_version = django.get_version()
     runtime_tuple = tuple(int(part) for part in runtime_version.split(".")[:2])
     version_warning = not (
@@ -423,6 +429,7 @@ def handbook_chapter(request: HttpRequest, slug: str) -> HttpResponse:
             "related_chapters": related,
             "practice_topic": practice_topic,
             "progress": progress,
+            "section_notes": section_notes,
             "runtime_version": runtime_version,
             "version_warning": version_warning,
             "active_nav": "handbook",
@@ -468,6 +475,117 @@ def handbook_bookmark(request: HttpRequest, slug: str) -> HttpResponse:
     progress.is_bookmarked = not progress.is_bookmarked
     progress.save(update_fields=["is_bookmarked", "last_seen_at"])
     return redirect("dojo:handbook_chapter", slug=slug)
+
+
+@require_POST
+def handbook_note(request: HttpRequest, slug: str, section_id: str) -> HttpResponse:
+    chapter = chapter_map().get(slug)
+    if chapter is None:
+        raise Http404("Handbook chapter not found")
+    section = next(
+        (item for item in chapter["sections"] if item["id"] == section_id), None
+    )
+    if section is None:
+        raise Http404("Handbook section not found")
+    body = request.POST.get("body", "")[:20000].strip()
+    is_bookmarked = request.POST.get("bookmarked") == "on"
+    learner = Learner.local()
+    note = HandbookNote.objects.filter(
+        learner=learner, chapter_slug=slug, section_id=section_id
+    ).first()
+    if not body and not is_bookmarked:
+        if note:
+            note.delete()
+        messages.info(request, "Notatka usunięta.")
+    else:
+        HandbookNote.objects.update_or_create(
+            learner=learner,
+            chapter_slug=slug,
+            section_id=section_id,
+            defaults={"body": body, "is_bookmarked": is_bookmarked},
+        )
+        messages.success(request, "Notatka zapisana.")
+    return redirect(f"{reverse('dojo:handbook_chapter', args=[slug])}#{section_id}")
+
+
+@require_GET
+def handbook_notes(request: HttpRequest) -> HttpResponse:
+    by_slug = chapter_map()
+    rows = []
+    for note in HandbookNote.objects.filter(learner=Learner.local()):
+        chapter = by_slug.get(note.chapter_slug)
+        if chapter is None:
+            continue
+        section = next(
+            (item for item in chapter["sections"] if item["id"] == note.section_id),
+            None,
+        )
+        if section is None:
+            continue
+        rows.append({"note": note, "chapter": chapter, "section": section})
+    return render(
+        request,
+        "dojo/handbook_notes.html",
+        {
+            "rows": rows,
+            "active_nav": "handbook",
+            "page_title": "Handbook notes",
+        },
+    )
+
+
+@require_GET
+def handbook_notes_export(request: HttpRequest) -> HttpResponse:
+    by_slug = chapter_map()
+    lines = ["# Django handbook notes", ""]
+    current = None
+    for note in HandbookNote.objects.filter(learner=Learner.local()):
+        chapter = by_slug.get(note.chapter_slug)
+        if chapter is None:
+            continue
+        section = next(
+            (item for item in chapter["sections"] if item["id"] == note.section_id),
+            None,
+        )
+        if section is None:
+            continue
+        if chapter["slug"] != current:
+            current = chapter["slug"]
+            lines.extend([f"## {chapter['title']}", ""])
+        marker = "★ " if note.is_bookmarked else ""
+        lines.extend([f"### {marker}{section['title']}", ""])
+        lines.extend([note.body or "_Bookmarked section._", ""])
+    response = HttpResponse(
+        "\n".join(lines).rstrip() + "\n",
+        content_type="text/markdown; charset=utf-8",
+    )
+    response["Content-Disposition"] = 'attachment; filename="django-handbook-notes.md"'
+    return response
+
+
+@require_POST
+def handbook_checkpoint(request: HttpRequest, slug: str) -> HttpResponse:
+    chapter = chapter_map().get(slug)
+    if chapter is None:
+        raise Http404("Handbook chapter not found")
+    if not chapter["quiz_topic"]:
+        messages.error(request, "This chapter has no checkpoint yet.")
+        return redirect("dojo:handbook_chapter", slug=slug)
+    topic = Topic.objects.filter(slug=chapter["quiz_topic"]).first()
+    if topic is None:
+        messages.error(request, "The checkpoint topic is not available.")
+        return redirect("dojo:handbook_chapter", slug=slug)
+    question_ids = list(
+        Question.objects.filter(topic=topic).values_list("id", flat=True)
+    )
+    try:
+        attempt = create_attempt_from_questions(
+            Learner.local(), question_ids, topic=topic, limit=3
+        )
+    except ValueError:
+        messages.error(request, "This checkpoint has no questions yet.")
+        return redirect("dojo:handbook_chapter", slug=slug)
+    return redirect("dojo:quiz_question", attempt_id=attempt.pk)
 
 
 @require_http_methods(["GET", "POST"])

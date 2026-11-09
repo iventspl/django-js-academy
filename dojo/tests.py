@@ -16,6 +16,7 @@ from .models import (
     Flashcard,
     FlashcardReview,
     HandbookProgress,
+    HandbookNote,
     HandbookSearchLog,
     Learner,
     Question,
@@ -711,7 +712,7 @@ class HandbookContentTests(TestCase):
         output = StringIO()
         call_command("check_handbook", stdout=output)
         text = output.getvalue()
-        self.assertIn("Chapters: 81", text)
+        self.assertIn("Chapters: 90", text)
         self.assertIn("Handbook is valid", text)
 
     def test_markdown_export_contains_the_chapter(self):
@@ -776,7 +777,7 @@ class HandbookViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Coverage report")
         self.assertContains(response, "Known gaps")
-        self.assertContains(response, "81")
+        self.assertContains(response, "90")
 
     def test_unknown_chapter_is_404(self):
         response = self.client.get(reverse("dojo:handbook_chapter", args=["not-a-chapter"]))
@@ -869,7 +870,8 @@ class HandbookPracticeTests(SeededTestCase):
     def test_chapter_links_to_quiz_topic_and_flashcards(self):
         response = self.client.get(reverse("dojo:handbook_chapter", args=["forms"]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Practice this chapter")
+        self.assertContains(response, "Checkpoint")
+        self.assertContains(response, reverse("dojo:handbook_checkpoint", args=["forms"]))
         self.assertContains(response, "/quiz/?topic=views-forms-templates")
         self.assertContains(response, "/flashcards/views-forms-templates/")
 
@@ -912,6 +914,62 @@ class HandbookProgressTests(SeededTestCase):
             self.client.post(reverse("dojo:handbook_bookmark", args=["not-real"])).status_code,
             404,
         )
+
+    def test_chapter_checkpoint_creates_three_question_attempt(self):
+        response = self.client.post(reverse("dojo:handbook_checkpoint", args=["forms"]))
+        self.assertEqual(response.status_code, 302)
+        attempt = Attempt.objects.latest("id")
+        self.assertEqual(attempt.length, 3)
+        self.assertEqual(attempt.attempt_questions.count(), 3)
+        self.assertIsNotNone(attempt.topic)
+
+
+class HandbookNoteTests(SeededTestCase):
+    def test_save_note_and_bookmark_section(self):
+        url = reverse(
+            "dojo:handbook_note", args=["messages", "thirty-second-answer"]
+        )
+        response = self.client.post(
+            url, {"body": "Messages are consumed once.", "bookmarked": "on"}
+        )
+        self.assertEqual(response.status_code, 302)
+        note = HandbookNote.objects.get(
+            chapter_slug="messages", section_id="thirty-second-answer"
+        )
+        self.assertIn("consumed once", note.body)
+        self.assertTrue(note.is_bookmarked)
+
+        chapter = self.client.get(
+            reverse("dojo:handbook_chapter", args=["messages"])
+        )
+        self.assertContains(chapter, "Your note")
+        self.assertContains(chapter, "Messages are consumed once.")
+
+        notes = self.client.get(reverse("dojo:handbook_notes"))
+        self.assertContains(notes, "Messages are consumed once.")
+        export = self.client.get(reverse("dojo:handbook_notes_export"))
+        self.assertIn("text/markdown", export["Content-Type"])
+        self.assertIn(b"Messages are consumed once.", export.content)
+
+    def test_clearing_note_deletes_it(self):
+        HandbookNote.objects.create(
+            learner=Learner.local(),
+            chapter_slug="messages",
+            section_id="thirty-second-answer",
+            body="Temporary",
+        )
+        url = reverse(
+            "dojo:handbook_note", args=["messages", "thirty-second-answer"]
+        )
+        self.client.post(url, {"body": ""})
+        self.assertFalse(HandbookNote.objects.exists())
+
+    def test_note_rejects_unknown_section(self):
+        response = self.client.post(
+            reverse("dojo:handbook_note", args=["messages", "not-a-section"]),
+            {"body": "x"},
+        )
+        self.assertEqual(response.status_code, 404)
 
 
 class AdaptivePracticeTests(SeededTestCase):

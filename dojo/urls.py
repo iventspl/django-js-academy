@@ -11,7 +11,19 @@ urlpatterns = [
     path("handbook/search/", views.handbook_search, name="handbook_search"),
     path("handbook/traceback/", views.handbook_traceback, name="handbook_traceback"),
     path("handbook/coverage/", views.handbook_coverage, name="handbook_coverage"),
+    path("handbook/notes/", views.handbook_notes, name="handbook_notes"),
+    path("handbook/notes.md", views.handbook_notes_export, name="handbook_notes_export"),
     path("handbook/<slug:slug>.md", views.handbook_markdown, name="handbook_markdown"),
+    path(
+        "handbook/<slug:slug>/checkpoint/",
+        views.handbook_checkpoint,
+        name="handbook_checkpoint",
+    ),
+    path(
+        "handbook/<slug:slug>/notes/<slug:section_id>/",
+        views.handbook_note,
+        name="handbook_note",
+    ),
     path("handbook/<slug:slug>/read/", views.handbook_read, name="handbook_read"),
     path(
         "handbook/<slug:slug>/bookmark/",

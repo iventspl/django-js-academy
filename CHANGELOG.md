@@ -1,5 +1,32 @@
 # Changelog
 
+## 4.29 — 2026-11-09
+
+### Django handbook: coverage completion and section notes
+
+- Added **8 chapters / 24 sections** for previously listed gaps:
+  - Messages framework
+  - Flatpages and redirects
+  - Sitemaps and syndication
+  - Content types and Sites
+  - Humanize
+  - Forms media and widget assets
+  - Signing and serialization
+  - Validators and checks
+  - GIS and GeoDjango
+- Handbook is now **90 chapters / 377 answers / 75 official URLs**.
+- Added **section-level notes and bookmarks**:
+  - `HandbookNote` model + migration `0007`
+  - save a note on any section
+  - bookmark a section without writing a note
+  - `/handbook/notes/` list and `/handbook/notes.md` export
+- Added a **three-question chapter checkpoint** tied to each chapter’s quiz topic.
+- `COVERAGE_GAPS` is now empty; remaining work is depth, exercises and version-specific notes.
+
+### Verification
+
+- Full test suite: **200 tests pass**.
+
 ## 4.28 — 2026-11-09
 
 ### JS: ściągawka, search, błędy i rozmowa

@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    HandbookNote,
     HandbookProgress,
     HandbookSearchLog,
     StudyNote,
@@ -128,6 +129,14 @@ class HandbookProgressAdmin(admin.ModelAdmin):
     list_filter = ("is_read", "is_bookmarked")
     search_fields = ("chapter_slug",)
     readonly_fields = ("last_seen_at", "read_at")
+
+
+@admin.register(HandbookNote)
+class HandbookNoteAdmin(admin.ModelAdmin):
+    list_display = ("chapter_slug", "section_id", "learner", "is_bookmarked", "updated_at")
+    list_filter = ("is_bookmarked",)
+    search_fields = ("chapter_slug", "section_id", "body")
+    readonly_fields = ("updated_at",)
 
 
 @admin.register(HandbookSearchLog)

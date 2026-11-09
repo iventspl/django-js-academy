@@ -42,19 +42,7 @@ DEFAULT_REVIEWED_ON = date(2026, 11, 9)
 DEFAULT_DJANGO_MIN = "5.2"
 DEFAULT_DJANGO_MAX = "6.1"
 STALE_AFTER_DAYS = 365
-COVERAGE_GAPS = (
-    "Messages framework",
-    "Sitemaps",
-    "Syndication feeds",
-    "Content types",
-    "Sites framework",
-    "Flatpages and redirects",
-    "Humanize",
-    "GIS / GeoDjango",
-    "Forms media and widget assets",
-    "Signing and serialization",
-    "Validators and the checks framework",
-)
+COVERAGE_GAPS = ()
 
 REQUIRED_CHAPTER_FIELDS = (
     "slug",

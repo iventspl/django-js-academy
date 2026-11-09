@@ -601,6 +601,29 @@ class HandbookProgress(models.Model):
         return self.chapter_slug
 
 
+class HandbookNote(models.Model):
+    learner = models.ForeignKey(
+        Learner, on_delete=models.CASCADE, related_name="handbook_notes"
+    )
+    chapter_slug = models.SlugField(max_length=120)
+    section_id = models.SlugField(max_length=120)
+    body = models.TextField(blank=True)
+    is_bookmarked = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "chapter_slug", "section_id"],
+                name="unique_handbook_note_section",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.chapter_slug}#{self.section_id}"
+
+
 class HandbookSearchLog(models.Model):
     """Local record of searches with no answer, used to find content gaps."""
 

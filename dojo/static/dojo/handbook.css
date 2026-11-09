@@ -1843,6 +1843,190 @@ mark {
   flex: 0 0 auto;
 }
 
+/* ---------- Section notes ---------- */
+
+.hb-section-note {
+  margin-top: 16px;
+  border: 1px solid rgba(246, 240, 226, 0.16);
+  border-radius: 9px;
+  background: rgba(246, 240, 226, 0.035);
+}
+
+.hb-section-note > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  color: #9faaa4;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  list-style: none;
+}
+
+.hb-section-note > summary::-webkit-details-marker {
+  display: none;
+}
+
+.hb-section-note > summary::before {
+  content: "+";
+  color: var(--mint);
+  font-size: 0.8rem;
+}
+
+.hb-section-note[open] > summary::before {
+  content: "−";
+}
+
+.hb-section-note form {
+  padding: 0 12px 12px;
+}
+
+.hb-section-note textarea {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  padding: 9px 10px;
+  border: 1px solid rgba(246, 240, 226, 0.18);
+  border-radius: 6px;
+  background: #0b1519;
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.hb-note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.hb-note-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #93a19a;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  cursor: pointer;
+}
+
+.hb-note-hint {
+  margin: 7px 0 0;
+  color: #71827a;
+  font-size: 0.6rem;
+}
+
+.hb-note-bookmark {
+  color: var(--coral);
+  font-size: 0.8rem;
+}
+
+.hb-notes-wrap {
+  max-width: 1000px;
+}
+
+.hb-notes-head {
+  padding: 20px 0 28px;
+}
+
+.hb-notes-head h1 {
+  margin: 0 0 18px;
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 6vw, 5.2rem);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 0.94;
+}
+
+.hb-notes-head h1 em {
+  color: var(--mint);
+  font-style: italic;
+}
+
+.hb-notes-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.hb-notes-list {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 40px;
+}
+
+.hb-note-card {
+  padding: 16px 18px;
+  border: 1px solid rgba(246, 240, 226, 0.14);
+  border-radius: 12px;
+  background: rgba(246, 240, 226, 0.04);
+}
+
+.hb-note-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hb-note-chapter {
+  display: block;
+  color: #f6f0e2;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.hb-note-section {
+  display: inline-block;
+  margin-top: 3px;
+  color: var(--mint);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+}
+
+.hb-note-body {
+  margin: 11px 0 8px;
+  color: #c2cec7;
+  font-size: 0.8rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.hb-note-empty {
+  color: #7e9087;
+  font-style: italic;
+}
+
+.hb-note-updated {
+  color: #758780;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+}
+
+.hb-empty-inline {
+  padding: 34px;
+  border: 1px dashed rgba(246, 240, 226, 0.22);
+  border-radius: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.hb-empty-inline a {
+  display: block;
+  margin-top: 6px;
+  color: var(--mint);
+}
+
 /* ---------- Coverage report ---------- */
 
 .hb-coverage-wrap {

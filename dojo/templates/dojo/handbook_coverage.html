@@ -6,7 +6,7 @@
 {% block meta_description %}Coverage report for the Django handbook: chapters, sections, reference tables, review dates and known gaps.{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109c">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109d">
 {% endblock %}
 
 {% block content %}
@@ -56,7 +56,7 @@
       <h2 id="coverage-gaps-title">Next chapters worth writing</h2>
     </div>
     <ul class="hb-gap-list">
-      {% for gap in gaps %}<li>{{ gap }}</li>{% endfor %}
+      {% for gap in gaps %}<li>{{ gap }}</li>{% empty %}<li>No known editorial gaps. The remaining work is depth: more exercises, diagrams and version-specific notes.</li>{% endfor %}
     </ul>
     <p class="hb-coverage-note">Also check <code>python manage.py handbook_gaps</code> for real zero-result searches. The list above is the editorial backlog, not a claim that these topics are absent from the whole book — several are covered inside larger chapters.</p>
   </section>

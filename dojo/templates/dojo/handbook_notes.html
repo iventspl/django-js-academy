@@ -1,0 +1,51 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Handbook notes · Django Quest{% endblock %}
+{% block body_class %}page-handbook page-handbook-notes{% endblock %}
+{% block meta_description %}Your saved Django handbook notes and bookmarked sections, stored locally in SQLite.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109d">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Your study layer</p>
+    <h1>Notes that stay<br><em>next to the answer.</em></h1>
+    <p class="hb-hero-lead">Every note is attached to one handbook section. Bookmark a section when you want it back without writing a long note.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Back to handbook <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_notes_export' %}">Export Markdown <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  {% if rows %}
+    <div class="hb-notes-list">
+      {% for row in rows %}
+        <article class="hb-note-card">
+          <div class="hb-note-card-head">
+            <div>
+              <a class="hb-note-chapter" href="{% url 'dojo:handbook_chapter' row.chapter.slug %}">{{ row.chapter.title }}</a>
+              <a class="hb-note-section" href="{% url 'dojo:handbook_chapter' row.chapter.slug %}#{{ row.section.id }}">{{ row.section.title }} <span aria-hidden="true">→</span></a>
+            </div>
+            {% if row.note.is_bookmarked %}<span class="hb-note-bookmark" aria-label="Bookmarked">★</span>{% endif %}
+          </div>
+          {% if row.note.body %}
+            <p class="hb-note-body">{{ row.note.body|linebreaksbr }}</p>
+          {% else %}
+            <p class="hb-note-body hb-note-empty">Bookmarked section — no note yet.</p>
+          {% endif %}
+          <span class="hb-note-updated">Updated {{ row.note.updated_at|date:"j M Y, H:i" }}</span>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="hb-empty-inline">
+      <span>No notes yet.</span>
+      <a href="{% url 'dojo:handbook' %}">Open a chapter and save your first note →</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

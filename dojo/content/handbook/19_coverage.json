@@ -1,0 +1,613 @@
+{
+  "chapters": [
+    {
+      "slug": "messages",
+      "title": "Messages framework",
+      "subtitle": "One-time notifications after redirects, without custom session code",
+      "category": "Request path",
+      "order": 80,
+      "level": "Core",
+      "tags": [
+        "messages",
+        "flash",
+        "redirect",
+        "session"
+      ],
+      "aliases": [
+        "messages",
+        "flash messages",
+        "success message",
+        "error message",
+        "django.contrib.messages"
+      ],
+      "summary": "The messages framework stores short notifications in the session and renders them once, usually after a redirect. It is the standard way to say “saved” or “could not delete” without stuffing state into the URL.",
+      "quick_answer": "Add `django.contrib.messages` to `INSTALLED_APPS`, enable the message middleware and context processor, call `messages.success(request, \"Saved\")` in the view, then render `messages` in the template. Messages survive exactly one redirect and disappear after being displayed.",
+      "sections": [
+        {
+          "id": "thirty-second-answer",
+          "title": "The 30-second answer",
+          "body": "Messages are a **one-request queue** stored in the session by default. The view adds a message, returns a redirect, and the next request renders it. This is why messages work so well with POST/redirect/GET.\n\nThere are five built-in levels: `debug`, `info`, `success`, `warning` and `error`. Each message also has extra tags you can use for CSS.",
+          "code": "from django.contrib import messages\n\ndef save_item(request):\n    if request.method == \"POST\":\n        item = save_from_request(request)\n        messages.success(request, f\"Saved {item.name}.\")\n        return redirect(\"items:detail\", pk=item.pk)\n    return render(request, \"items/form.html\")",
+          "language": "python"
+        },
+        {
+          "id": "setup-and-template",
+          "title": "Setup and template rendering",
+          "body": "The default project template already includes the app and middleware. If messages do not appear, check all three pieces: `INSTALLED_APPS`, `MessageMiddleware`, and the `messages` context processor. Without the context processor, `messages` is empty in templates even though the view added one.\n\nRender the queue in the base template so every page can show it. Use `messages` and `message.tags` for styling.",
+          "code": "# settings.py\nINSTALLED_APPS = [\n    \"django.contrib.messages\",\n]\nMIDDLEWARE = [\n    \"django.contrib.sessions.middleware.SessionMiddleware\",\n    \"django.contrib.messages.middleware.MessageMiddleware\",\n]\nTEMPLATES[0][\"OPTIONS\"][\"context_processors\"] += [\n    \"django.contrib.messages.context_processors.messages\",\n]\n\n{# base.html #}\n{% if messages %}\n  <div class=\"messages\" role=\"status\">\n    {% for message in messages %}\n      <p class=\"message {{ message.tags }}\">{{ message }}</p>\n    {% endfor %}\n  </div>\n{% endif %}",
+          "language": "python",
+          "note": "Messages are consumed when iterated. If you render them twice, the second block is empty."
+        },
+        {
+          "id": "levels-storage-and-pitfalls",
+          "title": "Levels, storage and the traps",
+          "body": "Use `messages.error` for a failed operation and `messages.warning` for a recoverable problem. Do not use an error message for expected validation failures — show those next to the fields instead.\n\nStorage is configurable. The default `FallbackStorage` uses cookies for small messages and falls back to the session. If you use messages in tests, assert on `response.context[\"messages\"]` or use `follow=True` and check the rendered page.",
+          "code": "messages.debug(request, \"cache key: %s\", key)\nmessages.info(request, \"Draft restored.\")\nmessages.success(request, \"Changes saved.\")\nmessages.warning(request, \"The image was optimised.\")\nmessages.error(request, \"Could not delete the last owner.\")\n\n# test\nresponse = client.post(url, data, follow=True)\nassert \"Changes saved.\" in response.content.decode()",
+          "language": "python",
+          "note": "Do not put sensitive data in messages. Cookie-backed messages are visible to the browser."
+        }
+      ],
+      "pitfalls": [
+        "Rendering `messages` twice: the first loop consumes the queue.",
+        "Using a message instead of a form error for a field that the user can fix.",
+        "Forgetting the messages context processor, then wondering why nothing appears."
+      ],
+      "checklist": [
+        "`django.contrib.messages` is installed.",
+        "`MessageMiddleware` is enabled.",
+        "The base template renders `messages` once.",
+        "Tests follow the redirect when checking the message."
+      ],
+      "related": [
+        "views",
+        "templates"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/messages/"
+    },
+    {
+      "slug": "flatpages-redirects",
+      "title": "Flatpages and redirects",
+      "subtitle": "Editable one-off pages and database-backed redirects without new views",
+      "category": "Request path",
+      "order": 81,
+      "level": "Core",
+      "tags": [
+        "flatpages",
+        "redirects",
+        "404",
+        "admin",
+        "content"
+      ],
+      "aliases": [
+        "flatpages",
+        "flat pages",
+        "redirects",
+        "django.contrib.flatpages",
+        "django.contrib.redirects"
+      ],
+      "summary": "Flatpages let an editor manage simple content pages in the admin, while the redirects app stores old-to-new URL mappings. Both are small tools for content and URL hygiene — not a replacement for a CMS.",
+      "quick_answer": "Install `django.contrib.flatpages` and `django.contrib.redirects`, add their middleware, run migrations, then create pages and redirects in the admin. Flatpages resolve by URL through middleware; redirects are matched before the view 404s.",
+      "sections": [
+        {
+          "id": "thirty-second-answer",
+          "title": "The 30-second answer",
+          "body": "A **flatpage** is a URL, title and HTML body stored in the database. A **redirect** is a path and a target. Both rely on middleware, so they work without writing a view for each page.\n\nUse flatpages for About, Privacy, Terms and similar static pages. Use redirects when a public URL changes and you cannot keep the old view.",
+          "code": "# settings.py\nINSTALLED_APPS += [\n    \"django.contrib.flatpages\",\n    \"django.contrib.redirects\",\n]\nMIDDLEWARE += [\n    \"django.contrib.flatpages.middleware.FlatpageFallbackMiddleware\",\n    \"django.contrib.redirects.middleware.RedirectFallbackMiddleware\",\n]\n\n# then\npython manage.py migrate",
+          "language": "python"
+        },
+        {
+          "id": "flatpages-in-practice",
+          "title": "Flatpages in practice",
+          "body": "Create a flatpage in the admin, set its URL (for example `/about/`), content and optional template. Add `sites` if you use the Sites framework. The default template is `flatpages/default.html`; override it in your project templates.\n\nThe middleware only runs when the normal URL resolver raises `404`, so an existing view always wins. A flatpage is not a view: it cannot run Python, query models or process forms.",
+          "code": "{# templates/flatpages/default.html #}\n{% extends \"base.html\" %}\n{% block title %}{{ flatpage.title }}{% endblock %}\n{% block content %}\n  <article class=\"prose\">\n    <h1>{{ flatpage.title }}</h1>\n    {{ flatpage.content|safe }}\n  </article>\n{% endblock %}\n\n# optional: restrict to one site\n# flatpage.sites.add(site)",
+          "language": "python",
+          "note": "`flatpage.content|safe` is only acceptable for trusted admin authors. If untrusted users can edit it, sanitise the HTML."
+        },
+        {
+          "id": "redirects-without-loops",
+          "title": "Redirects without loops",
+          "body": "The redirects app matches `old_path` and sends a 301 to `new_path`. It is useful for renamed marketing pages, but it is a fallback after the URL resolver, not a replacement for `RedirectView` or `path()` changes.\n\nAvoid chains and loops: `A → B → C` costs extra requests, and `A → A` produces a redirect loop. Prefer one hop to the final URL. Use a temporary redirect (`302`) while testing; use `301` only when the change is permanent.",
+          "code": "# Direct view redirect (more explicit than a DB row)\nfrom django.views.generic import RedirectView\n\npath(\"old-pricing/\", RedirectView.as_view(\n    pattern_name=\"pricing\",\n    permanent=True,\n)),\n\n# Management command to find loops\n# select old_path, new_path from django_redirect\n# where old_path = new_path or new_path like '/old%';",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Expecting a flatpage to run Python or accept a form.",
+        "Creating redirect chains and loops instead of one final target.",
+        "Forgetting `sites` when the project uses multiple domains."
+      ],
+      "checklist": [
+        "Both apps are in `INSTALLED_APPS`.",
+        "Both middleware classes are enabled and ordered.",
+        "Migrations have run.",
+        "Templates and redirects are tested after a URL rename."
+      ],
+      "related": [
+        "urls",
+        "views"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/flatpages/"
+    },
+    {
+      "slug": "sitemaps-syndication",
+      "title": "Sitemaps and syndication",
+      "subtitle": "XML sitemaps and RSS/Atom feeds from the same models",
+      "category": "API & deploy",
+      "order": 80,
+      "level": "Core",
+      "tags": [
+        "sitemaps",
+        "syndication",
+        "rss",
+        "atom",
+        "seo"
+      ],
+      "aliases": [
+        "sitemap",
+        "sitemaps",
+        "syndication",
+        "rss",
+        "atom",
+        "feed",
+        "django.contrib.sitemaps",
+        "django.contrib.syndication"
+      ],
+      "summary": "Sitemaps tell search engines which URLs exist and when they changed. Syndication publishes the latest items as RSS or Atom. Both are small framework classes that turn a queryset into XML.",
+      "quick_answer": "Subclass `Sitemap` for sitemaps and `Feed` for syndication, wire them in `urls.py`, and let Django render the XML. Keep querysets small, set `lastmod` honestly, and cache the output if generation is expensive.",
+      "sections": [
+        {
+          "id": "thirty-second-answer",
+          "title": "The 30-second answer",
+          "body": "A sitemap is a discovery document: `loc`, optional `lastmod`, `changefreq` and `priority`. A feed is a stream of recent items with title, link and description. They solve different problems; do not use a sitemap as a feed.\n\nBoth are views. They run on each request unless you cache them.",
+          "code": "# sitemaps.py\nfrom django.contrib.sitemaps import Sitemap\nfrom .models import Post\n\nclass PostSitemap(Sitemap):\n    changefreq = \"weekly\"\n    priority = 0.8\n\n    def items(self):\n        return Post.objects.filter(published=True)\n\n    def lastmod(self, obj):\n        return obj.updated_at",
+          "language": "python"
+        },
+        {
+          "id": "wire-sitemap-and-feed",
+          "title": "Wire a sitemap and a feed",
+          "body": "Register both views in the URLconf. A sitemap index is useful when you have several sitemap classes. A feed needs `title`, `link` and `items`; `description` is strongly recommended.\n\nDo not put private or draft URLs in either. Search engines and feed readers will see exactly what you publish.",
+          "code": "# urls.py\nfrom django.contrib.sitemaps.views import sitemap\nfrom django.contrib.syndication.views import Feed\nfrom .sitemaps import PostSitemap\n\nclass LatestPostsFeed(Feed):\n    title = \"Example blog\"\n    link = \"/blog/\"\n    description = \"Latest published posts\"\n\n    def items(self):\n        return Post.objects.filter(published=True)[:20]\n\n    def item_title(self, item):\n        return item.title\n\n    def item_description(self, item):\n        return item.summary\n\n    def item_pubdate(self, item):\n        return item.published_at\n\nurlpatterns += [\n    path(\"sitemap.xml\", sitemap, {\"sitemaps\": {\"posts\": PostSitemap}}),\n    path(\"blog/feed/\", LatestPostsFeed()),\n]",
+          "language": "python"
+        },
+        {
+          "id": "scale-and-correctness",
+          "title": "Scale, freshness and correctness",
+          "body": "A sitemap is only useful if `lastmod` is truthful and the queryset is bounded. For large sites, split sitemaps by content type or section and use a sitemap index. Add caching at the HTTP or view layer; generating thousands of URLs on every bot request is waste.\n\nTest the XML, not just the status code: valid XML, absolute URLs, no private items and no duplicate `<loc>` values.",
+          "code": "from django.core.cache import cache\n\ndef cached_sitemap(request):\n    xml = cache.get(\"sitemap:posts\")\n    if xml is None:\n        xml = render_sitemap()\n        cache.set(\"sitemap:posts\", xml, 60 * 30)\n    return HttpResponse(xml, content_type=\"application/xml\")\n\n# tests\n# assert response[\"Content-Type\"] == \"application/xml\"\n# assert b\"<loc>\" in response.content",
+          "language": "python",
+          "note": "`lastmod` should reflect a real content change, not the request time."
+        }
+      ],
+      "pitfalls": [
+        "Publishing drafts or private URLs in a sitemap or feed.",
+        "Building an unbounded sitemap on every request.",
+        "Using a relative URL in `<loc>` or `<link>`.",
+        "Setting `lastmod` to `now()` so every crawl looks like a change."
+      ],
+      "checklist": [
+        "Only public, canonical URLs are included.",
+        "The XML is valid and absolute.",
+        "Large sites use an index or pagination.",
+        "Output is cached if generation is expensive."
+      ],
+      "related": [
+        "urls",
+        "templates"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/sitemaps/"
+    },
+    {
+      "slug": "contenttypes-sites",
+      "title": "Content types and Sites",
+      "subtitle": "Generic relations and one database for multiple domains",
+      "category": "Data",
+      "order": 80,
+      "level": "Advanced",
+      "tags": [
+        "contenttypes",
+        "sites",
+        "generic relations",
+        "multi-site"
+      ],
+      "aliases": [
+        "contenttypes",
+        "content types",
+        "genericforeignkey",
+        "generic relation",
+        "sites",
+        "site framework",
+        "django.contrib.sites"
+      ],
+      "summary": "Content types identify any installed model with an app label and model name. Sites maps objects to one or more domains. Together they power generic relations, activity streams, comments and multi-site projects.",
+      "quick_answer": "Use `ContentType` plus `GenericForeignKey` when one row can point to different models. Use `Site` plus `ForeignKey(Site)` when the same database serves several domains. Add `django.contrib.contenttypes` and, for Sites, `django.contrib.sites` with `SITE_ID`.",
+      "sections": [
+        {
+          "id": "thirty-second-answer",
+          "title": "The 30-second answer",
+          "body": "`ContentType` is a database row describing a model. A generic relation stores `content_type_id` and `object_id`, then resolves the real object through `GenericForeignKey`.\n\nSites is a separate idea: a `Site` row is a domain. A model that belongs to a site gets a `site` foreign key, and queries filter by `request.site` or settings.",
+          "code": "from django.contrib.contenttypes.fields import GenericForeignKey\nfrom django.contrib.contenttypes.models import ContentType\n\nclass Comment(models.Model):\n    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)\n    object_id = models.PositiveIntegerField()\n    target = GenericForeignKey(\"content_type\", \"object_id\")\n    body = models.TextField()",
+          "language": "python"
+        },
+        {
+          "id": "generic-relations",
+          "title": "Generic relations without N+1",
+          "body": "A `GenericForeignKey` is convenient but not a real database foreign key: no `select_related` and no referential integrity. Add an index on `(content_type, object_id)` and use `prefetch_related` only when the type is fixed.\n\nFor one target type, a normal foreign key is simpler and faster. Reach for generic relations when the target genuinely varies.",
+          "code": "class Comment(models.Model):\n    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)\n    object_id = models.PositiveIntegerField()\n    target = GenericForeignKey(\"content_type\", \"object_id\")\n\n    class Meta:\n        indexes = [\n            models.Index(fields=[\"content_type\", \"object_id\"]),\n        ]\n\n# generic reverse relation\nclass Post(models.Model):\n    comments = GenericRelation(Comment)",
+          "language": "python",
+          "note": "Deleting the target does not cascade automatically. Add cleanup or a `post_delete` signal if orphan rows matter."
+        },
+        {
+          "id": "sites-and-multi-domain",
+          "title": "Sites and multi-domain projects",
+          "body": "`SITE_ID` selects the current site. `get_current_site(request)` is more useful behind multiple domains. Add `django.contrib.sites` and set `SITE_ID = 1` for a single-site project.\n\nDo not hardcode a domain in emails or absolute URLs. Build them from the current site or `request.get_host()`.",
+          "code": "# settings.py\nINSTALLED_APPS += [\"django.contrib.sites\"]\nSITE_ID = 1\n\n# models.py\nfrom django.contrib.sites.models import Site\n\nclass Article(models.Model):\n    site = models.ForeignKey(Site, on_delete=models.CASCADE)\n    title = models.CharField(max_length=200)\n\n# views.py\nfrom django.contrib.sites.shortcuts import get_current_site\n\ndef home(request):\n    site = get_current_site(request)\n    return render(request, \"home.html\", {\"articles\": Article.objects.filter(site=site)})",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Using a generic relation when a normal foreign key would be simpler.",
+        "Forgetting an index on `(content_type, object_id)`.",
+        "Assuming generic relations cascade on delete.",
+        "Hardcoding a domain when the project serves several sites."
+      ],
+      "checklist": [
+        "The generic target really varies.",
+        "There is an index and a cleanup strategy.",
+        "`SITE_ID` is set for single-site projects.",
+        "Absolute URLs use the current site, not a literal domain."
+      ],
+      "related": [
+        "models",
+        "auth"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/contenttypes/"
+    },
+    {
+      "slug": "humanize",
+      "title": "Humanize",
+      "subtitle": "Readable numbers, dates and file sizes in templates",
+      "category": "Assets & runtime",
+      "order": 80,
+      "level": "Core",
+      "tags": [
+        "humanize",
+        "template filters",
+        "numbers",
+        "dates",
+        "i18n"
+      ],
+      "aliases": [
+        "humanize",
+        "django.contrib.humanize",
+        "intcomma",
+        "naturaltime",
+        "filesizeformat"
+      ],
+      "summary": "Humanize is a small template-filter library for values that should read like prose: 1,234 instead of 1234, “3 minutes ago” instead of a timestamp, and 2.4 MB instead of 2516582 bytes.",
+      "quick_answer": "Add `django.contrib.humanize` to `INSTALLED_APPS`, load `humanize` in the template and use filters such as `intcomma`, `naturaltime`, `naturalday`, `intword` and `filesizeformat`. It changes presentation only; keep the raw value in the database.",
+      "sections": [
+        {
+          "id": "thirty-second-answer",
+          "title": "The 30-second answer",
+          "body": "Humanize filters are presentation, not storage. Store an integer or datetime, format it in the template. This keeps sorting, filtering and API output correct.\n\n`filesizeformat` is built into Django; `intcomma`, `naturaltime` and `intword` come from Humanize.",
+          "code": "{% load humanize %}\n\n<p>{{ price|floatformat:2|intcomma }} PLN</p>\n<p>{{ article.published_at|naturaltime }}</p>\n<p>{{ file.size|filesizeformat }}</p>\n<p>{{ reach|intword }}</p>",
+          "language": "django"
+        },
+        {
+          "id": "filters-that-matter",
+          "title": "Filters that matter",
+          "body": "`intcomma` adds thousands separators. `intword` turns large numbers into “1.2 million”. `naturaltime` shows a relative time, while `naturalday` says “today” or “yesterday”. `apnumber` spells small numbers in English; use it only for English UI.\n\nRelative time is locale-aware but still depends on `USE_TZ` and timezone configuration. Do not mix naive and aware datetimes.",
+          "code": "{% load humanize %}\n\n{{ 1234567|intcomma }}          {# 1,234,567 #}\n{{ 1200000|intword }}            {# 1.2 million #}\n{{ created_at|naturaltime }}     {# 3 minutes ago #}\n{{ created_at|naturalday }}      {# today #}\n{{ 3|apnumber }}                 {# three #}",
+          "language": "django"
+        },
+        {
+          "id": "translation-and-tests",
+          "title": "Translation and tests",
+          "body": "Humanize output is translated. Set `LANGUAGE_CODE` and activate the user’s language before rendering. In tests, assert on the rendered HTML with the active language, or assert the underlying value instead of a translated phrase.\n\nFor API responses, do not apply these filters; return raw values and let the client format them. Humanize is for server-rendered templates.",
+          "code": "# test with a fixed language\nfrom django.test import override_settings\n\n@override_settings(LANGUAGE_CODE=\"pl\")\ndef test_relative_time(self):\n    response = self.client.get(\"/\")\n    self.assertContains(response, \"minut\")",
+          "language": "python",
+          "note": "Do not build business rules from humanized strings. Keep numbers and dates typed."
+        }
+      ],
+      "pitfalls": [
+        "Storing formatted strings instead of numbers or datetimes.",
+        "Using `apnumber` in a non-English interface.",
+        "Testing a translated phrase without pinning the language."
+      ],
+      "checklist": [
+        "`django.contrib.humanize` is installed.",
+        "Templates load `humanize` explicitly.",
+        "Timezone and language are configured.",
+        "APIs return raw values, not humanized strings."
+      ],
+      "related": [
+        "templates",
+        "i18n"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/humanize/"
+    },
+    {
+      "slug": "forms-media",
+      "title": "Forms media and widget assets",
+      "subtitle": "CSS and JavaScript that follow the widgets on the page",
+      "category": "Forms",
+      "order": 80,
+      "level": "Core",
+      "tags": [
+        "forms",
+        "media",
+        "widgets",
+        "static",
+        "assets"
+      ],
+      "aliases": [
+        "forms media",
+        "form media",
+        "media class",
+        "widget assets",
+        "MediaDefiningClass",
+        "admin media"
+      ],
+      "summary": "A widget can declare CSS and JavaScript. Django collects those assets through `form.media` so a date picker or rich editor loads only when its widget is on the page.",
+      "quick_answer": "Set an inner `Media` class on the widget or form, then render `{{ form.media.css }}` in `<head>` and `{{ form.media.js }}` before `</body>`. The same mechanism powers admin widgets and third-party editors.",
+      "sections": [
+        {
+          "id": "thirty-second-answer",
+          "title": "The 30-second answer",
+          "body": "`Media` is a declaration of assets, not a loader. Django merges the media of every widget in the form. You still have to render it in the template.\n\nUse `forms.Media(css={...}, js=[...])` or an inner `class Media`. Paths are static-file paths, not absolute filesystem paths.",
+          "code": "from django import forms\n\nclass DatePicker(forms.DateInput):\n    class Media:\n        css = {\"all\": (\"css/datepicker.css\",)}\n        js = (\"js/datepicker.js\",)\n\nclass EventForm(forms.Form):\n    starts_at = forms.DateField(widget=DatePicker(attrs={\"type\": \"date\"}))",
+          "language": "python"
+        },
+        {
+          "id": "render-media-correctly",
+          "title": "Render media correctly",
+          "body": "Render CSS in the head and JS at the end of the body. `form.media` includes assets from all widgets; `field.field.widget.media` is only that widget. Do not render both, or you will duplicate `<script>` tags.\n\nIf you use a custom template pack (django-crispy-forms, django-widget-tweaks), check whether it already renders `form.media`.",
+          "code": "{# form.html #}\n{% block extra_css %}{{ form.media.css }}{% endblock %}\n\n<form method=\"post\">\n  {% csrf_token %}\n  {{ form.as_p }}\n  <button type=\"submit\">Save</button>\n</form>\n\n{% block extra_js %}{{ form.media.js }}{% endblock %}",
+          "language": "django",
+          "note": "`form.media` returns safe HTML. Do not wrap it in `|safe` again."
+        },
+        {
+          "id": "admin-and-third-party",
+          "title": "Admin widgets and third-party assets",
+          "body": "Admin widgets already declare media; the admin template renders it. If you add a third-party widget, confirm that its assets are in `STATICFILES_DIRS` or the package’s static folder and that `collectstatic` sees them.\n\nFor a custom widget, keep the JS progressive: the form must still submit without it. Treat the picker as an enhancement, not the only way to enter a value.",
+          "code": "# collectstatic in production\npython manage.py collectstatic --noinput\n\n# check the resolved URL\nfrom django.templatetags.static import static\nassert static(\"js/datepicker.js\").startswith(\"/static/\")",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Declaring `Media` but never rendering `form.media`.",
+        "Duplicating assets by rendering both form and widget media.",
+        "Using absolute filesystem paths in `Media`.",
+        "Making the widget the only way to submit a valid value."
+      ],
+      "checklist": [
+        "CSS is in the head, JS before `</body>`.",
+        "`collectstatic` includes third-party assets.",
+        "The form still works without JavaScript.",
+        "No duplicate asset tags."
+      ],
+      "related": [
+        "forms",
+        "static-media"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/forms/media/"
+    },
+    {
+      "slug": "signing-serialization",
+      "title": "Signing and serialization",
+      "subtitle": "Tamper-evident tokens and safe data export",
+      "category": "Quality",
+      "order": 80,
+      "level": "Advanced",
+      "tags": [
+        "signing",
+        "serialization",
+        "tokens",
+        "security",
+        "export"
+      ],
+      "aliases": [
+        "signing",
+        "django.core.signing",
+        "signer",
+        "timestamp signer",
+        "serialization",
+        "dumpdata",
+        "loaddata",
+        "json serializer"
+      ],
+      "summary": "Signing proves that a value came from your server and was not edited. Serialization turns model data into JSON, XML or YAML for fixtures and exports. They solve different problems and have different safety rules.",
+      "quick_answer": "Use `django.core.signing.dumps()` / `loads()` for short tamper-evident tokens, with a max age for expiry. Use `serializers.serialize()` for trusted data transfer, not as a public API. Never unpickle untrusted data.",
+      "sections": [
+        {
+          "id": "thirty-second-answer",
+          "title": "The 30-second answer",
+          "body": "Signing adds a cryptographic signature; it does not encrypt. Anyone can read the payload, but cannot change it without the secret key. `TimestampSigner` adds an expiry check.\n\nSerialization converts objects to text. It is meant for fixtures and internal transfer, not for exposing arbitrary model fields to users.",
+          "code": "from django.core import signing\n\ntoken = signing.dumps({\"user_id\": 42}, salt=\"email-change\")\npayload = signing.loads(token, salt=\"email-change\", max_age=3600)\n# {\"user_id\": 42}",
+          "language": "python"
+        },
+        {
+          "id": "signing-patterns",
+          "title": "Signing patterns that age well",
+          "body": "Use a dedicated `salt` per purpose so a token for one action cannot be replayed for another. Set `max_age` for links sent by email. Rotate `SECRET_KEY` carefully: all outstanding tokens become invalid.\n\nSign the smallest useful payload. Do not put passwords, full user objects or sensitive personal data in a signed value just because it is signed.",
+          "code": "from django.core.signing import TimestampSigner, BadSignature, SignatureExpired\n\nsigner = TimestampSigner(salt=\"password-reset\")\ntoken = signer.sign(str(user.pk))\n\ntry:\n    user_id = signer.unsign(token, max_age=60 * 30)\nexcept SignatureExpired:\n    return HttpResponse(\"Link expired\", status=410)\nexcept BadSignature:\n    return HttpResponse(\"Invalid link\", status=400)",
+          "language": "python",
+          "note": "A signature is not encryption. Treat the payload as public."
+        },
+        {
+          "id": "serialization-and-fixtures",
+          "title": "Serialization and fixtures",
+          "body": "`serializers.serialize(\"json\", queryset)` is useful for backups, fixtures and internal exports. It includes model metadata and primary keys. It does not automatically hide sensitive fields.\n\nUse `dumpdata` with explicit app/model labels, and `loaddata` only with trusted fixture files. Do not accept a fixture from an upload form. For public APIs, write explicit serializer fields instead.",
+          "code": "from django.core import serializers\n\npayload = serializers.serialize(\n    \"json\",\n    Article.objects.filter(published=True).only(\"id\", \"title\", \"slug\"),\n)\n\n# CLI\npython manage.py dumpdata blog.Article --indent 2 > articles.json\npython manage.py loaddata articles.json",
+          "language": "python",
+          "note": "Never call `pickle.loads` on untrusted input. Prefer JSON."
+        }
+      ],
+      "pitfalls": [
+        "Treating a signed token as encrypted.",
+        "Reusing one salt for unrelated actions.",
+        "Putting sensitive fields into a public export.",
+        "Loading fixtures from an untrusted upload."
+      ],
+      "checklist": [
+        "Each token purpose has its own salt.",
+        "Email links use `max_age`.",
+        "Exports list fields explicitly.",
+        "No untrusted pickle or fixture input."
+      ],
+      "related": [
+        "security",
+        "exports"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/signing/"
+    },
+    {
+      "slug": "validators-checks",
+      "title": "Validators and checks",
+      "subtitle": "Field validation, model constraints and deploy-time system checks",
+      "category": "Quality",
+      "order": 81,
+      "level": "Advanced",
+      "tags": [
+        "validators",
+        "checks",
+        "constraints",
+        "validation",
+        "deploy"
+      ],
+      "aliases": [
+        "validators",
+        "django.core.validators",
+        "system checks",
+        "check framework",
+        "register check",
+        "model constraints"
+      ],
+      "summary": "Validators reject bad values at the form/model boundary. System checks catch project misconfiguration before it becomes a production incident. They look similar but run at different times.",
+      "quick_answer": "Put reusable value rules in validator functions and attach them to fields. Put cross-field and database rules in `clean()` and `Meta.constraints`. Put project-wide configuration checks in `@register` functions, and run `manage.py check --deploy` in CI.",
+      "sections": [
+        {
+          "id": "thirty-second-answer",
+          "title": "The 30-second answer",
+          "body": "A validator is a callable that raises `ValidationError`. It runs during form validation and `full_clean()`. It does **not** run on `save()` by itself.\n\nA system check is a function that inspects the project and returns errors or warnings. Checks run on management commands, not on every request.",
+          "code": "from django.core.exceptions import ValidationError\nfrom django.core.validators import MinValueValidator\n\ndef validate_even(value):\n    if value % 2:\n        raise ValidationError(\"Wpisz liczbę parzystą.\")\n\nclass Ticket(models.Model):\n    seats = models.PositiveIntegerField(\n        validators=[MinValueValidator(1), validate_even]\n    )",
+          "language": "python"
+        },
+        {
+          "id": "constraints-and-clean",
+          "title": "Constraints and clean()",
+          "body": "Use `MinValueValidator`, `MaxValueValidator`, `RegexValidator` and `EmailValidator` for single-field rules. Use `Model.clean()` for rules that need several fields. Use `UniqueConstraint` and `CheckConstraint` for rules the database must enforce.\n\nValidators are skipped by `QuerySet.update()` and bulk operations. Database constraints are the last line of defence.",
+          "code": "from django.db.models import Q, UniqueConstraint, CheckConstraint\n\nclass Booking(models.Model):\n    room = models.ForeignKey(Room, on_delete=models.CASCADE)\n    starts_at = models.DateTimeField()\n    ends_at = models.DateTimeField()\n\n    class Meta:\n        constraints = [\n            UniqueConstraint(fields=[\"room\", \"starts_at\"], name=\"unique_slot\"),\n            CheckConstraint(check=Q(ends_at__gt=models.F(\"starts_at\")), name=\"end_after_start\"),\n        ]",
+          "language": "python",
+          "note": "`CheckConstraint(check=...)` is the modern keyword; use `condition=` on newer Django versions where supported."
+        },
+        {
+          "id": "system-checks",
+          "title": "System checks and deploy checks",
+          "body": "Register a check with `@register` and return `Error`, `Warning` or `Info`. Use checks for settings that must be present, unsafe defaults, missing indexes or incompatible versions. Run `manage.py check` locally and `manage.py check --deploy` in CI/production.\n\nDo not put slow network calls in a check. Checks should be fast and deterministic.",
+          "code": "from django.core.checks import Error, Warning, register\n\n@register()\ndef check_payment_key(app_configs, **kwargs):\n    from django.conf import settings\n    if not getattr(settings, \"PAYMENT_SECRET\", \"\"):\n        return [Error(\"PAYMENT_SECRET is not set.\", id=\"shop.E001\")]\n    if settings.DEBUG and settings.PAYMENT_SECRET.startswith(\"test_\"):\n        return [Warning(\"Test payment key used with DEBUG=True.\", id=\"shop.W001\")]\n    return []",
+          "language": "python",
+          "note": "Custom checks are loaded only when their app is installed and the module is imported."
+        }
+      ],
+      "pitfalls": [
+        "Expecting validators to run on `save()` or `update()`.",
+        "Putting cross-field rules in a validator instead of `clean()`.",
+        "Using a database constraint without a migration.",
+        "Slow network calls inside system checks."
+      ],
+      "checklist": [
+        "Single-field rules are validators.",
+        "Cross-field rules live in `clean()` or constraints.",
+        "`manage.py check --deploy` runs in CI.",
+        "Custom checks have stable IDs."
+      ],
+      "related": [
+        "models",
+        "testing"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/validators/"
+    },
+    {
+      "slug": "gis-geodjango",
+      "title": "GIS and GeoDjango",
+      "subtitle": "Spatial models, PostGIS queries and map-ready data",
+      "category": "Data",
+      "order": 82,
+      "level": "Advanced",
+      "tags": [
+        "gis",
+        "geodjango",
+        "postgis",
+        "spatial",
+        "maps"
+      ],
+      "aliases": [
+        "gis",
+        "geodjango",
+        "postgis",
+        "spatial",
+        "pointfield",
+        "polygonfield",
+        "distance",
+        "dwithin",
+        "intersects",
+        "srid",
+        "geography"
+      ],
+      "summary": "GeoDjango adds geometry fields, spatial lookups and distance queries on top of a spatially enabled database. It is a different data model, not a map widget: choose the SRID, index the geometry and keep coordinate order straight.",
+      "quick_answer": "Use PostGIS, add `django.contrib.gis.db.models` fields such as `PointField`, store longitude as x and latitude as y, and query with spatial lookups (`dwithin`, `intersects`, `distance_lte`). Add a GiST index and transform coordinates deliberately when input is in another SRID.",
+      "sections": [
+        {
+          "id": "thirty-second-answer",
+          "title": "The 30-second answer",
+          "body": "A geometry is stored with a **SRID** (spatial reference system). `4326` is WGS84 longitude/latitude, the usual GPS format. PostGIS stores geometry; a geography column uses meters on the ellipsoid.\n\nGeoDjango is not a mapping frontend. It gives you fields, lookups and distance calculations; rendering a map is a separate frontend concern.",
+          "code": "from django.contrib.gis.db import models\n\nclass Place(models.Model):\n    name = models.CharField(max_length=120)\n    location = models.PointField(srid=4326)\n\n# Point(longitude, latitude)\nPlace.objects.create(name=\"Warsaw\", location=\"POINT(21.0122 52.2297)\")",
+          "language": "python"
+        },
+        {
+          "id": "setup-and-model",
+          "title": "Setup and a spatial model",
+          "body": "Use a PostGIS database and the GIS backend. Add `django.contrib.gis` to `INSTALLED_APPS` when you use its templates/static helpers, and keep `GDAL_LIBRARY_PATH`/`GEOS_LIBRARY_PATH` configured if the libraries are not on the default path.\n\nChoose `PointField`, `LineStringField`, `PolygonField` or `MultiPolygonField`. Set `geography=True` only when you need meter-based distance on the ellipsoid; it costs storage and some operations.",
+          "code": "# settings.py\nDATABASES = {\n    \"default\": {\n        \"ENGINE\": \"django.contrib.gis.db.backends.postgis\",\n        \"NAME\": \"app\",\n        \"USER\": \"app\",\n        \"PASSWORD\": \"secret\",\n        \"HOST\": \"localhost\",\n    }\n}\n\n# models.py\nfrom django.contrib.gis.db import models\n\nclass Store(models.Model):\n    name = models.CharField(max_length=140)\n    location = models.PointField(srid=4326, geography=True)\n    service_area = models.PolygonField(srid=4326, null=True, blank=True)\n\n    class Meta:\n        indexes = [models.Index(fields=[\"location\"])]",
+          "language": "python",
+          "note": "The database user needs the PostGIS extension. Run `CREATE EXTENSION postgis;` once per database."
+        },
+        {
+          "id": "spatial-queries",
+          "title": "Spatial queries that stay fast",
+          "body": "Use `dwithin` for “within X meters” (especially with geography), `distance_lte` for a distance annotation, `intersects` for polygons and `contains` for containment. Always filter to a bounding box first when the dataset is large.\n\n`Distance` output is in the field’s units for geometry (degrees for 4326), which is rarely what you want. Use geography or transform to a projected SRID for meters.",
+          "code": "from django.contrib.gis.geos import Point\nfrom django.contrib.gis.measure import D\nfrom django.contrib.gis.db.models.functions import Distance\n\ncenter = Point(21.0122, 52.2297, srid=4326)\nnearby = (\n    Store.objects.filter(location__dwithin=(center, D(km=5)))\n    .annotate(distance=Distance(\"location\", center))\n    .order_by(\"distance\")[:20]\n)\n\n# polygon containment\npolice_areas = Area.objects.filter(geom__intersects=center)",
+          "language": "python",
+          "note": "A GiST index on geometry is essential. A sequential scan over polygons is slow even on a small-looking table."
+        },
+        {
+          "id": "pitfalls-and-production",
+          "title": "Coordinate order, SRID and production",
+          "body": "`Point(x, y)` means longitude, latitude — not latitude, longitude. GeoJSON also uses longitude, latitude, while some map libraries display lat/lng first. This is the most common GIS bug.\n\nTransform input explicitly with `.transform(4326)` and validate bounds. In production, run migrations that create the extension and indexes, and test distance queries against a real PostGIS instance — SQLite is not a substitute for spatial behavior.",
+          "code": "from django.contrib.gis.geos import Point\n\n# Explicit and validated\nlng, lat = 21.0122, 52.2297\npoint = Point(lng, lat, srid=4326)\n\n# Transform from a projected system\nprojected = Point(500000, 600000, srid=2180)\nwgs84 = projected.transform(4326, clone=True)\n\n# Bounds check before saving\nassert -180 <= lng <= 180 and -90 <= lat <= 90",
+          "language": "python"
+        }
+      ],
+      "pitfalls": [
+        "Passing latitude as x and longitude as y.",
+        "Treating geometry distance in SRID 4326 as meters.",
+        "Forgetting a GiST index on the geometry column.",
+        "Testing spatial behavior only on SQLite."
+      ],
+      "checklist": [
+        "PostGIS is installed and the database user can create the extension.",
+        "Every geometry has an explicit SRID.",
+        "Distance queries use geography or a projected SRID when meters matter.",
+        "Geometry columns have a GiST index.",
+        "Coordinate order is tested with a known point."
+      ],
+      "related": [
+        "models",
+        "orm",
+        "deploy-hardening"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/gis/"
+    }
+  ]
+}
