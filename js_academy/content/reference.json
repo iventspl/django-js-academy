@@ -1,0 +1,1112 @@
+{
+  "categories": [
+    {
+      "slug": "zmienne",
+      "title": "Zmienne i typy",
+      "glyph": "01",
+      "intro": "Wartości, wiązania i pułapki porównań, które wracają w każdym projekcie.",
+      "entries": [
+        {
+          "slug": "let-const",
+          "symbol": "let / const",
+          "aliases": [
+            "let",
+            "const",
+            "zmienna",
+            "przypisanie",
+            "mutacja"
+          ],
+          "summary": "`const` blokuje ponowne przypisanie, ale nie zamraża obiektu. `let` używaj tylko wtedy, gdy wartość naprawdę się zmienia.",
+          "code": "const user = { name: \"Ala\" };\nuser.name = \"Ola\";       // OK\n// user = { name: \"Jan\" }; // TypeError\n\nlet score = 10;\nscore = 20;               // OK",
+          "note": "Nie wybieraj `const` „dla bezpieczeństwa”, jeśli i tak mutujesz obiekt. Niemutowalność to decyzja o danych, nie sam keyword.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "typeof",
+          "symbol": "typeof",
+          "aliases": [
+            "typeof",
+            "typ",
+            "null",
+            "undefined",
+            "bigint"
+          ],
+          "summary": "`typeof` zwraca string z typem wartości. Pamiętaj o historycznym `typeof null === \"object\"`.",
+          "code": "typeof \"Ala\"   // \"string\"\ntypeof 42      // \"number\"\ntypeof null    // \"object\" — błąd historyczny\ntypeof undefined // \"undefined\"\ntypeof []      // \"object\"\nArray.isArray([]) // true",
+          "note": "Do sprawdzania tablicy używaj `Array.isArray`, a do null — bezpośredniego `value === null`.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "rowne",
+          "symbol": "=== / !==",
+          "aliases": [
+            "===",
+            "!==",
+            "rowne",
+            "porownanie",
+            "coercion",
+            "konwersja"
+          ],
+          "summary": "`===` porównuje wartość i typ. `==` uruchamia niejawne konwersje i częściej ukrywa błąd, niż pomaga.",
+          "code": "0 == \"0\"          // true\n0 === \"0\"         // false\nnull == undefined // true\nnull === undefined // false\n\n// Domyślnie:\nif (status === \"active\") { ... }",
+          "note": "Wyjątki (`value == null`) są czytelne, ale powinny być świadome. W nowym kodzie trzymaj się `===`.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "nullish",
+          "symbol": "??",
+          "aliases": [
+            "??",
+            "nullish",
+            "null",
+            "undefined",
+            "default",
+            "fallback"
+          ],
+          "summary": "`??` podstawia fallback tylko dla `null` i `undefined`. Nie dla `0`, `\"\"` ani `false`.",
+          "code": "const count = 0;\ncount || 10   // 10 — źle dla licznika\ncount ?? 10   // 0  — poprawnie\n\nconst name = null;\nname ?? \"Anonim\" // \"Anonim\"",
+          "note": "`||` jest dobry dla booleanów. `??` jest dobry dla wartości, w których zero lub pusty string są legalne.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "optional-chaining",
+          "symbol": "?.",
+          "aliases": [
+            "?.",
+            "optional chaining",
+            "opcjonalny",
+            "null",
+            "undefined"
+          ],
+          "summary": "`?.` zatrzymuje łańcuch, gdy wcześniejsza wartość jest `null` lub `undefined`, zamiast rzucać `TypeError`.",
+          "code": "const city = user?.address?.city;\nconst first = items?.[0];\nconst result = obj.method?.();\n\n// Nie ukrywaj braku danych bez decyzji:\nconst cityOrUnknown = user?.address?.city ?? \"Nie podano\";",
+          "note": "`?.` nie zastępuje walidacji. Jeśli brak adresu jest błędem biznesowym, jawnie go obsłuż.",
+          "module": "fundamenty-js"
+        }
+      ]
+    },
+    {
+      "slug": "tablice",
+      "title": "Tablice",
+      "glyph": "02",
+      "intro": "Transformacje danych bez ręcznych pętli i mutowania wejścia.",
+      "entries": [
+        {
+          "slug": "map",
+          "symbol": "Array.prototype.map()",
+          "aliases": [
+            "map",
+            "tablica",
+            "transformacja",
+            "array"
+          ],
+          "summary": "Tworzy nową tablicę tej samej długości, gdzie każdy element jest wynikiem callbacku.",
+          "code": "const prices = [20, 12, 8];\nconst withVat = prices.map((price) => price * 1.23);\n// [24.6, 14.76, 9.84]\n\nconst names = products.map((p) => p.name);",
+          "note": "`map` nie służy do efektów ubocznych. Jeśli nie używasz zwracanej tablicy, prawdopodobnie chcesz `forEach`.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "filter",
+          "symbol": "Array.prototype.filter()",
+          "aliases": [
+            "filter",
+            "filtrowanie",
+            "tablica",
+            "predicate"
+          ],
+          "summary": "Zwraca nową tablicę elementów, dla których callback zwrócił wartość truthy.",
+          "code": "const available = products.filter((p) => p.available);\nconst cheap = products.filter((p) => p.price < 20);\n\n// Puste wyniki są normalne:\ncheap.length === 0;",
+          "note": "`filter` zawsze zwraca tablicę. Nie sprawdzaj `if (filter(...))` — pusta tablica też jest truthy.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "reduce",
+          "symbol": "Array.prototype.reduce()",
+          "aliases": [
+            "reduce",
+            "akumulator",
+            "suma",
+            "tablica"
+          ],
+          "summary": "Sprowadza tablicę do jednej wartości: liczby, obiektu, mapy albo innej tablicy.",
+          "code": "const total = products.reduce((sum, p) => sum + p.price, 0);\n\nconst byCategory = products.reduce((groups, p) => {\n  (groups[p.category] ??= []).push(p);\n  return groups;\n}, {});",
+          "note": "Zawsze podawaj wartość początkową. Bez niej reduce na pustej tablicy rzuca `TypeError`.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "find",
+          "symbol": "Array.prototype.find()",
+          "aliases": [
+            "find",
+            "findindex",
+            "szukanie",
+            "tablica"
+          ],
+          "summary": "Zwraca pierwszy pasujący element albo `undefined`. Do samego sprawdzenia istnienia użyj `some`.",
+          "code": "const user = users.find((u) => u.id === id);\nconst index = users.findIndex((u) => u.id === id);\n\nif (!user) {\n  return null;\n}",
+          "note": "`find` nie rzuca błędu przy braku wyniku. Zdecyduj, czy brak jest błędem, pustym stanem czy 404.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "flat",
+          "symbol": "flat() / flatMap()",
+          "aliases": [
+            "flat",
+            "flatmap",
+            "zagniezdzone",
+            "tablica"
+          ],
+          "summary": "`flat` rozpłaszcza zagnieżdżone tablice, a `flatMap` łączy mapowanie z jednym poziomem rozpłaszczenia.",
+          "code": "[[1, 2], [3]].flat();       // [1, 2, 3]\n[[1, [2]]].flat(2);       // [1, 2]\n\nconst tags = posts.flatMap((p) => p.tags);",
+          "note": "`flatMap` nie usuwa duplikatów. Jeśli potrzebujesz unikalnych wartości, dodaj `new Set(...)`.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "sort",
+          "symbol": "toSorted() / sort()",
+          "aliases": [
+            "sort",
+            "tosorted",
+            "sortowanie",
+            "tablica",
+            "mutacja"
+          ],
+          "summary": "`sort()` mutuje tablicę i domyślnie porównuje jak stringi. `toSorted()` zwraca nową tablicę.",
+          "code": "const numbers = [10, 2, 1];\nnumbers.sort();          // [1, 10, 2] — pułapka\nnumbers.sort((a, b) => a - b); // [1, 2, 10]\n\nconst sorted = numbers.toSorted((a, b) => a - b);",
+          "note": "W nowoczesnym środowisku preferuj `toSorted`, jeśli nie chcesz mutować stanu. Sprawdź wsparcie w targetowanej przeglądarce.",
+          "module": "nowoczesny-js"
+        }
+      ]
+    },
+    {
+      "slug": "obiekty",
+      "title": "Obiekty",
+      "glyph": "03",
+      "intro": "Kopiowanie, iteracja i aktualizacja danych bez przypadkowej mutacji.",
+      "entries": [
+        {
+          "slug": "spread",
+          "symbol": "{ ...obj }",
+          "aliases": [
+            "spread",
+            "kopiowanie",
+            "obiekt",
+            "niemutowalnosc"
+          ],
+          "summary": "Spread tworzy płytką kopię obiektu. Zagnieżdżone obiekty nadal są współdzielone.",
+          "code": "const next = { ...user, name: \"Ola\" };\nconst config = { ...defaults, ...overrides };\n\n// Głęboka aktualizacja poziom po poziomie:\nconst nextAddress = {\n  ...user,\n  address: { ...user.address, city: \"Kraków\" },\n};",
+          "note": "Spread nie jest deep clone. Do zagnieżdżonych struktur użyj `structuredClone` albo jawnego kopiowania.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "entries",
+          "symbol": "Object.entries() / fromEntries()",
+          "aliases": [
+            "object.entries",
+            "object.fromentries",
+            "obiekt",
+            "iteracja",
+            "map"
+          ],
+          "summary": "`Object.entries` zamienia obiekt na pary `[klucz, wartość]`, a `fromEntries` buduje obiekt z takich par.",
+          "code": "const prices = { kawa: 12, herbata: 8 };\nconst doubled = Object.fromEntries(\n  Object.entries(prices).map(([name, price]) => [name, price * 2])\n);\n// { kawa: 24, herbata: 16 }",
+          "note": "Kolejność kluczy w obiekcie nie jest kontraktem biznesowym. Jeśli kolejność ma znaczenie, użyj tablicy.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "destructuring",
+          "symbol": "Destrukturyzacja",
+          "aliases": [
+            "destrukturyzacja",
+            "destructuring",
+            "obiekt",
+            "tablica",
+            "default"
+          ],
+          "summary": "Wyciąga wartości z obiektów i tablic do nazwanych zmiennych, z opcjonalnymi domyślnymi.",
+          "code": "const { name, price = 0 } = product;\nconst { city = \"Warszawa\" } = address ?? {};\nconst [first, second] = items;\n\nfunction render({ title, items = [] }) { ... }",
+          "note": "Default działa tylko dla `undefined`, nie dla `null`. Przy `null` musisz zabezpieczyć się wcześniej.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "structured-clone",
+          "symbol": "structuredClone()",
+          "aliases": [
+            "structuredclone",
+            "deep clone",
+            "kopia",
+            "obiekt"
+          ],
+          "summary": "Nowoczesny deep clone dla danych obsługiwanych przez structured clone algorithm.",
+          "code": "const copy = structuredClone(original);\ncopy.items[0].name = \"Zmienione\";\n// original pozostaje bez zmian",
+          "note": "Nie skopiuje funkcji, DOM ani klas z prototypami. Do takich przypadków potrzebujesz własnej strategii.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "hasown",
+          "symbol": "Object.hasOwn()",
+          "aliases": [
+            "object.hasown",
+            "hasownproperty",
+            "wlasciwosc",
+            "obiekt"
+          ],
+          "summary": "Sprawdza, czy obiekt ma własną właściwość, bez sięgania do prototypu.",
+          "code": "Object.hasOwn(user, \"name\"); // true\nObject.hasOwn(user, \"toString\"); // false\n\n// Zamiast:\nuser.hasOwnProperty(\"name\");",
+          "note": "`in` sprawdza też prototyp. `Object.hasOwn` jest bezpieczniejszy dla danych z zewnątrz.",
+          "module": "nowoczesny-js"
+        }
+      ]
+    },
+    {
+      "slug": "funkcje",
+      "title": "Funkcje",
+      "glyph": "04",
+      "intro": "Zakres, `this`, domknięcia i techniki, które trzeba umieć napisać od zera.",
+      "entries": [
+        {
+          "slug": "closure",
+          "symbol": "Closure",
+          "aliases": [
+            "closure",
+            "domkniecie",
+            "zakres",
+            "scope",
+            "funkcja"
+          ],
+          "summary": "Funkcja pamięta otoczenie, w którym powstała, nawet po zakończeniu funkcji zewnętrznej.",
+          "code": "function makeCounter() {\n  let count = 0;\n  return () => ++count;\n}\n\nconst next = makeCounter();\nnext(); // 1\nnext(); // 2",
+          "note": "Closure jest podstawą hooków Reacta. Nieaktualny stan w `useEffect` to często problem domknięcia, nie Reacta.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "this-bind",
+          "symbol": "this / bind()",
+          "aliases": [
+            "this",
+            "bind",
+            "call",
+            "apply",
+            "kontekst",
+            "funkcja"
+          ],
+          "summary": "`this` zależy od sposobu wywołania. Funkcje strzałkowe nie mają własnego `this`.",
+          "code": "const user = {\n  name: \"Ala\",\n  greet() { return `Cześć, ${this.name}`; },\n};\n\nconst greet = user.greet;\n// greet(); // this nie wskazuje user\n\nconst bound = user.greet.bind(user);\nbound(); // \"Cześć, Ala\"",
+          "note": "Nie używaj funkcji strzałkowej jako metody obiektu, jeśli potrzebujesz `this`.",
+          "module": "fundamenty-js"
+        },
+        {
+          "slug": "debounce",
+          "symbol": "debounce()",
+          "aliases": [
+            "debounce",
+            "opoznienie",
+            "input",
+            "search",
+            "funkcja"
+          ],
+          "summary": "Opóźnia wywołanie do momentu, gdy funkcja przestanie być wywoływana przez określony czas.",
+          "code": "function debounce(fn, delay = 300) {\n  let timer;\n  return (...args) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), delay);\n  };\n}\n\nconst search = debounce((value) => fetchResults(value), 300);",
+          "note": "Debounce nadaje się do wyszukiwania. Do ograniczenia częstotliwości zdarzeń (scroll, resize) często lepszy jest throttle.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "throttle",
+          "symbol": "throttle()",
+          "aliases": [
+            "throttle",
+            "ograniczenie",
+            "scroll",
+            "resize",
+            "funkcja"
+          ],
+          "summary": "Pozwala wywołać funkcję najwyżej raz na określony interwał, nawet jeśli zdarzenie leci ciągle.",
+          "code": "function throttle(fn, wait = 200) {\n  let last = 0;\n  return (...args) => {\n    const now = Date.now();\n    if (now - last >= wait) {\n      last = now;\n      fn(...args);\n    }\n  };\n}\n\nwindow.addEventListener(\"scroll\", throttle(onScroll, 200));",
+          "note": "Throttle nie gwarantuje ostatniego wywołania. Jeśli potrzebujesz trailing edge, dopisz go świadomie.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "pipe",
+          "symbol": "pipe() / compose()",
+          "aliases": [
+            "pipe",
+            "compose",
+            "kompozycja",
+            "funkcja",
+            "higher order"
+          ],
+          "summary": "Składa małe funkcje w jeden przepływ danych. `pipe` idzie od lewej do prawej.",
+          "code": "const pipe = (...fns) => (value) =>\n  fns.reduce((acc, fn) => fn(acc), value);\n\nconst normalize = pipe(\n  (s) => s.trim(),\n  (s) => s.toLowerCase(),\n  (s) => s.replaceAll(\" \", \"-\")\n);\n\nnormalize(\"  Hello World  \"); // \"hello-world\"",
+          "note": "Kompozycja jest czytelna, gdy funkcje są małe i jednego typu. Nie przepychaj przez nią całego requestu.",
+          "module": "wzorce-frontendu"
+        }
+      ]
+    },
+    {
+      "slug": "async",
+      "title": "Async i Promise",
+      "glyph": "05",
+      "intro": "Kolejność, błędy i anulowanie operacji asynchronicznych.",
+      "entries": [
+        {
+          "slug": "promise",
+          "symbol": "Promise",
+          "aliases": [
+            "promise",
+            "obietnica",
+            "then",
+            "catch",
+            "async"
+          ],
+          "summary": "Promise reprezentuje wynik operacji, która może się udać albo zakończyć błędem.",
+          "code": "fetch(\"/api/items\")\n  .then((response) => response.json())\n  .then((items) => render(items))\n  .catch((error) => showError(error));",
+          "note": "`catch` na końcu łańcucha nie złapie błędów z callbacków, które zostały uruchomione później poza łańcuchem.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "async-await",
+          "symbol": "async / await",
+          "aliases": [
+            "async",
+            "await",
+            "asynchronicznosc",
+            "try catch",
+            "promise"
+          ],
+          "summary": "`async` sprawia, że funkcja zwraca Promise; `await` czeka na wynik i pozwala pisać kod jak synchroniczny.",
+          "code": "async function loadItems() {\n  try {\n    const response = await fetch(\"/api/items\");\n    if (!response.ok) throw new Error(`HTTP ${response.status}`);\n    return await response.json();\n  } catch (error) {\n    console.error(\"Nie udało się pobrać danych\", error);\n    throw error;\n  }\n}",
+          "note": "`await` nie blokuje całej przeglądarki, tylko wstrzymuje daną funkcję async. Nie dodawaj go do każdego wywołania bez potrzeby.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "promise-all",
+          "symbol": "Promise.all()",
+          "aliases": [
+            "promise.all",
+            "rownolegle",
+            "parallel",
+            "promise",
+            "async"
+          ],
+          "summary": "Czeka na wszystkie promisy równolegle. Odrzucenie jednego odrzuca całość.",
+          "code": "const [user, orders, notifications] = await Promise.all([\n  fetchUser(id),\n  fetchOrders(id),\n  fetchNotifications(id),\n]);",
+          "note": "Jeśli jeden błąd nie powinien psuć całości, użyj `Promise.allSettled` i sprawdź statusy.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "promise-allsettled",
+          "symbol": "Promise.allSettled()",
+          "aliases": [
+            "promise.allsettled",
+            "allsettled",
+            "czesciowy",
+            "promise",
+            "async"
+          ],
+          "summary": "Czeka na wszystkie promisy i zwraca status każdego, bez odrzucania całości.",
+          "code": "const results = await Promise.allSettled(tasks);\nconst ok = results.filter((r) => r.status === \"fulfilled\");\nconst failed = results.filter((r) => r.status === \"rejected\");",
+          "note": "Dobre do raportów i importów, gdzie chcesz pokazać częściowy sukces zamiast jednego błędu.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "abort-controller",
+          "symbol": "AbortController",
+          "aliases": [
+            "abortcontroller",
+            "abort",
+            "anulowanie",
+            "fetch",
+            "signal"
+          ],
+          "summary": "Pozwala anulować `fetch` i inne operacje wspierające `AbortSignal`.",
+          "code": "const controller = new AbortController();\n\nfetch(\"/api/search?q=js\", { signal: controller.signal })\n  .then((r) => r.json())\n  .catch((error) => {\n    if (error.name !== \"AbortError\") throw error;\n  });\n\n// np. przy nowym wpisie w wyszukiwarce\ncontroller.abort();",
+          "note": "Anulowanie nie cofa efektów po stronie serwera. To nadal tylko klient przestaje czekać.",
+          "module": "web-api"
+        }
+      ]
+    },
+    {
+      "slug": "dom",
+      "title": "DOM i zdarzenia",
+      "glyph": "06",
+      "intro": "Selektory, nasłuchiwanie i aktualizacja interfejsu bez frameworka.",
+      "entries": [
+        {
+          "slug": "query-selector",
+          "symbol": "querySelector()",
+          "aliases": [
+            "queryselector",
+            "queryselectorall",
+            "dom",
+            "selektor"
+          ],
+          "summary": "Zwraca pierwszy pasujący element albo `null`. `querySelectorAll` zwraca statyczną listę.",
+          "code": "const button = document.querySelector(\"[data-save]\");\nconst items = document.querySelectorAll(\".item\");\n\nif (!button) return;\nbutton.addEventListener(\"click\", save);",
+          "note": "Sprawdzaj `null` przed użyciem. Skrypt ładowany przed DOM-em nie znajdzie elementów.",
+          "module": "dom-przegladarka"
+        },
+        {
+          "slug": "event-listener",
+          "symbol": "addEventListener()",
+          "aliases": [
+            "addeventlistener",
+            "event",
+            "zdarzenie",
+            "click",
+            "input"
+          ],
+          "summary": "Rejestruje handler zdarzenia. Możesz przekazać opcje, np. `once` albo `passive`.",
+          "code": "button.addEventListener(\"click\", handleClick);\ninput.addEventListener(\"input\", onInput);\nwindow.addEventListener(\"scroll\", onScroll, { passive: true });\n\n// later\nbutton.removeEventListener(\"click\", handleClick);",
+          "note": "Ta sama funkcja referencyjna jest potrzebna do usunięcia listenera. Anonimowy callback zostanie na zawsze.",
+          "module": "dom-przegladarka"
+        },
+        {
+          "slug": "class-list",
+          "symbol": "classList",
+          "aliases": [
+            "classlist",
+            "klasa",
+            "class",
+            "dom",
+            "styl"
+          ],
+          "summary": "Dodaje, usuwa i przełącza klasy bez ręcznego sklejania `className`.",
+          "code": "card.classList.add(\"is-active\");\ncard.classList.remove(\"is-loading\");\ncard.classList.toggle(\"is-open\", isOpen);\n\nif (card.classList.contains(\"is-open\")) { ... }",
+          "note": "`className = \"\"` usuwa wszystkie klasy. `classList` jest precyzyjniejsze i mniej podatne na literówki.",
+          "module": "dom-przegladarka"
+        },
+        {
+          "slug": "dataset",
+          "symbol": "dataset",
+          "aliases": [
+            "dataset",
+            "data-atrybut",
+            "dom",
+            "html"
+          ],
+          "summary": "Daje dostęp do atrybutów `data-*` jako właściwości obiektu.",
+          "code": "<button data-id=\"42\" data-action=\"save\">Zapisz</button>\n\nconst button = document.querySelector(\"button\");\nbutton.dataset.id;     // \"42\"\nbutton.dataset.action; // \"save\"",
+          "note": "Wartości z DOM są stringami. Konwertuj liczby jawnie i nie ufaj danym z atrybutów bez walidacji.",
+          "module": "dom-przegladarka"
+        },
+        {
+          "slug": "closest",
+          "symbol": "Element.closest()",
+          "aliases": [
+            "closest",
+            "delegacja",
+            "event",
+            "dom",
+            "parent"
+          ],
+          "summary": "Szuka najbliższego przodka pasującego do selektora. Podstawa delegacji zdarzeń.",
+          "code": "list.addEventListener(\"click\", (event) => {\n  const button = event.target.closest(\"[data-delete]\");\n  if (!button) return;\n  deleteItem(button.dataset.id);\n});",
+          "note": "`event.target` może być dzieckiem przycisku. Dlatego szukaj `closest`, a nie porównuj do konkretnego elementu.",
+          "module": "dom-przegladarka"
+        }
+      ]
+    },
+    {
+      "slug": "react",
+      "title": "React",
+      "glyph": "07",
+      "intro": "Hooki, zależności i renderowanie, które nie walczy z Reactem.",
+      "entries": [
+        {
+          "slug": "usestate",
+          "symbol": "useState()",
+          "aliases": [
+            "usestate",
+            "state",
+            "stan",
+            "react",
+            "hook"
+          ],
+          "summary": "Dodaje lokalny stan do komponentu funkcyjnego. Aktualizacja przez setter powoduje render.",
+          "code": "const [count, setCount] = useState(0);\n\n<button onClick={() => setCount((c) => c + 1)}>\n  {count}\n</button>;",
+          "note": "Gdy nowa wartość zależy od poprzedniej, użyj funkcji `setCount(c => c + 1)`, a nie `setCount(count + 1)`.",
+          "module": "react-podstawy"
+        },
+        {
+          "slug": "useeffect",
+          "symbol": "useEffect()",
+          "aliases": [
+            "useeffect",
+            "effect",
+            "efekt",
+            "react",
+            "hook",
+            "cleanup"
+          ],
+          "summary": "Uruchamia efekt po renderze. Tablica zależności decyduje, kiedy efekt ma się powtórzyć.",
+          "code": "useEffect(() => {\n  const controller = new AbortController();\n  loadUser(userId, controller.signal);\n\n  return () => controller.abort();\n}, [userId]);",
+          "note": "Pusta tablica oznacza „po pierwszym renderze”, nie „zawsze aktualne dane”. Wszystko, co czytasz z zewnątrz, powinno być w zależnościach.",
+          "module": "react-architektura"
+        },
+        {
+          "slug": "usememo",
+          "symbol": "useMemo() / useCallback()",
+          "aliases": [
+            "usememo",
+            "usecallback",
+            "memo",
+            "optymalizacja",
+            "react"
+          ],
+          "summary": "`useMemo` zapamiętuje wartość, `useCallback` — funkcję. Oba są optymalizacją, nie domyślnym stylem.",
+          "code": "const visible = useMemo(\n  () => products.filter((p) => p.name.includes(query)),\n  [products, query]\n);\n\nconst onSelect = useCallback((id) => setSelected(id), []);",
+          "note": "Nie owijaj każdej funkcji w `useCallback`. Najpierw zmierz, potem optymalizuj.",
+          "module": "react-architektura"
+        },
+        {
+          "slug": "useref",
+          "symbol": "useRef()",
+          "aliases": [
+            "useref",
+            "ref",
+            "dom",
+            "react",
+            "mutable"
+          ],
+          "summary": "Przechowuje wartość między renderami bez powodowania renderu. Często służy do referencji DOM.",
+          "code": "const inputRef = useRef(null);\n\nuseEffect(() => {\n  inputRef.current?.focus();\n}, []);\n\n<input ref={inputRef} />;",
+          "note": "Zmiana `ref.current` nie renderuje komponentu. Jeśli UI ma zareagować, to nie jest stan.",
+          "module": "react-architektura"
+        },
+        {
+          "slug": "usereducer",
+          "symbol": "useReducer()",
+          "aliases": [
+            "usereducer",
+            "reducer",
+            "stan",
+            "react",
+            "akcje"
+          ],
+          "summary": "Dobry wybór, gdy stan ma kilka powiązanych pól i przejścia zależą od akcji.",
+          "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"increment\":\n      return { ...state, count: state.count + 1 };\n    default:\n      return state;\n  }\n}\n\nconst [state, dispatch] = useReducer(reducer, { count: 0 });",
+          "note": "Reducer powinien być czysty. Nie wysyłaj requestów w reducerze; to zadanie efektu lub event handlera.",
+          "module": "react-architektura"
+        },
+        {
+          "slug": "keys",
+          "symbol": "key w listach",
+          "aliases": [
+            "key",
+            "lista",
+            "react",
+            "render",
+            "reconciliation"
+          ],
+          "summary": "`key` musi być stabilnym identyfikatorem elementu, a nie indeksem tablicy, jeśli lista się zmienia.",
+          "code": "return items.map((item) => (\n  <Row key={item.id} item={item} />\n));",
+          "note": "Indeks jako key powoduje błędy stanu i animacji po wstawieniu lub usunięciu elementu. Używaj `id`.",
+          "module": "react-podstawy"
+        },
+        {
+          "slug": "context",
+          "symbol": "useContext()",
+          "aliases": [
+            "usecontext",
+            "context",
+            "provider",
+            "react",
+            "globalny stan"
+          ],
+          "summary": "Przekazuje wartość przez drzewo bez prop-drillingu. Nadaje się do motywu, locale, sesji — nie do każdego stanu.",
+          "code": "const ThemeContext = createContext(\"light\");\n\nfunction Button() {\n  const theme = useContext(ThemeContext);\n  return <button className={theme}>Zapisz</button>;\n}\n\n<ThemeContext.Provider value=\"dark\"><Button /></ThemeContext.Provider>;",
+          "note": "Zmiana wartości contextu renderuje wszystkich konsumentów. Podziel konteksty, jeśli części drzewa zmieniają się niezależnie.",
+          "module": "react-architektura"
+        },
+        {
+          "slug": "error-boundary",
+          "symbol": "Error Boundary",
+          "aliases": [
+            "error boundary",
+            "componentdidcatch",
+            "react",
+            "blad",
+            "fallback"
+          ],
+          "summary": "Komponent klasowy, który łapie błędy renderu dzieci i pokazuje fallback zamiast białego ekranu.",
+          "code": "class ErrorBoundary extends React.Component {\n  state = { hasError: false };\n  static getDerivedStateFromError() { return { hasError: true }; }\n  render() {\n    return this.state.hasError ? <Fallback /> : this.props.children;\n  }\n}",
+          "note": "Error Boundary nie łapie błędów w event handlerach ani asynchronicznych. Te obsłuż lokalnie przez `try/catch`.",
+          "module": "react-architektura"
+        },
+        {
+          "slug": "lazy-suspense",
+          "symbol": "lazy() / Suspense",
+          "aliases": [
+            "lazy",
+            "suspense",
+            "code splitting",
+            "react",
+            "ladowanie"
+          ],
+          "summary": "Dzieli bundle i pokazuje fallback, dopóki komponent nie jest gotowy. Wymaga `Suspense` wyżej w drzewie.",
+          "code": "const Editor = lazy(() => import(\"./Editor.js\"));\n\n<Suspense fallback={<Spinner />}>\n  <Editor />\n</Suspense>;",
+          "note": "`lazy` działa z domyślnym eksportem. Jeśli moduł eksportuje nazwany komponent, mapuj go: `import(...).then(m => ({ default: m.Editor }))`.",
+          "module": "react-architektura"
+        }
+      ]
+    },
+    {
+      "slug": "typescript",
+      "title": "TypeScript",
+      "glyph": "08",
+      "intro": "Typy, które pomagają, zamiast walczyć z kompilatorem.",
+      "entries": [
+        {
+          "slug": "type-interface",
+          "symbol": "type / interface",
+          "aliases": [
+            "type",
+            "interface",
+            "typescript",
+            "typ",
+            "obiekt"
+          ],
+          "summary": "`interface` dobrze opisuje kształt obiektu i może być rozszerzany. `type` jest elastyczniejszy dla unii i typów złożonych.",
+          "code": "interface User {\n  id: string;\n  name: string;\n}\n\ntype Status = \"idle\" | \"loading\" | \"error\";",
+          "note": "Nie przepisuj jednego na drugie bez powodu. Wybierz konwencję zespołu i trzymaj się jej.",
+          "module": "typescript"
+        },
+        {
+          "slug": "union",
+          "symbol": "Union types",
+          "aliases": [
+            "union",
+            "unia",
+            "typescript",
+            "literal",
+            "status"
+          ],
+          "summary": "Unia ogranicza wartość do jednego z kilku typów. To najprostszy sposób modelowania statusów.",
+          "code": "type Status = \"idle\" | \"loading\" | \"success\" | \"error\";\n\nfunction render(status: Status) {\n  if (status === \"loading\") return \"Ładowanie…\";\n  // ...\n}",
+          "note": "Unia stringów jest lepsza niż `string` wszędzie. Kompilator wyłapie literówki w statusach.",
+          "module": "typescript"
+        },
+        {
+          "slug": "generic",
+          "symbol": "Generics",
+          "aliases": [
+            "generic",
+            "generyk",
+            "typescript",
+            "typ",
+            "reuse"
+          ],
+          "summary": "Generyk pozwala zachować związek między typem wejścia i wyjścia bez `any`.",
+          "code": "function first<T>(items: T[]): T | undefined {\n  return items[0];\n}\n\nconst user = first(users);    // User | undefined\nconst id = first([1, 2, 3]);   // number | undefined",
+          "note": "Jeśli nie wiesz, jak nazwać generyk, często wystarczy `T`. Nie dodawaj generyków, gdy zwykły typ jest czytelniejszy.",
+          "module": "typescript"
+        },
+        {
+          "slug": "satisfies",
+          "symbol": "satisfies",
+          "aliases": [
+            "satisfies",
+            "typescript",
+            "walidacja",
+            "konfiguracja"
+          ],
+          "summary": "Sprawdza zgodność z typem, ale zachowuje węższy typ wnioskowany dla wartości.",
+          "code": "const routes = {\n  home: \"/\",\n  user: \"/users/:id\",\n} satisfies Record<string, string>;\n\nroutes.home; // nadal zna dokładny kształt",
+          "note": "`as` nadpisuje typ; `satisfies` go sprawdza. Do konfiguracji prawie zawsze chcesz `satisfies`.",
+          "module": "typescript"
+        },
+        {
+          "slug": "as-const",
+          "symbol": "as const",
+          "aliases": [
+            "as const",
+            "typescript",
+            "literal",
+            "readonly",
+            "stala"
+          ],
+          "summary": "Zawęża wartości do literalnych i oznacza strukturę jako readonly.",
+          "code": "const ROLES = [\"admin\", \"editor\", \"viewer\"] as const;\ntype Role = (typeof ROLES)[number];\n// \"admin\" | \"editor\" | \"viewer\"",
+          "note": "`as const` nie zamraża runtime. To nadal zwykła tablica/obiekt, tylko inaczej typowana.",
+          "module": "typescript"
+        }
+      ]
+    },
+    {
+      "slug": "web-api",
+      "title": "Web API",
+      "glyph": "09",
+      "intro": "Przeglądarka jako platforma: sieć, storage i obserwatory.",
+      "entries": [
+        {
+          "slug": "fetch",
+          "symbol": "fetch()",
+          "aliases": [
+            "fetch",
+            "http",
+            "api",
+            "request",
+            "response"
+          ],
+          "summary": "Wysyła request HTTP i zwraca Promise z odpowiedzią. `fetch` nie odrzuca dla statusów 4xx/5xx.",
+          "code": "const response = await fetch(\"/api/items\", {\n  headers: { Accept: \"application/json\" },\n});\n\nif (!response.ok) {\n  throw new Error(`HTTP ${response.status}`);\n}\n\nconst items = await response.json();",
+          "note": "Zawsze sprawdzaj `response.ok`. Sam `fetch` odrzuci tylko błąd sieci, nie 404 ani 500.",
+          "module": "web-api"
+        },
+        {
+          "slug": "local-storage",
+          "symbol": "localStorage",
+          "aliases": [
+            "localstorage",
+            "storage",
+            "persystencja",
+            "json",
+            "offline"
+          ],
+          "summary": "Przechowuje stringi w przeglądarce bez terminu ważności. Dane zostają po zamknięciu karty.",
+          "code": "localStorage.setItem(\"theme\", \"dark\");\nconst theme = localStorage.getItem(\"theme\") ?? \"light\";\n\nlocalStorage.setItem(\"cart\", JSON.stringify(cart));\nconst cart = JSON.parse(localStorage.getItem(\"cart\") ?? \"[]\");",
+          "note": "To nie jest bezpieczne miejsce na tokeny. Każdy skrypt na origin może je odczytać.",
+          "module": "web-api"
+        },
+        {
+          "slug": "url-search-params",
+          "symbol": "URLSearchParams",
+          "aliases": [
+            "urlsearchparams",
+            "query",
+            "url",
+            "parametry",
+            "api"
+          ],
+          "summary": "Buduje i parsuje parametry query string bez ręcznego sklejania `?a=...&b=...`.",
+          "code": "const params = new URLSearchParams({\n  q: \"javascript\",\n  page: \"2\",\n});\n\nfetch(`/api/search?${params}`);\n\nconst page = new URLSearchParams(location.search).get(\"page\");",
+          "note": "`URLSearchParams` koduje wartości. Nie koduj ich drugi raz przez `encodeURIComponent`.",
+          "module": "web-api"
+        },
+        {
+          "slug": "intersection-observer",
+          "symbol": "IntersectionObserver",
+          "aliases": [
+            "intersectionobserver",
+            "lazy",
+            "scroll",
+            "widocznosc",
+            "obserwator"
+          ],
+          "summary": "Obserwuje, czy element wchodzi w viewport. Podstawa lazy-loadingu i infinite scroll.",
+          "code": "const observer = new IntersectionObserver((entries) => {\n  for (const entry of entries) {\n    if (entry.isIntersecting) {\n      loadMore();\n      observer.unobserve(entry.target);\n    }\n  }\n});\n\nobserver.observe(sentinel);",
+          "note": "Pamiętaj o `unobserve` lub `disconnect`, gdy element znika. Inaczej obserwatory zostają w pamięci.",
+          "module": "web-api"
+        },
+        {
+          "slug": "web-worker",
+          "symbol": "Web Worker",
+          "aliases": [
+            "web worker",
+            "worker",
+            "watki",
+            "cpu",
+            "wydajnosc"
+          ],
+          "summary": "Uruchamia JavaScript w osobnym wątku, więc ciężkie obliczenia nie blokują UI.",
+          "code": "// main.js\nconst worker = new Worker(\"worker.js\");\nworker.postMessage({ numbers });\nworker.onmessage = (event) => render(event.data);\n\n// worker.js\nself.onmessage = ({ data }) => {\n  const result = heavyComputation(data.numbers);\n  self.postMessage(result);\n};",
+          "note": "Worker nie ma dostępu do DOM. Komunikacja odbywa się przez `postMessage`, więc przesyłaj małe, serializowalne dane.",
+          "module": "web-api"
+        }
+      ]
+    },
+    {
+      "slug": "testy",
+      "title": "Testy i debug",
+      "glyph": "10",
+      "intro": "Szybkie narzędzia, które skracają pętlę „napisałem — nie działa”.",
+      "entries": [
+        {
+          "slug": "console-table",
+          "symbol": "console.table()",
+          "aliases": [
+            "console.table",
+            "debug",
+            "konsola",
+            "tabela",
+            "log"
+          ],
+          "summary": "Pokazuje tablicę obiektów jako czytelną tabelę. Szybsze niż dziesięć `console.log`.",
+          "code": "console.table(users.map(({ id, name, role }) => ({\n  id,\n  name,\n  role,\n})));",
+          "note": "Nie zostawiaj `console.table` w produkcji. Hałas w konsoli i ryzyko wycieku danych.",
+          "module": "debugging"
+        },
+        {
+          "slug": "debugger",
+          "symbol": "debugger",
+          "aliases": [
+            "debugger",
+            "breakpoint",
+            "devtools",
+            "debug",
+            "pauza"
+          ],
+          "summary": "Zatrzymuje wykonanie w DevTools, jeśli narzędzia są otwarte. Pozwala obejrzeć scope i call stack.",
+          "code": "function calculateTotal(items) {\n  debugger;\n  return items.reduce((sum, item) => sum + item.price, 0);\n}",
+          "note": "`debugger` w kodzie produkcyjnym potrafi zatrzymać użytkownika. Usuń go przed commitem lub użyj breakpointa w DevTools.",
+          "module": "debugging"
+        },
+        {
+          "slug": "try-catch",
+          "symbol": "try / catch",
+          "aliases": [
+            "try",
+            "catch",
+            "error",
+            "wyjatek",
+            "obsluga bledow"
+          ],
+          "summary": "Łapie wyjątki synchroniczne. W async pamiętaj o `await` wewnątrz `try`.",
+          "code": "try {\n  const data = await loadData();\n  render(data);\n} catch (error) {\n  console.error(error);\n  showError(\"Nie udało się załadować danych\");\n} finally {\n  hideSpinner();\n}",
+          "note": "Nie łap `catch` bez planu. Połknięty błąd to najdroższy rodzaj błędu.",
+          "module": "testy-publikacja"
+        },
+        {
+          "slug": "expect-vi",
+          "symbol": "expect() / vi.fn()",
+          "aliases": [
+            "expect",
+            "vi.fn",
+            "vitest",
+            "jest",
+            "test",
+            "mock"
+          ],
+          "summary": "Asercje i mocki w testach jednostkowych. Sprawdzaj zachowanie, nie implementację.",
+          "code": "import { expect, vi, test } from \"vitest\";\n\ntest(\"wysyła email po zapisie\", async () => {\n  const send = vi.fn();\n  await saveUser({ name: \"Ala\" }, { send });\n  expect(send).toHaveBeenCalledOnce();\n});",
+          "note": "Mockuj granice systemu (sieć, storage), a nie własne funkcje pomocnicze. Inaczej testujesz mock, nie kod.",
+          "module": "testy-publikacja"
+        },
+        {
+          "slug": "describe-it",
+          "symbol": "describe() / it()",
+          "aliases": [
+            "describe",
+            "it",
+            "test",
+            "vitest",
+            "jest",
+            "struktura testow"
+          ],
+          "summary": "Grupuje testy w konteksty i nazywa zachowania. Dobra nazwa mówi, co ma się stać, a nie jaka funkcja jest wołana.",
+          "code": "describe(\"calculateTotal\", () => {\n  it(\"sumuje ceny produktów\", () => {\n    expect(calculateTotal([{ price: 10 }, { price: 5 }])).toBe(15);\n  });\n\n  it(\"zwraca 0 dla pustej listy\", () => {\n    expect(calculateTotal([])).toBe(0);\n  });\n});",
+          "note": "Testuj zachowanie i kontrakt. Nie.testuj prywatnych helperów tylko dlatego, że są łatwe do mockowania.",
+          "module": "testy-publikacja"
+        },
+        {
+          "slug": "before-each",
+          "symbol": "beforeEach() / afterEach()",
+          "aliases": [
+            "beforeeach",
+            "aftereach",
+            "setup",
+            "teardown",
+            "vitest",
+            "jest"
+          ],
+          "summary": "Powtarzalny setup i sprzątanie między testami. Dzięki temu testy nie zależą od kolejności.",
+          "code": "let storage;\n\nbeforeEach(() => {\n  storage = createMemoryStorage();\n});\n\nafterEach(() => {\n  storage.clear();\n});",
+          "note": "Nie współdziel mutowalnego stanu między testami. `beforeEach` ma izolować, nie przyspieszać przez ukryte globalsy.",
+          "module": "testy-publikacja"
+        }
+      ]
+    },
+    {
+      "slug": "jezyk-i-moduly",
+      "title": "Język i moduły",
+      "glyph": "11",
+      "intro": "Event loop, moduły i struktury danych, które trzeba znać poza składnią.",
+      "entries": [
+        {
+          "slug": "event-loop",
+          "symbol": "Event loop",
+          "aliases": [
+            "event loop",
+            "petla zdarzen",
+            "microtask",
+            "macrotask",
+            "kolejka"
+          ],
+          "summary": "JavaScript wykonuje jeden wątek, ale kolejkuje zadania. Mikrozadania (`Promise`) idą przed makrozadaniami (`setTimeout`).",
+          "code": "console.log(\"1\");\nsetTimeout(() => console.log(\"2\"), 0);\nPromise.resolve().then(() => console.log(\"3\"));\nconsole.log(\"4\");\n// 1, 4, 3, 2",
+          "note": "`setTimeout(fn, 0)` nie oznacza „natychmiast”. Najpierw kończy się bieżący stos i mikrozadania.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "modules",
+          "symbol": "import / export",
+          "aliases": [
+            "import",
+            "export",
+            "esm",
+            "moduly",
+            "module"
+          ],
+          "summary": "Moduły ESM mają własny zakres i jawne zależności. Import domyślny i nazwany to różne rzeczy.",
+          "code": "// math.js\nexport const add = (a, b) => a + b;\nexport default function multiply(a, b) { return a * b; }\n\n// app.js\nimport multiply, { add } from \"./math.js\";",
+          "note": "W ESM ścieżki są względne wobec pliku, a nie HTML. W Node często potrzebne jest rozszerzenie `.js`.",
+          "module": "node-narzedzia"
+        },
+        {
+          "slug": "map-set",
+          "symbol": "Map / Set / WeakMap",
+          "aliases": [
+            "map",
+            "set",
+            "weakmap",
+            "weakset",
+            "struktury danych",
+            "kolekcje"
+          ],
+          "summary": "`Map` pozwala na klucze dowolnego typu, `Set` przechowuje unikalne wartości, a `WeakMap` nie blokuje GC dla kluczy-obiektów.",
+          "code": "const counts = new Map();\ncounts.set(\"js\", 3);\ncounts.get(\"js\"); // 3\n\nconst unique = new Set([1, 2, 2, 3]);\n// Set {1, 2, 3}\n\nconst cache = new WeakMap();\ncache.set(element, data);",
+          "note": "`Map` to nie zamiennik obiektu w JSON. Do serializacji użyj `Object.fromEntries(map)`.",
+          "module": "struktury-danych"
+        },
+        {
+          "slug": "intl",
+          "symbol": "Intl.NumberFormat / DateTimeFormat",
+          "aliases": [
+            "intl",
+            "numberformat",
+            "datetimeformat",
+            "waluta",
+            "data",
+            "lokalizacja"
+          ],
+          "summary": "Wbudowane API do formatowania liczb, walut i dat zgodnie z locale — bez ręcznych separatorów.",
+          "code": "new Intl.NumberFormat(\"pl-PL\", {\n  style: \"currency\", currency: \"PLN\",\n}).format(1234.5); // 1 234,50 zł\n\nnew Intl.DateTimeFormat(\"pl-PL\", {\n  dateStyle: \"long\",\n}).format(new Date());",
+          "note": "`toLocaleString` korzysta z tego samego mechanizmu. Nie zakładaj formatu `DD/MM/YYYY` na sztywno.",
+          "module": "nowoczesny-js"
+        },
+        {
+          "slug": "date",
+          "symbol": "Date",
+          "aliases": [
+            "date",
+            "data",
+            "timestamp",
+            "utc",
+            "timezone"
+          ],
+          "summary": "`Date` miesza strefy i mutację. Do liczenia różnic używaj timestampów, a do wyświetlania `Intl`.",
+          "code": "const now = Date.now();\nconst tomorrow = new Date(now + 24 * 60 * 60 * 1000);\n\n// ISO do API\nnew Date().toISOString();\n\n// Dzień w lokalnej strefie\nnew Intl.DateTimeFormat(\"pl-PL\", { weekday: \"long\" }).format(now);",
+          "note": "`new Date(\"2026-11-09\")` jest interpretowane jako UTC, a `new Date(2026, 10, 9)` jako lokalny czas. To częste źródło przesunięcia o dzień.",
+          "module": "nowoczesny-js"
+        }
+      ]
+    },
+    {
+      "slug": "react-native",
+      "title": "React Native",
+      "glyph": "12",
+      "intro": "Mobilne odpowiedniki komponentów i stylów, bez przenoszenia nawyków z DOM.",
+      "entries": [
+        {
+          "slug": "flatlist",
+          "symbol": "FlatList",
+          "aliases": [
+            "flatlist",
+            "react native",
+            "lista",
+            "list",
+            "virtualizacja"
+          ],
+          "summary": "Wydajna lista mobilna, która renderuje widoczne elementy zamiast całej kolekcji.",
+          "code": "<FlatList\n  data={items}\n  keyExtractor={(item) => item.id}\n  renderItem={({ item }) => <Row item={item} />}\n  ListEmptyComponent={<Empty />}\n/>;",
+          "note": "Nie używaj `ScrollView` z `map` dla długich list. `keyExtractor` musi zwracać stabilny string.",
+          "module": "react-native"
+        },
+        {
+          "slug": "stylesheet",
+          "symbol": "StyleSheet.create()",
+          "aliases": [
+            "stylesheet",
+            "react native",
+            "style",
+            "flex",
+            "styl"
+          ],
+          "summary": "Tworzy nazwane style RN. Layout opiera się na flexboxie, ale bez CSS-owych selektorów i jednostek `px`.",
+          "code": "const styles = StyleSheet.create({\n  row: { flexDirection: \"row\", gap: 12, padding: 16 },\n  title: { fontSize: 18, fontWeight: \"600\" },\n});\n\n<View style={styles.row}><Text style={styles.title}>JS</Text></View>;",
+          "note": "W RN `gap` działa w nowszych wersjach; sprawdź target. `display: \"grid\"` nie jest częścią podstawowego RN.",
+          "module": "react-native"
+        },
+        {
+          "slug": "async-storage",
+          "symbol": "AsyncStorage",
+          "aliases": [
+            "asyncstorage",
+            "react native",
+            "storage",
+            "offline",
+            "persystencja"
+          ],
+          "summary": "Asynchroniczny storage klucz-wartość dla React Native. Wartości są stringami, więc obiekty serializujesz ręcznie.",
+          "code": "await AsyncStorage.setItem(\"token\", value);\nconst token = await AsyncStorage.getItem(\"token\");\n\nawait AsyncStorage.setItem(\"cart\", JSON.stringify(cart));\nconst cart = JSON.parse((await AsyncStorage.getItem(\"cart\")) ?? \"[]\");",
+          "note": "To nie jest bezpieczny sejf dla tokenów. Na produkcji rozważ Keychain/Keystore i pamiętaj o limicie rozmiaru.",
+          "module": "react-native-produkcja"
+        }
+      ]
+    },
+    {
+      "slug": "a11y",
+      "title": "Dostępność",
+      "glyph": "13",
+      "intro": "Rzeczy, które działają dla klawiatury, czytników i wszystkich użytkowników.",
+      "entries": [
+        {
+          "slug": "aria",
+          "symbol": "ARIA",
+          "aliases": [
+            "aria",
+            "a11y",
+            "dostępność",
+            "role",
+            "aria-label"
+          ],
+          "summary": "ARIA uzupełnia semantyczny HTML, ale go nie zastępuje. Najpierw `button`, `label`, `nav`; dopiero potem `aria-*`.",
+          "code": "<button aria-expanded={open} aria-controls=\"menu\">\n  Menu\n</button>\n<ul id=\"menu\" hidden={!open}>…</ul>",
+          "note": "`aria-label` nadpisuje tekst widoczny dla czytnika. Nie nadużywaj go, jeśli widoczny tekst już jest dobry.",
+          "module": "bezpieczenstwo-wydajnosc"
+        },
+        {
+          "slug": "focus",
+          "symbol": "Zarządzanie focusem",
+          "aliases": [
+            "focus",
+            "fokus",
+            "klawiatura",
+            "tab",
+            "a11y",
+            "dialog"
+          ],
+          "summary": "Po otwarciu dialogu przenieś focus do środka, zamknij Escape i przywróć focus po zamknięciu.",
+          "code": "dialog.showModal();\nfirstInput.focus();\n\n// po zamknięciu\ntrigger.focus();",
+          "note": "`outline: none` bez zamiennika łamie nawigację klawiaturą. Zostaw widoczny focus albo zaprojektuj wyraźny.",
+          "module": "bezpieczenstwo-wydajnosc"
+        },
+        {
+          "slug": "request-animation-frame",
+          "symbol": "requestAnimationFrame()",
+          "aliases": [
+            "requestanimationframe",
+            "raf",
+            "animacja",
+            "wydajnosc",
+            "scroll"
+          ],
+          "summary": "Planuje pracę przed następnym odświeżeniem ekranu. Lepsze niż `setInterval` do animacji i pomiarów layoutu.",
+          "code": "function tick(time) {\n  element.style.transform = `translateX(${time / 10}px)`;\n  if (running) requestAnimationFrame(tick);\n}\nrequestAnimationFrame(tick);",
+          "note": "Nie wykonuj ciężkich obliczeń w każdej klatce. Batchuj odczyty DOM i zapisy, żeby uniknąć layout thrashing.",
+          "module": "bezpieczenstwo-wydajnosc"
+        }
+      ]
+    }
+  ]
+}

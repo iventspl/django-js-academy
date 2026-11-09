@@ -2,7 +2,7 @@
 
 A local-first learning game for Python, Django, JavaScript and applied AI. It mixes multiple-choice quiz runs, open flashcards (fiszki), spaced repetition, explanations, coding challenges and a progress notebook — with a deliberately polished interface that runs the same way on macOS and Windows.
 
-No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.27 Django handbook, the 4.26 JS workshops, the 4.25 extended modules, the 4.24 practical examples and plain-language glossary, the 4.23 full MVC project walkthroughs, the 4.22 mobile layout, the 4.21 cross-platform learner tools, the 4.20 local Wi-Fi mode and earlier releases.
+No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHANGELOG.md](CHANGELOG.md) for the 4.28 JS reference, the 4.27 Django handbook, the 4.26 JS workshops, the 4.25 extended modules, the 4.24 practical examples and plain-language glossary, the 4.23 full MVC project walkthroughs, the 4.22 mobile layout, the 4.21 cross-platform learner tools, the 4.20 local Wi-Fi mode and earlier releases.
 
 ## What is inside
 
@@ -12,7 +12,7 @@ No account. No cloud. No Node.js. One SQLite file keeps your progress. See [CHAN
 - **6 application blueprints** for SaaS, marketplace, booking, CMS, support desk, and mobile API products — with data models, starter code, build order, and production traps.
 - **8 Architecture Studio labs** for AI document assistants, tool-using agents, multi-tenant SaaS, webhook platforms, marketplace ledgers, real-time fan-out, analytics pipelines, and legacy modernization.
 - **Django handbook** — a super-reference with **81 searchable chapters, 349 answers and 39 exception fixes**. It covers core Django, advanced ORM and SQL, transactions, formsets, class-based views, auth, admin, security, testing, performance, typing, middleware, caching, async, background jobs, storage, email, Channels, DRF, deployment, observability, i18n, PostgreSQL search, multi-tenancy, internals and upgrades — plus 15 lookup-table reference chapters and 11 end-to-end recipes. Open `/handbook/` and type `forms`, `PositiveIntegerField`, `select_for_update`, `window function`, `CSP` or `NoReverseMatch`.
-- **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 22 modules, 137 lessons, 152 quiz questions, 140 flashcards, 2 full project walkthroughs (17 steps), 13 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 64-term glossary, 30 interview questions, and XP/streaks.
+- **JS Akademia** — a Polish-language JavaScript → TypeScript → React → React Native path with 22 modules, 137 lessons, 152 quiz questions, 140 flashcards, 2 full project walkthroughs (17 steps), 13 live iframe demos, 31 coding challenges, a live playground, 13 ready-made components, 36 curiosities, a 64-term glossary, 30 interview questions, a 67-entry Ściągawka reference, a 20-pattern JS error explainer, a mock interview mode, and XP/streaks.
 - **AI Academy** — a 12-month applied AI engineering path with 8 modules, 42 lessons, 48 quiz questions, 40 concept cards, 55 glossary terms, 12 real projects and a career map.
 - **Release radar** with current Django versions, LTS windows, CVE summaries, and source links to the official release notes.
 - **Spaced repetition** for every card with four recall ratings: Again, Hard, Good, Easy.
@@ -317,6 +317,15 @@ The platform includes:
 - **31 coding challenges** with an in-browser editor and automatic tests.
 - **13 ready-made components** with live preview, full HTML/CSS/JS and copyable code.
 - **36 curiosities**, a **64-term glossary**, and **30 interview questions with model answers**.
+- **Ściągawka** at `/js/sciagawka/` — 13 areas and 67 code-first entries for arrays, objects, functions, async, DOM, React, React Native, TypeScript, Web APIs, modules, data structures, accessibility and testing, with search, typo suggestions and links to the matching module.
+- **Ranked, code-aware search** at `/js/szukaj/`: searches lesson prose and code, reference symbols, components, challenges, glossary, facts, interviews, errors, projects and modules; returns snippets, type filters, typo suggestions, debounced instant results, `/` focus shortcut and arrow-key navigation.
+- **Practice after every lesson**: a 3-question quick quiz, the full module quiz and a flashcard shortcut in the lesson page.
+- **Project retrospective**: completed projects show self-review questions and a notes shortcut; partial projects show the next step.
+- **Challenge review mode**: after passing all tests, the challenge page unlocks the reference solution, review questions and the list of tests that passed.
+- **Progress analytics**: quiz accuracy, quiz volume in the last 7 days, the least-developed module and a “best next move” panel that chooses the next lesson, weak spots or due flashcards.
+- **Content review dates**: every JS module shows when its content was last checked (`reviewed_on`), also visible in the Django admin.
+- **JS error explainer** at `/js/bledy/`: paste a console error or stack trace, get the likely cause, fix, code example and the matching module. The 20-pattern catalog is local and searchable.
+- **Mock interview lab** at `/js/wiedza/wywiad/rozmowa/`: answer a random question first, reveal the model answer, then self-rate `Jeszcze raz / Trudne / Dobre / Łatwe` with local progress.
 - **XP, levels and daily streaks** based on real completed work.
 - **22 module projects** with a concrete build checklist.
 - Full Polish interface, `lang="pl"`, and a separate yellow JS visual identity.
@@ -677,7 +686,7 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **176 tests** in total, including handbook search, symbol indexing, typo suggestions, filters, practice links, reading progress, the error explainer and reference-table rendering.
+The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **196 tests** in total, including handbook search, symbol indexing, typo suggestions, filters, practice links, reading progress, the Django error explainer, reference-table rendering, the JS Ściągawka, JS error explainer, interview lab, instant search and progress analytics.
 
 You can also run Django's deployment check before hosting anything:
 

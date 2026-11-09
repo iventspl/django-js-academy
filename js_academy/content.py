@@ -37,7 +37,14 @@ class ContentError(ValueError):
 
 
 def bundle_paths() -> list[Path]:
-    auxiliary = {"demos.json", "knowledge.json", "challenges.json", "components.json"}
+    auxiliary = {
+        "demos.json",
+        "knowledge.json",
+        "challenges.json",
+        "components.json",
+        "reference.json",
+        "errors.json",
+    }
     return [path for path in sorted(CONTENT_DIR.glob("*.json")) if path.name not in auxiliary]
 
 
@@ -139,6 +146,8 @@ def load_bundles() -> list[dict]:
 def content_fingerprint() -> str:
     digest = hashlib.sha256()
     for path in sorted(CONTENT_DIR.glob("*.json")):
+        if path.name in {"reference.json", "errors.json"}:
+            continue
         digest.update(path.name.encode("utf-8"))
         digest.update(path.read_bytes())
     return digest.hexdigest()

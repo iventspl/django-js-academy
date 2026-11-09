@@ -1,5 +1,32 @@
 # Changelog
 
+## 4.28 — 2026-11-09
+
+### JS: ściągawka, search, błędy i rozmowa
+
+- Added a Polish **JS reference** at `/js/sciagawka/`:
+  - **13 areas / 67 code-first entries** for variables/types, arrays, objects, functions, async, DOM, React, React Native, TypeScript, Web APIs, modules, data structures, accessibility and testing/debugging.
+  - Every entry has a symbol, short explanation, runnable example, a practical warning and a link to the matching module.
+  - Search, category filters, typo suggestions and anchors (`#useEffect`, `#map`, …).
+- Added **Ściągawka** to the JS sidebar and home actions.
+- Integrated reference entries into the global JS search (`/js/szukaj/`), so searches like `AbortController` or `useEffect` return the reference result alongside lessons and glossary terms.
+- Excluded `reference.json` from the module seed bundles.
+- Replaced the JS search with a ranked, code-aware index across lessons, reference, components, challenges, glossary, facts, interviews, projects and modules. Results include code/prose snippets, type filters (`Lekcje`, `Ściągawka`, `Komponenty`, …) and typo suggestions.
+- Added a **practice box** to every lesson with module quiz and flashcard actions.
+- Added a **project retrospective** with self-review questions after all steps are completed, plus next-step feedback for partial projects.
+- Added a local **JS error explainer** at `/js/bledy/` with 20 curated patterns, stack-trace analysis and search integration.
+- Added a **mock interview lab** at `/js/wiedza/wywiad/rozmowa/` with answer-first flow, model answers and self-rating. New model/migration: `JsInterviewPractice`.
+- Added a **3-question quick quiz** to every lesson, alongside the full module quiz.
+- Added **challenge review mode** after a passed challenge: reference solution, review questions and the test names.
+- Added **instant JS search**: debounced `/js/szukaj.json`, live result rendering, `/` focus shortcut, arrow-key navigation, `aria-live` status and visible keyboard focus.
+- Added **progress analytics**: quiz accuracy, 7-day quiz volume, least-developed module and a context-aware “best next move” panel (next lesson, weak spots or due flashcards).
+- Added **module review dates** (`JsModule.reviewed_on`, migration `0008`) and a review badge on every module page.
+
+### Verification
+
+- JS suite: **68 tests pass**.
+- Full test suite: **196 tests pass**.
+
 ## 4.27 — 2026-11-06
 
 ### The Django super-handbook

@@ -46,6 +46,38 @@
           <div><strong>Wyzwanie ukończone</strong><p>+{{ challenge.xp }} XP · {{ completion.completed_at|date:"d.m.Y" }}</p></div>
           <a class="js-text-link" href="{% url 'js_academy:challenges' %}">Następne wyzwanie →</a>
         </div>
+
+        <section class="js-challenge-review" aria-labelledby="challenge-review-title">
+          <div class="js-challenge-review-head">
+            <div>
+              <p class="eyebrow eyebrow-js-dark">Po zielonych testach</p>
+              <h2 id="challenge-review-title">Porównaj decyzje, nie tylko składnię.</h2>
+              <p>Twoje testy przeszły. Teraz sprawdź, czy wzorcowe rozwiązanie różni się od Twojego w sposobie myślenia.</p>
+            </div>
+            <span class="tag tag-mint">review mode</span>
+          </div>
+
+          <div class="js-challenge-review-grid">
+            <div>
+              <h3>Pytania do przeglądu</h3>
+              <ul class="js-challenge-review-questions">
+                <li>Który test był najtrudniejszy i dlaczego?</li>
+                <li>Czy obsłużyłeś przypadek pustej listy, `null` i duplikaty?</li>
+                <li>Gdzie wzorcowe rozwiązanie jest prostsze albo bardziej odporne?</li>
+                <li>Co zmieniłbyś, żeby kod był łatwiejszy do przetestowania?</li>
+              </ul>
+              <h3>Testy, które przeszły</h3>
+              <ul class="js-challenge-test-list">
+                {% for test in challenge.tests %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ test.name }}</li>{% empty %}<li>Brak nazwanych testów.</li>{% endfor %}
+              </ul>
+            </div>
+            <details class="js-challenge-solution">
+              <summary>Pokaż wzorcowe rozwiązanie <span aria-hidden="true">+</span></summary>
+              <p class="js-challenge-solution-note">Najpierw porównaj z własnym kodem. Potem przeczytaj komentarz do decyzji.</p>
+              <pre><code>{{ challenge.solution_code }}</code></pre>
+            </details>
+          </div>
+        </section>
       {% else %}
         <div class="js-challenge-complete" id="challenge-complete" hidden>
           <span class="js-complete-check">✓</span>

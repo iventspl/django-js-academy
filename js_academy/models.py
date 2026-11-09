@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import date, timedelta
 from math import ceil
 
 from django.db import models
@@ -29,6 +29,10 @@ RATING_CHOICES = [
 ]
 
 
+def default_review_date():
+    return date(2026, 11, 9)
+
+
 class JsModule(models.Model):
     slug = models.SlugField(max_length=80, unique=True)
     title = models.CharField(max_length=140)
@@ -43,6 +47,7 @@ class JsModule(models.Model):
     project_brief = models.TextField()
     project_steps = models.TextField(help_text="Jeden krok projektu w linii.")
     order = models.PositiveSmallIntegerField(default=0)
+    reviewed_on = models.DateField(default=default_review_date)
 
     class Meta:
         ordering = ["order", "title"]
@@ -378,6 +383,33 @@ class JsInterviewQuestion(models.Model):
 
     def __str__(self) -> str:
         return self.question[:90]
+
+
+class JsInterviewPractice(models.Model):
+    """Local self-review of an interview question."""
+
+    learner = models.ForeignKey(
+        "dojo.Learner", on_delete=models.CASCADE, related_name="js_interview_practices"
+    )
+    question = models.ForeignKey(
+        JsInterviewQuestion, on_delete=models.CASCADE, related_name="practices"
+    )
+    answer = models.TextField(blank=True)
+    rating = models.CharField(max_length=10, choices=RATING_CHOICES, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "question"],
+                name="unique_js_interview_practice",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.learner_id}: {self.question_id}"
 
 
 class JsChallenge(models.Model):

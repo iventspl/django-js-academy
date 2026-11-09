@@ -15,8 +15,41 @@
     <div><strong>{{ stats.completed_lessons }}<small>/{{ stats.lesson_total }}</small></strong><span>ukończonych lekcji</span></div>
     <div><strong>{{ stats.completed_modules }}<small>/{{ stats.module_total }}</small></strong><span>modułów z lekcjami</span></div>
     <div><strong>{{ stats.reviewed_cards }}<small>/{{ stats.card_total }}</small></strong><span>poznanych fiszek</span></div>
-    <div><strong>{{ stats.best_score }}%</strong><span>najlepszy quiz</span></div>
+    <div><strong>{{ quiz_accuracy }}%</strong><span>skuteczność quizów · best {{ stats.best_score }}%</span></div>
   </div>
+
+  <section class="js-focus-panel" aria-labelledby="focus-title">
+    <div>
+      <p class="eyebrow eyebrow-js-dark">Teraz najlepszy ruch</p>
+      {% if next_item %}
+        <h2 id="focus-title">Kontynuuj: {{ next_item.lesson.title }}</h2>
+        <p>Jeden konkretny krok zamiast przeglądania całej ścieżki. Po lekcji zrób szybki quiz i wróć do projektu.</p>
+        <a class="btn btn-js btn-small" href="{{ next_item.lesson.get_absolute_url }}">Otwórz lekcję <span aria-hidden="true">→</span></a>
+      {% elif weak_spot_count %}
+        <h2 id="focus-title">Najpierw słabe punkty.</h2>
+        <p>Masz {{ weak_spot_count }} pytań bez poprawnej odpowiedzi. Krótka sesja domknie lukę szybciej niż nowy materiał.</p>
+        <form method="post" action="{% url 'js_academy:weak_spots' %}">
+          {% csrf_token %}
+          <button class="btn btn-js btn-small" type="submit">Ćwicz słabe punkty <span aria-hidden="true">→</span></button>
+        </form>
+      {% elif stats.due_cards %}
+        <h2 id="focus-title">Powtórka czeka.</h2>
+        <p>{{ stats.due_cards }} fiszek jest gotowych do powtórki. To najkrótsza droga do utrwalenia tego, co już znasz.</p>
+        <a class="btn btn-js btn-small" href="{% url 'js_academy:flashcards_review' %}">Otwórz powtórkę <span aria-hidden="true">→</span></a>
+      {% else %}
+        <h2 id="focus-title">Zacznij od fundamentów.</h2>
+        <p>Pierwsza lekcja jest krótka. Po niej od razu sprawdzisz się trzema pytaniami.</p>
+        <a class="btn btn-js btn-small" href="{% url 'js_academy:module' 'fundamenty-js' %}">Zacznij moduł 1 <span aria-hidden="true">→</span></a>
+      {% endif %}
+    </div>
+    <div class="js-focus-meta">
+      <div><strong>{{ recent_attempts }}</strong><span>quizów w 7 dni</span></div>
+      <div><strong>{{ answered_questions }}</strong><span>odpowiedzi w quizach</span></div>
+      {% if weakest_module %}
+        <div><strong>{{ weakest_module.lesson_percent }}%</strong><span>najmniej rozpracowany: {{ weakest_module.module.title }}</span></div>
+      {% endif %}
+    </div>
+  </section>
 
   <section class="js-game-panel" aria-labelledby="game-title">
     <div class="js-game-copy">

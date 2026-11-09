@@ -6,6 +6,7 @@ from .models import (
     JsComponent,
     JsFact,
     JsInterviewQuestion,
+    JsInterviewPractice,
     JsTerm,
     JsAttempt,
     JsAttemptQuestion,
@@ -35,7 +36,7 @@ class JsLessonInline(admin.TabularInline):
 
 @admin.register(JsModule)
 class JsModuleAdmin(admin.ModelAdmin):
-    list_display = ("title", "level", "order", "duration_minutes")
+    list_display = ("title", "level", "order", "duration_minutes", "reviewed_on")
     list_filter = ("level",)
     prepopulated_fields = {"slug": ("title",)}
     inlines = [JsLessonInline]
@@ -76,6 +77,7 @@ class JsAttemptAdmin(admin.ModelAdmin):
 
 admin.site.register(JsLessonProgress)
 admin.site.register(JsFlashcardReview)
+admin.site.register(JsInterviewPractice)
 
 
 @admin.register(JsChallenge)

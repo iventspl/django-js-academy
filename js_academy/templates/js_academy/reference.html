@@ -1,0 +1,71 @@
+{% extends "js_academy/base_js.html" %}
+
+{% block title %}Ściągawka JS · szybka referencja{% endblock %}
+{% block meta_description %}Polska ściągawka JavaScript, TypeScript, React i Web API: składnia, przykłady i pułapki.{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-ref-page">
+  <header class="js-ref-hero">
+    <p class="eyebrow eyebrow-js">Szybka referencja · {{ categories|length }} obszarów</p>
+    <h1>Jedno miejsce.<br><em>Konkretna odpowiedź.</em></h1>
+    <p class="js-ref-lead">Wpisz metodę, hook albo API: <code>map</code>, <code>useEffect</code>, <code>fetch</code>, <code>satisfies</code>. Każdy wpis ma krótkie wyjaśnienie, działający przykład i pułapkę, która częściej psuje kod niż sama składnia.</p>
+  </header>
+
+  <form class="js-ref-search" method="get" action="{% url 'js_academy:reference' %}" role="search">
+    <span aria-hidden="true">⌕</span>
+    <label class="sr-only" for="js-ref-q">Szukaj w ściągawce</label>
+    <input id="js-ref-q" type="search" name="q" value="{{ query }}" placeholder="np. map, useEffect, AbortController, satisfies…" autofocus>
+    {% if category_slug %}<input type="hidden" name="kategoria" value="{{ category_slug }}">{% endif %}
+    <button class="btn btn-js" type="submit">Szukaj</button>
+  </form>
+
+  <nav class="js-ref-categories" aria-label="Kategorie ściągawki">
+    <a class="{% if not category_slug %}is-active{% endif %}" href="{% url 'js_academy:reference' %}{% if query %}?q={{ query|urlencode }}{% endif %}">Wszystko</a>
+    {% for category in categories %}
+      <a class="{% if category_slug == category.slug %}is-active{% endif %}" href="{% url 'js_academy:reference' %}?kategoria={{ category.slug|urlencode }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}">{{ category.title }} <span>{{ category.entries|length }}</span></a>
+    {% endfor %}
+  </nav>
+
+  <div class="js-ref-summary">
+    {% if query %}
+      <strong>{{ total }}</strong> wynik{{ total|pluralize:"i" }} dla „{{ query }}”
+      <a href="{% url 'js_academy:reference' %}">Wyczyść</a>
+    {% else %}
+      <strong>{{ total }}</strong> wpis{{ total|pluralize:"ów" }} w ściągawce
+    {% endif %}
+  </div>
+
+  {% if entries %}
+    <div class="js-ref-grid">
+      {% for entry in entries %}
+        <article class="js-ref-card" id="{{ entry.slug }}">
+          <div class="js-ref-card-head">
+            <span class="js-ref-category">{{ entry.category }}</span>
+            <span class="js-ref-glyph">{{ entry.glyph }}</span>
+          </div>
+          <h2>{{ entry.symbol }}</h2>
+          <p class="js-ref-summary-text">{{ entry.summary }}</p>
+          <pre><code>{{ entry.code }}</code></pre>
+          {% if entry.note %}<p class="js-ref-note"><strong>Uwaga:</strong> {{ entry.note }}</p>{% endif %}
+          <a class="js-ref-link" href="{% url 'js_academy:module' entry.module %}">Czytaj moduł <span aria-hidden="true">→</span></a>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="js-ref-empty">
+      <span>0</span>
+      <h2>Brak wpisu dla „{{ query }}”.</h2>
+      {% if suggestions %}
+        <p>Może chodziło o:</p>
+        <div class="js-ref-suggestions">
+          {% for suggestion in suggestions %}
+            <a href="{% url 'js_academy:reference' %}?q={{ suggestion|urlencode }}">{{ suggestion }}</a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>Spróbuj krótszego pojęcia albo nazwy metody bez nawiasów.</p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

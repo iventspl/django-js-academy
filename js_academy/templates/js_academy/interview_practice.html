@@ -1,0 +1,81 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Tryb rozmowy · JS Akademia{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-interview-practice">
+  <nav class="js-breadcrumb"><a href="{% url 'js_academy:interview' %}">Pytania rekrutacyjne</a><span>/</span><span>Tryb rozmowy</span></nav>
+
+  <header class="js-interview-practice-hero">
+    <p class="eyebrow eyebrow-js">Aktywna powtórka · bez podglądania odpowiedzi</p>
+    <h1>Odpowiedz.<br><em>Potem porównaj.</em></h1>
+    <p class="js-lead">Najpierw mówisz lub piszesz własną odpowiedź. Dopiero po wysłaniu zobaczysz modelową odpowiedź i pytanie pogłębiające. Oceń się szczerze — to steruje kolejną powtórką.</p>
+  </header>
+
+  <div class="js-interview-stats">
+    <div><strong>{{ practiced_count }}</strong><span>ocenionych</span></div>
+    <div><strong>{{ question_count }}</strong><span>pytań w banku</span></div>
+    <div><strong>{{ rating_counts.again }}</strong><span>do powtórki</span></div>
+    <div><strong>{{ rating_counts.good|add:rating_counts.easy }}</strong><span>gotowe</span></div>
+  </div>
+
+  {% if question %}
+    <article class="js-interview-question-card">
+      <div class="js-interview-question-meta">
+        <span class="tag tag-js-dark">{{ question.get_difficulty_display }}</span>
+        <span>{{ question.category }}</span>
+        {% if practice.rating %}<span class="js-interview-last">Ostatnia ocena: {{ practice.get_rating_display }}</span>{% endif %}
+      </div>
+      <p class="eyebrow eyebrow-js">Pytanie</p>
+      <h2>{{ question.question }}</h2>
+
+      {% if not show_answer %}
+        <form method="post" action="{% url 'js_academy:interview_practice' %}">
+          {% csrf_token %}
+          <input type="hidden" name="question_id" value="{{ question.pk }}">
+          <input type="hidden" name="action" value="answer">
+          <label class="sr-only" for="interview-answer">Twoja odpowiedź</label>
+          <textarea id="interview-answer" name="answer" rows="8" placeholder="Napisz odpowiedź tak, jak powiedziałbyś ją na rozmowie. Konkret, przykład, kompromis…">{{ answer_text }}</textarea>
+          <div class="js-interview-form-actions">
+            <button class="btn btn-js" type="submit">Pokaż modelową odpowiedź <span aria-hidden="true">→</span></button>
+            <span>Najpierw Twoja wersja. Potem porównanie.</span>
+          </div>
+        </form>
+      {% else %}
+        <div class="js-interview-your-answer">
+          <p class="eyebrow eyebrow-js-dark">Twoja odpowiedź</p>
+          <p>{{ answer_text|default:"(pusta odpowiedź)"|linebreaksbr }}</p>
+        </div>
+
+        <div class="js-interview-model">
+          <p class="eyebrow eyebrow-js-dark">Modelowa odpowiedź</p>
+          <p>{{ question.answer|linebreaksbr }}</p>
+          {% if question.follow_up %}
+            <div class="js-follow-up"><span>Pytanie pogłębiające</span><strong>{{ question.follow_up }}</strong></div>
+          {% endif %}
+        </div>
+
+        <form method="post" action="{% url 'js_academy:interview_practice' %}" class="js-interview-rating">
+          {% csrf_token %}
+          <input type="hidden" name="question_id" value="{{ question.pk }}">
+          <input type="hidden" name="answer" value="{{ answer_text }}">
+          <input type="hidden" name="action" value="rate">
+          <p class="eyebrow eyebrow-js-dark">Jak Ci poszło?</p>
+          <div class="js-interview-rating-buttons">
+            {% for value, label in rating_choices %}
+              <button class="js-rating-btn js-rating-{{ value }}" type="submit" name="rating" value="{{ value }}">{{ label }}</button>
+            {% endfor %}
+          </div>
+          <p class="js-interview-rating-note">Ocena jest lokalna. „Jeszcze raz” i „Trudne” wrócą szybciej.</p>
+        </form>
+      {% endif %}
+    </article>
+  {% else %}
+    <div class="js-empty-inline"><span>Brak pytań w banku.</span><a href="{% url 'js_academy:interview' %}">Wróć do listy</a></div>
+  {% endif %}
+
+  <div class="js-interview-practice-footer">
+    <a class="btn btn-ghost-dark" href="{% url 'js_academy:interview' %}">Cały bank pytań <span aria-hidden="true">←</span></a>
+    <a class="btn btn-ghost-dark" href="{% url 'js_academy:knowledge' %}">Wiedza <span aria-hidden="true">✦</span></a>
+  </div>
+</div>
+{% endblock %}

@@ -66,6 +66,25 @@
         </section>
       {% endif %}
 
+      <section class="js-practice-box" aria-labelledby="practice-title">
+        <div class="js-practice-copy">
+          <p class="eyebrow eyebrow-js-dark">Sprawdź się</p>
+          <h2 id="practice-title">Trzy minuty utrwalania.</h2>
+          <p>Ten moduł ma {{ module.question_count }} pytań quizowych i {{ module.card_count }} fiszek. Krótka próba po lekcji działa lepiej niż kolejne czytanie.</p>
+        </div>
+        <div class="js-practice-actions">
+          <form method="post" action="{% url 'js_academy:lesson_practice' module.slug lesson.slug %}">
+            {% csrf_token %}
+            <button class="btn btn-js btn-small" type="submit">Szybki quiz: 3 pytania <span aria-hidden="true">→</span></button>
+          </form>
+          <form method="post" action="{% url 'js_academy:quiz_start' module.slug %}">
+            {% csrf_token %}
+            <button class="btn btn-ghost-dark btn-small" type="submit">Cały quiz modułu</button>
+          </form>
+          <a class="btn btn-ghost-dark btn-small" href="{% url 'js_academy:flashcards' module.slug %}">Fiszki <span aria-hidden="true">▣</span></a>
+        </div>
+      </section>
+
       <section class="js-note-box">
         <div class="js-note-head">
           <div><p class="eyebrow eyebrow-js-dark">Twój notatnik</p><h2>Zapisz jedną myśl.</h2></div>

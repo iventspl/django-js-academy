@@ -186,6 +186,28 @@
     </div>
   </div>
 
+  {% if completed_count == step_count %}
+    <section class="js-project-review" aria-labelledby="project-review-title">
+      <div>
+        <p class="eyebrow eyebrow-js-dark">Projekt ukończony</p>
+        <h2 id="project-review-title">Zatrzymaj się. To jest moment nauki.</h2>
+        <p>Kod działa — teraz zamień doświadczenie w wiedzę, którą zabierzesz do następnego projektu.</p>
+      </div>
+      <ol class="js-project-review-questions">
+        <li>Co było najtrudniejsze i dlaczego?</li>
+        <li>Którą decyzję projektową zmieniłbyś po przeczytaniu pełnego rozwiązania?</li>
+        <li>Jaki test albo punkt kontrolny złapałby najgroźniejszy błąd?</li>
+        <li>Co dodasz w wersji 2: API, testy E2E, offline, dostępność?</li>
+      </ol>
+      <a class="btn btn-js btn-small" href="{% url 'js_academy:notes' %}">Zapisz retrospekcję w notatkach <span aria-hidden="true">→</span></a>
+    </section>
+  {% elif completed_count %}
+    <div class="js-project-progress-note">
+      <strong>{{ percent }}% projektu.</strong>
+      <span>Następny krok: {{ next_step.title }}. Wróć do niego, gdy będziesz gotowy — postęp jest zapisany lokalnie.</span>
+    </div>
+  {% endif %}
+
   <div class="js-project-final-cta">
     <div>
       <p class="eyebrow eyebrow-js-dark">Następny ruch</p>

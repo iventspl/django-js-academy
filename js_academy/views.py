@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import random
+from datetime import timedelta
 
 from django.contrib import messages
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -14,6 +15,7 @@ from dojo.models import Learner
 
 from .career import FACTS as CAREER_FACTS, REVIEWED_ON, SOURCES as CAREER_SOURCES
 from .components import build_component_preview
+from .errors import analyze_error, error_categories, load_js_errors, suggest_error_terms
 from .models import (
     JsAttempt,
     JsAttemptQuestion,
@@ -24,16 +26,25 @@ from .models import (
     JsFlashcard,
     JsFlashcardReview,
     JsInterviewQuestion,
+    JsInterviewPractice,
     JsLesson,
     JsLessonNote,
     JsLessonProgress,
     JsModule,
     JsProjectStepProgress,
     JsTerm,
+    RATING_CHOICES,
     percent,
 )
 from .projects import PROJECTS, get_project, get_step
+from .reference import (
+    load_reference,
+    reference_categories,
+    suggest_reference_terms,
+    search_reference,
+)
 from .runner import build_challenge_runner
+from .search import search_js, suggest_js_terms
 from .services import (
     achievements,
     create_retry_attempt,
@@ -186,6 +197,31 @@ def complete_lesson(request: HttpRequest, module_slug: str, lesson_slug: str) ->
                 lesson_slug=lessons[index + 1].slug,
             )
     return redirect("js_academy:module", module_slug=module.slug)
+
+
+@require_POST
+def lesson_practice(
+    request: HttpRequest, module_slug: str, lesson_slug: str
+) -> HttpResponse:
+    learner = _learner()
+    module = get_object_or_404(JsModule, slug=module_slug)
+    lesson = get_object_or_404(JsLesson, module=module, slug=lesson_slug)
+    question_ids = list(module.questions.values_list("id", flat=True))
+    if not question_ids:
+        messages.error(request, "Ten moduł nie ma jeszcze pytań.")
+        return redirect(lesson.get_absolute_url())
+    random.shuffle(question_ids)
+    question_ids = question_ids[:3]
+    attempt = JsAttempt.objects.create(
+        learner=learner, module=module, length=len(question_ids)
+    )
+    JsAttemptQuestion.objects.bulk_create(
+        [
+            JsAttemptQuestion(attempt=attempt, question_id=question_id, position=index)
+            for index, question_id in enumerate(question_ids)
+        ]
+    )
+    return redirect("js_academy:quiz", attempt_id=attempt.pk)
 
 
 @require_POST
@@ -396,12 +432,32 @@ def flashcards_rate(
 def progress(request: HttpRequest) -> HttpResponse:
     learner = _learner()
     achievement_list = achievements(learner)
+    stats = overall_stats(learner)
+    module_rows = _modules_with_progress(learner)
+    answered = JsAttemptQuestion.objects.filter(
+        attempt__learner=learner,
+        attempt__completed_at__isnull=False,
+        selected__isnull=False,
+    )
+    answered_count = answered.count()
+    correct_count = answered.filter(is_correct=True).count()
+    recent_attempts = JsAttempt.objects.filter(
+        learner=learner,
+        completed_at__isnull=False,
+        started_at__gte=timezone.now() - timedelta(days=7),
+    ).count()
+    next_item = start_lesson(learner)
+    weakest = min(
+        (row for row in module_rows if row["lesson_total"]),
+        key=lambda row: (row["lesson_percent"], row["best_score"]),
+        default=None,
+    )
     return render(
         request,
         "js_academy/progress.html",
         {
-            "modules": _modules_with_progress(learner),
-            "stats": overall_stats(learner),
+            "modules": module_rows,
+            "stats": stats,
             "achievements": achievement_list,
             "weak_spot_count": weak_spot_count(learner),
             "achievements_earned": sum(
@@ -410,6 +466,11 @@ def progress(request: HttpRequest) -> HttpResponse:
             "attempts": JsAttempt.objects.filter(
                 learner=learner, completed_at__isnull=False
             ).select_related("module")[:10],
+            "quiz_accuracy": percent(correct_count, answered_count),
+            "answered_questions": answered_count,
+            "recent_attempts": recent_attempts,
+            "next_item": next_item,
+            "weakest_module": weakest,
             "active_nav": "js_progress",
             "page_title": "Postępy",
         },
@@ -555,6 +616,109 @@ def glossary(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_http_methods(["GET", "POST"])
+def errors(request: HttpRequest) -> HttpResponse:
+    raw = ""
+    terms: list[str] = []
+    matches: list[dict] = []
+    suggestions: list[str] = []
+    submitted = False
+    if request.method == "POST":
+        raw = request.POST.get("error_text", "")[:20000].strip()
+        submitted = True
+    else:
+        raw = request.GET.get("q", "")[:2000].strip()
+        submitted = bool(raw)
+    if raw:
+        terms, matches = analyze_error(raw)
+        if not matches and terms:
+            suggestions = suggest_error_terms(terms[0])
+    return render(
+        request,
+        "js_academy/errors.html",
+        {
+            "raw": raw,
+            "terms": terms,
+            "matches": matches,
+            "suggestions": suggestions,
+            "catalog": load_js_errors(),
+            "categories": error_categories(),
+            "submitted": submitted,
+            "active_nav": "js_errors",
+            "page_title": "Błędy JS",
+        },
+    )
+
+
+@require_http_methods(["GET", "POST"])
+def interview_practice(request: HttpRequest) -> HttpResponse:
+    learner = _learner()
+    questions = list(JsInterviewQuestion.objects.all())
+    practices = {
+        row.question_id: row
+        for row in JsInterviewPractice.objects.filter(learner=learner)
+    }
+    practice = None
+    question = None
+    show_answer = False
+    answer_text = ""
+
+    if request.method == "POST":
+        question = get_object_or_404(
+            JsInterviewQuestion, pk=request.POST.get("question_id")
+        )
+        practice, _ = JsInterviewPractice.objects.get_or_create(
+            learner=learner, question=question
+        )
+        action = request.POST.get("action")
+        if action == "answer":
+            answer_text = request.POST.get("answer", "")[:8000]
+            practice.answer = answer_text
+            practice.save(update_fields=["answer", "updated_at"])
+            show_answer = True
+        elif action == "rate":
+            rating = request.POST.get("rating", "")
+            if rating not in dict(RATING_CHOICES):
+                messages.error(request, "Wybierz ocenę odpowiedzi.")
+                return redirect("js_academy:interview_practice")
+            practice.answer = request.POST.get("answer", practice.answer)[:8000]
+            practice.rating = rating
+            practice.save(update_fields=["answer", "rating", "updated_at"])
+            messages.success(request, "Ocena zapisana. Następne pytanie gotowe.")
+            return redirect("js_academy:interview_practice")
+    elif questions:
+        priority = [
+            item
+            for item in questions
+            if item.id not in practices
+            or practices[item.id].rating in {"again", "hard"}
+        ]
+        question = random.choice(priority or questions)
+        practice = practices.get(question.id)
+        answer_text = practice.answer if practice else ""
+
+    rating_counts = {
+        key: sum(1 for row in practices.values() if row.rating == key)
+        for key, _label in RATING_CHOICES
+    }
+    return render(
+        request,
+        "js_academy/interview_practice.html",
+        {
+            "question": question,
+            "practice": practice,
+            "answer_text": answer_text,
+            "show_answer": show_answer,
+            "rating_choices": RATING_CHOICES,
+            "practiced_count": sum(1 for row in practices.values() if row.rating),
+            "question_count": len(questions),
+            "rating_counts": rating_counts,
+            "active_nav": "js_interview",
+            "page_title": "Tryb rozmowy",
+        },
+    )
+
+
 @require_GET
 def interview(request: HttpRequest) -> HttpResponse:
     query = request.GET.get("q", "").strip()
@@ -664,62 +828,75 @@ def mvc_guide(request: HttpRequest) -> HttpResponse:
 
 
 @require_GET
+def reference(request: HttpRequest) -> HttpResponse:
+    query = request.GET.get("q", "").strip()
+    category_slug = request.GET.get("kategoria", "").strip()
+    entries = list(search_reference(query)) if query else list(load_reference())
+    if category_slug:
+        entries = [entry for entry in entries if entry["category_slug"] == category_slug]
+    suggestions = suggest_reference_terms(query) if query and not entries else []
+    return render(
+        request,
+        "js_academy/reference.html",
+        {
+            "query": query,
+            "category_slug": category_slug,
+            "entries": entries,
+            "categories": reference_categories(),
+            "total": len(entries),
+            "suggestions": suggestions,
+            "active_nav": "js_reference",
+            "page_title": "Ściągawka JS",
+        },
+    )
+
+
+@require_GET
+def search_json(request: HttpRequest) -> JsonResponse:
+    query = request.GET.get("q", "").strip()
+    kind = request.GET.get("typ", "").strip()
+    level = request.GET.get("poziom", "").strip()
+    results = search_js(query, kind=kind, level=level)[:30] if query else []
+    return JsonResponse(
+        {
+            "query": query,
+            "count": len(results),
+            "results": [
+                {
+                    "kind": item["kind"],
+                    "kind_label": item["kind_label"],
+                    "title": item["title"],
+                    "url": item["url"],
+                    "meta": item["meta"],
+                    "snippet": item["snippet"],
+                }
+                for item in results
+            ],
+        }
+    )
+
+
+@require_GET
 def search(request: HttpRequest) -> HttpResponse:
     query = request.GET.get("q", "").strip()
-    context = {
-        "query": query,
-        "active_nav": "js_search",
-        "page_title": "Szukaj w JS Akademii",
-        "groups": [],
-    }
-    if query:
-        modules = JsModule.objects.filter(
-            Q(title__icontains=query)
-            | Q(subtitle__icontains=query)
-            | Q(description__icontains=query)
-        )[:8]
-        project_matches = [
-            project
-            for project in PROJECTS
-            if query.lower()
-            in " ".join(
-                [project["title"], project["subtitle"], project["summary"]]
-                + project["features"]
-                + [step["title"] for step in project["steps"]]
-            ).lower()
-        ][:4]
-        lessons = JsLesson.objects.select_related("module").filter(
-            Q(title__icontains=query)
-            | Q(summary__icontains=query)
-            | Q(body_html__icontains=query)
-        )[:12]
-        components = JsComponent.objects.filter(
-            Q(title__icontains=query) | Q(description__icontains=query)
-        )[:8]
-        challenges = JsChallenge.objects.filter(
-            Q(title__icontains=query) | Q(prompt__icontains=query)
-        )[:8]
-        terms = JsTerm.objects.filter(
-            Q(term__icontains=query) | Q(definition__icontains=query)
-        )[:10]
-        facts = JsFact.objects.filter(
-            Q(title__icontains=query) | Q(body__icontains=query)
-        )[:8]
-        interview = JsInterviewQuestion.objects.filter(
-            Q(question__icontains=query) | Q(answer__icontains=query)
-        )[:8]
-        context["groups"] = [
-            {"label": "Moduły", "kind": "module", "items": modules},
-            {"label": "Projekty", "kind": "project", "items": project_matches},
-            {"label": "Lekcje", "kind": "lesson", "items": lessons},
-            {"label": "Komponenty", "kind": "component", "items": components},
-            {"label": "Wyzwania", "kind": "challenge", "items": challenges},
-            {"label": "Słownik", "kind": "term", "items": terms},
-            {"label": "Ciekawostki", "kind": "fact", "items": facts},
-            {"label": "Pytania rekrutacyjne", "kind": "interview", "items": interview},
-        ]
-        context["total"] = sum(len(group["items"]) for group in context["groups"])
-    return render(request, "js_academy/search.html", context)
+    kind = request.GET.get("typ", "").strip()
+    level = request.GET.get("poziom", "").strip()
+    results = search_js(query, kind=kind, level=level) if query else []
+    suggestions = suggest_js_terms(query) if query and not results else []
+    return render(
+        request,
+        "js_academy/search.html",
+        {
+            "query": query,
+            "kind": kind,
+            "level": level,
+            "results": results,
+            "total": len(results),
+            "suggestions": suggestions,
+            "active_nav": "js_search",
+            "page_title": "Szukaj w JS Akademii",
+        },
+    )
 
 
 @require_GET

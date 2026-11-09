@@ -8,13 +8,17 @@ from django.utils import timezone
 from dojo.models import Learner
 
 from .content import load_bundles
+from .errors import analyze_error
 from .projects import PROJECTS
+from .reference import load_reference, search_reference, suggest_reference_terms
+from .search import search_js, suggest_js_terms
 from .models import (
     JsChallenge,
     JsChallengeCompletion,
     JsComponent,
     JsFact,
     JsInterviewQuestion,
+    JsInterviewPractice,
     JsTerm,
     JsAttempt,
     JsFlashcard,
@@ -42,6 +46,11 @@ class JsContentTests(SeededJsTestCase):
         self.assertEqual(JsQuestion.objects.count(), 152)
         self.assertEqual(JsFlashcard.objects.count(), 140)
         self.assertEqual(JsComponent.objects.count(), 13)
+
+    def test_module_shows_review_date(self):
+        response = self.client.get(reverse("js_academy:module", args=["fundamenty-js"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Treść sprawdzona")
 
     def test_every_module_has_expected_lessons_questions_and_cards(self):
         for module in JsModule.objects.prefetch_related(
@@ -582,6 +591,29 @@ class JsLearnerToolsTests(SeededJsTestCase):
         self.assertEqual(response["Content-Type"], "text/markdown; charset=utf-8")
         self.assertIn("attachment", response["Content-Disposition"])
 
+    def test_progress_shows_accuracy_and_next_action(self):
+        from .models import JsAttemptQuestion
+
+        module = JsModule.objects.get(slug="fundamenty-js")
+        question = module.questions.first()
+        choice = question.choices.filter(is_correct=True).first()
+        attempt = JsAttempt.objects.create(
+            learner=Learner.local(), module=module, length=1, completed_at=timezone.now()
+        )
+        JsAttemptQuestion.objects.create(
+            attempt=attempt,
+            question=question,
+            position=0,
+            selected=choice,
+            is_correct=True,
+            answered_at=timezone.now(),
+        )
+        response = self.client.get(reverse("js_academy:progress"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "skuteczność quizów")
+        self.assertContains(response, "Teraz najlepszy ruch")
+        self.assertContains(response, "100%")
+
     def test_retry_missed_creates_smaller_attempt(self):
         module = JsModule.objects.get(slug="fundamenty-js")
         self.client.post(reverse("js_academy:quiz_start", args=[module.slug]))
@@ -616,6 +648,203 @@ class JsLearnerToolsTests(SeededJsTestCase):
         self.assertEqual(JsAttempt.objects.count(), 0)
         self.assertEqual(JsLessonProgress.objects.count(), 0)
         self.assertEqual(JsProjectStepProgress.objects.count(), 0)
+
+
+class JsReferenceTests(SeededJsTestCase):
+    def test_reference_content_is_indexed(self):
+        entries = load_reference()
+        self.assertGreaterEqual(len(entries), 67)
+        categories = {entry["category"] for entry in entries}
+        self.assertIn("Tablice", categories)
+        self.assertIn("React", categories)
+        self.assertIn("TypeScript", categories)
+        self.assertIn("React Native", categories)
+        self.assertIn("Dostępność", categories)
+
+    def test_reference_page_renders_and_searches(self):
+        response = self.client.get(reverse("js_academy:reference"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Array.prototype.map")
+        self.assertContains(response, "useEffect()")
+
+        response = self.client.get(reverse("js_academy:reference"), {"q": "useEffect"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "useEffect()")
+
+    def test_reference_search_and_typo_suggestion(self):
+        hits = search_reference("AbortController")
+        self.assertTrue(hits)
+        self.assertEqual(hits[0]["symbol"], "AbortController")
+        self.assertIn("useEffect()", suggest_reference_terms("useEfect"))
+
+    def test_global_search_includes_reference_entries(self):
+        response = self.client.get(reverse("js_academy:search"), {"q": "AbortController"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ściągawka")
+
+    def test_code_aware_search_ranks_symbols_and_lessons(self):
+        hits = search_js("useEffect")
+        self.assertTrue(hits)
+        self.assertEqual(hits[0]["kind"], "reference")
+        self.assertEqual(hits[0]["title"], "useEffect()")
+
+        mvc = search_js("currentView")
+        self.assertTrue(mvc)
+        self.assertTrue(any(hit["kind"] == "lesson" for hit in mvc))
+
+        errors = search_js("Cannot read properties of undefined")
+        self.assertTrue(any(hit["kind"] == "error" for hit in errors))
+
+        self.assertIn("useEffect()", suggest_js_terms("useEfect"))
+
+    def test_search_filter_narrows_results(self):
+        response = self.client.get(
+            reverse("js_academy:search"), {"q": "useEffect", "typ": "reference"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "useEffect()")
+        self.assertContains(response, "Ściągawka")
+
+    def test_live_search_json_endpoint(self):
+        response = self.client.get(reverse("js_academy:search_json"), {"q": "useEffect"})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertGreater(payload["count"], 0)
+        self.assertEqual(payload["results"][0]["kind"], "reference")
+        self.assertEqual(payload["results"][0]["title"], "useEffect()")
+
+    def test_search_page_loads_live_script(self):
+        response = self.client.get(reverse("js_academy:search"), {"q": "useEffect"})
+        self.assertContains(response, "js_academy/search-live.js")
+
+
+class JsInterviewPracticeTests(SeededJsTestCase):
+    def test_practice_page_shows_a_question(self):
+        response = self.client.get(reverse("js_academy:interview_practice"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pokaż modelową odpowiedź")
+        self.assertContains(response, "Pytanie")
+
+    def test_answer_reveals_model_and_rate_saves(self):
+        question = JsInterviewQuestion.objects.first()
+        response = self.client.post(
+            reverse("js_academy:interview_practice"),
+            {
+                "question_id": question.pk,
+                "action": "answer",
+                "answer": "Moja odpowiedź o event loop.",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Modelowa odpowiedź")
+        practice = JsInterviewPractice.objects.get(question=question)
+        self.assertIn("event loop", practice.answer)
+
+        response = self.client.post(
+            reverse("js_academy:interview_practice"),
+            {
+                "question_id": question.pk,
+                "action": "rate",
+                "rating": "good",
+                "answer": practice.answer,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        practice.refresh_from_db()
+        self.assertEqual(practice.rating, "good")
+
+
+class JsErrorExplainerTests(TestCase):
+    def test_error_catalog_and_analyzer(self):
+        terms, matches = analyze_error(
+            "Uncaught TypeError: Cannot read properties of undefined (reading 'map')"
+        )
+        self.assertIn("TypeError", terms)
+        self.assertEqual(matches[0]["slug"], "cannot-read-properties-undefined")
+
+    def test_error_page_renders_and_matches_a_trace(self):
+        response = self.client.get(reverse("js_academy:errors"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Najczęstsze błędy JS")
+
+        response = self.client.post(
+            reverse("js_academy:errors"),
+            {"error_text": "Uncaught TypeError: Cannot read properties of undefined"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Prawdopodobna przyczyna")
+        self.assertContains(response, "Cannot read properties of undefined")
+
+    def test_unknown_error_gets_an_empty_state(self):
+        response = self.client.post(
+            reverse("js_academy:errors"), {"error_text": "SomethingWeirdHappened"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Nie rozpoznano błędu")
+
+
+class JsPracticeAndProjectFeedbackTests(SeededJsTestCase):
+    def test_lesson_shows_practice_box(self):
+        response = self.client.get(
+            reverse("js_academy:lesson", args=["fundamenty-js", "zmienne-i-typy"])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Sprawdź się")
+        self.assertContains(response, "Szybki quiz")
+        self.assertContains(response, reverse("js_academy:flashcards", args=["fundamenty-js"]))
+
+    def test_quick_quiz_creates_three_question_attempt(self):
+        response = self.client.post(
+            reverse(
+                "js_academy:lesson_practice",
+                args=["fundamenty-js", "zmienne-i-typy"],
+            )
+        )
+        self.assertEqual(response.status_code, 302)
+        attempt = JsAttempt.objects.latest("id")
+        self.assertEqual(attempt.length, 3)
+        self.assertEqual(attempt.attempt_questions.count(), 3)
+
+    def test_completed_project_shows_retrospective(self):
+        project = PROJECTS[0]
+        learner = Learner.local()
+        for step in project["steps"]:
+            JsProjectStepProgress.objects.create(
+                learner=learner,
+                project_slug=project["slug"],
+                step_slug=step["slug"],
+            )
+        response = self.client.get(reverse("js_academy:project", args=[project["slug"]]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Projekt ukończony")
+        self.assertContains(response, "Zapisz retrospekcję")
+
+    def test_partial_project_shows_next_step(self):
+        project = PROJECTS[0]
+        learner = Learner.local()
+        first_step = project["steps"][0]
+        JsProjectStepProgress.objects.create(
+            learner=learner,
+            project_slug=project["slug"],
+            step_slug=first_step["slug"],
+        )
+        response = self.client.get(reverse("js_academy:project", args=[project["slug"]]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Następny krok")
+
+    def test_challenge_review_is_gated_by_completion(self):
+        challenge = JsChallenge.objects.first()
+        response = self.client.get(reverse("js_academy:challenge", args=[challenge.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Pokaż wzorcowe rozwiązanie")
+
+        JsChallengeCompletion.objects.create(
+            learner=Learner.local(), challenge=challenge, passed=True
+        )
+        response = self.client.get(reverse("js_academy:challenge", args=[challenge.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pokaż wzorcowe rozwiązanie")
+        self.assertContains(response, "Pytania do przeglądu")
 
 
 class JsAdminAndCommandsTests(SeededJsTestCase):

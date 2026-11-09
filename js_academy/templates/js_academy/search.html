@@ -1,4 +1,5 @@
 {% extends "js_academy/base_js.html" %}
+{% load static %}
 {% block title %}Szukaj w JS Akademii{% endblock %}
 
 {% block content %}
@@ -6,51 +7,61 @@
   <header class="js-page-header">
     <p class="eyebrow eyebrow-js">Przeszukaj całą akademię</p>
     <h1>Jedno miejsce.<br><em>Wszystkie odpowiedzi.</em></h1>
-    <p class="js-lead">Szukaj w lekcjach, komponentach, wyzwaniach, słowniku, ciekawostkach i pytaniach rekrutacyjnych. Wpisz pojęcie, funkcję albo fragment kodu.</p>
+    <p class="js-lead">Szukaj w lekcjach, ściągawce, komponentach, wyzwaniach, słowniku, ciekawostkach i pytaniach rekrutacyjnych. Wpisz pojęcie, metodę albo fragment kodu — wyniki są rankowane, a nie tylko filtrowane.</p>
   </header>
 
-  <form class="js-search-big" method="get" action="{% url 'js_academy:search' %}">
+  <form class="js-search-big" method="get" action="{% url 'js_academy:search' %}" data-js-search data-endpoint="{% url 'js_academy:search_json' %}">
     <label class="sr-only" for="big-q">Szukaj</label>
-    <input id="big-q" name="q" type="search" value="{{ query }}" placeholder="np. currentView, promise, flexbox, MVC…" autofocus>
+    <input id="big-q" name="q" type="search" value="{{ query }}" placeholder="np. useEffect, AbortController, currentView, reduce…" autofocus aria-controls="js-search-results" aria-describedby="js-search-status">
+    {% if kind %}<input type="hidden" name="typ" value="{{ kind }}">{% endif %}
+    {% if level %}<input type="hidden" name="poziom" value="{{ level }}">{% endif %}
     <button class="btn btn-js" type="submit">Szukaj</button>
   </form>
 
   {% if query %}
-    <p class="js-search-summary">Dla „<strong>{{ query }}</strong>” znaleziono <strong>{{ total }}</strong> wyników.</p>
-    {% if not total %}
-      <div class="js-empty-inline"><span>Brak wyników. Spróbuj krótszego pojęcia.</span><a href="{% url 'js_academy:knowledge' %}">Przejdź do wiedzy</a></div>
-    {% endif %}
-    <div class="js-search-groups">
-      {% for group in groups %}
-        {% if group.items %}
-          <section class="js-search-group">
-            <div class="js-search-group-head"><h2>{{ group.label }}</h2><span>{{ group.items|length }}</span></div>
-            <div class="js-search-results">
-              {% for item in group.items %}
-                {% if group.kind == 'module' %}
-                  <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.subtitle }}</span></a>
-                {% elif group.kind == 'project' %}
-                  <a href="{% url 'js_academy:project' item.slug %}"><strong>{{ item.title }}</strong><span>{{ item.subtitle }} · {{ item.steps|length }} kroków</span></a>
-                {% elif group.kind == 'lesson' %}
-                  <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.module.title }} · {{ item.summary|truncatechars:120 }}</span></a>
-                {% elif group.kind == 'component' %}
-                  <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.category }} · {{ item.description|truncatechars:120 }}</span></a>
-                {% elif group.kind == 'challenge' %}
-                  <a href="{{ item.get_absolute_url }}"><strong>{{ item.title }}</strong><span>{{ item.get_difficulty_display }} · {{ item.prompt|striptags|truncatechars:120 }}</span></a>
-                {% elif group.kind == 'term' %}
-                  <a href="{% url 'js_academy:glossary' %}?q={{ item.term|urlencode }}"><strong>{{ item.term }}</strong><span>{{ item.definition|truncatechars:140 }}</span></a>
-                {% elif group.kind == 'fact' %}
-                  <a href="{% url 'js_academy:facts' %}"><strong>{{ item.title }}</strong><span>{{ item.body|truncatechars:140 }}</span></a>
-                {% elif group.kind == 'interview' %}
-                  <a href="{% url 'js_academy:interview' %}?q={{ item.question|truncatechars:40|urlencode }}"><strong>{{ item.question }}</strong><span>{{ item.get_difficulty_display }} · {{ item.answer|truncatechars:140 }}</span></a>
-                {% endif %}
-              {% endfor %}
-            </div>
-          </section>
-        {% endif %}
-      {% empty %}
-        <div class="js-empty-inline"><span>Brak wyników. Spróbuj krótszego pojęcia.</span><a href="{% url 'js_academy:knowledge' %}">Przejdź do wiedzy</a></div>
+    <nav class="js-search-filters" aria-label="Filtruj wyniki">
+      <a class="{% if not kind %}is-active{% endif %}" href="?q={{ query|urlencode }}{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Wszystko</a>
+      <a class="{% if kind == 'lesson' %}is-active{% endif %}" href="?q={{ query|urlencode }}&amp;typ=lesson{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Lekcje</a>
+      <a class="{% if kind == 'module' %}is-active{% endif %}" href="?q={{ query|urlencode }}&amp;typ=module{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Moduły</a>
+      <a class="{% if kind == 'reference' %}is-active{% endif %}" href="?q={{ query|urlencode }}&amp;typ=reference{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Ściągawka</a>
+      <a class="{% if kind == 'error' %}is-active{% endif %}" href="?q={{ query|urlencode }}&amp;typ=error{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Błędy</a>
+      <a class="{% if kind == 'component' %}is-active{% endif %}" href="?q={{ query|urlencode }}&amp;typ=component{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Komponenty</a>
+      <a class="{% if kind == 'challenge' %}is-active{% endif %}" href="?q={{ query|urlencode }}&amp;typ=challenge{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Wyzwania</a>
+      <a class="{% if kind == 'term' %}is-active{% endif %}" href="?q={{ query|urlencode }}&amp;typ=term{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Słownik</a>
+      <a class="{% if kind == 'fact' %}is-active{% endif %}" href="?q={{ query|urlencode }}&amp;typ=fact{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Ciekawostki</a>
+      <a class="{% if kind == 'interview' %}is-active{% endif %}" href="?q={{ query|urlencode }}&amp;typ=interview{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Wywiad</a>
+      <a class="{% if kind == 'project' %}is-active{% endif %}" href="?q={{ query|urlencode }}&amp;typ=project{% if level %}&amp;poziom={{ level|urlencode }}{% endif %}">Projekty</a>
+    </nav>
+
+    <p class="js-search-summary" id="js-search-status" role="status" aria-live="polite">Dla „<strong>{{ query }}</strong>” znaleziono <strong id="js-search-count">{{ total }}</strong> {% if total == 1 %}wynik{% else %}wyników{% endif %}.</p>
+
+    <div class="js-search-results" id="js-search-results" {% if not results %}hidden{% endif %}>
+      {% for result in results %}
+        <a class="js-search-result" href="{{ result.url }}">
+          <span class="js-search-kind">{{ result.kind_label }}</span>
+          <span class="js-search-result-body">
+            <strong>{{ result.title }}</strong>
+            {% if result.meta %}<span class="js-search-meta">{{ result.meta }}</span>{% endif %}
+            <span class="js-search-snippet">{{ result.snippet }}</span>
+          </span>
+          <span class="js-search-arrow" aria-hidden="true">→</span>
+        </a>
       {% endfor %}
+    </div>
+
+    <div class="js-ref-empty" id="js-search-empty" {% if results %}hidden{% endif %}>
+      <span>0</span>
+      <h2>Brak wyników dla „{{ query }}”.</h2>
+      {% if suggestions %}
+        <p>Może chodziło o:</p>
+        <div class="js-ref-suggestions">
+          {% for suggestion in suggestions %}
+            <a href="?q={{ suggestion|urlencode }}">{{ suggestion }}</a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>Spróbuj krótszego pojęcia, nazwy metody bez nawiasów albo fragmentu kodu.</p>
+      {% endif %}
     </div>
   {% else %}
     <div class="js-search-hints">
@@ -60,4 +71,5 @@
     </div>
   {% endif %}
 </div>
+<script defer src="{% static 'js_academy/search-live.js' %}?v=20261109a"></script>
 {% endblock %}

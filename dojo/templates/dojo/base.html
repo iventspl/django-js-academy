@@ -82,6 +82,18 @@
             <span class="nav-glyph" aria-hidden="true">✦</span>
             <span>Wiedza</span>
           </a>
+          <a class="nav-link {% if active_nav == 'js_reference' %}is-active{% endif %}" href="{% url 'js_academy:reference' %}">
+            <span class="nav-glyph" aria-hidden="true">⌘</span>
+            <span>Ściągawka</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'js_errors' %}is-active{% endif %}" href="{% url 'js_academy:errors' %}">
+            <span class="nav-glyph" aria-hidden="true">!</span>
+            <span>Błędy JS</span>
+          </a>
+          <a class="nav-link {% if active_nav == 'js_interview' %}is-active{% endif %}" href="{% url 'js_academy:interview_practice' %}">
+            <span class="nav-glyph" aria-hidden="true">?</span>
+            <span>Rozmowa</span>
+          </a>
           <a class="nav-link {% if active_nav == 'js_progress' %}is-active{% endif %}" href="{% url 'js_academy:progress' %}">
             <span class="nav-glyph" aria-hidden="true">↗</span>
             <span>Postępy</span>

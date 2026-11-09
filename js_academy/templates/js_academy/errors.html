@@ -1,0 +1,93 @@
+{% extends "js_academy/base_js.html" %}
+{% block title %}Błędy JS · wyjaśnij błąd{% endblock %}
+{% block meta_description %}Wklej błąd JavaScript i zobacz prawdopodobną przyczynę, poprawkę i powiązany moduł.{% endblock %}
+
+{% block content %}
+<div class="js-wrap js-errors-page">
+  <header class="js-errors-hero">
+    <p class="eyebrow eyebrow-js">Błędy JS · lokalnie, bez wysyłania kodu</p>
+    <h1>Wklej błąd.<br><em>Znajdź przyczynę.</em></h1>
+    <p class="js-lead">Skopiuj cały komunikat z konsoli — z klasą błędu, komunikatem i fragmentem stack trace. Wyjaśnienie dopasuje wzorzec, pokaże prawdopodobną przyczynę i poprawkę.</p>
+  </header>
+
+  <form class="js-errors-form" method="post" action="{% url 'js_academy:errors' %}">
+    {% csrf_token %}
+    <label for="js-error-input">Komunikat błędu lub stack trace</label>
+    <textarea id="js-error-input" name="error_text" rows="9" spellcheck="false" placeholder="Uncaught TypeError: Cannot read properties of undefined (reading 'map')&#10;    at renderList (app.js:42:18)">{{ raw }}</textarea>
+    <div class="js-errors-actions">
+      <button class="btn btn-js" type="submit">Wyjaśnij błąd <span aria-hidden="true">→</span></button>
+      <a class="btn btn-ghost-dark" href="{% url 'js_academy:module' 'debugging' %}">Moduł Debugging <span aria-hidden="true">↗</span></a>
+    </div>
+  </form>
+
+  {% if submitted %}
+    <section class="js-errors-results" aria-live="polite">
+      {% if terms %}
+        <div class="js-errors-terms">
+          <span class="eyebrow eyebrow-js-dark">Wykryto</span>
+          {% for term in terms %}<code>{{ term }}</code>{% endfor %}
+        </div>
+      {% endif %}
+
+      {% if matches %}
+        <div class="js-errors-head"><h2>Prawdopodobna przyczyna</h2></div>
+        <div class="js-errors-grid">
+          {% for item in matches %}
+            <article class="js-error-card is-match">
+              <span class="js-error-category">{{ item.category }}</span>
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.summary }}</p>
+              <div class="js-error-cause"><strong>Dlaczego</strong><p>{{ item.cause }}</p></div>
+              <div class="js-error-fix"><strong>Poprawka</strong><p>{{ item.fix }}</p></div>
+              <pre><code>{{ item.code }}</code></pre>
+              {% if item.module %}<a class="js-error-link" href="{% url 'js_academy:module' item.module %}">Powiązany moduł <span aria-hidden="true">→</span></a>{% endif %}
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="js-ref-empty">
+          <span>?</span>
+          <h2>Nie rozpoznano błędu.</h2>
+          {% if suggestions %}
+            <p>Spróbuj jednego z tych wzorców:</p>
+            <div class="js-ref-suggestions">
+              {% for suggestion in suggestions %}<a href="?q={{ suggestion|urlencode }}">{{ suggestion }}</a>{% endfor %}
+            </div>
+          {% else %}
+            <p>Wklej pełny komunikat z klasą błędu, np. <code>TypeError</code> albo <code>ReferenceError</code>.</p>
+          {% endif %}
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  <section class="js-errors-catalog" aria-labelledby="js-errors-catalog-title">
+    <div class="js-errors-head">
+      <div>
+        <p class="eyebrow eyebrow-js-dark">Katalog</p>
+        <h2 id="js-errors-catalog-title">Najczęstsze błędy JS</h2>
+      </div>
+      <span class="tag tag-js-dark">{{ catalog|length }} wzorców</span>
+    </div>
+    {% for category in categories %}
+      <div class="js-error-group">
+        <h3>{{ category }}</h3>
+        <div class="js-errors-grid">
+          {% for item in catalog %}
+            {% if item.category == category %}
+              <details class="js-error-card">
+                <summary><span>{{ item.title }}</span><span aria-hidden="true">+</span></summary>
+                <p>{{ item.summary }}</p>
+                <div class="js-error-cause"><strong>Dlaczego</strong><p>{{ item.cause }}</p></div>
+                <div class="js-error-fix"><strong>Poprawka</strong><p>{{ item.fix }}</p></div>
+                <pre><code>{{ item.code }}</code></pre>
+                {% if item.module %}<a class="js-error-link" href="{% url 'js_academy:module' item.module %}">Powiązany moduł <span aria-hidden="true">→</span></a>{% endif %}
+              </details>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

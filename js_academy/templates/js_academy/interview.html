@@ -8,6 +8,9 @@
     <p class="eyebrow eyebrow-js">30 pytań · odpowiedzi i pytania pogłębiające</p>
     <h1>Rozmowa<br><em>bez improwizacji.</em></h1>
     <p class="js-lead">Modelowe odpowiedzi pokazują sposób myślenia, a nie gotowy skrypt. Czytaj pytanie, odpowiedz na głos, potem porównaj i wejdź w pytanie pogłębiające.</p>
+    <div class="hero-actions">
+      <a class="btn btn-js" href="{% url 'js_academy:interview_practice' %}">Tryb rozmowy: odpowiedz i oceń <span aria-hidden="true">→</span></a>
+    </div>
   </header>
 
   <form class="js-knowledge-search" method="get" action="{% url 'js_academy:interview' %}">

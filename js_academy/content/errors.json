@@ -1,0 +1,325 @@
+{
+  "errors": [
+    {
+      "slug": "cannot-read-properties-undefined",
+      "title": "TypeError: Cannot read properties of undefined",
+      "category": "Runtime",
+      "aliases": [
+        "cannot read properties of undefined",
+        "reading map",
+        "undefined.map",
+        "undefined.length"
+      ],
+      "summary": "Kod próbuje odczytać właściwość z `undefined` — najczęściej z brakującego elementu tablicy, nieustawionego stanu albo odpowiedzi API.",
+      "cause": "Zmienna istnieje, ale jej wartość jest `undefined`. Często `array.find()` nic nie znalazł, `response.data` nie istnieje albo stan początkowy jest pusty.",
+      "fix": "Sprawdź wartość przed użyciem (`if (!value) return`), ustaw sensowny stan początkowy (`[]` zamiast `undefined`) i sprawdź kontrakt API.",
+      "code": "const user = users.find((u) => u.id === id);\nif (!user) return null;\nreturn user.name;\n\n// Zamiast: items.map(...) bez sprawdzenia\nconst items = response.items ?? [];",
+      "module": "nowoczesny-js"
+    },
+    {
+      "slug": "cannot-read-properties-null",
+      "title": "TypeError: Cannot read properties of null",
+      "category": "Runtime",
+      "aliases": [
+        "cannot read properties of null",
+        "null",
+        "reading style",
+        "null addEventListener"
+      ],
+      "summary": "Element DOM albo wynik funkcji jest `null`. `querySelector` zwraca `null`, gdy nic nie pasuje.",
+      "cause": "Selektor nie znalazł elementu, skrypt uruchomił się przed DOM-em albo element został usunięty.",
+      "fix": "Sprawdź `null`, uruchom skrypt po `DOMContentLoaded` lub umieść `<script defer>`, a selektor oprzyj na istniejącym atrybucie.",
+      "code": "const button = document.querySelector(\"[data-save]\");\nif (!button) {\n  console.warn(\"Brak przycisku zapisu\");\n  return;\n}\nbutton.addEventListener(\"click\", save);",
+      "module": "dom-przegladarka"
+    },
+    {
+      "slug": "not-a-function",
+      "title": "TypeError: x is not a function",
+      "category": "Runtime",
+      "aliases": [
+        "is not a function",
+        "not a function",
+        "map is not a function",
+        "callback"
+      ],
+      "summary": "Wywołujesz coś, co nie jest funkcją — zły import, literówka albo wartość innego typu.",
+      "cause": "Nazwa koliduje ze zmienną, import jest domyślny zamiast nazwanego, albo do funkcji trafił np. string zamiast callbacku.",
+      "fix": "Sprawdź `typeof value === \"function\"`, poprawność importu i to, co przekazujesz jako callback.",
+      "code": "if (typeof onChange === \"function\") {\n  onChange(value);\n}\n\n// Import nazwany vs domyślny\nimport { debounce } from \"./utils.js\";",
+      "module": "fundamenty-js"
+    },
+    {
+      "slug": "is-not-defined",
+      "title": "ReferenceError: x is not defined",
+      "category": "Reference",
+      "aliases": [
+        "is not defined",
+        "not defined",
+        "referenceerror",
+        "zmienna nie istnieje"
+      ],
+      "summary": "Nazwa nie istnieje w danym zakresie. To nie jest `undefined` — zmienna nigdy nie została zadeklarowana.",
+      "cause": "Literówka, brak importu, użycie zmiennej poza blokiem albo odwołanie do globalnego obiektu, którego nie ma.",
+      "fix": "Sprawdź pisownię, zasięg `let/const` i import. W module pamiętaj, że zmienne nie trafiają do `window` automatycznie.",
+      "code": "// Błąd: console.log(total);\nlet total = 0;\nconsole.log(total);\n\n// W module importuj jawnie:\nimport { total } from \"./state.js\";",
+      "module": "fundamenty-js"
+    },
+    {
+      "slug": "unexpected-token",
+      "title": "SyntaxError: Unexpected token",
+      "category": "Syntax",
+      "aliases": [
+        "unexpected token",
+        "syntaxerror",
+        "unexpected end",
+        "bracket",
+        "nawias"
+      ],
+      "summary": "Parser zatrzymał się na znaku, którego nie rozumie. Często brakuje nawiasu, przecinka albo cudzysłowu.",
+      "cause": "Niedomknięty nawias, przecinek w obiekcie, nieprawidłowy import, znak poza stringiem albo składnia nieobsługiwana przez target.",
+      "fix": "Sprawdź linię z błędu i kilka linii wyżej. Użyj formattera/lintera; w przeglądarce sprawdź, czy plik jest transpilowany.",
+      "code": "const config = {\n  apiUrl: \"/api\",\n  retries: 3, // brak przecinka przed kolejnym polem\n  timeout: 5000,\n};",
+      "module": "fundamenty-js"
+    },
+    {
+      "slug": "json-unexpected-end",
+      "title": "SyntaxError: Unexpected end of JSON input",
+      "category": "Data",
+      "aliases": [
+        "unexpected end of json",
+        "json.parse",
+        "json input",
+        "puste body"
+      ],
+      "summary": "`JSON.parse` dostał pusty lub niekompletny string — np. puste ciało odpowiedzi 204 albo błąd serwera zwrócony jako HTML.",
+      "cause": "`response.json()` na pustej odpowiedzi, odczyt uszkodzonego `localStorage` albo string ucięty w połowie.",
+      "fix": "Sprawdź status i `content-type`, użyj `response.text()` i parsuj tylko niepuste ciało; dla localStorage dodaj `try/catch`.",
+      "code": "const text = await response.text();\nconst data = text ? JSON.parse(text) : null;\n\nfunction readCart() {\n  try { return JSON.parse(localStorage.getItem(\"cart\") ?? \"[]\"); }\n  catch { return []; }\n}",
+      "module": "web-api"
+    },
+    {
+      "slug": "failed-to-fetch",
+      "title": "TypeError: Failed to fetch",
+      "category": "Network",
+      "aliases": [
+        "failed to fetch",
+        "fetch error",
+        "cors",
+        "network error",
+        "offline"
+      ],
+      "summary": "`fetch` nie dostał odpowiedzi: sieć, CORS, mixed content, zły URL albo zablokowane rozszerzenie.",
+      "cause": "Serwer nie odpowiada, przeglądarka blokuje CORS, strona HTTPS woła HTTP albo adres jest nieprawidłowy.",
+      "fix": "Sprawdź URL i DevTools → Network. CORS musi być ustawiony po stronie serwera; `mode: \"no-cors\"` nie daje dostępu do odpowiedzi.",
+      "code": "try {\n  const response = await fetch(\"/api/items\", { credentials: \"include\" });\n  if (!response.ok) throw new Error(`HTTP ${response.status}`);\n} catch (error) {\n  showOfflineState();\n}",
+      "module": "web-api"
+    },
+    {
+      "slug": "cors-policy",
+      "title": "CORS policy: No 'Access-Control-Allow-Origin'",
+      "category": "Network",
+      "aliases": [
+        "cors",
+        "access-control-allow-origin",
+        "preflight",
+        "options"
+      ],
+      "summary": "Przeglądarka blokuje odczyt odpowiedzi, bo serwer nie pozwala na origin aplikacji. To nie jest błąd JavaScriptu do obejścia w kliencie.",
+      "cause": "Brak nagłówka CORS, zły origin, brak obsługi `OPTIONS` albo `credentials` bez konkretnego origin.",
+      "fix": "Skonfiguruj CORS na serwerze; przy ciasteczkach użyj konkretnego origin i `credentials: \"include\"`, nie `*`.",
+      "code": "// serwer (przykład)\nAccess-Control-Allow-Origin: https://app.example.com\nAccess-Control-Allow-Credentials: true\nAccess-Control-Allow-Methods: GET, POST, OPTIONS",
+      "module": "web-api"
+    },
+    {
+      "slug": "response-json-404",
+      "title": "fetch zwrócił 404, a response.json() rzuca błąd",
+      "category": "Network",
+      "aliases": [
+        "404",
+        "response.json",
+        "response.ok",
+        "http error"
+      ],
+      "summary": "`fetch` nie odrzuca dla 4xx/5xx. Trzeba sprawdzić `response.ok` przed parsowaniem.",
+      "cause": "Serwer zwrócił HTML błędu albo puste ciało, a kod próbuje `response.json()`.",
+      "fix": "Sprawdź `response.ok` i `content-type`, obsłuż błąd jawnie i pokaż komunikat użytkownikowi.",
+      "code": "const response = await fetch(`/api/items/${id}`);\nif (!response.ok) {\n  throw new Error(`Nie znaleziono: ${response.status}`);\n}\nconst item = await response.json();",
+      "module": "web-api"
+    },
+    {
+      "slug": "max-update-depth",
+      "title": "Maximum update depth exceeded",
+      "category": "React",
+      "aliases": [
+        "maximum update depth",
+        "infinite loop",
+        "useeffect loop",
+        "setstate"
+      ],
+      "summary": "Efekt lub render aktualizuje stan, który ponownie uruchamia ten sam efekt — pętla renderów.",
+      "cause": "`useEffect` bez tablicy zależności, zależność tworzona przy każdym renderze, `setState` w renderze albo obiekt w zależnościach.",
+      "fix": "Ustaw poprawne zależności, użyj funkcji aktualizującej stan i nie twórz nowych obiektów w tablicy zależności bez `useMemo`.",
+      "code": "useEffect(() => {\n  setCount((current) => current + 1);\n}, []); // nie: [count] przy aktualizacji count",
+      "module": "react-architektura"
+    },
+    {
+      "slug": "hook-order",
+      "title": "React has detected a change in the order of Hooks",
+      "category": "React",
+      "aliases": [
+        "order of hooks",
+        "hook order",
+        "rendered more hooks",
+        "conditional hook"
+      ],
+      "summary": "Hooki muszą być wywoływane w tej samej kolejności przy każdym renderze. Nie wywołuj ich w `if`, pętli ani po wczesnym `return`.",
+      "cause": "Warunkowy `useEffect`/`useState`, hook w pętli albo wczesny return przed hookiem.",
+      "fix": "Przenieś wszystkie hooki na górę komponentu i warunkuj ich wnętrze, nie samo wywołanie.",
+      "code": "function Panel({ user }) {\n  const [open, setOpen] = useState(false);\n  useEffect(() => { if (user) load(user); }, [user]);\n  if (!user) return null;\n  return <div>{open}</div>;\n}",
+      "module": "react-architektura"
+    },
+    {
+      "slug": "objects-not-valid-child",
+      "title": "Objects are not valid as a React child",
+      "category": "React",
+      "aliases": [
+        "objects are not valid",
+        "react child",
+        "render object",
+        "jsx object"
+      ],
+      "summary": "W JSX próbujesz wyrenderować obiekt zamiast stringa, liczby, elementu lub tablicy elementów.",
+      "cause": "`{user}` zamiast `{user.name}`, data obiektu z API albo obiekt błędu wstawiony do JSX.",
+      "fix": "Wybierz konkretne pole, sformatuj datę/liczbę lub użyj `JSON.stringify` do debugowania — nie do docelowego UI.",
+      "code": "return <p>{user.name}</p>;\n// nie: <p>{user}</p>\n// debug: <pre>{JSON.stringify(user, null, 2)}</pre>",
+      "module": "react-podstawy"
+    },
+    {
+      "slug": "missing-key",
+      "title": "Each child in a list should have a unique key",
+      "category": "React",
+      "aliases": [
+        "unique key",
+        "missing key",
+        "key prop",
+        "list key"
+      ],
+      "summary": "React potrzebuje stabilnego `key` przy renderowaniu listy, żeby poprawnie dopasować elementy między renderami.",
+      "cause": "Brak `key` albo użycie indeksu tablicy, która się zmienia.",
+      "fix": "Użyj stabilnego identyfikatora (`item.id`), nie indeksu, jeśli lista może się zmieniać.",
+      "code": "return items.map((item) => (\n  <Row key={item.id} item={item} />\n));",
+      "module": "react-podstawy"
+    },
+    {
+      "slug": "set-state-unmounted",
+      "title": "Can't perform a React state update on an unmounted component",
+      "category": "React",
+      "aliases": [
+        "unmounted component",
+        "setstate unmounted",
+        "cleanup",
+        "abort"
+      ],
+      "summary": "Asynchroniczna operacja kończy się po odmontowaniu komponentu i próbuje ustawić stan.",
+      "cause": "Brak cleanupu w `useEffect`, wyścig requestów albo timer działający po unmount.",
+      "fix": "Anuluj request przez `AbortController`, wyczyść timer i użyj flagi `cancelled` w efekcie.",
+      "code": "useEffect(() => {\n  let cancelled = false;\n  load().then((data) => { if (!cancelled) setData(data); });\n  return () => { cancelled = true; };\n}, []);",
+      "module": "react-architektura"
+    },
+    {
+      "slug": "module-not-found",
+      "title": "Cannot find module / Failed to resolve import",
+      "category": "Modules",
+      "aliases": [
+        "cannot find module",
+        "failed to resolve import",
+        "module not found",
+        "import"
+      ],
+      "summary": "Bundler lub Node nie potrafi znaleźć pliku/pakietu. Ścieżka, rozszerzenie albo nazwa pakietu są złe.",
+      "cause": "Brak zależności, literówka w ścieżce, brak rozszerzenia w ESM, zły alias albo pakiet tylko dla Node.",
+      "fix": "Sprawdź `package.json`, ścieżkę względną i aliasy; w ESM podawaj rozszerzenie pliku, jeśli środowisko tego wymaga.",
+      "code": "// źle: import { x } from \"./utils\"\nimport { x } from \"./utils.js\";\n\n// sprawdź też:\n// npm ls nazwa-pakietu",
+      "module": "node-narzedzia"
+    },
+    {
+      "slug": "quota-exceeded",
+      "title": "QuotaExceededError: localStorage is full",
+      "category": "Browser",
+      "aliases": [
+        "quotaexceeded",
+        "localstorage full",
+        "storage quota",
+        "persist"
+      ],
+      "summary": "Przekroczono limit `localStorage` (zwykle ~5 MB na origin) albo storage jest zablokowany.",
+      "cause": "Zapisywanie dużych JSON-ów, base64, wielu kopii albo prywatny tryb przeglądarki.",
+      "fix": "Zapisuj tylko niezbędne dane, obsłuż wyjątek i użyj IndexedDB dla większych zbiorów.",
+      "code": "try {\n  localStorage.setItem(\"cart\", JSON.stringify(cart));\n} catch (error) {\n  if (error.name === \"QuotaExceededError\") {\n    showStorageWarning();\n  }\n}",
+      "module": "web-api"
+    },
+    {
+      "slug": "abort-error",
+      "title": "AbortError: The operation was aborted",
+      "category": "Async",
+      "aliases": [
+        "aborterror",
+        "aborted",
+        "abortcontroller",
+        "cancel fetch"
+      ],
+      "summary": "Request został anulowany przez `AbortController` — to często oczekiwane zachowanie, ale trzeba je odróżnić od prawdziwego błędu.",
+      "cause": "Nowy request anulował poprzedni, komponent się odmontował albo minął timeout.",
+      "fix": "Sprawdź `error.name === \"AbortError\"` i nie pokazuj błędu użytkownikowi; nie traktuj anulowania jak awarii.",
+      "code": "try {\n  await fetch(url, { signal: controller.signal });\n} catch (error) {\n  if (error.name === \"AbortError\") return;\n  throw error;\n}",
+      "module": "web-api"
+    },
+    {
+      "slug": "unhandled-rejection",
+      "title": "Unhandled promise rejection",
+      "category": "Async",
+      "aliases": [
+        "unhandled rejection",
+        "promise rejection",
+        "uncaught in promise"
+      ],
+      "summary": "Promise zakończył się błędem, ale nikt go nie obsłużył — brak `catch` lub `try/catch` wokół `await`.",
+      "cause": "Zapomniany `await`, `forEach` z async callbackiem, brak `return` w łańcuchu.",
+      "fix": "Dodaj `await` w `try/catch`, użyj `Promise.all` z obsługą błędów lub `.catch` na końcu łańcucha.",
+      "code": "try {\n  await saveAll(items);\n} catch (error) {\n  reportError(error);\n}\n\n// unikaj: items.forEach(async (item) => await save(item));",
+      "module": "nowoczesny-js"
+    },
+    {
+      "slug": "maximum-call-stack",
+      "title": "RangeError: Maximum call stack size exceeded",
+      "category": "Runtime",
+      "aliases": [
+        "maximum call stack",
+        "stack overflow",
+        "recursion",
+        "infinite recursion"
+      ],
+      "summary": "Rekurencja nie ma warunku stopu albo funkcja wywołuje siebie w pętli.",
+      "cause": "Brak warunku bazowego, zły argument w rekurencji, cykliczny getter/setter.",
+      "fix": "Dodaj warunek stopu, sprawdź, czy argument zmniejsza się w każdym kroku, i zamień głęboką rekurencję na iterację.",
+      "code": "function factorial(n) {\n  if (n <= 1) return 1;\n  return n * factorial(n - 1);\n}",
+      "module": "struktury-danych"
+    },
+    {
+      "slug": "not-allowed-clipboard",
+      "title": "NotAllowedError: clipboard / permissions",
+      "category": "Browser",
+      "aliases": [
+        "notallowederror",
+        "clipboard",
+        "permission",
+        "geolocation"
+      ],
+      "summary": "Przeglądarka odmówiła dostępu do API (schowek, geolokalizacja, powiadomienia) — brak gestu użytkownika, HTTPS albo zgody.",
+      "cause": "Wywołanie API bez interakcji użytkownika, brak HTTPS, wcześniejsza odmowa uprawnień.",
+      "fix": "Wywołuj w reakcji na kliknięcie, używaj HTTPS i obsłuż odmowę osobnym komunikatem.",
+      "code": "button.addEventListener(\"click\", async () => {\n  try {\n    await navigator.clipboard.writeText(text);\n    showToast(\"Skopiowano\");\n  } catch {\n    showToast(\"Skopiuj ręcznie: Ctrl/Cmd+C\");\n  }\n});",
+      "module": "web-api"
+    }
+  ]
+}
