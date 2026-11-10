@@ -214,6 +214,7 @@ def load_chapters() -> tuple[dict, ...]:
                 "sections": [],
                 "pitfalls": _clean_list(item["pitfalls"], "pitfalls", context, allow_empty=False),
                 "checklist": _clean_list(item["checklist"], "checklist", context),
+                "exercises": [],
                 "errors": [],
                 "related": _clean_list(item["related"], "related", context),
                 "official": _clean_text(item["official"], "official", context),
@@ -272,6 +273,7 @@ def load_chapters() -> tuple[dict, ...]:
                         "id": anchor,
                         "title": _clean_text(raw.get("title"), "title", section_context),
                         "body": _clean_text(raw.get("body"), "body", section_context),
+                        "diagram": str(raw.get("diagram", "")).rstrip(),
                         "code": code.rstrip(),
                         "language": str(raw.get("language", "python")).strip() or "python",
                         "note": str(raw.get("note", "")).strip(),
@@ -296,6 +298,26 @@ def load_chapters() -> tuple[dict, ...]:
                         }
                     )
 
+            raw_exercises = item.get("exercises", [])
+            if raw_exercises:
+                if not isinstance(raw_exercises, list):
+                    raise HandbookError(f"{context}: exercises must be a list")
+                for exercise_index, raw in enumerate(raw_exercises):
+                    exercise_context = f"{context} exercise #{exercise_index + 1}"
+                    if not isinstance(raw, dict):
+                        raise HandbookError(f"{exercise_context}: expected an object")
+                    chapter["exercises"].append(
+                        {
+                            "prompt": _clean_text(
+                                raw.get("prompt"), "prompt", exercise_context
+                            ),
+                            "hint": str(raw.get("hint", "")).strip(),
+                            "solution": str(raw.get("solution", "")).rstrip(),
+                            "language": str(raw.get("language", "python")).strip()
+                            or "python",
+                        }
+                    )
+
             words = len(_plain(chapter["summary"]).split())
             words += len(_plain(chapter["quick_answer"]).split())
             for section in chapter["sections"]:
@@ -311,9 +333,13 @@ def load_chapters() -> tuple[dict, ...]:
                     words += len(_plain(table_text).split())
                 section["table_text"] = table_text
                 section["search_title"] = _normalize(section["title"])
-                section["search_body"] = _normalize(section["body"] + " " + section["note"])
+                section["search_body"] = _normalize(
+                    section["body"] + " " + section["note"] + " " + section["diagram"]
+                )
                 section["search_code"] = _normalize(section["code"])
                 section["search_table"] = _normalize(table_text)
+            for exercise in chapter["exercises"]:
+                words += len(_plain(exercise["prompt"]).split())
             chapter["read_minutes"] = max(1, round(words / 210))
             chapter["word_count"] = words
             chapter["search_text"] = _normalize(
@@ -337,6 +363,10 @@ def load_chapters() -> tuple[dict, ...]:
                             for section in chapter["sections"]
                         ),
                         " ".join(chapter["pitfalls"]),
+                        " ".join(
+                            exercise["prompt"] + " " + exercise["hint"]
+                            for exercise in chapter["exercises"]
+                        ),
                     ]
                 )
             )
@@ -750,6 +780,9 @@ def chapter_markdown(chapter: dict) -> str:
     ]
     for section in chapter["sections"]:
         lines.extend([f"## {section['title']}", "", section["body"], ""])
+        if section["diagram"]:
+            fence = "~~~" if "```" in section["diagram"] else "```"
+            lines.extend([f"{fence}text", section["diagram"], fence, ""])
         if section["table"]:
             head = section["table"]["head"]
             lines.append("| " + " | ".join(_md_cell(cell) for cell in head) + " |")
@@ -770,6 +803,26 @@ def chapter_markdown(chapter: dict) -> str:
         lines.extend(["## Before you move on", ""])
         lines.extend([f"- {item}" for item in chapter["checklist"]])
         lines.append("")
+    if chapter["exercises"]:
+        lines.extend(["## Try it yourself", ""])
+        for index, exercise in enumerate(chapter["exercises"], start=1):
+            lines.extend([f"### Exercise {index:02d}", "", exercise["prompt"], ""])
+            if exercise["hint"]:
+                lines.extend([f"**Hint:** {exercise['hint']}", ""])
+            if exercise["solution"]:
+                fence = "~~~" if "```" in exercise["solution"] else "```"
+                lines.extend(
+                    [
+                        "<details><summary>Show solution</summary>",
+                        "",
+                        f"{fence}{exercise['language']}",
+                        exercise["solution"],
+                        fence,
+                        "",
+                        "</details>",
+                        "",
+                    ]
+                )
     if chapter["errors"]:
         lines.extend(["## Error fixes", ""])
         for error in chapter["errors"]:

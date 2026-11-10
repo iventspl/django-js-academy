@@ -21,11 +21,21 @@
   - bookmark a section without writing a note
   - `/handbook/notes/` list and `/handbook/notes.md` export
 - Added a **three-question chapter checkpoint** tied to each chapter’s quiz topic.
+- Added **try-it exercises** to the nine coverage chapters: prompt, hint and hidden worked solution.
+- Added **`/handbook/versions/`**: compatible chapter counts for Django 5.2 / 6.0 / 6.1 and version-specific chapter lists.
+- Added **chapter feedback** (`HandbookFeedback`, migration `0008`) with a helpful / needs-work vote and optional comment.
+- Added **`/handbook/gaps/`**: a local dashboard of zero-result searches with a clear action.
+- Added **ASCII diagrams** to the views, ORM, middleware and messages chapters; diagrams are included in Markdown export.
+- Added **`/handbook/feedback/`**: a triage view that groups needs-work votes by chapter with comments and stale-review flags.
+- Added **`/handbook/upgrade/`**: source → target version planning with incompatible chapters, target release notes and an upgrade checklist.
+- Added **`/handbook/edit-next/`**: one editorial queue combining needs-work feedback, stale review dates and unmapped search queries.
+- Improved dark-theme contrast and chapter UI: readable checkpoint buttons, light feedback fields, clearer section notes and visible reading-band actions.
+- Added a collapsible **More tools** group to the Django and JS sidebars, with handbook version, upgrade, feedback and notes shortcuts.
 - `COVERAGE_GAPS` is now empty; remaining work is depth, exercises and version-specific notes.
 
 ### Verification
 
-- Full test suite: **200 tests pass**.
+- Full test suite: **209 tests pass**.
 
 ## 4.28 — 2026-11-09
 

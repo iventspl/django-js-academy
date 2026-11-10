@@ -1,0 +1,84 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Version matrix · Django handbook{% endblock %}
+{% block body_class %}page-handbook page-handbook-versions{% endblock %}
+{% block meta_description %}Which Django handbook chapters apply to Django 5.2, 6.0 and 6.1.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109k">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Version matrix · running {{ runtime_version }}</p>
+    <h1>Read for<br><em>your Django.</em></h1>
+    <p class="hb-hero-lead">Every chapter carries a supported Django range. This page shows what applies to 5.2, 6.0 and 6.1 before you copy a pattern into a project.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Back to handbook <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_coverage' %}">Coverage <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  <div class="hb-coverage-stats" aria-label="Version summary">
+    {% for row in rows %}
+      <div>
+        <strong>{{ row.count }}</strong>
+        <span>chapters on {{ row.version }}{% if row.runtime %} · running{% endif %}</span>
+      </div>
+    {% endfor %}
+    <div><strong>{{ chapter_total }}</strong><span>chapters total</span></div>
+  </div>
+
+  <section class="hb-coverage-panel">
+    <div class="hb-coverage-head">
+      <p class="hb-label hb-label-light">What changed</p>
+      <h2>Version-specific chapters</h2>
+    </div>
+    <div class="hb-version-lists">
+      <div>
+        <h3>Requires Django 6.0+</h3>
+        {% if new_in_60 %}
+          <ul class="hb-gap-list">
+            {% for chapter in new_in_60 %}<li><a href="{% url 'dojo:handbook_chapter' chapter.slug %}">{{ chapter.title }}</a> — {{ chapter.django_min }}–{{ chapter.django_max }}</li>{% endfor %}
+          </ul>
+        {% else %}
+          <p class="hb-coverage-note">No chapter starts at 6.0 yet.</p>
+        {% endif %}
+      </div>
+      <div>
+        <h3>Does not cover 6.1</h3>
+        {% if not_in_61 %}
+          <ul class="hb-gap-list">
+            {% for chapter in not_in_61 %}<li><a href="{% url 'dojo:handbook_chapter' chapter.slug %}">{{ chapter.title }}</a> — up to {{ chapter.django_max }}</li>{% endfor %}
+          </ul>
+        {% else %}
+          <p class="hb-coverage-note">Every chapter supports 6.1.</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {% for row in rows %}
+    <section class="hb-coverage-panel">
+      <div class="hb-coverage-head">
+        <p class="hb-label hb-label-light">Django {{ row.version }}</p>
+        <h2>{{ row.count }} compatible chapters</h2>
+      </div>
+      <details class="hb-version-details">
+        <summary>Show all compatible chapters <span aria-hidden="true">+</span></summary>
+        <div class="hb-version-grid">
+          {% for chapter in row.chapters %}
+            <a href="{% url 'dojo:handbook_chapter' chapter.slug %}">
+              <span>{{ chapter.number|stringformat:"02d" }}</span>
+              <strong>{{ chapter.title }}</strong>
+              <small>{{ chapter.level }}</small>
+            </a>
+          {% endfor %}
+        </div>
+      </details>
+    </section>
+  {% endfor %}
+</div>
+{% endblock %}

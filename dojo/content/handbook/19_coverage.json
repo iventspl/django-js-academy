@@ -28,7 +28,8 @@
           "title": "The 30-second answer",
           "body": "Messages are a **one-request queue** stored in the session by default. The view adds a message, returns a redirect, and the next request renders it. This is why messages work so well with POST/redirect/GET.\n\nThere are five built-in levels: `debug`, `info`, `success`, `warning` and `error`. Each message also has extra tags you can use for CSS.",
           "code": "from django.contrib import messages\n\ndef save_item(request):\n    if request.method == \"POST\":\n        item = save_from_request(request)\n        messages.success(request, f\"Saved {item.name}.\")\n        return redirect(\"items:detail\", pk=item.pk)\n    return render(request, \"items/form.html\")",
-          "language": "python"
+          "language": "python",
+          "diagram": "POST /items/save/\n  │\n  ▼\nview: messages.success(...)\n  │\n  ▼\n302 redirect to /items/42/\n  │\n  ▼\nGET /items/42/ ──▶ template consumes the message queue once\n  │\n  ▼\nnext request: queue is empty"
         },
         {
           "id": "setup-and-template",
@@ -62,7 +63,14 @@
         "views",
         "templates"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/messages/"
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/messages/",
+      "exercises": [
+        {
+          "prompt": "Add a success message after a `POST` that creates an object, redirect to the detail page, and render the queue in the base template. Then explain why the message disappears after one redirect.",
+          "hint": "Use `messages.success(request, ...)`, `redirect(...)`, and a `{% for message in messages %}` block in the base template.",
+          "solution": "from django.contrib import messages\nfrom django.shortcuts import redirect\n\ndef create_item(request):\n    if request.method == \"POST\":\n        item = Item.objects.create(name=request.POST[\"name\"])\n        messages.success(request, f\"Saved {item.name}.\")\n        return redirect(\"items:detail\", pk=item.pk)\n    return render(request, \"items/form.html\")\n\n{# base.html #}\n{% if messages %}\n  {% for message in messages %}\n    <p class=\"message {{ message.tags }}\">{{ message }}</p>\n  {% endfor %}\n{% endif %}"
+        }
+      ]
     },
     {
       "slug": "flatpages-redirects",
@@ -126,7 +134,14 @@
         "urls",
         "views"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/flatpages/"
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/flatpages/",
+      "exercises": [
+        {
+          "prompt": "Enable flatpages and redirects, then create a redirect from `/old-pricing/` to `/pricing/`. Explain why the redirects middleware is a fallback, not a replacement for `path()`.",
+          "hint": "Add both apps to `INSTALLED_APPS`, add both middleware classes, run migrations, then create the redirect in the admin.",
+          "solution": "INSTALLED_APPS += [\n    \"django.contrib.flatpages\",\n    \"django.contrib.redirects\",\n]\nMIDDLEWARE += [\n    \"django.contrib.flatpages.middleware.FlatpageFallbackMiddleware\",\n    \"django.contrib.redirects.middleware.RedirectFallbackMiddleware\",\n]\n\n# Then:\n# python manage.py migrate\n# Admin -> Redirects -> add /old-pricing/ -> /pricing/"
+        }
+      ]
     },
     {
       "slug": "sitemaps-syndication",
@@ -194,7 +209,14 @@
         "urls",
         "templates"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/sitemaps/"
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/sitemaps/",
+      "exercises": [
+        {
+          "prompt": "Create a sitemap for published posts and an RSS feed for the latest 10 posts. What should you check before exposing either endpoint publicly?",
+          "hint": "Subclass `Sitemap` and `Feed`; wire both in `urls.py`; check drafts, absolute URLs and caching.",
+          "solution": "from django.contrib.sitemaps import Sitemap\nfrom django.contrib.syndication.views import Feed\n\nclass PostSitemap(Sitemap):\n    def items(self):\n        return Post.objects.filter(published=True)\n\n    def lastmod(self, obj):\n        return obj.updated_at\n\nclass LatestPosts(Feed):\n    title = \"Latest posts\"\n    link = \"/blog/\"\n\n    def items(self):\n        return Post.objects.filter(published=True)[:10]\n\n    def item_title(self, item):\n        return item.title\n\n    def item_description(self, item):\n        return item.summary"
+        }
+      ]
     },
     {
       "slug": "contenttypes-sites",
@@ -260,7 +282,14 @@
         "models",
         "auth"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/contenttypes/"
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/contenttypes/",
+      "exercises": [
+        {
+          "prompt": "Add a `Comment` model that can attach to either a `Post` or a `Video` with `GenericForeignKey`. Add the index that the relation needs.",
+          "hint": "Store `content_type`, `object_id` and a `GenericForeignKey`; add an index on the two columns.",
+          "solution": "from django.contrib.contenttypes.fields import GenericForeignKey\nfrom django.contrib.contenttypes.models import ContentType\n\nclass Comment(models.Model):\n    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)\n    object_id = models.PositiveIntegerField()\n    target = GenericForeignKey(\"content_type\", \"object_id\")\n    body = models.TextField()\n\n    class Meta:\n        indexes = [\n            models.Index(fields=[\"content_type\", \"object_id\"]),\n        ]"
+        }
+      ]
     },
     {
       "slug": "humanize",
@@ -324,7 +353,15 @@
         "templates",
         "i18n"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/humanize/"
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/humanize/",
+      "exercises": [
+        {
+          "prompt": "Render a price, a publication timestamp and a file size using Humanize. Why should the database keep the raw values?",
+          "hint": "Load `humanize`, use `intcomma`, `naturaltime` and `filesizeformat`.",
+          "solution": "{% load humanize %}\n\n<p>{{ price|floatformat:2|intcomma }} PLN</p>\n<p>{{ post.published_at|naturaltime }}</p>\n<p>{{ file.size|filesizeformat }}</p>\n\n{# Store numbers and datetimes, format only for display. #}",
+          "language": "django"
+        }
+      ]
     },
     {
       "slug": "forms-media",
@@ -390,7 +427,14 @@
         "forms",
         "static-media"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/forms/media/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/forms/media/",
+      "exercises": [
+        {
+          "prompt": "Create a custom `DateInput` widget with its own CSS and JavaScript, then render the media in the form template. What happens if you forget `{{ form.media }}`?",
+          "hint": "Declare an inner `Media` class and render `{{ form.media.css }}` and `{{ form.media.js }}`.",
+          "solution": "class DatePicker(forms.DateInput):\n    class Media:\n        css = {\"all\": (\"css/datepicker.css\",)}\n        js = (\"js/datepicker.js\",)\n\nclass EventForm(forms.Form):\n    starts_at = forms.DateField(widget=DatePicker)\n\n{# template #}\n{{ form.media.css }}\n<form method=\"post\">{{ form.as_p }}</form>\n{{ form.media.js }}"
+        }
+      ]
     },
     {
       "slug": "signing-serialization",
@@ -459,7 +503,14 @@
         "security",
         "exports"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/topics/signing/"
+      "official": "https://docs.djangoproject.com/en/stable/topics/signing/",
+      "exercises": [
+        {
+          "prompt": "Create a signed, expiring password-reset token for a user ID. Explain the difference between signing and encryption.",
+          "hint": "Use `TimestampSigner`, a dedicated salt, and `max_age`; the payload remains readable.",
+          "solution": "from django.core.signing import TimestampSigner\n\nsigner = TimestampSigner(salt=\"password-reset\")\ntoken = signer.sign(str(user.pk))\n\n# later\nuser_id = signer.unsign(token, max_age=60 * 30)"
+        }
+      ]
     },
     {
       "slug": "validators-checks",
@@ -526,7 +577,14 @@
         "models",
         "testing"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/ref/validators/"
+      "official": "https://docs.djangoproject.com/en/stable/ref/validators/",
+      "exercises": [
+        {
+          "prompt": "Write a validator that rejects odd numbers and a system check that fails when `PAYMENT_SECRET` is missing. Why must the validator not be your only database guarantee?",
+          "hint": "Raise `ValidationError` in the validator; register a check returning `Error`; add a database constraint when the rule must always hold.",
+          "solution": "from django.core.exceptions import ValidationError\nfrom django.core.checks import Error, register\n\ndef validate_even(value):\n    if value % 2:\n        raise ValidationError(\"Wpisz liczbę parzystą.\")\n\n@register()\ndef check_payment_key(app_configs, **kwargs):\n    from django.conf import settings\n    if not getattr(settings, \"PAYMENT_SECRET\", \"\"):\n        return [Error(\"PAYMENT_SECRET is not set.\", id=\"shop.E001\")]\n    return []"
+        }
+      ]
     },
     {
       "slug": "gis-geodjango",
@@ -607,7 +665,14 @@
         "orm",
         "deploy-hardening"
       ],
-      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/gis/"
+      "official": "https://docs.djangoproject.com/en/stable/ref/contrib/gis/",
+      "exercises": [
+        {
+          "prompt": "Find stores within 5 km of a point using GeoDjango and order them by distance. Why should the distance use geography or a projected SRID?",
+          "hint": "Use `Point(longitude, latitude, srid=4326)`, `dwithin`, `Distance` and `order_by`.",
+          "solution": "from django.contrib.gis.geos import Point\nfrom django.contrib.gis.measure import D\nfrom django.contrib.gis.db.models.functions import Distance\n\ncenter = Point(21.0122, 52.2297, srid=4326)\nstores = (\n    Store.objects.filter(location__dwithin=(center, D(km=5)))\n    .annotate(distance=Distance(\"location\", center))\n    .order_by(\"distance\")\n)"
+        }
+      ]
     }
   ]
 }

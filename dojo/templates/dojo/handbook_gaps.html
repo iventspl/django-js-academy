@@ -1,0 +1,57 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Search gaps · Django handbook{% endblock %}
+{% block body_class %}page-handbook page-handbook-gaps{% endblock %}
+{% block meta_description %}Zero-result Django handbook searches, stored locally so content gaps are measurable.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109k">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Search gaps · local only</p>
+    <h1>What people<br><em>could not find.</em></h1>
+    <p class="hb-hero-lead">Every zero-result handbook search is logged locally. These are real misses, not guesses — use them to decide what to write next.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Back to handbook <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_coverage' %}">Coverage <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  {% if rows %}
+    <section class="hb-coverage-panel">
+      <div class="hb-coverage-head">
+        <p class="hb-label hb-label-light">Most missed</p>
+        <h2>{{ rows|length }} logged gap{{ rows|length|pluralize }}</h2>
+      </div>
+      <div class="hb-table-wrap">
+        <table class="hb-table">
+          <thead><tr><th>Query</th><th>Count</th><th>First seen</th><th>Last seen</th></tr></thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td><a href="{% url 'dojo:handbook' %}?q={{ row.query|urlencode }}">{{ row.query }}</a></td>
+                <td>{{ row.count }}</td>
+                <td>{{ row.first_seen|date:"j M Y" }}</td>
+                <td>{{ row.last_seen|date:"j M Y, H:i" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <form method="post" action="{% url 'dojo:handbook_gaps_clear' %}" data-confirm="Clear all logged search gaps?">
+        {% csrf_token %}
+        <button class="btn btn-ghost-dark btn-small" type="submit">Clear log</button>
+      </form>
+    </section>
+  {% else %}
+    <div class="hb-empty-inline">
+      <span>No zero-result searches recorded yet.</span>
+      <a href="{% url 'dojo:handbook' %}">Open the handbook and search something →</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

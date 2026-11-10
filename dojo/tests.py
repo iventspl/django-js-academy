@@ -17,6 +17,7 @@ from .models import (
     FlashcardReview,
     HandbookProgress,
     HandbookNote,
+    HandbookFeedback,
     HandbookSearchLog,
     Learner,
     Question,
@@ -715,6 +716,13 @@ class HandbookContentTests(TestCase):
         self.assertIn("Chapters: 90", text)
         self.assertIn("Handbook is valid", text)
 
+    def test_coverage_chapters_have_exercises(self):
+        chapter = chapter_map()["messages"]
+        self.assertTrue(chapter["exercises"])
+        response = self.client.get(reverse("dojo:handbook_chapter", args=["messages"]))
+        self.assertContains(response, "Try it yourself")
+        self.assertContains(response, "Show solution")
+
     def test_markdown_export_contains_the_chapter(self):
         response = self.client.get(reverse("dojo:handbook_markdown", args=["forms"]))
         self.assertEqual(response.status_code, 200)
@@ -778,6 +786,13 @@ class HandbookViewTests(TestCase):
         self.assertContains(response, "Coverage report")
         self.assertContains(response, "Known gaps")
         self.assertContains(response, "90")
+
+    def test_version_matrix_renders(self):
+        response = self.client.get(reverse("dojo:handbook_versions"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Version matrix")
+        self.assertContains(response, "5.2")
+        self.assertContains(response, "6.1")
 
     def test_unknown_chapter_is_404(self):
         response = self.client.get(reverse("dojo:handbook_chapter", args=["not-a-chapter"]))
@@ -970,6 +985,86 @@ class HandbookNoteTests(SeededTestCase):
             {"body": "x"},
         )
         self.assertEqual(response.status_code, 404)
+
+
+class HandbookFeedbackTests(SeededTestCase):
+    def test_feedback_saves_and_updates(self):
+        url = reverse("dojo:handbook_feedback", args=["forms"])
+        response = self.client.post(url, {"helpful": "no", "comment": "More formsets."})
+        self.assertEqual(response.status_code, 302)
+        feedback = HandbookFeedback.objects.get(chapter_slug="forms")
+        self.assertFalse(feedback.helpful)
+        self.assertIn("formsets", feedback.comment)
+
+        self.client.post(url, {"helpful": "yes", "comment": "Now it clicks."})
+        feedback.refresh_from_db()
+        self.assertTrue(feedback.helpful)
+
+        chapter = self.client.get(reverse("dojo:handbook_chapter", args=["forms"]))
+        self.assertContains(chapter, "Last vote")
+        self.assertContains(chapter, "Now it clicks.")
+
+    def test_feedback_rejects_unknown_chapter(self):
+        response = self.client.post(
+            reverse("dojo:handbook_feedback", args=["not-real"]), {"helpful": "yes"}
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_feedback_review_groups_needs_work(self):
+        HandbookFeedback.objects.create(
+            learner=Learner.local(),
+            chapter_slug="forms",
+            helpful=False,
+            comment="Explain formsets earlier.",
+        )
+        response = self.client.get(reverse("dojo:handbook_feedback_review"))
+        self.assertContains(response, "Triage queue")
+        self.assertContains(response, "Forms")
+        self.assertContains(response, "Explain formsets earlier.")
+
+        filtered = self.client.get(
+            reverse("dojo:handbook_feedback_review"), {"filtr": "needs-work"}
+        )
+        self.assertContains(filtered, "Explain formsets earlier.")
+
+    def test_edit_next_queue_combines_feedback_and_gaps(self):
+        HandbookFeedback.objects.create(
+            learner=Learner.local(),
+            chapter_slug="forms",
+            helpful=False,
+            comment="Add a real FormSet example.",
+        )
+        HandbookSearchLog.objects.create(query="custom lookup that does not exist", count=2)
+        response = self.client.get(reverse("dojo:handbook_edit_next"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Editorial queue")
+        self.assertContains(response, "Add a real FormSet example.")
+        self.assertContains(response, "custom lookup that does not exist")
+
+    def test_upgrade_assistant_uses_version_ranges(self):
+        response = self.client.get(
+            reverse("dojo:handbook_upgrade"), {"from": "5.2", "to": "6.1"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Upgrade assistant")
+        self.assertContains(response, "5.2")
+        self.assertContains(response, "6.1")
+        self.assertContains(response, "Upgrade checklist")
+
+    def test_gap_dashboard_lists_and_clears_queries(self):
+        HandbookSearchLog.objects.create(query="custom lookup", count=3)
+        response = self.client.get(reverse("dojo:handbook_gaps_page"))
+        self.assertContains(response, "custom lookup")
+        self.assertContains(response, "Most missed")
+
+        response = self.client.post(reverse("dojo:handbook_gaps_clear"))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(HandbookSearchLog.objects.exists())
+
+    def test_diagram_renders_for_a_core_chapter(self):
+        response = self.client.get(reverse("dojo:handbook_chapter", args=["views"]))
+        self.assertContains(response, "hb-diagram")
+        self.assertContains(response, "URL resolver")
 
 
 class AdaptivePracticeTests(SeededTestCase):

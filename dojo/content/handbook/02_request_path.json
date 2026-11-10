@@ -122,7 +122,8 @@
           "title": "The contract is small",
           "body": "A view is any callable that takes a request and returns a response. The response can be HTML, JSON, a redirect, a file or an error. Django does not care how you build it.\n\nThe request gives you `method`, `GET`, `POST`, `FILES`, `headers`, `user`, `session` and `path`. The response needs a status code and content; `render()` and `JsonResponse()` handle the boilerplate.",
           "code": "from django.http import HttpResponse, JsonResponse\nfrom django.shortcuts import render\n\ndef health(request):\n    return JsonResponse({\"ok\": True})\n\ndef about(request):\n    return render(request, \"pages/about.html\", {\"title\": \"About\"})\n\ndef ping(request):\n    return HttpResponse(\"pong\", content_type=\"text/plain\")",
-          "language": "python"
+          "language": "python",
+          "diagram": "Browser\n  │  GET /orders/42/\n  ▼\nURL resolver ──(no match)──▶ 404 handler\n  │ view callable\n  ▼\nView: auth + query + template\n  │ HttpResponse\n  ▼\nMiddleware response chain ──▶ Browser"
         },
         {
           "id": "function-views",

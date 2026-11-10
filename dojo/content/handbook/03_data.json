@@ -229,7 +229,8 @@
           "title": "QuerySets are lazy",
           "body": "Building a QuerySet does not run SQL. Chaining filters builds a query description. The database is hit when the result is needed.\n\nThis is why a QuerySet can be passed around and refined, and why a loop over a QuerySet inside a template can quietly run one query per row. Evaluate once, then reuse the list if the result is needed more than once.",
           "code": "posts = Post.objects.filter(published=True)  # no query yet\nposts = posts.order_by(\"-published_at\")      # still no query\nfor post in posts:                           # query runs here\n    print(post.title)\n\n# Force evaluation once when you need the same rows repeatedly:\nposts = list(Post.objects.filter(published=True))",
-          "language": "python"
+          "language": "python",
+          "diagram": "queryset = Order.objects.filter(status=\"paid\")\n        │\n        │  lazy: no SQL yet\n        ▼\nlist(queryset) / queryset[0] / iteration\n        │\n        │  SQL\n        ▼\nDatabase ──▶ rows ──▶ model instances"
         },
         {
           "id": "lookups",

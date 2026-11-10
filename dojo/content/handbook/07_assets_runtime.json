@@ -119,7 +119,8 @@
           "title": "The pipeline",
           "body": "Django builds a chain: the outermost middleware calls the next, down to the view, then the response travels back out. `SecurityMiddleware` is first, `SessionMiddleware` and `CommonMiddleware` follow, `CsrfViewMiddleware` protects unsafe methods, `AuthenticationMiddleware` attaches `request.user`, and `MessageMiddleware` enables messages.\n\nA middleware can inspect the request before the view, replace the response after it, or return early. It cannot know which view will run unless it does extra resolution; prefer a decorator or a mixin for view-specific behaviour.",
           "code": "MIDDLEWARE = [\n    \"django.middleware.security.SecurityMiddleware\",\n    \"django.contrib.sessions.middleware.SessionMiddleware\",\n    \"django.middleware.common.CommonMiddleware\",\n    \"django.middleware.csrf.CsrfViewMiddleware\",\n    \"django.contrib.auth.middleware.AuthenticationMiddleware\",\n    \"django.contrib.messages.middleware.MessageMiddleware\",\n    \"django.middleware.clickjacking.XFrameOptionsMiddleware\",\n]",
-          "language": "python"
+          "language": "python",
+          "diagram": "request\n  │\n  ▼\nMW 1 ─▶ MW 2 ─▶ MW 3 ─▶ view\n                          │\nresponse                  ▼\n  ▲ ◀── MW 3 ◀── MW 2 ◀── MW 1"
         },
         {
           "id": "write-one",

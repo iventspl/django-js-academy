@@ -6,7 +6,7 @@
 {% block meta_description %}{{ chapter.summary }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109d">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109k">
 {% endblock %}
 
 {% block extra_js %}
@@ -106,6 +106,9 @@
             <h2>{{ section.title }}</h2>
           </div>
           <div class="hb-prose">{{ section.body|prose }}</div>
+          {% if section.diagram %}
+            <pre class="hb-diagram" aria-label="Diagram for {{ section.title }}">{{ section.diagram }}</pre>
+          {% endif %}
           {% if section.table %}
             <div class="hb-table-wrap">
               <table class="hb-table">
@@ -184,6 +187,41 @@
         </section>
       {% endif %}
 
+      {% if chapter.exercises %}
+        <section class="hb-section hb-exercises" id="exercises">
+          <div class="hb-section-head">
+            <span class="hb-section-num">→</span>
+            <h2>Try it yourself</h2>
+          </div>
+          <p class="hb-section-intro">Reading is not the same as writing. Do the exercise before opening the solution.</p>
+          {% for exercise in chapter.exercises %}
+            <article class="hb-exercise">
+              <p class="hb-label hb-label-light">Exercise {{ forloop.counter|stringformat:"02d" }}</p>
+              <div class="hb-prose">{{ exercise.prompt|prose }}</div>
+              {% if exercise.hint %}
+                <details class="hb-exercise-details">
+                  <summary>Hint <span aria-hidden="true">+</span></summary>
+                  <div class="hb-prose">{{ exercise.hint|prose }}</div>
+                </details>
+              {% endif %}
+              {% if exercise.solution %}
+                <details class="hb-exercise-details">
+                  <summary>Show solution <span aria-hidden="true">+</span></summary>
+                  <div class="code-block hb-code">
+                    <div class="code-bar">
+                      <span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                      <span>{{ exercise.language }}</span>
+                      <button class="copy-code" type="button" data-copy-code>Copy</button>
+                    </div>
+                    <pre><code>{{ exercise.solution }}</code></pre>
+                  </div>
+                </details>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </section>
+      {% endif %}
+
       {% if chapter.errors %}
         <section class="hb-section hb-errors" id="error-decoder">
           <div class="hb-section-head">
@@ -224,7 +262,7 @@
       {% endif %}
 
       {% if practice_topic %}
-        <aside class="hb-practice">
+        <aside class="hb-practice" id="checkpoint">
           <div>
             <p class="hb-label">Checkpoint</p>
             <h2>Three questions. Then move on.</h2>
@@ -240,6 +278,27 @@
           </div>
         </aside>
       {% endif %}
+
+      <section class="hb-feedback" id="feedback" aria-labelledby="feedback-title">
+        <div>
+          <p class="hb-label hb-label-light">Feedback</p>
+          <h2 id="feedback-title">Did this answer help?</h2>
+          <p>Your vote stays local. Use it to remember which chapters need a second read or a better explanation.</p>
+          {% if feedback %}
+            <p class="hb-feedback-current">Last vote: <strong>{% if feedback.helpful %}helpful{% else %}needs work{% endif %}</strong>{% if feedback.comment %} — {{ feedback.comment|truncatechars:120 }}{% endif %}</p>
+          {% endif %}
+        </div>
+        <form method="post" action="{% url 'dojo:handbook_feedback' chapter.slug %}">
+          {% csrf_token %}
+          <div class="hb-feedback-choices">
+            <label><input type="radio" name="helpful" value="yes" {% if feedback.helpful %}checked{% endif %}> Helpful</label>
+            <label><input type="radio" name="helpful" value="no" {% if feedback and not feedback.helpful %}checked{% endif %}> Needs work</label>
+          </div>
+          <label class="sr-only" for="feedback-comment">Optional comment</label>
+          <textarea id="feedback-comment" name="comment" rows="3" placeholder="What was missing or confusing?">{{ feedback.comment|default:"" }}</textarea>
+          <button class="btn btn-primary btn-small" type="submit">Save feedback</button>
+        </form>
+      </section>
 
       <aside class="hb-source">
         <div>

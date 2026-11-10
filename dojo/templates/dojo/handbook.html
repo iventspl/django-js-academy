@@ -6,7 +6,7 @@
 {% block meta_description %}A plain-language, searchable Django manual: forms, models, ORM, URLs, templates, migrations, errors and deployment.{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109d">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109k">
 {% endblock %}
 
 {% block content %}
@@ -54,7 +54,11 @@
       <a class="hb-level-chip {% if level == item.name %}is-active{% endif %}" href="?{% hb_query level=item.name %}">{{ item.name }} <span>{{ item.count }}</span></a>
     {% endfor %}
     <span class="hb-level-note">Core → advanced → reference → recipes</span>
+    <span class="hb-tools-label">Tools</span>
     <a class="hb-coverage-link" href="{% url 'dojo:handbook_coverage' %}">Coverage &amp; gaps →</a>
+    <a class="hb-coverage-link" href="{% url 'dojo:handbook_versions' %}">Versions →</a>
+    <a class="hb-coverage-link" href="{% url 'dojo:handbook_upgrade' %}">Upgrade →</a>
+    <a class="hb-coverage-link" href="{% url 'dojo:handbook_notes' %}">Notes →</a>
   </nav>
 
   {% if searched %}

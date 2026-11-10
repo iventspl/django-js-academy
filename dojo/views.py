@@ -4,7 +4,7 @@ from datetime import date
 
 import django
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -37,6 +37,7 @@ from .models import (
     Flashcard,
     HandbookProgress,
     HandbookNote,
+    HandbookFeedback,
     HandbookSearchLog,
     Learner,
     Question,
@@ -290,6 +291,108 @@ def handbook_coverage(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_GET
+def handbook_versions(request: HttpRequest) -> HttpResponse:
+    chapters = load_chapters()
+    versions = ("5.2", "6.0", "6.1")
+    rows = []
+    for version in versions:
+        version_tuple = tuple(int(part) for part in version.split("."))
+        compatible = [
+            chapter
+            for chapter in chapters
+            if chapter["django_min_tuple"] <= version_tuple <= chapter["django_max_tuple"]
+        ]
+        rows.append(
+            {
+                "version": version,
+                "count": len(compatible),
+                "chapters": compatible,
+                "runtime": django.get_version().startswith(version + "."),
+            }
+        )
+    return render(
+        request,
+        "dojo/handbook_versions.html",
+        {
+            "rows": rows,
+            "chapter_total": len(chapters),
+            "runtime_version": django.get_version(),
+            "new_in_60": [
+                chapter
+                for chapter in chapters
+                if chapter["django_min_tuple"] >= (6, 0)
+            ],
+            "not_in_61": [
+                chapter
+                for chapter in chapters
+                if chapter["django_max_tuple"] < (6, 1)
+            ],
+            "active_nav": "handbook",
+        },
+    )
+
+
+@require_GET
+def handbook_upgrade(request: HttpRequest) -> HttpResponse:
+    versions = ("5.2", "6.0", "6.1")
+    source = request.GET.get("from", "5.2").strip()
+    target = request.GET.get("to", "6.1").strip()
+    if source not in versions:
+        source = "5.2"
+    if target not in versions:
+        target = "6.1"
+    source_tuple = tuple(int(part) for part in source.split("."))
+    target_tuple = tuple(int(part) for part in target.split("."))
+    chapters = load_chapters()
+    not_compatible = [
+        chapter
+        for chapter in chapters
+        if not (
+            chapter["django_min_tuple"]
+            <= target_tuple
+            <= chapter["django_max_tuple"]
+        )
+    ]
+    newer_than_target = [
+        chapter
+        for chapter in chapters
+        if chapter["django_min_tuple"] > target_tuple
+    ]
+    ends_before_target = [
+        chapter
+        for chapter in chapters
+        if chapter["django_max_tuple"] < target_tuple
+    ]
+    changed = [
+        chapter
+        for chapter in chapters
+        if chapter["django_min_tuple"] > source_tuple
+        or chapter["django_max_tuple"] < target_tuple
+    ]
+    return render(
+        request,
+        "dojo/handbook_upgrade.html",
+        {
+            "versions": versions,
+            "source": source,
+            "target": target,
+            "source_tuple": source_tuple,
+            "target_tuple": target_tuple,
+            "not_compatible": not_compatible,
+            "newer_than_target": newer_than_target,
+            "ends_before_target": ends_before_target,
+            "changed": changed,
+            "release_notes": ReleaseNote.objects.filter(version=target),
+            "stale_chapters": [chapter for chapter in chapters if chapter["is_stale"]],
+            "chapter_total": len(chapters),
+            "runtime_version": django.get_version(),
+            "active_nav": "handbook",
+            "page_title": "Upgrade assistant",
+        },
+    )
+
+
 def _handbook_url(hit_or_suggestion: dict) -> str:
     chapter = hit_or_suggestion["chapter"]
     section = hit_or_suggestion.get("section")
@@ -414,6 +517,9 @@ def handbook_chapter(request: HttpRequest, slug: str) -> HttpResponse:
         note.section_id: note
         for note in HandbookNote.objects.filter(learner=learner, chapter_slug=slug)
     }
+    feedback = HandbookFeedback.objects.filter(
+        learner=learner, chapter_slug=slug
+    ).first()
     runtime_version = django.get_version()
     runtime_tuple = tuple(int(part) for part in runtime_version.split(".")[:2])
     version_warning = not (
@@ -430,6 +536,7 @@ def handbook_chapter(request: HttpRequest, slug: str) -> HttpResponse:
             "practice_topic": practice_topic,
             "progress": progress,
             "section_notes": section_notes,
+            "feedback": feedback,
             "runtime_version": runtime_version,
             "version_warning": version_warning,
             "active_nav": "handbook",
@@ -586,6 +693,143 @@ def handbook_checkpoint(request: HttpRequest, slug: str) -> HttpResponse:
         messages.error(request, "This checkpoint has no questions yet.")
         return redirect("dojo:handbook_chapter", slug=slug)
     return redirect("dojo:quiz_question", attempt_id=attempt.pk)
+
+
+@require_POST
+def handbook_feedback(request: HttpRequest, slug: str) -> HttpResponse:
+    chapter = chapter_map().get(slug)
+    if chapter is None:
+        raise Http404("Handbook chapter not found")
+    helpful = request.POST.get("helpful") == "yes"
+    comment = request.POST.get("comment", "")[:4000].strip()
+    HandbookFeedback.objects.update_or_create(
+        learner=Learner.local(),
+        chapter_slug=slug,
+        defaults={"helpful": helpful, "comment": comment},
+    )
+    messages.success(request, "Feedback saved locally.")
+    return redirect(f"{reverse('dojo:handbook_chapter', args=[slug])}#feedback")
+
+
+@require_GET
+def handbook_gaps_page(request: HttpRequest) -> HttpResponse:
+    rows = HandbookSearchLog.objects.all()[:100]
+    return render(
+        request,
+        "dojo/handbook_gaps.html",
+        {
+            "rows": rows,
+            "active_nav": "handbook",
+            "page_title": "Search gaps",
+        },
+    )
+
+
+@require_POST
+def handbook_gaps_clear(request: HttpRequest) -> HttpResponse:
+    deleted = HandbookSearchLog.objects.all().delete()[0]
+    messages.success(request, f"Cleared {deleted} logged search gap(s).")
+    return redirect("dojo:handbook_gaps_page")
+
+
+@require_GET
+def handbook_feedback_review(request: HttpRequest) -> HttpResponse:
+    only_needs_work = request.GET.get("filtr") == "needs-work"
+    by_slug = chapter_map()
+    aggregate = (
+        HandbookFeedback.objects.values("chapter_slug")
+        .annotate(
+            total=Count("id"),
+            needs_work=Count("id", filter=Q(helpful=False)),
+            helpful=Count("id", filter=Q(helpful=True)),
+        )
+        .order_by("-needs_work", "-total", "chapter_slug")
+    )
+    rows = []
+    for item in aggregate:
+        chapter = by_slug.get(item["chapter_slug"])
+        if chapter is None:
+            continue
+        if only_needs_work and not item["needs_work"]:
+            continue
+        comments = list(
+            HandbookFeedback.objects.filter(chapter_slug=item["chapter_slug"])
+            .exclude(comment="")
+            .order_by("-updated_at")[:5]
+        )
+        rows.append({**item, "chapter": chapter, "comments": comments})
+    return render(
+        request,
+        "dojo/handbook_feedback_review.html",
+        {
+            "rows": rows,
+            "only_needs_work": only_needs_work,
+            "needs_work_total": sum(row["needs_work"] for row in rows),
+            "feedback_total": sum(row["total"] for row in rows),
+            "active_nav": "handbook",
+            "page_title": "Feedback review",
+        },
+    )
+
+
+@require_GET
+def handbook_edit_next(request: HttpRequest) -> HttpResponse:
+    chapters = load_chapters()
+    feedback = {
+        row["chapter_slug"]: row
+        for row in HandbookFeedback.objects.values("chapter_slug").annotate(
+            total=Count("id"),
+            needs_work=Count("id", filter=Q(helpful=False)),
+        )
+    }
+    latest_comments = {}
+    for note in HandbookFeedback.objects.exclude(comment="").order_by("-updated_at"):
+        latest_comments.setdefault(note.chapter_slug, note.comment)
+    queries = list(HandbookSearchLog.objects.all()[:40])
+    rows = []
+    for chapter in chapters:
+        reasons = []
+        score = 0
+        feedback_row = feedback.get(chapter["slug"])
+        if feedback_row and feedback_row["needs_work"]:
+            score += feedback_row["needs_work"] * 10
+            reasons.append(
+                f"{feedback_row['needs_work']} needs-work vote(s)"
+            )
+        if chapter["is_stale"]:
+            score += 5
+            reasons.append(f"reviewed {chapter['reviewed_on'].isoformat()}")
+        if reasons:
+            rows.append(
+                {
+                    "chapter": chapter,
+                    "score": score,
+                    "reasons": reasons,
+                    "comment": latest_comments.get(chapter["slug"], ""),
+                }
+            )
+    rows.sort(key=lambda row: (-row["score"], row["chapter"]["title"]))
+    normalized = {
+        chapter["slug"]: " ".join(
+            [chapter["title"], " ".join(chapter["aliases"]), chapter["summary"]]
+        ).casefold()
+        for chapter in chapters
+    }
+    unmapped = [
+        query
+        for query in queries
+        if not any(query.query.casefold() in text for text in normalized.values())
+    ]
+    return render(
+        request,
+        "dojo/handbook_edit_next.html",
+        {
+            "rows": rows,
+            "unmapped": unmapped,
+            "active_nav": "handbook",
+            "page_title": "Edit next",
+        },
+    )
 
 
 @require_http_methods(["GET", "POST"])

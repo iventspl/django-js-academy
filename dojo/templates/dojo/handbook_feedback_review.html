@@ -1,0 +1,64 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Feedback review · Django handbook{% endblock %}
+{% block body_class %}page-handbook page-handbook-feedback{% endblock %}
+{% block meta_description %}Local handbook feedback: which chapters readers mark as “needs work”.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109k">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Feedback review · local only</p>
+    <h1>Where the book<br><em>needs work.</em></h1>
+    <p class="hb-hero-lead">Reader votes are evidence. This page groups “needs work” feedback by chapter and keeps the comments next to the chapter that needs another pass.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook_coverage' %}">Coverage <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_feedback_review' %}{% if not only_needs_work %}?filtr=needs-work{% endif %}">{% if only_needs_work %}Show all feedback{% else %}Only needs work{% endif %}</a>
+    </div>
+  </header>
+
+  <div class="hb-coverage-stats">
+    <div><strong>{{ feedback_total }}</strong><span>votes</span></div>
+    <div><strong>{{ needs_work_total }}</strong><span>needs work</span></div>
+    <div><strong>{{ rows|length }}</strong><span>chapters with feedback</span></div>
+  </div>
+
+  {% if rows %}
+    <section class="hb-coverage-panel">
+      <div class="hb-coverage-head">
+        <p class="hb-label hb-label-light">Triage queue</p>
+        <h2>Chapters to revisit</h2>
+      </div>
+      <div class="hb-table-wrap">
+        <table class="hb-table">
+          <thead><tr><th>Chapter</th><th>Votes</th><th>Needs work</th><th>Latest comment</th><th></th></tr></thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td><a href="{% url 'dojo:handbook_chapter' row.chapter.slug %}#feedback">{{ row.chapter.title }}</a></td>
+                <td>{{ row.total }}</td>
+                <td><strong>{{ row.needs_work }}</strong></td>
+                <td>
+                  {% if row.comments %}
+                    {% with comment=row.comments.0 %}<span class="hb-feedback-quote">{{ comment.comment|truncatechars:120 }}</span>{% endwith %}
+                  {% else %}<span class="muted">No comment</span>{% endif %}
+                </td>
+                <td>{% if row.chapter.is_stale %}<span class="tag tag-js-dark">stale review</span>{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% else %}
+    <div class="hb-empty-inline">
+      <span>No feedback yet.</span>
+      <a href="{% url 'dojo:handbook' %}">Open a chapter and leave the first vote →</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

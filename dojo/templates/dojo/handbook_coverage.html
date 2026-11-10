@@ -6,7 +6,7 @@
 {% block meta_description %}Coverage report for the Django handbook: chapters, sections, reference tables, review dates and known gaps.{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109d">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109k">
 {% endblock %}
 
 {% block content %}
@@ -16,6 +16,11 @@
     <h1>What is covered.<br><em>What is next.</em></h1>
     <p class="hb-hero-lead">A local, honest snapshot of the handbook: where the chapters are, when they were reviewed, and which Django areas still need a dedicated answer.</p>
     <a class="hb-back" href="{% url 'dojo:handbook' %}">← Back to the handbook</a>
+    <a class="hb-back" href="{% url 'dojo:handbook_versions' %}">Version matrix →</a>
+    <a class="hb-back" href="{% url 'dojo:handbook_gaps_page' %}">Search gaps →</a>
+    <a class="hb-back" href="{% url 'dojo:handbook_feedback_review' %}">Feedback review →</a>
+    <a class="hb-back" href="{% url 'dojo:handbook_edit_next' %}">Edit next →</a>
+    <a class="hb-back" href="{% url 'dojo:handbook_upgrade' %}">Upgrade assistant →</a>
   </header>
 
   <div class="hb-coverage-stats" aria-label="Coverage summary">

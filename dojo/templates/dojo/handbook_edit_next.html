@@ -1,0 +1,70 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Edit next · Django handbook{% endblock %}
+{% block body_class %}page-handbook page-handbook-edit-next{% endblock %}
+{% block meta_description %}Editorial queue built from handbook feedback, stale reviews and zero-result searches.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109k">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Edit next · evidence first</p>
+    <h1>What deserves<br><em>the next edit.</em></h1>
+    <p class="hb-hero-lead">Feedback, stale review dates and real search misses in one queue. The score is only a sorting aid; the reason column tells you what to fix.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook_coverage' %}">Coverage <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_feedback_review' %}">Feedback review <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_gaps_page' %}">Search gaps <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  {% if rows %}
+    <section class="hb-coverage-panel">
+      <div class="hb-coverage-head">
+        <p class="hb-label hb-label-light">Editorial queue</p>
+        <h2>{{ rows|length }} chapter{{ rows|length|pluralize }} with evidence</h2>
+      </div>
+      <div class="hb-table-wrap">
+        <table class="hb-table">
+          <thead><tr><th>Priority</th><th>Chapter</th><th>Why</th><th>Latest comment</th></tr></thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td><strong>{{ row.score }}</strong></td>
+                <td><a href="{% url 'dojo:handbook_chapter' row.chapter.slug %}">{{ row.chapter.title }}</a></td>
+                <td>{{ row.reasons|join:" · " }}</td>
+                <td>{% if row.comment %}{{ row.comment|truncatechars:100 }}{% else %}<span class="muted">—</span>{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% else %}
+    <div class="hb-empty-inline">
+      <span>No editorial evidence yet.</span>
+      <a href="{% url 'dojo:handbook' %}">Read a chapter and leave feedback →</a>
+    </div>
+  {% endif %}
+
+  <section class="hb-coverage-panel">
+    <div class="hb-coverage-head">
+      <p class="hb-label hb-label-light">Unmapped searches</p>
+      <h2>Queries with no chapter match</h2>
+    </div>
+    {% if unmapped %}
+      <ul class="hb-gap-list">
+        {% for query in unmapped %}
+          <li><a href="{% url 'dojo:handbook' %}?q={{ query.query|urlencode }}">{{ query.query }}</a> — {{ query.count }} search{{ query.count|pluralize:"es" }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="hb-coverage-note">Every logged query overlaps a chapter title, alias or summary. The queue above only needs feedback and review dates.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

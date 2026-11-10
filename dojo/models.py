@@ -601,6 +601,29 @@ class HandbookProgress(models.Model):
         return self.chapter_slug
 
 
+class HandbookFeedback(models.Model):
+    learner = models.ForeignKey(
+        Learner, on_delete=models.CASCADE, related_name="handbook_feedback"
+    )
+    chapter_slug = models.SlugField(max_length=120)
+    helpful = models.BooleanField()
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "chapter_slug"],
+                name="unique_handbook_feedback_chapter",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.chapter_slug}: {'helpful' if self.helpful else 'needs work'}"
+
+
 class HandbookNote(models.Model):
     learner = models.ForeignKey(
         Learner, on_delete=models.CASCADE, related_name="handbook_notes"

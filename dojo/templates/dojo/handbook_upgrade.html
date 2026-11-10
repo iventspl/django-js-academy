@@ -1,0 +1,106 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Upgrade assistant · Django handbook{% endblock %}
+{% block body_class %}page-handbook page-handbook-upgrade{% endblock %}
+{% block meta_description %}Plan a Django upgrade from 5.2 to 6.0 or 6.1 using handbook version ranges and release notes.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109k">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Upgrade assistant · running {{ runtime_version }}</p>
+    <h1>Move versions<br><em>without guessing.</em></h1>
+    <p class="hb-hero-lead">Pick the version you run and the version you want. The assistant shows which chapters still apply, where coverage stops, and which release notes to read before changing code.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook_versions' %}">Version matrix <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_feedback_review' %}">Feedback review <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  <form class="hb-upgrade-form" method="get" action="{% url 'dojo:handbook_upgrade' %}">
+    <label>From
+      <select name="from">
+        {% for version in versions %}<option value="{{ version }}" {% if version == source %}selected{% endif %}>{{ version }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>To
+      <select name="to">
+        {% for version in versions %}<option value="{{ version }}" {% if version == target %}selected{% endif %}>{{ version }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="btn btn-primary" type="submit">Build upgrade plan</button>
+  </form>
+
+  <div class="hb-coverage-stats">
+    <div><strong>{{ chapter_total }}</strong><span>chapters total</span></div>
+    <div><strong>{{ not_compatible|length }}</strong><span>not compatible with {{ target }}</span></div>
+    <div><strong>{{ changed|length }}</strong><span>need a version check</span></div>
+    <div><strong>{{ release_notes|length }}</strong><span>release notes for {{ target }}</span></div>
+  </div>
+
+  <section class="hb-coverage-panel">
+    <div class="hb-coverage-head">
+      <p class="hb-label hb-label-light">{{ source }} → {{ target }}</p>
+      <h2>What to review</h2>
+    </div>
+    <div class="hb-version-lists">
+      <div>
+        <h3>Not compatible with {{ target }}</h3>
+        {% if not_compatible %}
+          <ul class="hb-gap-list">{% for chapter in not_compatible %}<li><a href="{% url 'dojo:handbook_chapter' chapter.slug %}">{{ chapter.title }}</a> — {{ chapter.django_min }}–{{ chapter.django_max }}</li>{% endfor %}</ul>
+        {% else %}<p class="hb-coverage-note">Every chapter covers {{ target }}.</p>{% endif %}
+      </div>
+      <div>
+        <h3>Chapters to re-read</h3>
+        {% if changed %}
+          <ul class="hb-gap-list">{% for chapter in changed %}<li><a href="{% url 'dojo:handbook_chapter' chapter.slug %}">{{ chapter.title }}</a> — {{ chapter.django_min }}–{{ chapter.django_max }}</li>{% endfor %}</ul>
+        {% else %}<p class="hb-coverage-note">No chapter has a narrower range than this upgrade.</p>{% endif %}
+      </div>
+    </div>
+    {% if newer_than_target or ends_before_target %}
+      <p class="hb-coverage-note">{{ newer_than_target|length }} chapter(s) require a newer Django; {{ ends_before_target|length }} chapter(s) stop before {{ target }}.</p>
+    {% endif %}
+  </section>
+
+  <section class="hb-coverage-panel">
+    <div class="hb-coverage-head">
+      <p class="hb-label hb-label-light">Release radar</p>
+      <h2>Django {{ target }} notes</h2>
+    </div>
+    {% if release_notes %}
+      <div class="hb-upgrade-notes">
+        {% for note in release_notes %}
+          <article>
+            <span class="hb-label hb-label-light">{{ note.version }} · {{ note.get_kind_display }} · {{ note.released_on|date:"j M Y" }}</span>
+            <h3>{{ note.headline }}</h3>
+            <p>{{ note.summary }}</p>
+            <p class="hb-coverage-note"><strong>Action:</strong> {{ note.action }}</p>
+            {% if note.source_url %}<a class="hb-back" href="{{ note.source_url }}" target="_blank" rel="noopener noreferrer">Official release notes ↗</a>{% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="hb-coverage-note">No release note is stored for {{ target }} yet. Check the official Django release notes before upgrading.</p>
+    {% endif %}
+  </section>
+
+  <section class="hb-coverage-panel">
+    <div class="hb-coverage-head">
+      <p class="hb-label hb-label-light">Before deploy</p>
+      <h2>Upgrade checklist</h2>
+    </div>
+    <ul class="hb-check-list">
+      <li>Read the official release notes for every version you cross.</li>
+      <li>Run the full test suite on the target version — not only the new feature you are adding.</li>
+      <li>Check deprecation warnings in CI, not just locally.</li>
+      <li>Review settings and middleware changes in the target release.</li>
+      <li>Test migrations against a copy of production data.</li>
+      <li>Deploy a canary, watch errors, then roll forward or back deliberately.</li>
+    </ul>
+  </section>
+</div>
+{% endblock %}

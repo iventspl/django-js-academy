@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     HandbookNote,
+    HandbookFeedback,
     HandbookProgress,
     HandbookSearchLog,
     StudyNote,
@@ -137,6 +138,14 @@ class HandbookNoteAdmin(admin.ModelAdmin):
     list_filter = ("is_bookmarked",)
     search_fields = ("chapter_slug", "section_id", "body")
     readonly_fields = ("updated_at",)
+
+
+@admin.register(HandbookFeedback)
+class HandbookFeedbackAdmin(admin.ModelAdmin):
+    list_display = ("chapter_slug", "helpful", "learner", "updated_at")
+    list_filter = ("helpful",)
+    search_fields = ("chapter_slug", "comment")
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(HandbookSearchLog)

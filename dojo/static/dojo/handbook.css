@@ -1843,6 +1843,283 @@ mark {
   flex: 0 0 auto;
 }
 
+/* ---------- Chapter diagrams ---------- */
+
+.hb-diagram {
+  margin: 16px 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  border: 1px solid rgba(127, 227, 195, 0.22);
+  border-radius: 8px;
+  background: #0b1519;
+  color: #a9e7d3;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  line-height: 1.55;
+  white-space: pre;
+}
+
+/* ---------- Chapter feedback ---------- */
+
+.hb-feedback {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 18px;
+  padding: 18px 20px;
+  border: 1px solid rgba(246, 240, 226, 0.16);
+  border-radius: 10px;
+  background: rgba(246, 240, 226, 0.035);
+}
+
+.hb-feedback h2 {
+  margin: 0 0 6px;
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.hb-feedback p {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.hb-feedback-current {
+  margin-top: 9px !important;
+  color: var(--mint) !important;
+}
+
+.hb-feedback form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hb-feedback-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 13px;
+}
+
+.hb-feedback-choices label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #b8c4bf;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  cursor: pointer;
+}
+
+.hb-feedback textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 8px 9px;
+  border: 1px solid rgba(246, 240, 226, 0.18);
+  border-radius: 5px;
+  background: #0b1519;
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+@media (max-width: 760px) {
+  .hb-feedback {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- Chapter exercises ---------- */
+
+.hb-exercises {
+  border-color: rgba(127, 227, 195, 0.25);
+}
+
+.hb-exercise {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border: 1px solid rgba(246, 240, 226, 0.14);
+  border-radius: 10px;
+  background: rgba(246, 240, 226, 0.035);
+}
+
+.hb-exercise-details {
+  margin-top: 10px;
+  border-top: 1px dashed rgba(246, 240, 226, 0.16);
+  padding-top: 8px;
+}
+
+.hb-exercise-details > summary {
+  color: var(--mint);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.hb-exercise-details > summary span {
+  float: right;
+}
+
+.hb-exercise-details .hb-prose {
+  margin-top: 8px;
+  font-size: 0.8rem;
+}
+
+.hb-exercise-details .code-block {
+  margin-top: 10px;
+}
+
+/* ---------- Upgrade assistant ---------- */
+
+.hb-upgrade-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #fffdf0;
+  color: var(--ink);
+}
+
+.hb-upgrade-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #7d4a37;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hb-upgrade-form select {
+  min-width: 100px;
+  padding: 8px 9px;
+  border: 1px solid rgba(16, 19, 26, 0.18);
+  border-radius: 5px;
+  background: #fff;
+  color: #1d302a;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.hb-upgrade-notes {
+  display: grid;
+  gap: 10px;
+}
+
+.hb-upgrade-notes article {
+  padding: 12px 14px;
+  border: 1px solid rgba(13, 27, 36, 0.1);
+  border-radius: 7px;
+  background: #fbf4e6;
+}
+
+.hb-upgrade-notes h3 {
+  margin: 3px 0 5px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.hb-upgrade-notes p {
+  margin: 0 0 5px;
+  color: #4e6158;
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+.hb-feedback-quote {
+  color: #4e6158;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+/* ---------- Version matrix ---------- */
+
+.hb-version-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.hb-version-lists h3 {
+  margin: 0 0 9px;
+  color: #7c3a27;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hb-version-details > summary {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  cursor: pointer;
+}
+
+.hb-version-details > summary span {
+  float: right;
+  color: var(--coral-deep);
+}
+
+.hb-version-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 14px;
+}
+
+.hb-version-grid a {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  background: #fbf4e6;
+  color: #30453d;
+  font-size: 0.72rem;
+}
+
+.hb-version-grid a:hover {
+  background: #f3e6cc;
+}
+
+.hb-version-grid span {
+  color: #9a6a55;
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+}
+
+.hb-version-grid strong {
+  flex: 1;
+}
+
+.hb-version-grid small {
+  color: #7a8b83;
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+  .hb-version-lists,
+  .hb-version-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ---------- Section notes ---------- */
 
 .hb-section-note {
@@ -2396,4 +2673,191 @@ mark {
   .hb-table-wrap {
     break-inside: avoid;
   }
+}
+
+/* ---------- Checkpoint and feedback contrast fixes ---------- */
+
+.hb-practice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, auto);
+  align-items: center;
+}
+
+.hb-practice > div:first-child {
+  min-width: 0;
+}
+
+.hb-practice h2 {
+  max-width: 24ch;
+  font-size: clamp(1.35rem, 2.1vw, 1.8rem);
+  line-height: 1.08;
+}
+
+.hb-practice-actions {
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 210px;
+}
+
+.hb-practice-actions form {
+  margin: 0;
+}
+
+.hb-practice-actions .btn {
+  width: 100%;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+}
+
+.hb-practice .btn-ghost-dark {
+  border-color: rgba(29, 59, 49, 0.3);
+  background: rgba(255, 255, 255, 0.4);
+  color: #1d3b31;
+  box-shadow: none;
+}
+
+.hb-practice .btn-ghost-dark:hover {
+  border-color: #1d3b31;
+  background: #1d3b31;
+  color: #fff;
+}
+
+.hb-feedback {
+  border-color: rgba(13, 27, 36, 0.12);
+  background: #f7ecd8;
+  color: var(--ink);
+}
+
+.hb-feedback h2 {
+  color: var(--ink);
+}
+
+.hb-feedback p {
+  color: #4b625a;
+}
+
+.hb-feedback .hb-label {
+  color: #8a3c27;
+}
+
+.hb-feedback-current {
+  color: #23704f !important;
+}
+
+.hb-feedback-choices label {
+  color: #2f4a40;
+  font-size: 0.66rem;
+}
+
+.hb-feedback-choices input {
+  accent-color: #c54a32;
+}
+
+.hb-feedback textarea {
+  border-color: rgba(13, 27, 36, 0.2);
+  background: #fffdf5;
+  color: #1d302a;
+}
+
+@media (max-width: 900px) {
+  .hb-practice {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .hb-practice-actions {
+    min-width: 0;
+  }
+
+  .hb-practice-actions .btn {
+    width: auto;
+  }
+}
+
+/* ---------- Reading band and tool links contrast ---------- */
+
+.hb-reading-band .btn-ghost-dark {
+  border-color: rgba(13, 27, 36, 0.45);
+  background: rgba(255, 255, 255, 0.28);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.hb-reading-band .btn-ghost-dark:hover {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.hb-tools-label {
+  margin-left: auto;
+  color: #90a49d;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hb-coverage-link {
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 139, 122, 0.28);
+  border-radius: 5px;
+  color: #ffc1b5;
+  font-size: 0.58rem;
+  text-decoration: none;
+}
+
+.hb-coverage-link:hover {
+  border-color: #ff8b7a;
+  background: rgba(255, 139, 122, 0.12);
+  color: #fffdf5;
+}
+
+@media (max-width: 900px) {
+  .hb-tools-label {
+    margin-left: 0;
+  }
+}
+
+/* Section notes and chapter actions on the paper article. */
+
+.hb-section-note {
+  border-color: rgba(13, 27, 36, 0.14);
+  background: #f7ecd8;
+}
+
+.hb-section-note > summary {
+  color: #4c6157;
+}
+
+.hb-section-note > summary::before {
+  color: #23704f;
+}
+
+.hb-section-note textarea {
+  border-color: rgba(13, 27, 36, 0.2);
+  background: #fffdf5;
+  color: #1d302a;
+}
+
+.hb-note-check {
+  color: #4c6157;
+}
+
+.hb-note-hint {
+  color: #7d8e86;
+}
+
+.hb-article .hb-action {
+  border-color: rgba(13, 27, 36, 0.28);
+  color: #334b42;
+  background: #fffdf5;
+}
+
+.hb-article .hb-action:hover,
+.hb-article .hb-action.is-active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
 }

@@ -182,6 +182,13 @@ The **Django handbook** at `/handbook/` is the “open it and type the thing tha
 - **Reading progress and bookmarks** are stored locally. The handbook landing page offers “continue reading”, a read count and saved chapters; every chapter has “Mark as read” and “Bookmark” actions.
 - **Section-level notes and bookmarks**: save a note under any answer, bookmark a section without a note, review everything at `/handbook/notes/`, or export it as Markdown at `/handbook/notes.md`.
 - **Chapter checkpoints**: a three-question run tied to the chapter’s quiz topic, separate from the full topic quiz.
+- **Try it exercises**: selected chapters include a prompt, optional hint and a hidden worked solution. The nine coverage chapters ship with one exercise each.
+- **Version matrix** at `/handbook/versions/`: chapters compatible with Django 5.2, 6.0 and 6.1, plus chapters that require 6.0+ or stop before 6.1.
+- **Chapter feedback** and a local **search-gap dashboard** at `/handbook/gaps/`: see real zero-result queries and clear the log.
+- **Feedback review** at `/handbook/feedback/`: group “needs work” votes by chapter, read the latest comments and spot stale reviews.
+- **Upgrade assistant** at `/handbook/upgrade/`: choose a source and target Django version, see incompatible chapters, target release notes and an upgrade checklist.
+- **Edit-next queue** at `/handbook/edit-next/`: combines needs-work feedback, stale reviews and unmapped search queries into one editorial priority list.
+- **Diagrams** in core chapters: request lifecycle, QuerySet laziness, middleware order and message redirect flow.
 - The **Error explainer** at `/handbook/traceback/` accepts a pasted traceback, extracts the exception class and links the closest decoder entry.
 - Every chapter carries a **review date** and a **Django version range**; the header warns if the running Django falls outside it. The **Coverage report** at `/handbook/coverage/` shows chapters, sections, tables, latest review and known gaps.
 - Chapters export as clean Markdown at `/handbook/<slug>.md` (for example `/handbook/forms.md`), and the chapter page has print styles.
@@ -688,7 +695,7 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **200 tests** in total, including handbook search, symbol indexing, typo suggestions, filters, practice links, reading progress, the Django error explainer, reference-table rendering, the JS Ściągawka, JS error explainer, interview lab, instant search, progress analytics, handbook section notes and chapter checkpoints.
+The suite covers content validation, quiz selection and scoring, attempt scoping, flashcard scheduling, XP, streaks, resetting progress, global search, weak-spot tracking, retry-only-missed runs, field-guide search/filters, blueprint details, Architecture Studio pages/filters, release-radar content, AI Academy lessons/quizzes/cards/projects/career pages/glossary/search/code-library/notes/retry/export, JS lessons/quizzes/flashcards/challenges/playground/components/MVC/knowledge/AI-career pages/gamification, and all main pages. There are **209 tests** in total, including handbook search, symbol indexing, typo suggestions, filters, practice links, reading progress, the Django error explainer, reference-table rendering, the JS Ściągawka, JS error explainer, interview lab, instant search, progress analytics, handbook section notes, chapter checkpoints, exercises, the version matrix, feedback, search gaps, diagrams, feedback review, the upgrade assistant and the edit-next queue.
 
 You can also run Django's deployment check before hosting anything:
 

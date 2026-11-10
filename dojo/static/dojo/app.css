@@ -15623,3 +15623,94 @@ body {
     font-size: 0.52rem;
   }
 }
+
+/* ---------- Navigation contrast and collapsible tools ---------- */
+
+.nav-link {
+  color: #c3d1cc;
+}
+
+.nav-link .nav-glyph {
+  color: #dbe7e2;
+}
+
+.nav-link:hover,
+.nav-link:focus-visible {
+  color: #fffdf5;
+}
+
+.nav-more {
+  margin-top: 2px;
+}
+
+.nav-more > summary {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #c3d1cc;
+  font-size: 0.86rem;
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+
+.nav-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-more > summary:hover,
+.nav-more[open] > summary {
+  background: rgba(246, 240, 226, 0.07);
+  color: #fffdf5;
+}
+
+.nav-more .nav-glyph {
+  color: #dbe7e2;
+}
+
+.nav-more-chevron {
+  margin-left: auto;
+  color: #9fb2ac;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+}
+
+.nav-more[open] .nav-more-chevron {
+  transform: rotate(180deg);
+}
+
+.nav-more-links {
+  display: grid;
+  gap: 2px;
+  margin: 4px 0 4px 13px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(246, 240, 226, 0.18);
+}
+
+.nav-more-links a {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  color: #d3dfda;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.nav-more-links a:hover,
+.nav-more-links a:focus-visible {
+  background: rgba(246, 240, 226, 0.08);
+  color: #fffdf5;
+}
+
+.nav-more-links small {
+  color: #93a8a1;
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  letter-spacing: 0.02em;
+}
