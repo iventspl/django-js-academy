@@ -282,6 +282,15 @@ html[data-theme="paper"] .hb-defense-model > summary {
   color: #23704f;
 }
 
+html[data-theme="paper"] .hb-interview-answer {
+  background: #fffaf0;
+  border: 1px solid rgba(13, 27, 36, 0.12);
+}
+
+html[data-theme="paper"] .hb-interview-answer p:last-child {
+  color: #4f655d;
+}
+
 html[data-theme="paper"] .hb-chapter-list a:hover strong,
 html[data-theme="paper"] .hb-bookmark-list a:hover strong {
   color: #a6422d;

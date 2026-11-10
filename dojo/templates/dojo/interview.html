@@ -1,0 +1,75 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Django interview simulator{% endblock %}
+{% block body_class %}page-interview{% endblock %}
+{% block meta_description %}Random Django interview questions with answer-first flow, model answers and spaced self-ratings.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109v">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Django interview · {{ practiced_count }}/{{ question_count }} rated · {{ solid_count }} solid</p>
+    <h1>Answer first.<br><em>Then compare.</em></h1>
+    <p class="hb-hero-lead">A random Django interview bank across ORM, migrations, forms, auth, security, testing, deployment and architecture. Write your answer before revealing the model.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:interview' %}">Next random question <span aria-hidden="true">↻</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:interview_report' %}">Export report <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <div class="hb-coverage-stats">
+    {% for stat in stats %}
+      <div><strong>{{ stat.practiced }}/{{ stat.total }}</strong><span>{{ stat.category }} · {{ stat.solid }} solid</span></div>
+    {% endfor %}
+  </div>
+
+  {% if question %}
+    <article class="hb-defense-card hb-interview-card">
+      <p class="hb-label hb-label-light">{{ question.category }} · {{ question.difficulty }}</p>
+      <h2>{{ question.question }}</h2>
+
+      {% if not show_answer %}
+        <form method="post" action="{% url 'dojo:interview' %}">
+          {% csrf_token %}
+          <input type="hidden" name="question_slug" value="{{ question.slug }}">
+          <input type="hidden" name="action" value="answer">
+          <label class="sr-only" for="interview-answer">Your answer</label>
+          <textarea id="interview-answer" name="answer" rows="7" placeholder="Answer as if this were the interview.">{{ answer_text }}</textarea>
+          <div class="hb-defense-actions">
+            <span class="hb-defense-why">Write first. The model answer stays hidden.</span>
+            <button class="btn btn-primary btn-small" type="submit">Show model answer <span aria-hidden="true">→</span></button>
+          </div>
+        </form>
+      {% else %}
+        <div class="hb-interview-answer">
+          <p class="hb-label hb-label-light">Your answer</p>
+          <p>{{ answer_text|default:"(empty)"|linebreaksbr }}</p>
+        </div>
+        <details class="hb-defense-model" open>
+          <summary>Model answer <span aria-hidden="true">−</span></summary>
+          <p>{{ question.answer }}</p>
+          {% if question.follow_up %}<p class="hb-defense-why"><strong>Follow-up:</strong> {{ question.follow_up }}</p>{% endif %}
+        </details>
+        <form method="post" action="{% url 'dojo:interview' %}" class="hb-interview-rating">
+          {% csrf_token %}
+          <input type="hidden" name="question_slug" value="{{ question.slug }}">
+          <input type="hidden" name="action" value="rate">
+          <input type="hidden" name="answer" value="{{ answer_text }}">
+          <p class="hb-label hb-label-light">How did it go?</p>
+          <div class="hb-defense-actions">
+            <button class="btn btn-ghost-dark btn-small" type="submit" name="rating" value="shaky">Shaky · 1 day</button>
+            <button class="btn btn-ghost-dark btn-small" type="submit" name="rating" value="okay">Okay · 3 days</button>
+            <button class="btn btn-primary btn-small" type="submit" name="rating" value="solid">Solid · 14 days</button>
+          </div>
+        </form>
+      {% endif %}
+    </article>
+  {% else %}
+    <div class="hb-empty-inline"><span>No questions loaded.</span><a href="{% url 'dojo:handbook' %}">Back to handbook</a></div>
+  {% endif %}
+</div>
+{% endblock %}

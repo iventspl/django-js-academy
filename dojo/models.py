@@ -601,6 +601,39 @@ class HandbookProgress(models.Model):
         return self.chapter_slug
 
 
+class DjangoInterviewPractice(models.Model):
+    learner = models.ForeignKey(
+        Learner, on_delete=models.CASCADE, related_name="django_interview_practice"
+    )
+    question_slug = models.SlugField(max_length=120)
+    answer = models.TextField(blank=True)
+    rating = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=[
+            ("shaky", "Shaky"),
+            ("okay", "Okay"),
+            ("solid", "Solid"),
+        ],
+    )
+    due_on = models.DateField(default=timezone.localdate)
+    interval_days = models.PositiveSmallIntegerField(default=1)
+    repetitions = models.PositiveSmallIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["due_on", "-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "question_slug"],
+                name="unique_django_interview_practice",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.question_slug
+
+
 class DjangoCapstoneProgress(models.Model):
     learner = models.ForeignKey(
         Learner, on_delete=models.CASCADE, related_name="django_capstone_progress"

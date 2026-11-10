@@ -1,0 +1,164 @@
+{
+  "questions": [
+    {
+      "slug": "orm-lazy",
+      "question": "Why is a Django QuerySet lazy, and when does it hit the database?",
+      "category": "ORM",
+      "difficulty": "beginner",
+      "answer": "A QuerySet builds a query description without executing it. It hits the database when you iterate, index, slice with a step, call `len()`, `list()`, `exists()`, `count()` or render it. Laziness lets you compose filters and avoid work you never use.",
+      "follow_up": "What is the difference between `count()` and `len(queryset)`?"
+    },
+    {
+      "slug": "orm-n-plus-one",
+      "question": "How do you diagnose and fix an N+1 query problem?",
+      "category": "ORM",
+      "difficulty": "intermediate",
+      "answer": "Enable query logging or Django Debug Toolbar, then count queries per request. Fix it with `select_related` for foreign keys and `prefetch_related` for many-to-many/reverse relations. Re-measure after the change.",
+      "follow_up": "When is `prefetch_related` slower than a join?"
+    },
+    {
+      "slug": "orm-select-for-update",
+      "question": "When do you need `select_for_update()`?",
+      "category": "ORM",
+      "difficulty": "advanced",
+      "answer": "When a read-check-write workflow must be serialized, such as decrementing stock. It locks rows until the transaction ends. It must run inside `transaction.atomic()` and should lock the smallest useful set.",
+      "follow_up": "What happens if you call it outside a transaction?"
+    },
+    {
+      "slug": "orm-f-vs-python",
+      "question": "Why use `F()` instead of reading a value into Python and saving it back?",
+      "category": "ORM",
+      "difficulty": "intermediate",
+      "answer": "`F()` performs the update in the database atomically, so concurrent requests cannot overwrite each other with stale values. The Python round-trip is a race window.",
+      "follow_up": "When do you still need `refresh_from_db()`?"
+    },
+    {
+      "slug": "migrations-squash",
+      "question": "When would you squash migrations, and what is the risk?",
+      "category": "Migrations",
+      "difficulty": "advanced",
+      "answer": "Squash when a long migration history slows setup or obscures the schema. Keep the original migrations in version control until every environment has migrated, and test the squashed result on a production-like database.",
+      "follow_up": "How do you handle a migration already applied in production but changed locally?"
+    },
+    {
+      "slug": "migrations-zero-downtime",
+      "question": "How do you add a non-nullable column without downtime?",
+      "category": "Migrations",
+      "difficulty": "advanced",
+      "answer": "Add it nullable, backfill in batches, then add the constraint in a separate deploy. On PostgreSQL, use a `NOT VALID` check or a concurrent index where appropriate. Never lock a large table for a long rewrite.",
+      "follow_up": "Why can `ALTER TABLE ... SET NOT NULL` still lock?"
+    },
+    {
+      "slug": "forms-binding",
+      "question": "What is the difference between a bound and unbound form?",
+      "category": "Forms",
+      "difficulty": "beginner",
+      "answer": "A bound form has data (`Form(request.POST)`); an unbound form does not. `is_valid()` only validates a bound form. `cleaned_data` exists only after successful validation.",
+      "follow_up": "Why does `Form(request.POST or None)` help on GET?"
+    },
+    {
+      "slug": "forms-modelform-save",
+      "question": "When would you use `form.save(commit=False)`?",
+      "category": "Forms",
+      "difficulty": "intermediate",
+      "answer": "When you need to set server-controlled fields before saving, such as `owner`, `created_by` or a slug derived from the instance. It returns an unsaved object; you must call `save()` yourself.",
+      "follow_up": "What happens to many-to-many fields with `commit=False`?"
+    },
+    {
+      "slug": "forms-clean-vs-validator",
+      "question": "When do you use `clean_<field>()` versus a validator?",
+      "category": "Forms",
+      "difficulty": "intermediate",
+      "answer": "A validator is reusable and single-value. `clean_<field>()` is form-specific and can use other cleaned values. Cross-field rules belong in `clean()`, and database rules belong in constraints.",
+      "follow_up": "Why do validators not run on `save()`?"
+    },
+    {
+      "slug": "auth-object-permission",
+      "question": "How do you implement object-level permissions in Django?",
+      "category": "Auth",
+      "difficulty": "intermediate",
+      "answer": "Filter the queryset by the current user or an explicit membership relation, then use `get_object_or_404`. Do not rely on template hiding. For complex rules, centralize them in a policy function and test both allowed and denied paths.",
+      "follow_up": "When would you return 403 instead of 404?"
+    },
+    {
+      "slug": "auth-custom-user",
+      "question": "Why is changing `AUTH_USER_MODEL` after the first migration painful?",
+      "category": "Auth",
+      "difficulty": "advanced",
+      "answer": "The user model is a foreign-key target across the project. Changing it later requires migrations that rewrite those relations. Decide before the first production migration; if not, plan a staged data migration.",
+      "follow_up": "What is the safest way to add a profile field?"
+    },
+    {
+      "slug": "security-csrf",
+      "question": "What does Django's CSRF protection actually prevent?",
+      "category": "Security",
+      "difficulty": "beginner",
+      "answer": "It prevents another site from making an authenticated state-changing request with the user's cookies. The token proves the request came from a page Django rendered. It does not replace authentication or authorization.",
+      "follow_up": "Why is `csrf_exempt` dangerous on a cookie-authenticated view?"
+    },
+    {
+      "slug": "security-xss",
+      "question": "Where does Django escape output, and where can XSS still happen?",
+      "category": "Security",
+      "difficulty": "intermediate",
+      "answer": "Templates autoescape variables by default. XSS can still happen through `|safe`, `mark_safe`, raw HTML from users, unsafe JavaScript insertion or unescaped attributes. Sanitize untrusted HTML and avoid `safe` on user input.",
+      "follow_up": "Does escaping protect a value inserted into a JavaScript string?"
+    },
+    {
+      "slug": "views-cbv",
+      "question": "What does `View.dispatch()` do in a class-based view?",
+      "category": "Views",
+      "difficulty": "intermediate",
+      "answer": "It chooses the HTTP method handler (`get`, `post`, etc.), applies mixins and returns the response. Overriding it is powerful but easy to break; prefer overriding `get`/`post` or hooks like `get_queryset`.",
+      "follow_up": "When is a function view simpler than a CBV?"
+    },
+    {
+      "slug": "urls-reverse",
+      "question": "Why does `reverse()` fail even when the URL pattern exists?",
+      "category": "URLs",
+      "difficulty": "beginner",
+      "answer": "The name, namespace or required arguments do not match. Check the `app_name`, `include()` namespace and positional/keyword arguments. `NoReverseMatch` includes the attempted pattern, which is the first clue.",
+      "follow_up": "When do you use `request.build_absolute_uri()`?"
+    },
+    {
+      "slug": "templates-context",
+      "question": "How do you add data to every template without editing every view?",
+      "category": "Templates",
+      "difficulty": "intermediate",
+      "answer": "Use a context processor for small, request-safe values, or a custom inclusion tag for markup. Context processors run for every template render, so keep them cheap and avoid queries.",
+      "follow_up": "Why is a context processor a poor place for per-page queries?"
+    },
+    {
+      "slug": "testing-db",
+      "question": "What is the difference between `TestCase` and `TransactionTestCase` in Django?",
+      "category": "Testing",
+      "difficulty": "advanced",
+      "answer": "`TestCase` wraps each test in a transaction and rolls it back, which is fast. `TransactionTestCase` truncates tables and is needed when testing transactional behavior, `select_for_update` or post-commit hooks. Use it only when necessary.",
+      "follow_up": "When do `on_commit` callbacks run in tests?"
+    },
+    {
+      "slug": "testing-client",
+      "question": "When should you use Django's test client versus a browser test?",
+      "category": "Testing",
+      "difficulty": "intermediate",
+      "answer": "The test client exercises views, forms and templates without JavaScript. Use a browser test for JavaScript behavior, real navigation, focus and iframe interactions. Do not use a browser to test what a view test can prove.",
+      "follow_up": "What does `follow=True` change?"
+    },
+    {
+      "slug": "deploy-static",
+      "question": "Why do static files work locally but 404 in production?",
+      "category": "Deployment",
+      "difficulty": "beginner",
+      "answer": "`runserver` serves static files automatically; production does not. Run `collectstatic`, configure `STATIC_ROOT`, and let WhiteNoise, the web server or the platform serve the files. Check the storage backend and manifest.",
+      "follow_up": "What changes when `DEBUG=False`?"
+    },
+    {
+      "slug": "architecture-service-layer",
+      "question": "When is a service layer worth adding to a Django app?",
+      "category": "Architecture",
+      "difficulty": "advanced",
+      "answer": "When a workflow spans several models, side effects and permissions, and putting it in a view or model method makes it hard to test or reuse. Keep it explicit, transaction-aware and free of request/response objects. Do not add it for a single CRUD form.",
+      "follow_up": "What belongs in a selector versus a service?"
+    }
+  ]
+}

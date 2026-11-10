@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import (
     DjangoCapstoneProgress,
     DjangoFeature,
+    DjangoInterviewPractice,
     DjangoTrackProgress,
     HandbookExplanation,
     HandbookFeedback,
@@ -171,6 +172,13 @@ class DjangoTrackProgressAdmin(admin.ModelAdmin):
 class DjangoCapstoneProgressAdmin(admin.ModelAdmin):
     list_display = ("capstone_slug", "learner", "completed_at", "updated_at")
     search_fields = ("capstone_slug", "evidence_what")
+
+
+@admin.register(DjangoInterviewPractice)
+class DjangoInterviewPracticeAdmin(admin.ModelAdmin):
+    list_display = ("question_slug", "rating", "learner", "due_on", "repetitions")
+    list_filter = ("rating",)
+    search_fields = ("question_slug", "answer")
 
 
 @admin.register(HandbookExplanation)

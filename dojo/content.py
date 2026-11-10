@@ -55,7 +55,7 @@ def bundle_paths() -> list[Path]:
     return [
         path
         for path in sorted(CONTENT_DIR.glob("*.json"))
-        if path.name not in {"labs.json", "tracks.json", "capstone.json"}
+        if path.name not in {"labs.json", "tracks.json", "capstone.json", "interview.json"}
     ]
 
 

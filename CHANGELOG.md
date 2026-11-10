@@ -39,6 +39,7 @@
 - Added **Django Project Tracks** at `/handbook/tracks/`: four tracks combining labs, milestones, final evidence, completion gating and Markdown export. New model/migration: `DjangoTrackProgress` / `0016`; feature map entry via `0017`.
 - Added **Django Capstone** at `/handbook/capstone/`: a deployable Field Notes project with six phases, deployment checklist, portfolio evidence and Markdown export. Model/migration: `DjangoCapstoneProgress` / `0018`; feature map entry via `0019`.
 - Added **Project Defense** at `/handbook/capstone/defense/`: eight written defense questions with model answers, self-ratings and Markdown export. Migration `0020`; feature map entry via `0021`.
+- Added a **Django Interview Simulator** at `/interview/`: 20 answer-first questions, model answers, follow-ups, spaced self-ratings and readiness export. Model/migration: `DjangoInterviewPractice` / `0022`; feature map entry via `0023`.
 - Added the feature map to **More tools** and the handbook tool bar.
 - Improved dark-theme contrast and chapter UI: readable checkpoint buttons, light feedback fields, clearer section notes and visible reading-band actions.
 - Added a persisted **High contrast** toggle and collapsed secondary navigation into **More tools** for both Django and JS modules.
@@ -47,7 +48,7 @@
 
 ### Verification
 
-- Full test suite: **227 tests pass**.
+- Full test suite: **230 tests pass**.
 
 ## 4.28 — 2026-11-09
 

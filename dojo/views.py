@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from datetime import date, timedelta
 
 import django
@@ -29,6 +30,7 @@ from .handbook import (
     traceback_hits,
 )
 from .capstone import load_capstone
+from .interview import interview_map, load_interview_questions
 from .labs import lab_for_chapter, lab_map, load_labs
 from .tracks import load_tracks, track_map
 from .models import (
@@ -46,6 +48,7 @@ from .models import (
     HandbookSearchLog,
     DjangoCapstoneProgress,
     DjangoFeature,
+    DjangoInterviewPractice,
     DjangoTrackProgress,
     Learner,
     Question,
@@ -399,6 +402,132 @@ def handbook_upgrade(request: HttpRequest) -> HttpResponse:
             "page_title": "Upgrade assistant",
         },
     )
+
+
+@require_http_methods(["GET", "POST"])
+def interview(request: HttpRequest) -> HttpResponse:
+    questions = list(load_interview_questions())
+    by_slug = interview_map()
+    learner = Learner.local()
+    practices = {
+        row.question_slug: row
+        for row in DjangoInterviewPractice.objects.filter(learner=learner)
+    }
+    question = None
+    practice = None
+    show_answer = False
+    answer_text = ""
+    if request.method == "POST":
+        question = by_slug.get(request.POST.get("question_slug", ""))
+        if question is None:
+            raise Http404("Interview question not found")
+        practice, _ = DjangoInterviewPractice.objects.get_or_create(
+            learner=learner, question_slug=question["slug"]
+        )
+        action = request.POST.get("action")
+        if action == "answer":
+            answer_text = request.POST.get("answer", "")[:8000]
+            practice.answer = answer_text
+            practice.save(update_fields=["answer", "updated_at"])
+            show_answer = True
+        elif action == "rate":
+            rating = request.POST.get("rating", "")
+            if rating not in {"shaky", "okay", "solid"}:
+                messages.error(request, "Choose a self-rating.")
+                return redirect("dojo:interview")
+            interval = {"shaky": 1, "okay": 3, "solid": 14}[rating]
+            practice.answer = request.POST.get("answer", practice.answer)[:8000]
+            practice.rating = rating
+            practice.interval_days = interval
+            practice.repetitions = (practice.repetitions or 0) + 1
+            practice.due_on = timezone.localdate() + timedelta(days=interval)
+            practice.save(
+                update_fields=[
+                    "answer",
+                    "rating",
+                    "interval_days",
+                    "repetitions",
+                    "due_on",
+                    "updated_at",
+                ]
+            )
+            messages.success(request, "Answer rated. Next question ready.")
+            return redirect("dojo:interview")
+    else:
+        requested = request.GET.get("q", "")
+        if requested in by_slug:
+            question = by_slug[requested]
+        elif questions:
+            today = timezone.localdate()
+            priority = [
+                item
+                for item in questions
+                if item["slug"] not in practices
+                or practices[item["slug"]].due_on <= today
+                or practices[item["slug"]].rating in {"", "shaky", "okay"}
+            ]
+            question = random.choice(priority or questions)
+        if question:
+            practice = practices.get(question["slug"])
+            answer_text = practice.answer if practice else ""
+
+    stats = []
+    for category in dict.fromkeys(item["category"] for item in questions):
+        rows = [practices.get(item["slug"]) for item in questions if item["category"] == category]
+        stats.append(
+            {
+                "category": category,
+                "total": len(rows),
+                "solid": sum(1 for row in rows if row and row.rating == "solid"),
+                "practiced": sum(1 for row in rows if row and row.rating),
+            }
+        )
+    return render(
+        request,
+        "dojo/interview.html",
+        {
+            "question": question,
+            "practice": practice,
+            "answer_text": answer_text,
+            "show_answer": show_answer,
+            "stats": stats,
+            "practiced_count": sum(1 for row in practices.values() if row.rating),
+            "solid_count": sum(1 for row in practices.values() if row.rating == "solid"),
+            "question_count": len(questions),
+            "active_nav": "interview",
+            "page_title": "Django interview simulator",
+        },
+    )
+
+
+@require_GET
+def interview_report(request: HttpRequest) -> HttpResponse:
+    practices = {
+        row.question_slug: row
+        for row in DjangoInterviewPractice.objects.filter(learner=Learner.local())
+    }
+    lines = ["# Django interview readiness", ""]
+    for question in load_interview_questions():
+        row = practices.get(question["slug"])
+        if not row or not row.rating:
+            continue
+        lines.extend(
+            [
+                f"## {question['question']}",
+                "",
+                f"Category: {question['category']} · Rating: {row.rating} · Next: {row.due_on.isoformat()}",
+                "",
+                row.answer or "_No written answer._",
+                "",
+                f"**Model answer:** {question['answer']}",
+                "",
+            ]
+        )
+    response = HttpResponse(
+        "\n".join(lines).rstrip() + "\n", content_type="text/markdown; charset=utf-8"
+    )
+    response["Content-Disposition"] = 'attachment; filename="django-interview-report.md"'
+    return response
 
 
 @require_GET

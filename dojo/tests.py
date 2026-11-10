@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .capstone import load_capstone
+from .interview import load_interview_questions
 from .content import load_bundles
 from .handbook import chapter_map, load_chapters, render_prose, search_handbook, suggest_terms
 from .labs import load_labs
@@ -22,6 +23,7 @@ from .models import (
     HandbookNote,
     DjangoCapstoneProgress,
     DjangoFeature,
+    DjangoInterviewPractice,
     DjangoTrackProgress,
     HandbookExplanation,
     HandbookFeedback,
@@ -1229,6 +1231,54 @@ class DjangoCapstoneTests(SeededTestCase):
         )
         response = self.client.get(reverse("dojo:handbook_capstone_evidence_export"))
         self.assertIn(b"A deployed team notebook.", response.content)
+
+
+class DjangoInterviewTests(SeededTestCase):
+    def test_interview_bank_and_page(self):
+        questions = load_interview_questions()
+        self.assertEqual(len(questions), 20)
+        response = self.client.get(reverse("dojo:interview"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Django interview")
+        self.assertContains(response, "Answer first")
+
+    def test_interview_answer_and_rating(self):
+        question = load_interview_questions()[0]
+        response = self.client.post(
+            reverse("dojo:interview"),
+            {
+                "question_slug": question["slug"],
+                "action": "answer",
+                "answer": "My first answer.",
+            },
+        )
+        self.assertContains(response, "Model answer")
+        response = self.client.post(
+            reverse("dojo:interview"),
+            {
+                "question_slug": question["slug"],
+                "action": "rate",
+                "rating": "okay",
+                "answer": "My first answer.",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        practice = DjangoInterviewPractice.objects.get(question_slug=question["slug"])
+        self.assertEqual(practice.rating, "okay")
+        self.assertEqual(practice.interval_days, 3)
+
+    def test_interview_report_exports(self):
+        self.client.post(
+            reverse("dojo:interview"),
+            {
+                "question_slug": "orm-lazy",
+                "action": "rate",
+                "rating": "solid",
+                "answer": "Lazy means no SQL until evaluation.",
+            },
+        )
+        response = self.client.get(reverse("dojo:interview_report"))
+        self.assertIn(b"Lazy means no SQL until evaluation.", response.content)
 
 
 class HandbookFeedbackTests(SeededTestCase):
