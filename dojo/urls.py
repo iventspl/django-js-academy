@@ -29,6 +29,16 @@ urlpatterns = [
         name="handbook_capstone_evidence_export",
     ),
     path(
+        "handbook/capstone/defense/",
+        views.handbook_capstone_defense,
+        name="handbook_capstone_defense",
+    ),
+    path(
+        "handbook/capstone/defense.md",
+        views.handbook_capstone_defense_export,
+        name="handbook_capstone_defense_export",
+    ),
+    path(
         "handbook/capstone/complete/",
         views.handbook_capstone_complete,
         name="handbook_capstone_complete",

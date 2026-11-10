@@ -497,6 +497,72 @@ def handbook_capstone_evidence(request: HttpRequest) -> HttpResponse:
     return redirect(f"{reverse('dojo:handbook_capstone')}#portfolio")
 
 
+@require_http_methods(["GET", "POST"])
+def handbook_capstone_defense(request: HttpRequest) -> HttpResponse:
+    capstone = load_capstone()
+    row, _ = DjangoCapstoneProgress.objects.get_or_create(
+        learner=Learner.local(), capstone_slug=capstone["slug"]
+    )
+    answers = row.defense_answers or {}
+    if request.method == "POST":
+        slug = request.POST.get("question_slug", "")
+        question = next(
+            (item for item in capstone["defense"] if item["slug"] == slug), None
+        )
+        if question is None:
+            raise Http404("Defense question not found")
+        rating = request.POST.get("rating", "")
+        if rating not in {"shaky", "okay", "solid"}:
+            rating = ""
+        answers[slug] = {
+            "answer": request.POST.get("answer", "")[:8000].strip(),
+            "rating": rating,
+        }
+        row.defense_answers = answers
+        row.save(update_fields=["defense_answers", "updated_at"])
+        messages.success(request, "Defense answer saved.")
+        return redirect(f"{reverse('dojo:handbook_capstone_defense')}#defense-{slug}")
+    rows = [
+        {**question, "answer": answers.get(question["slug"], {})}
+        for question in capstone["defense"]
+    ]
+    answered = sum(1 for row_item in rows if row_item["answer"].get("answer"))
+    return render(
+        request,
+        "dojo/handbook_capstone_defense.html",
+        {
+            "capstone": capstone,
+            "rows": rows,
+            "answered": answered,
+            "question_total": len(rows),
+            "active_nav": "handbook",
+            "page_title": "Capstone defense",
+        },
+    )
+
+
+@require_GET
+def handbook_capstone_defense_export(request: HttpRequest) -> HttpResponse:
+    capstone = load_capstone()
+    row = DjangoCapstoneProgress.objects.filter(
+        learner=Learner.local(), capstone_slug=capstone["slug"]
+    ).first()
+    answers = row.defense_answers if row else {}
+    lines = [f"# {capstone['title']} — project defense", "", capstone["goal"], ""]
+    for question in capstone["defense"]:
+        entry = answers.get(question["slug"], {})
+        lines.extend([f"## {question['question']}", ""])
+        if entry.get("rating"):
+            lines.extend([f"Self-rating: {entry['rating']}", ""])
+        lines.extend([entry.get("answer") or "_Not answered yet._", ""])
+        lines.extend([f"**Model answer:** {question['model']}", ""])
+    response = HttpResponse(
+        "\n".join(lines).rstrip() + "\n", content_type="text/markdown; charset=utf-8"
+    )
+    response["Content-Disposition"] = 'attachment; filename="django-capstone-defense.md"'
+    return response
+
+
 @require_GET
 def handbook_capstone_evidence_export(request: HttpRequest) -> HttpResponse:
     capstone = load_capstone()

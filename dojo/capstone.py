@@ -37,6 +37,7 @@ def load_capstone() -> dict:
         "stack",
         "outcomes",
         "phases",
+        "defense",
         "deployment",
         "portfolio",
     ):
@@ -74,6 +75,31 @@ def load_capstone() -> dict:
             }
         )
 
+    defense = item["defense"]
+    if not isinstance(defense, list) or len(defense) < 4:
+        raise CapstoneError("capstone: defense must contain at least four questions")
+    clean_defense = []
+    defense_slugs: set[str] = set()
+    for index, question in enumerate(defense):
+        context = f"defense #{index + 1}"
+        if not isinstance(question, dict):
+            raise CapstoneError(f"{context}: expected an object")
+        for field in ("slug", "question", "why", "model"):
+            if not question.get(field):
+                raise CapstoneError(f"{context}: missing {field}")
+        slug = str(question["slug"]).strip()
+        if slug in defense_slugs:
+            raise CapstoneError(f"{context}: duplicate slug {slug!r}")
+        defense_slugs.add(slug)
+        clean_defense.append(
+            {
+                "slug": slug,
+                "question": str(question["question"]).strip(),
+                "why": str(question["why"]).strip(),
+                "model": str(question["model"]).strip(),
+            }
+        )
+
     return {
         "slug": str(item["slug"]).strip(),
         "title": str(item["title"]).strip(),
@@ -84,6 +110,7 @@ def load_capstone() -> dict:
         "stack": [str(entry).strip() for entry in item["stack"]],
         "outcomes": [str(entry).strip() for entry in item["outcomes"]],
         "phases": clean_phases,
+        "defense": clean_defense,
         "deployment": [str(entry).strip() for entry in item["deployment"]],
         "portfolio": [str(entry).strip() for entry in item["portfolio"]],
     }

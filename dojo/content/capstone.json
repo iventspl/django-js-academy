@@ -6,7 +6,13 @@
     "goal": "Ship a real Django application from an empty project to a public URL with tests, a deployment story and a portfolio write-up.",
     "level": "Capstone",
     "weeks": 4,
-    "stack": ["Django 5.2+", "PostgreSQL", "WhiteNoise", "pytest-django", "Fly.io or Render"],
+    "stack": [
+      "Django 5.2+",
+      "PostgreSQL",
+      "WhiteNoise",
+      "pytest-django",
+      "Fly.io or Render"
+    ],
     "outcomes": [
       "You can model a small domain and defend its boundaries.",
       "You can implement authentication and object-level authorization.",
@@ -134,6 +140,56 @@
       "One hard decision and why you made it.",
       "One failure you found in testing or deployment.",
       "What you would build next."
+    ],
+    "defense": [
+      {
+        "slug": "domain-boundary",
+        "question": "Why is a note owned by a notebook rather than directly by a user?",
+        "why": "Tests whether you can defend a domain boundary, not just a foreign key.",
+        "model": "A notebook is the sharing and permission boundary. A note inherits access through its notebook, so ownership stays in one place and a future collaborator can be added without duplicating ownership on every note."
+      },
+      {
+        "slug": "authorization",
+        "question": "Where does authorization live in your app, and why not only in the template?",
+        "why": "The most common Django security mistake is mixing presentation with permission.",
+        "model": "Authorization lives in the queryset: every note lookup filters by the current user or by a notebook the user can access. Templates hide UI, but the view must return 404 for foreign objects before rendering anything."
+      },
+      {
+        "slug": "upload-validation",
+        "question": "Why is checking the file extension not enough for an avatar upload?",
+        "why": "Tests whether you understand server-side validation and content types.",
+        "model": "An extension is user-controlled and easy to spoof. The server should validate size, decode the image with Pillow, and store through the configured storage backend. The extension is only a display hint, never the security boundary."
+      },
+      {
+        "slug": "search-pagination",
+        "question": "Why filter and paginate the queryset instead of doing it in Python?",
+        "why": "Tests ORM and performance reasoning.",
+        "model": "The database can use indexes and return only the requested page. Doing it in Python loads every row, scales badly and makes pagination unstable. `select_related`/`prefetch_related` keep the rendered page's query count constant."
+      },
+      {
+        "slug": "background-job",
+        "question": "Why does sending an invitation email belong outside the request path?",
+        "why": "Tests async reasoning and failure handling.",
+        "model": "Email providers are slow and unreliable. The request should commit the invitation and enqueue the send. The job retries independently, and the user gets a fast response even when email is down."
+      },
+      {
+        "slug": "cache-invalidation",
+        "question": "Who owns cache invalidation in your dashboard, and why?",
+        "why": "Tests whether you understand cache as a second source of truth.",
+        "model": "The write path owns invalidation. Creating or deleting a note clears the dashboard key after the transaction commits. The cache stores shared aggregates only; per-user data must never sit under a shared key."
+      },
+      {
+        "slug": "tests",
+        "question": "Which test would fail if someone removed the owner filter from the note detail view?",
+        "why": "Tests whether your tests protect the security boundary.",
+        "model": "A test that creates a note for user A, signs in as user B and requests the detail URL. It must assert 404, not just a redirect or an empty page. That test fails immediately when the owner filter disappears."
+      },
+      {
+        "slug": "deploy",
+        "question": "What happens during a deploy if migrations run in the web process instead of a release step?",
+        "why": "Tests deployment and rollback thinking.",
+        "model": "Every web instance can race to migrate, a failed migration can leave a half-started process, and rollback becomes unclear. Migrations should run once in a release step before the new web process takes traffic, with a tested rollback path."
+      }
     ]
   }
 }

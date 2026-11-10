@@ -612,6 +612,7 @@ class DjangoCapstoneProgress(models.Model):
     evidence_decision = models.TextField(blank=True)
     evidence_test = models.TextField(blank=True)
     evidence_url = models.URLField(blank=True)
+    defense_answers = models.JSONField(default=dict, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

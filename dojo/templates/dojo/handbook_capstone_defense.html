@@ -1,0 +1,55 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Project defense · {{ capstone.title }}{% endblock %}
+{% block body_class %}page-handbook page-handbook-defense{% endblock %}
+{% block meta_description %}Answer the capstone defense questions and compare with model answers.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109u">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Project defense · {{ answered }}/{{ question_total }} answered</p>
+    <h1>Defend the<br><em>decisions.</em></h1>
+    <p class="hb-hero-lead">{{ capstone.title }} is only a portfolio piece if you can explain why it works. Answer first, then compare with the model answer.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook_capstone' %}">Back to capstone <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_capstone_defense_export' %}">Export defense <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <div class="hb-defense-list">
+    {% for row in rows %}
+      <article class="hb-defense-card" id="defense-{{ row.slug }}">
+        <p class="hb-label hb-label-light">Question {{ forloop.counter|stringformat:"02d" }}</p>
+        <h2>{{ row.question }}</h2>
+        <p class="hb-defense-why">{{ row.why }}</p>
+        <form method="post" action="{% url 'dojo:handbook_capstone_defense' %}">
+          {% csrf_token %}
+          <input type="hidden" name="question_slug" value="{{ row.slug }}">
+          <label class="sr-only" for="answer-{{ row.slug }}">Your answer</label>
+          <textarea id="answer-{{ row.slug }}" name="answer" rows="5" placeholder="Answer as if this were an interview.">{{ row.answer.answer|default:"" }}</textarea>
+          <div class="hb-defense-actions">
+            <label>Self-rating
+              <select name="rating">
+                <option value="">—</option>
+                <option value="shaky" {% if row.answer.rating == 'shaky' %}selected{% endif %}>Shaky</option>
+                <option value="okay" {% if row.answer.rating == 'okay' %}selected{% endif %}>Okay</option>
+                <option value="solid" {% if row.answer.rating == 'solid' %}selected{% endif %}>Solid</option>
+              </select>
+            </label>
+            <button class="btn btn-primary btn-small" type="submit">Save answer</button>
+          </div>
+        </form>
+        <details class="hb-defense-model">
+          <summary>Compare with the model answer <span aria-hidden="true">+</span></summary>
+          <p>{{ row.model }}</p>
+        </details>
+      </article>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

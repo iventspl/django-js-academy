@@ -3035,6 +3035,101 @@ mark {
 
 /* ---------- Django Labs ---------- */
 
+.hb-defense-list {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 40px;
+}
+
+.hb-defense-card {
+  padding: 18px 20px;
+  border: 1px solid var(--line-light);
+  border-radius: 12px;
+  background: rgba(246, 240, 226, 0.04);
+}
+
+.hb-defense-card h2 {
+  margin: 0 0 5px;
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.hb-defense-why {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.hb-defense-card textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 9px 10px;
+  border: 1px solid var(--line-light);
+  border-radius: 6px;
+  background: #0b1519;
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.hb-defense-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.hb-defense-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+}
+
+.hb-defense-actions select {
+  padding: 5px 6px;
+  border: 1px solid var(--line-light);
+  border-radius: 4px;
+  background: #0b1519;
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+}
+
+.hb-defense-model {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line-light);
+}
+
+.hb-defense-model > summary {
+  color: var(--mint);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  cursor: pointer;
+}
+
+.hb-defense-model > summary span {
+  float: right;
+}
+
+.hb-defense-model p {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
 .hb-capstone-stack {
   display: flex;
   flex-wrap: wrap;

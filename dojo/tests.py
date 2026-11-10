@@ -1204,6 +1204,21 @@ class DjangoCapstoneTests(SeededTestCase):
             DjangoCapstoneProgress.objects.filter(completed_at__isnull=False).exists()
         )
 
+    def test_capstone_defense_saves_and_exports(self):
+        response = self.client.post(
+            reverse("dojo:handbook_capstone_defense"),
+            {
+                "question_slug": "authorization",
+                "answer": "The queryset filters by the current user.",
+                "rating": "solid",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        page = self.client.get(reverse("dojo:handbook_capstone_defense"))
+        self.assertContains(page, "The queryset filters by the current user.")
+        export = self.client.get(reverse("dojo:handbook_capstone_defense_export"))
+        self.assertIn(b"The queryset filters by the current user.", export.content)
+
     def test_capstone_evidence_exports(self):
         self.client.post(
             reverse("dojo:handbook_capstone_evidence"),

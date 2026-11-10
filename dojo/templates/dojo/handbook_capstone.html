@@ -6,7 +6,7 @@
 {% block meta_description %}{{ capstone.goal }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109t">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109u">
 {% endblock %}
 
 {% block content %}
@@ -21,6 +21,10 @@
     <p class="hb-hero-lead">{{ capstone.subtitle }}</p>
     <p class="hb-lab-goal"><strong>Goal:</strong> {{ capstone.goal }}</p>
     <div class="hb-capstone-stack">{% for item in capstone.stack %}<span>{{ item }}</span>{% endfor %}</div>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook_capstone_defense' %}">Project defense <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_capstone_evidence_export' %}">Export evidence <span aria-hidden="true">↗</span></a>
+    </div>
   </header>
 
   <div class="hb-lab-grid">

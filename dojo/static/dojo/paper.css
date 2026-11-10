@@ -257,6 +257,31 @@ html[data-theme="paper"] .hb-capstone-phase.is-complete {
   background: #eef6ef;
 }
 
+html[data-theme="paper"] .hb-defense-card {
+  border-color: rgba(13, 27, 36, 0.14);
+  background: #fffaf0;
+}
+
+html[data-theme="paper"] .hb-defense-card h2 {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-defense-why,
+html[data-theme="paper"] .hb-defense-model p {
+  color: #4f655d;
+}
+
+html[data-theme="paper"] .hb-defense-card textarea,
+html[data-theme="paper"] .hb-defense-actions select {
+  border-color: rgba(13, 27, 36, 0.18);
+  background: #fffdf5;
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-defense-model > summary {
+  color: #23704f;
+}
+
 html[data-theme="paper"] .hb-chapter-list a:hover strong,
 html[data-theme="paper"] .hb-bookmark-list a:hover strong {
   color: #a6422d;
