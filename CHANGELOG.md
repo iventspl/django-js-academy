@@ -35,6 +35,10 @@
 - Added **spaced teach-back scheduling**: `Shaky` 1 day, `Okay` 3 days, `Solid` 14 days; due explanations appear in the review queue and on `/progress/`. Migration `0011` adds `due_on`, `interval_days` and `repetitions`.
 - Added **Django Labs** at `/handbook/labs/`: 10 build tasks with starter code, acceptance criteria, hints and hidden reference implementations. New model/migration: `HandbookLabProgress` / `0012`.
 - Added a **lab evidence journal**: each lab records what was built, a hard decision, a test and a repo link; evidence survives completion toggles and exports to Markdown. Migration `0013`.
+- Added a **Django feature map** at `/features/` backed by `DjangoFeature` entries and a data migration, covering the handbook, search, practice, content-health, versioning, labs and UI features.
+- Added **Django Project Tracks** at `/handbook/tracks/`: four tracks combining labs, milestones, final evidence, completion gating and Markdown export. New model/migration: `DjangoTrackProgress` / `0016`; feature map entry via `0017`.
+- Added **Django Capstone** at `/handbook/capstone/`: a deployable Field Notes project with six phases, deployment checklist, portfolio evidence and Markdown export. Model/migration: `DjangoCapstoneProgress` / `0018`; feature map entry via `0019`.
+- Added the feature map to **More tools** and the handbook tool bar.
 - Improved dark-theme contrast and chapter UI: readable checkpoint buttons, light feedback fields, clearer section notes and visible reading-band actions.
 - Added a persisted **High contrast** toggle and collapsed secondary navigation into **More tools** for both Django and JS modules.
 - Added `aria-current` for the active nav item and `aria-expanded`/`aria-controls` for the mobile menu.
@@ -42,7 +46,7 @@
 
 ### Verification
 
-- Full test suite: **217 tests pass**.
+- Full test suite: **226 tests pass**.
 
 ## 4.28 — 2026-11-09
 

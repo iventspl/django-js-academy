@@ -7,6 +7,7 @@ app_name = "dojo"
 urlpatterns = [
     path("", views.home, name="home"),
     path("search/", views.search, name="search"),
+    path("features/", views.django_features, name="features"),
     path("handbook/", views.handbook, name="handbook"),
     path("handbook/search/", views.handbook_search, name="handbook_search"),
     path("handbook/traceback/", views.handbook_traceback, name="handbook_traceback"),
@@ -20,6 +21,48 @@ urlpatterns = [
     path("handbook/notes/", views.handbook_notes, name="handbook_notes"),
     path("handbook/explanations/", views.handbook_explanations, name="handbook_explanations"),
     path("handbook/labs/", views.handbook_labs, name="handbook_labs"),
+    path("handbook/tracks/", views.handbook_tracks, name="handbook_tracks"),
+    path("handbook/capstone/", views.handbook_capstone, name="handbook_capstone"),
+    path(
+        "handbook/capstone/evidence.md",
+        views.handbook_capstone_evidence_export,
+        name="handbook_capstone_evidence_export",
+    ),
+    path(
+        "handbook/capstone/complete/",
+        views.handbook_capstone_complete,
+        name="handbook_capstone_complete",
+    ),
+    path(
+        "handbook/capstone/evidence/",
+        views.handbook_capstone_evidence,
+        name="handbook_capstone_evidence",
+    ),
+    path(
+        "handbook/capstone/phase/<slug:phase_slug>/",
+        views.handbook_capstone_phase,
+        name="handbook_capstone_phase",
+    ),
+    path(
+        "handbook/tracks/evidence.md",
+        views.handbook_track_evidence_export,
+        name="handbook_track_evidence_export",
+    ),
+    path(
+        "handbook/tracks/<slug:slug>/",
+        views.handbook_track,
+        name="handbook_track",
+    ),
+    path(
+        "handbook/tracks/<slug:slug>/complete/",
+        views.handbook_track_complete,
+        name="handbook_track_complete",
+    ),
+    path(
+        "handbook/tracks/<slug:slug>/evidence/",
+        views.handbook_track_evidence,
+        name="handbook_track_evidence",
+    ),
     path(
         "handbook/labs/evidence.md",
         views.handbook_lab_evidence_export,

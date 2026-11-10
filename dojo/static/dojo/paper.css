@@ -207,6 +207,56 @@ html[data-theme="paper"] .hb-evidence label {
   color: #5b7067;
 }
 
+html[data-theme="paper"] .hb-feature-card {
+  border-color: rgba(13, 27, 36, 0.14);
+  background: #fffaf0;
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-feature-card h2 {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-feature-card p {
+  color: #4f655d;
+}
+
+html[data-theme="paper"] .hb-feature-glyph {
+  color: #23704f;
+}
+
+html[data-theme="paper"] .hb-track-lab {
+  border-color: rgba(13, 27, 36, 0.14);
+  background: #fffaf0;
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-track-lab strong {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-track-lab small {
+  color: #5b7067;
+}
+
+html[data-theme="paper"] .hb-track-lab.is-complete {
+  border-color: rgba(35, 112, 79, 0.35);
+  background: #eef6ef;
+}
+
+html[data-theme="paper"] .hb-capstone-phase-head h2 {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-capstone-phase {
+  background: #fffaf0;
+  border-color: rgba(13, 27, 36, 0.14);
+}
+
+html[data-theme="paper"] .hb-capstone-phase.is-complete {
+  background: #eef6ef;
+}
+
 html[data-theme="paper"] .hb-chapter-list a:hover strong,
 html[data-theme="paper"] .hb-bookmark-list a:hover strong {
   color: #a6422d;

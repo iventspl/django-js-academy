@@ -6,9 +6,11 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from .capstone import load_capstone
 from .content import load_bundles
 from .handbook import chapter_map, load_chapters, render_prose, search_handbook, suggest_terms
 from .labs import load_labs
+from .tracks import load_tracks
 from .models import (
     AppBlueprint,
     ArchitectureCase,
@@ -18,6 +20,9 @@ from .models import (
     FlashcardReview,
     HandbookProgress,
     HandbookNote,
+    DjangoCapstoneProgress,
+    DjangoFeature,
+    DjangoTrackProgress,
     HandbookExplanation,
     HandbookFeedback,
     HandbookLabProgress,
@@ -1106,6 +1111,109 @@ class HandbookLabTests(SeededTestCase):
         self.assertContains(detail, "A working contact page.")
         export = self.client.get(reverse("dojo:handbook_lab_evidence_export"))
         self.assertIn(b"A working contact page.", export.content)
+
+
+class DjangoFeatureTests(SeededTestCase):
+    def test_feature_model_is_seeded(self):
+        features = list(DjangoFeature.objects.all())
+        self.assertGreaterEqual(len(features), 20)
+        self.assertTrue(all(feature.url for feature in features))
+        self.assertTrue(any(feature.is_new for feature in features))
+
+    def test_feature_page_renders(self):
+        response = self.client.get(reverse("dojo:features"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Everything")
+        self.assertContains(response, "Django Labs")
+        self.assertContains(response, "90-chapter Django handbook")
+
+
+class DjangoTrackTests(SeededTestCase):
+    def test_tracks_reference_existing_labs(self):
+        tracks = load_tracks()
+        self.assertEqual(len(tracks), 4)
+        lab_slugs = {lab["slug"] for lab in load_labs()}
+        for track in tracks:
+            self.assertTrue(set(track["lab_slugs"]).issubset(lab_slugs))
+
+    def test_track_index_and_detail_render(self):
+        response = self.client.get(reverse("dojo:handbook_tracks"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Project Tracks")
+        self.assertContains(response, "Content platform")
+
+        response = self.client.get(
+            reverse("dojo:handbook_track", args=["content-platform"])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Milestones")
+        self.assertContains(response, "Track evidence")
+
+    def test_track_completion_requires_all_labs(self):
+        track = load_tracks()[0]
+        url = reverse("dojo:handbook_track_complete", args=[track["slug"]])
+        response = self.client.post(url, follow=True)
+        self.assertContains(response, "Complete every lab")
+        self.assertFalse(DjangoTrackProgress.objects.filter(completed_at__isnull=False).exists())
+
+        for lab_slug in track["lab_slugs"]:
+            HandbookLabProgress.objects.create(
+                learner=Learner.local(), lab_slug=lab_slug, completed_at=timezone.now()
+            )
+        self.client.post(url)
+        self.assertTrue(
+            DjangoTrackProgress.objects.filter(
+                track_slug=track["slug"], completed_at__isnull=False
+            ).exists()
+        )
+
+    def test_track_evidence_export(self):
+        self.client.post(
+            reverse("dojo:handbook_track_evidence", args=["content-platform"]),
+            {"evidence_what": "A private content platform.", "evidence_test": "404 test."},
+        )
+        response = self.client.get(reverse("dojo:handbook_track_evidence_export"))
+        self.assertIn(b"A private content platform.", response.content)
+
+
+class DjangoCapstoneTests(SeededTestCase):
+    def test_capstone_content_and_page(self):
+        capstone = load_capstone()
+        self.assertEqual(len(capstone["phases"]), 6)
+        response = self.client.get(reverse("dojo:handbook_capstone"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Field Notes")
+        self.assertContains(response, "Deployment checklist")
+
+    def test_capstone_completion_requires_all_phases(self):
+        capstone = load_capstone()
+        response = self.client.post(
+            reverse("dojo:handbook_capstone_complete"), follow=True
+        )
+        self.assertContains(response, "Complete every capstone phase")
+        self.assertFalse(
+            DjangoCapstoneProgress.objects.filter(completed_at__isnull=False).exists()
+        )
+
+        for phase in capstone["phases"]:
+            self.client.post(
+                reverse("dojo:handbook_capstone_phase", args=[phase["slug"]])
+            )
+        self.client.post(reverse("dojo:handbook_capstone_complete"))
+        self.assertTrue(
+            DjangoCapstoneProgress.objects.filter(completed_at__isnull=False).exists()
+        )
+
+    def test_capstone_evidence_exports(self):
+        self.client.post(
+            reverse("dojo:handbook_capstone_evidence"),
+            {
+                "evidence_what": "A deployed team notebook.",
+                "evidence_test": "Private notes return 404.",
+            },
+        )
+        response = self.client.get(reverse("dojo:handbook_capstone_evidence_export"))
+        self.assertIn(b"A deployed team notebook.", response.content)
 
 
 class HandbookFeedbackTests(SeededTestCase):

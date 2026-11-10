@@ -601,6 +601,93 @@ class HandbookProgress(models.Model):
         return self.chapter_slug
 
 
+class DjangoCapstoneProgress(models.Model):
+    learner = models.ForeignKey(
+        Learner, on_delete=models.CASCADE, related_name="django_capstone_progress"
+    )
+    capstone_slug = models.SlugField(max_length=120)
+    completed_phases = models.JSONField(default=list, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    evidence_what = models.TextField(blank=True)
+    evidence_decision = models.TextField(blank=True)
+    evidence_test = models.TextField(blank=True)
+    evidence_url = models.URLField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "capstone_slug"],
+                name="unique_django_capstone_progress",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.capstone_slug
+
+    @property
+    def has_evidence(self) -> bool:
+        return bool(
+            self.evidence_what
+            or self.evidence_decision
+            or self.evidence_test
+            or self.evidence_url
+        )
+
+
+class DjangoTrackProgress(models.Model):
+    learner = models.ForeignKey(
+        Learner, on_delete=models.CASCADE, related_name="django_track_progress"
+    )
+    track_slug = models.SlugField(max_length=120)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    evidence_what = models.TextField(blank=True)
+    evidence_decision = models.TextField(blank=True)
+    evidence_test = models.TextField(blank=True)
+    evidence_url = models.URLField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "track_slug"],
+                name="unique_django_track_progress",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.track_slug
+
+    @property
+    def has_evidence(self) -> bool:
+        return bool(
+            self.evidence_what
+            or self.evidence_decision
+            or self.evidence_test
+            or self.evidence_url
+        )
+
+
+class DjangoFeature(models.Model):
+    slug = models.SlugField(max_length=120, unique=True)
+    title = models.CharField(max_length=160)
+    summary = models.TextField()
+    category = models.CharField(max_length=60)
+    url = models.CharField(max_length=240)
+    glyph = models.CharField(max_length=4, default="•")
+    order = models.PositiveSmallIntegerField(default=0)
+    is_new = models.BooleanField(default=False)
+    released_on = models.DateField(default=timezone.localdate)
+
+    class Meta:
+        ordering = ["order", "title"]
+
+    def __str__(self) -> str:
+        return self.title
+
+
 class HandbookLabProgress(models.Model):
     learner = models.ForeignKey(
         Learner, on_delete=models.CASCADE, related_name="handbook_lab_progress"

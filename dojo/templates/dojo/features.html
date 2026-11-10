@@ -1,0 +1,51 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Django module · feature map{% endblock %}
+{% block body_class %}page-features{% endblock %}
+{% block meta_description %}Everything inside the Django Quest module: handbook, search, labs, notes, teach-back, version tools and editorial systems.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109t">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-features-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Django module · {{ feature_count }} features · {{ new_count }} new</p>
+    <h1>Everything<br><em>inside Django.</em></h1>
+    <p class="hb-hero-lead">{{ chapter_total }} handbook chapters, {{ lab_total }} build labs, search, notes, teach-back, feedback, version tools and a local-first learning loop. Every entry below is a model-backed feature, not a marketing list.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Open handbook <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_labs' %}">Django Labs <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  <div class="hb-coverage-stats">
+    <div><strong>{{ chapter_total }}</strong><span>chapters</span></div>
+    <div><strong>{{ lab_total }}</strong><span>labs</span></div>
+    <div><strong>{{ feature_count }}</strong><span>features</span></div>
+    <div><strong>{{ new_count }}</strong><span>recent additions</span></div>
+  </div>
+
+  {% for category in categories %}
+    <section class="hb-feature-group" aria-labelledby="feature-{{ forloop.counter }}">
+      <p class="hb-label hb-label-light" id="feature-{{ forloop.counter }}">{{ category }}</p>
+      <div class="hb-feature-grid">
+        {% for feature in features %}
+          {% if feature.category == category %}
+            <a class="hb-feature-card {% if feature.is_new %}is-new{% endif %}" href="{{ feature.url }}">
+              <span class="hb-feature-glyph">{{ feature.glyph }}</span>
+              <div>
+                <h2>{{ feature.title }}{% if feature.is_new %}<span class="hb-feature-new">new</span>{% endif %}</h2>
+                <p>{{ feature.summary }}</p>
+              </div>
+              <span class="hb-feature-arrow" aria-hidden="true">→</span>
+            </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+  {% endfor %}
+</div>
+{% endblock %}

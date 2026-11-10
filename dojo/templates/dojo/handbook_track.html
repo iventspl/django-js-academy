@@ -1,0 +1,90 @@
+{% extends "dojo/base.html" %}
+{% load static handbook_extras %}
+
+{% block title %}{{ track.title }} · Django Project Tracks{% endblock %}
+{% block body_class %}page-handbook page-handbook-track{% endblock %}
+{% block meta_description %}{{ track.goal }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109t">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-lab-wrap">
+  <div class="js-breadcrumb">
+    <a href="{% url 'dojo:handbook_tracks' %}">Project Tracks</a><span>/</span><span>{{ track.title }}</span>
+  </div>
+
+  <header class="hb-lab-hero">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> {{ track.level }} · {{ track.minutes }} min · {{ done_count }}/{{ lab_count }} labs</p>
+    <h1>{{ track.title }}</h1>
+    <p class="hb-hero-lead">{{ track.subtitle }}</p>
+    <p class="hb-lab-goal"><strong>Goal:</strong> {{ track.goal }}</p>
+  </header>
+
+  <div class="hb-lab-grid">
+    <div>
+      <section class="hb-lab-panel">
+        <p class="hb-label hb-label-light">Milestones</p>
+        <ul class="hb-check-list">{% for item in track.milestones %}<li>{{ item }}</li>{% endfor %}</ul>
+      </section>
+
+      <section class="hb-lab-panel">
+        <p class="hb-label hb-label-light">Labs in this track</p>
+        <div class="hb-track-labs">
+          {% for lab in labs %}
+            <a class="hb-track-lab {% if lab.completed %}is-complete{% endif %}" href="{% url 'dojo:handbook_lab' lab.slug %}">
+              <span>{% if lab.completed %}✓{% else %}{{ forloop.counter|stringformat:"02d" }}{% endif %}</span>
+              <strong>{{ lab.title }}</strong>
+              <small>{{ lab.minutes }} min</small>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="hb-lab-panel">
+        <p class="hb-label hb-label-light">What this track proves</p>
+        <div class="hb-prose">{{ track.proof|prose }}</div>
+        <div class="hb-prose hb-lab-explain">{{ track.explain|prose }}</div>
+      </section>
+
+      <section class="hb-lab-panel hb-evidence" id="track-evidence">
+        <p class="hb-label hb-label-light">Track evidence</p>
+        <h2>One final piece of proof.</h2>
+        <p class="hb-lab-evidence-intro">Write this after the labs. It should describe a project, not a list of exercises.</p>
+        <form method="post" action="{% url 'dojo:handbook_track_evidence' track.slug %}">
+          {% csrf_token %}
+          <label for="track-evidence-what">What the project does</label>
+          <textarea id="track-evidence-what" name="evidence_what" rows="3">{{ progress.evidence_what|default:"" }}</textarea>
+          <label for="track-evidence-decision">Hardest decision</label>
+          <textarea id="track-evidence-decision" name="evidence_decision" rows="2">{{ progress.evidence_decision|default:"" }}</textarea>
+          <label for="track-evidence-test">Most valuable test</label>
+          <textarea id="track-evidence-test" name="evidence_test" rows="2">{{ progress.evidence_test|default:"" }}</textarea>
+          <label for="track-evidence-url">Repo or commit link</label>
+          <input id="track-evidence-url" type="url" name="evidence_url" value="{{ progress.evidence_url|default:'' }}" placeholder="https://github.com/…">
+          <button class="btn btn-primary btn-small" type="submit">Save track evidence</button>
+        </form>
+      </section>
+    </div>
+
+    <aside class="hb-lab-aside">
+      <div class="hb-lab-status">
+        <p class="hb-label hb-label-light">Track status</p>
+        <strong>{% if completed %}Completed{% elif ready %}Ready to complete{% else %}{{ done_count }}/{{ lab_count }} labs{% endif %}</strong>
+        <form method="post" action="{% url 'dojo:handbook_track_complete' track.slug %}">
+          {% csrf_token %}
+          {% if completed %}
+            <button class="btn btn-ghost-dark btn-small" type="submit">Mark unfinished</button>
+          {% else %}
+            <button class="btn btn-primary btn-small" type="submit" {% if not ready %}disabled{% endif %}>Mark track complete</button>
+          {% endif %}
+        </form>
+        {% if not ready %}<p class="hb-lab-warning">Complete every lab first.</p>{% endif %}
+      </div>
+      <a class="hb-lab-chapter" href="{% url 'dojo:handbook_lab_evidence_export' %}">
+        <span>Portfolio</span><strong>Lab evidence</strong><small>Export lab proof</small>
+      </a>
+    </aside>
+  </div>
+</div>
+{% endblock %}

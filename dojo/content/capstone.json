@@ -1,0 +1,139 @@
+{
+  "capstone": {
+    "slug": "field-notes",
+    "title": "Field Notes",
+    "subtitle": "A small, deployable team notebook with private notes, uploads, search and email.",
+    "goal": "Ship a real Django application from an empty project to a public URL with tests, a deployment story and a portfolio write-up.",
+    "level": "Capstone",
+    "weeks": 4,
+    "stack": ["Django 5.2+", "PostgreSQL", "WhiteNoise", "pytest-django", "Fly.io or Render"],
+    "outcomes": [
+      "You can model a small domain and defend its boundaries.",
+      "You can implement authentication and object-level authorization.",
+      "You can build validated forms, uploads and search that stay fast.",
+      "You can add one background job and explain why it is asynchronous.",
+      "You can deploy with environment settings, static files and migrations.",
+      "You can present the result as evidence, not a tutorial."
+    ],
+    "phases": [
+      {
+        "slug": "domain",
+        "title": "Phase 1 — Domain and data model",
+        "brief": "Design the smallest useful notebook: users, notebooks, notes, attachments and a soft-delete rule.",
+        "tasks": [
+          "Write a one-page domain model before coding.",
+          "Create models with explicit related names and indexes.",
+          "Add a `deleted_at` soft-delete field and a manager that hides deleted rows.",
+          "Write the first migration and an admin registration."
+        ],
+        "acceptance": [
+          "A note always belongs to one notebook and one owner.",
+          "Deleted notes are invisible to normal queries.",
+          "The admin can inspect notebooks and notes.",
+          "The migration applies cleanly on an empty database."
+        ]
+      },
+      {
+        "slug": "auth",
+        "title": "Phase 2 — Auth and permissions",
+        "brief": "Users sign in, see only their notebooks, and get a safe 404 for anything else.",
+        "tasks": [
+          "Add login/logout and a protected dashboard.",
+          "Filter every notebook/note queryset by the current user.",
+          "Add a test for anonymous access and foreign-object access.",
+          "Create a member invitation model with a signed token."
+        ],
+        "acceptance": [
+          "Anonymous users are redirected to login.",
+          "A user cannot read or edit another user's note.",
+          "Invitation tokens expire and are single-purpose.",
+          "The permission tests fail if the owner filter is removed."
+        ]
+      },
+      {
+        "slug": "content",
+        "title": "Phase 3 — Forms, uploads and search",
+        "brief": "Build create/edit forms, validated attachments and a searchable note list.",
+        "tasks": [
+          "Use ModelForm for create/edit with server-controlled owner.",
+          "Validate attachment size and image type.",
+          "Add search by title/body and paginate the result.",
+          "Show a useful empty state and preserve query params."
+        ],
+        "acceptance": [
+          "Invalid input re-renders with field errors.",
+          "A 3 MB upload is rejected before storage.",
+          "Search and pagination preserve the query.",
+          "The list page has a constant query count for 20 notes."
+        ]
+      },
+      {
+        "slug": "async",
+        "title": "Phase 4 — One background job and one cache",
+        "brief": "Send an invitation email asynchronously and cache a dashboard aggregate.",
+        "tasks": [
+          "Move invitation email out of the request path.",
+          "Add a retry/error path for the job.",
+          "Cache a dashboard count for 60 seconds.",
+          "Invalidate the cache when a note or notebook is written."
+        ],
+        "acceptance": [
+          "Creating an invitation returns quickly and queues the email.",
+          "A failed email is visible in logs and can be retried.",
+          "The cached dashboard is invalidated on write.",
+          "No per-user data is stored under a shared cache key."
+        ]
+      },
+      {
+        "slug": "quality",
+        "title": "Phase 5 — Tests and hardening",
+        "brief": "Make the project boring to break: tests, checks and a security pass.",
+        "tasks": [
+          "Add tests for the critical permission and upload paths.",
+          "Run `manage.py check --deploy` and fix the warnings.",
+          "Add CSP or a documented security header strategy.",
+          "Add a health endpoint and structured error logging."
+        ],
+        "acceptance": [
+          "The critical paths have regression tests.",
+          "`check --deploy` passes or has documented exceptions.",
+          "Secrets come from environment variables.",
+          "A failing health check is visible to the deploy platform."
+        ]
+      },
+      {
+        "slug": "deploy",
+        "title": "Phase 6 — Deploy and present",
+        "brief": "Put the app on a public URL and write the portfolio entry.",
+        "tasks": [
+          "Deploy with a managed PostgreSQL database.",
+          "Run migrations and collect static files in the release step.",
+          "Create a demo account and seed sample data.",
+          "Write the README: problem, architecture, tradeoffs, what broke."
+        ],
+        "acceptance": [
+          "The app is reachable over HTTPS.",
+          "A new user can register, sign in and create a note.",
+          "Uploads persist across a redeploy.",
+          "The README explains one decision you would change."
+        ]
+      }
+    ],
+    "deployment": [
+      "Use environment variables for `SECRET_KEY`, database URL and email credentials.",
+      "Set `DEBUG=False` and `ALLOWED_HOSTS` explicitly.",
+      "Run `collectstatic` and serve static files through WhiteNoise or the platform.",
+      "Run migrations as a release command, not inside the web process.",
+      "Add a `/healthz/` endpoint.",
+      "Test a rollback or redeploy before calling it done."
+    ],
+    "portfolio": [
+      "Public URL and demo account.",
+      "Repo link with a readable README.",
+      "One screenshot of the main workflow.",
+      "One hard decision and why you made it.",
+      "One failure you found in testing or deployment.",
+      "What you would build next."
+    ]
+  }
+}

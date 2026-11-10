@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="{% static 'dojo/app.css' %}?v=20261110d">
   {% block extra_css %}{% endblock %}
   <link rel="stylesheet" href="{% static 'dojo/mobile.css' %}?v=20261030k">
-  <link rel="stylesheet" href="{% static 'dojo/paper.css' %}?v=20261110e">
+  <link rel="stylesheet" href="{% static 'dojo/paper.css' %}?v=20261110h">
   <script defer src="{% static 'dojo/app.js' %}?v=20261110d"></script>
 </head>
 <body class="{% block body_class %}{% endblock %} {% if request.resolver_match.namespace == 'js_academy' %}platform-js{% elif request.resolver_match.namespace == 'ai_academy' %}platform-ai{% endif %}">
@@ -204,6 +204,9 @@
               <a href="{% url 'dojo:handbook_notes' %}"><span>Handbook notes</span><small>Your section notes</small></a>
               <a href="{% url 'dojo:handbook_explanations' %}"><span>Teach-back review</span><small>Explain it again</small></a>
               <a href="{% url 'dojo:handbook_labs' %}"><span>Django Labs</span><small>Build and verify</small></a>
+              <a href="{% url 'dojo:handbook_tracks' %}"><span>Project Tracks</span><small>Labs into projects</small></a>
+              <a href="{% url 'dojo:handbook_capstone' %}"><span>Capstone</span><small>Ship the portfolio</small></a>
+              <a href="{% url 'dojo:features' %}"><span>Feature map</span><small>Everything in Django</small></a>
               <a href="{% url 'dojo:handbook_coverage' %}"><span>Coverage</span><small>Chapters and gaps</small></a>
               <a href="{% url 'dojo:handbook_versions' %}"><span>Version matrix</span><small>5.2 · 6.0 · 6.1</small></a>
               <a href="{% url 'dojo:handbook_upgrade' %}"><span>Upgrade assistant</span><small>Plan a version jump</small></a>

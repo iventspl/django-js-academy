@@ -1,0 +1,39 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Django Project Tracks{% endblock %}
+{% block body_class %}page-handbook page-handbook-tracks{% endblock %}
+{% block meta_description %}Four project tracks combining Django Labs into coherent proof of work.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109t">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Project Tracks · {{ completed_count }}/{{ track_total }} complete</p>
+    <h1>Small labs.<br><em>Real projects.</em></h1>
+    <p class="hb-hero-lead">Tracks combine existing labs into a coherent build. Finish every lab, then write one final piece of evidence: what the project proves and what you would do differently.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook_labs' %}">All labs <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_capstone' %}">Capstone <span aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_track_evidence_export' %}">Export track evidence <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <div class="hb-cat-grid">
+    {% for row in rows %}
+      <a class="hb-cat-card hb-lab-card {% if row.completed %}is-complete{% endif %}" href="{% url 'dojo:handbook_track' row.slug %}">
+        <div class="hb-cat-head">
+          <span class="hb-cat-index">{{ forloop.counter|stringformat:"02d" }}</span>
+          <h3>{{ row.title }}</h3>
+          <span class="hb-cat-count">{% if row.completed %}✓{% else %}{{ row.done_count }}/{{ row.lab_count }}{% endif %}</span>
+        </div>
+        <p>{{ row.subtitle }}</p>
+        <span class="hb-lab-meta">{{ row.level }} · {{ row.minutes }} min · {{ row.done_count }} of {{ row.lab_count }} labs</span>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

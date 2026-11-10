@@ -1,0 +1,101 @@
+{% extends "dojo/base.html" %}
+{% load static handbook_extras %}
+
+{% block title %}{{ capstone.title }} · Django Capstone{% endblock %}
+{% block body_class %}page-handbook page-handbook-capstone{% endblock %}
+{% block meta_description %}{{ capstone.goal }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109t">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-lab-wrap">
+  <div class="js-breadcrumb">
+    <a href="{% url 'dojo:handbook_tracks' %}">Project Tracks</a><span>/</span><span>{{ capstone.title }}</span>
+  </div>
+
+  <header class="hb-lab-hero">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Capstone · {{ capstone.level }} · {{ capstone.weeks }} weeks · {{ done_count }}/{{ phase_count }} phases</p>
+    <h1>{{ capstone.title }}</h1>
+    <p class="hb-hero-lead">{{ capstone.subtitle }}</p>
+    <p class="hb-lab-goal"><strong>Goal:</strong> {{ capstone.goal }}</p>
+    <div class="hb-capstone-stack">{% for item in capstone.stack %}<span>{{ item }}</span>{% endfor %}</div>
+  </header>
+
+  <div class="hb-lab-grid">
+    <div>
+      <section class="hb-lab-panel">
+        <p class="hb-label hb-label-light">What you will prove</p>
+        <ul class="hb-check-list">{% for item in capstone.outcomes %}<li>{{ item }}</li>{% endfor %}</ul>
+      </section>
+
+      {% for phase in phases %}
+        <section class="hb-lab-panel hb-capstone-phase {% if phase.completed %}is-complete{% endif %}" id="phase-{{ phase.slug }}">
+          <div class="hb-capstone-phase-head">
+            <div>
+              <p class="hb-label hb-label-light">Phase {{ forloop.counter|stringformat:"02d" }}</p>
+              <h2>{{ phase.title }}</h2>
+            </div>
+            <form method="post" action="{% url 'dojo:handbook_capstone_phase' phase.slug %}">
+              {% csrf_token %}
+              <button class="btn {% if phase.completed %}btn-ghost-dark{% else %}btn-primary{% endif %} btn-small" type="submit">{% if phase.completed %}✓ Done{% else %}Mark phase done{% endif %}</button>
+            </form>
+          </div>
+          <div class="hb-prose">{{ phase.brief|prose }}</div>
+          <h3>Tasks</h3>
+          <ol class="hb-lab-list">{% for task in phase.tasks %}<li>{{ task }}</li>{% endfor %}</ol>
+          <h3>Acceptance</h3>
+          <ul class="hb-check-list">{% for item in phase.acceptance %}<li>{{ item }}</li>{% endfor %}</ul>
+        </section>
+      {% endfor %}
+
+      <section class="hb-lab-panel">
+        <p class="hb-label hb-label-light">Deployment checklist</p>
+        <ul class="hb-check-list">{% for item in capstone.deployment %}<li>{{ item }}</li>{% endfor %}</ul>
+      </section>
+
+      <section class="hb-lab-panel hb-evidence" id="portfolio">
+        <p class="hb-label hb-label-light">Portfolio evidence</p>
+        <h2>Make it presentable.</h2>
+        <p class="hb-lab-evidence-intro">This is what you show in an interview. Write it after deployment, not before.</p>
+        <form method="post" action="{% url 'dojo:handbook_capstone_evidence' %}">
+          {% csrf_token %}
+          <label for="capstone-what">What I built</label>
+          <textarea id="capstone-what" name="evidence_what" rows="3">{{ progress.evidence_what|default:"" }}</textarea>
+          <label for="capstone-decision">Hardest decision</label>
+          <textarea id="capstone-decision" name="evidence_decision" rows="2">{{ progress.evidence_decision|default:"" }}</textarea>
+          <label for="capstone-test">Most valuable test</label>
+          <textarea id="capstone-test" name="evidence_test" rows="2">{{ progress.evidence_test|default:"" }}</textarea>
+          <label for="capstone-url">Public URL or repo</label>
+          <input id="capstone-url" type="url" name="evidence_url" value="{{ progress.evidence_url|default:'' }}" placeholder="https://…">
+          <button class="btn btn-primary btn-small" type="submit">Save portfolio evidence</button>
+        </form>
+      </section>
+    </div>
+
+    <aside class="hb-lab-aside">
+      <div class="hb-lab-status">
+        <p class="hb-label hb-label-light">Capstone status</p>
+        <strong>{% if completed %}Completed{% elif ready %}Ready to complete{% else %}{{ done_count }}/{{ phase_count }} phases{% endif %}</strong>
+        <form method="post" action="{% url 'dojo:handbook_capstone_complete' %}">
+          {% csrf_token %}
+          {% if completed %}
+            <button class="btn btn-ghost-dark btn-small" type="submit">Mark unfinished</button>
+          {% else %}
+            <button class="btn btn-primary btn-small" type="submit" {% if not ready %}disabled{% endif %}>Mark capstone complete</button>
+          {% endif %}
+        </form>
+        {% if not ready %}<p class="hb-lab-warning">Complete every phase first.</p>{% endif %}
+      </div>
+      <a class="hb-lab-chapter" href="{% url 'dojo:handbook_capstone_evidence_export' %}">
+        <span>Portfolio</span><strong>Export evidence</strong><small>Markdown</small>
+      </a>
+      <div class="hb-lab-status">
+        <p class="hb-label hb-label-light">Portfolio checklist</p>
+        <ul class="hb-check-list">{% for item in capstone.portfolio %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

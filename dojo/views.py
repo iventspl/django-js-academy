@@ -28,7 +28,9 @@ from .handbook import (
     suggest_terms,
     traceback_hits,
 )
+from .capstone import load_capstone
 from .labs import lab_for_chapter, lab_map, load_labs
+from .tracks import load_tracks, track_map
 from .models import (
     AppBlueprint,
     ArchitectureCase,
@@ -42,6 +44,9 @@ from .models import (
     HandbookFeedback,
     HandbookLabProgress,
     HandbookSearchLog,
+    DjangoCapstoneProgress,
+    DjangoFeature,
+    DjangoTrackProgress,
     Learner,
     Question,
     ReleaseNote,
@@ -392,6 +397,318 @@ def handbook_upgrade(request: HttpRequest) -> HttpResponse:
             "runtime_version": django.get_version(),
             "active_nav": "handbook",
             "page_title": "Upgrade assistant",
+        },
+    )
+
+
+@require_GET
+def handbook_capstone(request: HttpRequest) -> HttpResponse:
+    capstone = load_capstone()
+    progress = DjangoCapstoneProgress.objects.filter(
+        learner=Learner.local(), capstone_slug=capstone["slug"]
+    ).first()
+    completed_phases = set(progress.completed_phases if progress else [])
+    phases = [
+        {**phase, "completed": phase["slug"] in completed_phases}
+        for phase in capstone["phases"]
+    ]
+    done = sum(1 for phase in phases if phase["completed"])
+    return render(
+        request,
+        "dojo/handbook_capstone.html",
+        {
+            "capstone": capstone,
+            "phases": phases,
+            "progress": progress,
+            "done_count": done,
+            "phase_count": len(phases),
+            "ready": done == len(phases),
+            "completed": bool(progress and progress.completed_at),
+            "active_nav": "handbook",
+            "page_title": capstone["title"],
+        },
+    )
+
+
+@require_POST
+def handbook_capstone_phase(request: HttpRequest, phase_slug: str) -> HttpResponse:
+    capstone = load_capstone()
+    phase = next(
+        (item for item in capstone["phases"] if item["slug"] == phase_slug), None
+    )
+    if phase is None:
+        raise Http404("Capstone phase not found")
+    row, _ = DjangoCapstoneProgress.objects.get_or_create(
+        learner=Learner.local(), capstone_slug=capstone["slug"]
+    )
+    completed = set(row.completed_phases or [])
+    if phase_slug in completed:
+        completed.remove(phase_slug)
+        messages.info(request, "Phase marked unfinished.")
+    else:
+        completed.add(phase_slug)
+        messages.success(request, "Phase complete.")
+    row.completed_phases = sorted(completed)
+    if len(completed) < len(capstone["phases"]):
+        row.completed_at = None
+    row.save(update_fields=["completed_phases", "completed_at", "updated_at"])
+    return redirect(f"{reverse('dojo:handbook_capstone')}#phase-{phase_slug}")
+
+
+@require_POST
+def handbook_capstone_complete(request: HttpRequest) -> HttpResponse:
+    capstone = load_capstone()
+    row, _ = DjangoCapstoneProgress.objects.get_or_create(
+        learner=Learner.local(), capstone_slug=capstone["slug"]
+    )
+    if set(row.completed_phases or []) != {phase["slug"] for phase in capstone["phases"]}:
+        messages.error(request, "Complete every capstone phase first.")
+        return redirect("dojo:handbook_capstone")
+    if row.completed_at:
+        row.completed_at = None
+        messages.info(request, "Capstone marked unfinished.")
+    else:
+        row.completed_at = timezone.now()
+        messages.success(request, "Capstone completed. That is a portfolio piece.")
+    row.save(update_fields=["completed_at", "updated_at"])
+    return redirect("dojo:handbook_capstone")
+
+
+@require_POST
+def handbook_capstone_evidence(request: HttpRequest) -> HttpResponse:
+    capstone = load_capstone()
+    row, _ = DjangoCapstoneProgress.objects.get_or_create(
+        learner=Learner.local(), capstone_slug=capstone["slug"]
+    )
+    row.evidence_what = request.POST.get("evidence_what", "")[:4000].strip()
+    row.evidence_decision = request.POST.get("evidence_decision", "")[:4000].strip()
+    row.evidence_test = request.POST.get("evidence_test", "")[:4000].strip()
+    row.evidence_url = request.POST.get("evidence_url", "")[:500].strip()
+    row.save(
+        update_fields=[
+            "evidence_what",
+            "evidence_decision",
+            "evidence_test",
+            "evidence_url",
+            "updated_at",
+        ]
+    )
+    messages.success(request, "Capstone portfolio evidence saved.")
+    return redirect(f"{reverse('dojo:handbook_capstone')}#portfolio")
+
+
+@require_GET
+def handbook_capstone_evidence_export(request: HttpRequest) -> HttpResponse:
+    capstone = load_capstone()
+    row = DjangoCapstoneProgress.objects.filter(
+        learner=Learner.local(), capstone_slug=capstone["slug"]
+    ).first()
+    lines = [f"# {capstone['title']} — capstone evidence", "", capstone["goal"], ""]
+    if row:
+        lines.extend(
+            [
+                f"Status: {'completed' if row.completed_at else 'in progress'}",
+                f"Phases: {len(row.completed_phases or [])}/{len(capstone['phases'])}",
+                "",
+            ]
+        )
+        for label, value in (
+            ("What I built", row.evidence_what),
+            ("Hardest decision", row.evidence_decision),
+            ("Test proven", row.evidence_test),
+            ("Evidence URL", row.evidence_url),
+        ):
+            if value:
+                lines.extend([f"**{label}:** {value}", ""])
+    response = HttpResponse(
+        "\n".join(lines).rstrip() + "\n", content_type="text/markdown; charset=utf-8"
+    )
+    response["Content-Disposition"] = 'attachment; filename="django-capstone-evidence.md"'
+    return response
+
+
+@require_GET
+def handbook_tracks(request: HttpRequest) -> HttpResponse:
+    learner = Learner.local()
+    done_labs = set(
+        HandbookLabProgress.objects.filter(
+            learner=learner, completed_at__isnull=False
+        ).values_list("lab_slug", flat=True)
+    )
+    progress_rows = {
+        row.track_slug: row
+        for row in DjangoTrackProgress.objects.filter(learner=learner)
+    }
+    rows = []
+    for track in load_tracks():
+        labs = [
+            {**lab, "completed": lab["slug"] in done_labs}
+            for lab in track["labs"]
+        ]
+        done = sum(1 for lab in labs if lab["completed"])
+        progress = progress_rows.get(track["slug"])
+        rows.append(
+            {
+                **track,
+                "labs": labs,
+                "done_count": done,
+                "lab_count": len(labs),
+                "ready": done == len(labs),
+                "progress": progress,
+                "completed": bool(progress and progress.completed_at),
+            }
+        )
+    return render(
+        request,
+        "dojo/handbook_tracks.html",
+        {
+            "rows": rows,
+            "completed_count": sum(1 for row in rows if row["completed"]),
+            "track_total": len(rows),
+            "active_nav": "handbook",
+            "page_title": "Django Project Tracks",
+        },
+    )
+
+
+@require_GET
+def handbook_track(request: HttpRequest, slug: str) -> HttpResponse:
+    track = track_map().get(slug)
+    if track is None:
+        raise Http404("Track not found")
+    learner = Learner.local()
+    done_labs = set(
+        HandbookLabProgress.objects.filter(
+            learner=learner, completed_at__isnull=False
+        ).values_list("lab_slug", flat=True)
+    )
+    progress = DjangoTrackProgress.objects.filter(
+        learner=learner, track_slug=slug
+    ).first()
+    labs = [
+        {**lab, "completed": lab["slug"] in done_labs}
+        for lab in track["labs"]
+    ]
+    done = sum(1 for lab in labs if lab["completed"])
+    return render(
+        request,
+        "dojo/handbook_track.html",
+        {
+            "track": track,
+            "labs": labs,
+            "done_count": done,
+            "lab_count": len(labs),
+            "ready": done == len(labs),
+            "progress": progress,
+            "completed": bool(progress and progress.completed_at),
+            "active_nav": "handbook",
+            "page_title": track["title"],
+        },
+    )
+
+
+@require_POST
+def handbook_track_complete(request: HttpRequest, slug: str) -> HttpResponse:
+    track = track_map().get(slug)
+    if track is None:
+        raise Http404("Track not found")
+    learner = Learner.local()
+    done = set(
+        HandbookLabProgress.objects.filter(
+            learner=learner, completed_at__isnull=False
+        ).values_list("lab_slug", flat=True)
+    )
+    if not all(lab_slug in done for lab_slug in track["lab_slugs"]):
+        messages.error(request, "Complete every lab in this track first.")
+        return redirect("dojo:handbook_track", slug=slug)
+    row, _ = DjangoTrackProgress.objects.get_or_create(
+        learner=learner, track_slug=slug
+    )
+    if row.completed_at:
+        row.completed_at = None
+        row.save(update_fields=["completed_at", "updated_at"])
+        messages.info(request, "Track marked unfinished.")
+    else:
+        row.completed_at = timezone.now()
+        row.save(update_fields=["completed_at", "updated_at"])
+        messages.success(request, "Track completed. A project is stronger than a checklist.")
+    return redirect("dojo:handbook_track", slug=slug)
+
+
+@require_POST
+def handbook_track_evidence(request: HttpRequest, slug: str) -> HttpResponse:
+    if slug not in track_map():
+        raise Http404("Track not found")
+    learner = Learner.local()
+    row, _ = DjangoTrackProgress.objects.get_or_create(
+        learner=learner, track_slug=slug
+    )
+    row.evidence_what = request.POST.get("evidence_what", "")[:4000].strip()
+    row.evidence_decision = request.POST.get("evidence_decision", "")[:4000].strip()
+    row.evidence_test = request.POST.get("evidence_test", "")[:4000].strip()
+    row.evidence_url = request.POST.get("evidence_url", "")[:500].strip()
+    row.save(
+        update_fields=[
+            "evidence_what",
+            "evidence_decision",
+            "evidence_test",
+            "evidence_url",
+            "updated_at",
+        ]
+    )
+    messages.success(request, "Track evidence saved.")
+    return redirect(f"{reverse('dojo:handbook_track', args=[slug])}#track-evidence")
+
+
+@require_GET
+def handbook_track_evidence_export(request: HttpRequest) -> HttpResponse:
+    rows = {
+        row.track_slug: row
+        for row in DjangoTrackProgress.objects.filter(learner=Learner.local())
+    }
+    lines = ["# Django Project Tracks — evidence", ""]
+    for track in load_tracks():
+        row = rows.get(track["slug"])
+        if not row or not row.has_evidence:
+            continue
+        lines.extend(
+            [
+                f"## {track['title']}",
+                "",
+                f"Status: {'completed' if row.completed_at else 'in progress'}",
+                "",
+            ]
+        )
+        if row.evidence_what:
+            lines.extend([f"**What I built:** {row.evidence_what}", ""])
+        if row.evidence_decision:
+            lines.extend([f"**Hard decision:** {row.evidence_decision}", ""])
+        if row.evidence_test:
+            lines.extend([f"**Test added:** {row.evidence_test}", ""])
+        if row.evidence_url:
+            lines.extend([f"**Evidence:** {row.evidence_url}", ""])
+    response = HttpResponse(
+        "\n".join(lines).rstrip() + "\n", content_type="text/markdown; charset=utf-8"
+    )
+    response["Content-Disposition"] = 'attachment; filename="django-tracks-evidence.md"'
+    return response
+
+
+@require_GET
+def django_features(request: HttpRequest) -> HttpResponse:
+    features = list(DjangoFeature.objects.all())
+    return render(
+        request,
+        "dojo/features.html",
+        {
+            "features": features,
+            "feature_count": len(features),
+            "new_count": sum(1 for feature in features if feature.is_new),
+            "categories": list(dict.fromkeys(feature.category for feature in features)),
+            "chapter_total": len(load_chapters()),
+            "lab_total": len(load_labs()),
+            "active_nav": "features",
+            "page_title": "Django module features",
         },
     )
 

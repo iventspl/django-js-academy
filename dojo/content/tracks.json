@@ -1,0 +1,72 @@
+{
+  "tracks": [
+    {
+      "slug": "content-platform",
+      "title": "Content platform",
+      "subtitle": "Auth, safe uploads and search that stays fast as content grows.",
+      "goal": "Ship a small content platform where people sign in, upload a file, browse their own content and search it.",
+      "level": "Core",
+      "minutes": 105,
+      "lab_slugs": ["auth-permissions", "file-upload", "paginated-search"],
+      "milestones": [
+        "A private document page returns 404 for another user.",
+        "An avatar upload rejects a non-image and a file over 2 MB.",
+        "Search and category filters combine and pagination stays stable.",
+        "The list page runs a constant number of queries for 20 rows."
+      ],
+      "proof": "A working content list with private ownership, validated uploads and a searchable paginated index.",
+      "explain": "This track proves you can connect authentication, authorization, uploads and query design into one user-facing workflow."
+    },
+    {
+      "slug": "commerce",
+      "title": "Commerce",
+      "subtitle": "Stock, transactions, caching and a safe operational command.",
+      "goal": "Build the backend slice of a small shop that can sell the last item without overselling.",
+      "level": "Advanced",
+      "minutes": 120,
+      "lab_slugs": ["transaction-stock", "cached-dashboard", "management-command"],
+      "milestones": [
+        "Two concurrent checkouts cannot both take the last item.",
+        "The dashboard aggregate is cached and invalidated after an order.",
+        "The cleanup command is dry-run by default.",
+        "Deleting data requires an explicit confirmation flag."
+      ],
+      "proof": "A checkout flow with row locking, a cached aggregate, invalidation on write and an auditable command.",
+      "explain": "This track proves you can reason about consistency, cache ownership and destructive operations — the parts that break in production."
+    },
+    {
+      "slug": "api",
+      "title": "API surface",
+      "subtitle": "A small DRF API with ownership, pagination and predictable ordering.",
+      "goal": "Expose a notes API that a mobile client can use without ever seeing another user's data.",
+      "level": "Advanced",
+      "minutes": 105,
+      "lab_slugs": ["drf-endpoint", "auth-permissions", "paginated-search"],
+      "milestones": [
+        "Anonymous requests are rejected.",
+        "Each user sees only their own notes.",
+        "Create assigns the owner on the server.",
+        "Pagination is stable and ordered."
+      ],
+      "proof": "A paginated, authenticated API with queryset-level authorization.",
+      "explain": "This track proves you can design an API boundary, not just a serializer: permissions, ownership and stable collection output."
+    },
+    {
+      "slug": "product-craft",
+      "title": "Product craft",
+      "subtitle": "Forms, reusable UI and a cache-aware read path.",
+      "goal": "Build a small product editor with a polished form, a reusable status component and a fast dashboard read.",
+      "level": "Core",
+      "minutes": 105,
+      "lab_slugs": ["modelform-crud", "template-tag", "cached-dashboard"],
+      "milestones": [
+        "The editor updates only title/body and never exposes owner.",
+        "The status badge works in two templates.",
+        "The dashboard cache is invalidated after a write.",
+        "Invalid input re-renders with errors."
+      ],
+      "proof": "A small editor with clean form boundaries, reusable presentation and a deliberate cache.",
+      "explain": "This track proves you can keep product code small: the form owns validation, the tag owns presentation and the write path owns cache invalidation."
+    }
+  ]
+}

@@ -1,6 +1,9 @@
 from django.contrib import admin
 
 from .models import (
+    DjangoCapstoneProgress,
+    DjangoFeature,
+    DjangoTrackProgress,
     HandbookExplanation,
     HandbookFeedback,
     HandbookLabProgress,
@@ -148,6 +151,26 @@ class HandbookFeedbackAdmin(admin.ModelAdmin):
     list_filter = ("helpful",)
     search_fields = ("chapter_slug", "comment")
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(DjangoFeature)
+class DjangoFeatureAdmin(admin.ModelAdmin):
+    list_display = ("title", "category", "is_new", "order", "released_on")
+    list_filter = ("category", "is_new")
+    search_fields = ("title", "summary")
+    prepopulated_fields = {"slug": ("title",)}
+
+
+@admin.register(DjangoTrackProgress)
+class DjangoTrackProgressAdmin(admin.ModelAdmin):
+    list_display = ("track_slug", "learner", "completed_at", "updated_at")
+    search_fields = ("track_slug", "evidence_what")
+
+
+@admin.register(DjangoCapstoneProgress)
+class DjangoCapstoneProgressAdmin(admin.ModelAdmin):
+    list_display = ("capstone_slug", "learner", "completed_at", "updated_at")
+    search_fields = ("capstone_slug", "evidence_what")
 
 
 @admin.register(HandbookExplanation)

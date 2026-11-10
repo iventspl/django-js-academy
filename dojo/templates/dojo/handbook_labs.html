@@ -6,7 +6,7 @@
 {% block meta_description %}Ten short Django build labs with tasks, acceptance criteria and reference implementations.{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109q">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109t">
 {% endblock %}
 
 {% block content %}
@@ -17,6 +17,7 @@
     <p class="hb-hero-lead">Ten small builds with tasks, acceptance criteria and a hidden reference implementation. No account, no cloud, no magic — just code you can compare after you try.</p>
     <div class="hb-notes-actions">
       <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Back to handbook <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_tracks' %}">Project Tracks <span aria-hidden="true">→</span></a>
       <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_lab_evidence_export' %}">Export evidence <span aria-hidden="true">↗</span></a>
       <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_explanations' %}">Teach-back review <span aria-hidden="true">→</span></a>
     </div>

@@ -6,7 +6,7 @@
 {% block meta_description %}A plain-language, searchable Django manual: forms, models, ORM, URLs, templates, migrations, errors and deployment.{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109q">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109t">
 {% endblock %}
 
 {% block content %}
@@ -59,6 +59,7 @@
     <a class="hb-coverage-link" href="{% url 'dojo:handbook_versions' %}">Versions →</a>
     <a class="hb-coverage-link" href="{% url 'dojo:handbook_upgrade' %}">Upgrade →</a>
     <a class="hb-coverage-link" href="{% url 'dojo:handbook_notes' %}">Notes →</a>
+    <a class="hb-coverage-link" href="{% url 'dojo:features' %}">Features →</a>
   </nav>
 
   {% if searched %}
