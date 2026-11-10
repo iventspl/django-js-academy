@@ -1,0 +1,304 @@
+{
+  "labs": [
+    {
+      "slug": "contact-form",
+      "title": "CSRF-protected contact form",
+      "subtitle": "A plain Form, validation, POST/redirect/GET and a safe email boundary.",
+      "chapter_slug": "forms",
+      "level": "Core",
+      "minutes": 35,
+      "goal": "Build a contact form that validates input, shows field errors and redirects only after success.",
+      "scenario": "A marketing page needs a contact form. It must reject malformed email addresses, require a message and never send twice on refresh.",
+      "starter_code": "# forms.py\nfrom django import forms\n\nclass ContactForm(forms.Form):\n    # TODO: name, email, topic, message, consent\n    pass\n\n# views.py\ndef contact(request):\n    # TODO: bind on POST, validate, send, redirect\n    return render(request, \"contact.html\")",
+      "tasks": [
+        "Create `ContactForm` with name, email, topic, message and consent fields.",
+        "Use `request.POST or None` so GET renders an unbound form.",
+        "On valid POST, send via a small function and redirect.",
+        "Render `form.errors` and `csrf_token` in the template."
+      ],
+      "acceptance": [
+        "GET shows an empty form.",
+        "POST with a bad email shows an error and does not send.",
+        "Valid POST calls the email function once and redirects.",
+        "Refreshing the success page does not resend."
+      ],
+      "hints": [
+        "Use `form.is_valid()` before touching `cleaned_data`.",
+        "`request.POST or None` avoids a bound empty form on GET.",
+        "A `Textarea` widget only changes HTML, not validation."
+      ],
+      "solution": "from django import forms\nfrom django.core.mail import send_mail\nfrom django.shortcuts import redirect, render\n\nclass ContactForm(forms.Form):\n    name = forms.CharField(max_length=80)\n    email = forms.EmailField()\n    topic = forms.ChoiceField(choices=[(\"support\", \"Support\"), (\"sales\", \"Sales\")])\n    message = forms.CharField(widget=forms.Textarea, min_length=20)\n    consent = forms.BooleanField()\n\ndef contact(request):\n    form = ContactForm(request.POST or None)\n    if request.method == \"POST\" and form.is_valid():\n        send_mail(\n            f\"Contact: {form.cleaned_data['topic']}\",\n            form.cleaned_data[\"message\"],\n            form.cleaned_data[\"email\"],\n            [\"team@example.com\"],\n        )\n        return redirect(\"contact-success\")\n    return render(request, \"contact.html\", {\"form\": form})",
+      "explain": "The form is the validation boundary. The view decides what success means. The redirect is what prevents duplicate sends on refresh."
+    },
+    {
+      "slug": "modelform-crud",
+      "title": "ModelForm CRUD with permissions",
+      "subtitle": "Create, edit and delete one object without trusting the URL.",
+      "chapter_slug": "forms",
+      "level": "Core",
+      "minutes": 40,
+      "goal": "Build create and update views with one ModelForm and an ownership check.",
+      "scenario": "A notes app lets each user edit only their own notes. The form should never expose the owner field.",
+      "starter_code": "# models.py\nclass Note(models.Model):\n    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)\n    title = models.CharField(max_length=120)\n    body = models.TextField()\n\n# forms.py\nclass NoteForm(forms.ModelForm):\n    class Meta:\n        model = Note\n        fields = [\"title\", \"body\"]\n\n# views.py\ndef note_edit(request, pk):\n    note = get_object_or_404(Note, pk=pk)\n    # TODO: ownership + form + save",
+      "tasks": [
+        "Use `get_object_or_404(Note, pk=pk, owner=request.user)` for edit/delete.",
+        "Create with `form.save(commit=False)` and assign `owner`.",
+        "Redirect after a successful save.",
+        "Return 404 for another user's note, not 403 with data leakage."
+      ],
+      "acceptance": [
+        "A user can create a note and is set as owner.",
+        "Edit only changes title/body.",
+        "Another user's note returns 404.",
+        "Invalid input re-renders with errors."
+      ],
+      "hints": [
+        "Never put `owner` in `Meta.fields`.",
+        "`commit=False` lets you set server-controlled fields.",
+        "Filtering the queryset by owner is both authorization and a clean 404."
+      ],
+      "solution": "def note_create(request):\n    form = NoteForm(request.POST or None)\n    if request.method == \"POST\" and form.is_valid():\n        note = form.save(commit=False)\n        note.owner = request.user\n        note.save()\n        return redirect(\"note-detail\", pk=note.pk)\n    return render(request, \"notes/form.html\", {\"form\": form})\n\ndef note_edit(request, pk):\n    note = get_object_or_404(Note, pk=pk, owner=request.user)\n    form = NoteForm(request.POST or None, instance=note)\n    if request.method == \"POST\" and form.is_valid():\n        form.save()\n        return redirect(\"note-detail\", pk=note.pk)\n    return render(request, \"notes/form.html\", {\"form\": form})",
+      "explain": "Authorization belongs in the queryset, not only in the template. If the object is not yours, it should not exist for this request."
+    },
+    {
+      "slug": "template-tag",
+      "title": "A custom inclusion tag",
+      "subtitle": "Reusable template markup with an explicit context.",
+      "chapter_slug": "templates-advanced",
+      "level": "Advanced",
+      "minutes": 30,
+      "goal": "Build an inclusion tag that renders a badge from a status value.",
+      "scenario": "Several templates need the same status pill. Copy-pasting it causes inconsistent labels and CSS.",
+      "starter_code": "# templatetags/ui.py\nfrom django import template\nregister = template.Library()\n\n@register.inclusion_tag(\"ui/status.html\")\ndef status_badge(status):\n    # TODO: map status to label + css class\n    return {}\n\n{# templates/ui/status.html #}\n<span class=\"badge\">{{ label }}</span>",
+      "tasks": [
+        "Map `draft`, `published` and `archived` to label and CSS class.",
+        "Return only the context the partial needs.",
+        "Handle an unknown status safely.",
+        "Load and use the tag in a template."
+      ],
+      "acceptance": [
+        "Known statuses render the expected label/class.",
+        "Unknown status does not crash.",
+        "The partial has no database queries.",
+        "The tag can be reused in two templates."
+      ],
+      "hints": [
+        "A dictionary lookup is enough for three statuses.",
+        "Use a fallback label like “Unknown”.",
+        "Inclusion tags are for markup, not business logic."
+      ],
+      "solution": "from django import template\nregister = template.Library()\n\n@register.inclusion_tag(\"ui/status.html\")\ndef status_badge(status):\n    options = {\n        \"draft\": (\"Draft\", \"badge-draft\"),\n        \"published\": (\"Published\", \"badge-published\"),\n        \"archived\": (\"Archived\", \"badge-archived\"),\n    }\n    label, css = options.get(status, (\"Unknown\", \"badge-unknown\"))\n    return {\"label\": label, \"css\": css}\n\n{# ui/status.html #}\n<span class=\"badge {{ css }}\">{{ label }}</span>\n\n{# article.html #}\n{% load ui %}{% status_badge article.status %}",
+      "explain": "The tag owns presentation, not permission or queries. Keeping the context small makes the partial easy to test and reuse."
+    },
+    {
+      "slug": "transaction-stock",
+      "title": "Transaction-safe stock decrement",
+      "subtitle": "Row locks, atomic updates and a deliberate failure path.",
+      "chapter_slug": "transactions-locking",
+      "level": "Advanced",
+      "minutes": 45,
+      "goal": "Prevent overselling when two requests decrement the same stock row.",
+      "scenario": "A checkout endpoint reads stock, creates an order and decrements stock. Two concurrent requests must not both succeed when only one item remains.",
+      "starter_code": "def buy(request, product_id):\n    product = Product.objects.get(pk=product_id)\n    if product.stock < 1:\n        return HttpResponse(\"Sold out\", status=409)\n    product.stock -= 1\n    product.save()\n    Order.objects.create(product=product, user=request.user)\n    return redirect(\"orders\")",
+      "tasks": [
+        "Wrap read/create/update in `transaction.atomic()`.",
+        "Lock the product with `select_for_update()`.",
+        "Recheck stock inside the transaction.",
+        "Return a conflict response without partial writes."
+      ],
+      "acceptance": [
+        "A successful purchase creates one order and decrements once.",
+        "Zero stock returns 409 and creates no order.",
+        "Two simulated concurrent purchases cannot both take the last item.",
+        "An exception rolls back both order and stock changes."
+      ],
+      "hints": [
+        "Lock the row before the stock check.",
+        "`select_for_update()` only helps inside a transaction.",
+        "A `F()` update is atomic but still needs a constraint/check for the full workflow."
+      ],
+      "solution": "from django.db import transaction\nfrom django.db.models import F\n\ndef buy(request, product_id):\n    with transaction.atomic():\n        product = (\n            Product.objects.select_for_update()\n            .get(pk=product_id)\n        )\n        if product.stock < 1:\n            return HttpResponse(\"Sold out\", status=409)\n        product.stock = F(\"stock\") - 1\n        product.save(update_fields=[\"stock\"])\n        Order.objects.create(product=product, user=request.user)\n    return redirect(\"orders\")",
+      "explain": "The lock serializes the critical section. The recheck inside the transaction is what makes the decision safe; the update alone is not the whole workflow."
+    },
+    {
+      "slug": "paginated-search",
+      "title": "Paginated search without N+1",
+      "subtitle": "Filtering, pagination and prefetching in one queryset.",
+      "chapter_slug": "orm",
+      "level": "Core",
+      "minutes": 35,
+      "goal": "Build a searchable, paginated product list that does not explode query count.",
+      "scenario": "A catalogue page filters by query and category, shows 20 products per page, and each product displays its category and tags.",
+      "starter_code": "def product_list(request):\n    products = Product.objects.all()\n    # TODO: filter q/category, prefetch tags/category, paginate\n    return render(request, \"products/list.html\", {\"products\": products})",
+      "tasks": [
+        "Filter by `q` on name/description and by category.",
+        "Use `select_related(\"category\")` and `prefetch_related(\"tags\")`.",
+        "Paginate with `Paginator` and 20 per page.",
+        "Preserve query parameters in pagination links."
+      ],
+      "acceptance": [
+        "Search and category filters combine.",
+        "Page 2 returns the next 20 objects.",
+        "The page executes a constant number of queries for 20 rows.",
+        "An empty search state is rendered."
+      ],
+      "hints": [
+        "Use `Q(name__icontains=q) | Q(description__icontains=q)`.",
+        "`select_related` is for foreign keys; `prefetch_related` is for many-to-many.",
+        "Do not slice before `Paginator`."
+      ],
+      "solution": "from django.core.paginator import Paginator\nfrom django.db.models import Q\n\ndef product_list(request):\n    q = request.GET.get(\"q\", \"\").strip()\n    category = request.GET.get(\"category\", \"\").strip()\n    products = Product.objects.select_related(\"category\").prefetch_related(\"tags\")\n    if q:\n        products = products.filter(Q(name__icontains=q) | Q(description__icontains=q))\n    if category:\n        products = products.filter(category__slug=category)\n    page = Paginator(products, 20).get_page(request.GET.get(\"page\"))\n    return render(request, \"products/list.html\", {\"page\": page, \"q\": q, \"category\": category})",
+      "explain": "The queryset is the contract: filter it, join what you know, prefetch what you render, and paginate the final result."
+    },
+    {
+      "slug": "drf-endpoint",
+      "title": "A small DRF endpoint with validation",
+      "subtitle": "Serializer, permissions, pagination and an explicit response contract.",
+      "chapter_slug": "drf",
+      "level": "Advanced",
+      "minutes": 40,
+      "goal": "Expose a read/create API for notes owned by the authenticated user.",
+      "scenario": "A mobile client needs `GET /api/notes/` and `POST /api/notes/`, but must only see its own notes.",
+      "starter_code": "# serializers.py\nclass NoteSerializer(serializers.ModelSerializer):\n    class Meta:\n        model = Note\n        fields = [\"id\", \"title\", \"body\"]\n\n# views.py\nclass NoteViewSet(viewsets.ModelViewSet):\n    queryset = Note.objects.all()\n    serializer_class = NoteSerializer",
+      "tasks": [
+        "Require authentication.",
+        "Override `get_queryset()` to filter by `request.user`.",
+        "Set `perform_create()` to assign owner.",
+        "Add pagination and a stable ordering."
+      ],
+      "acceptance": [
+        "Anonymous access is rejected.",
+        "A user sees only their own notes.",
+        "Creating a note sets the owner automatically.",
+        "The list is paginated and ordered."
+      ],
+      "hints": [
+        "`IsAuthenticated` is the permission class.",
+        "Never trust an `owner` field from the client.",
+        "`ordering = [\"-created_at\"]` prevents unstable pagination."
+      ],
+      "solution": "from rest_framework import permissions, viewsets\n\nclass NoteViewSet(viewsets.ModelViewSet):\n    serializer_class = NoteSerializer\n    permission_classes = [permissions.IsAuthenticated]\n    ordering = [\"-created_at\"]\n\n    def get_queryset(self):\n        return Note.objects.filter(owner=self.request.user)\n\n    def perform_create(self, serializer):\n        serializer.save(owner=self.request.user)",
+      "explain": "The queryset is the authorization boundary. The serializer validates shape; `perform_create` owns server-controlled fields."
+    },
+    {
+      "slug": "auth-permissions",
+      "title": "Login, ownership and a safe 404",
+      "subtitle": "Protect a view and avoid leaking whether someone else's object exists.",
+      "chapter_slug": "auth",
+      "level": "Core",
+      "minutes": 25,
+      "goal": "Protect a document detail view and return 404 for objects the user cannot access.",
+      "scenario": "A private document URL must require login and must not reveal another user's document existence.",
+      "starter_code": "def document_detail(request, pk):\n    document = get_object_or_404(Document, pk=pk)\n    return render(request, \"documents/detail.html\", {\"document\": document})",
+      "tasks": [
+        "Require login with `login_required`.",
+        "Filter the queryset by owner.",
+        "Return 404 for a foreign document.",
+        "Add a test for anonymous and foreign access."
+      ],
+      "acceptance": [
+        "Anonymous request redirects to login.",
+        "Owner sees the document.",
+        "Other user gets 404, not the document.",
+        "The test covers both cases."
+      ],
+      "hints": [
+        "`login_required` can wrap the view or use `LoginRequiredMixin`.",
+        "`get_object_or_404(Document, pk=pk, owner=request.user)` is enough.",
+        "404 is both a security and a UX choice here."
+      ],
+      "solution": "from django.contrib.auth.decorators import login_required\n\n@login_required\ndef document_detail(request, pk):\n    document = get_object_or_404(Document, pk=pk, owner=request.user)\n    return render(request, \"documents/detail.html\", {\"document\": document})",
+      "explain": "Authentication answers “who are you”; authorization answers “which rows may you see”. The queryset filter implements the second."
+    },
+    {
+      "slug": "file-upload",
+      "title": "Validated file upload",
+      "subtitle": "Size, type, storage and a clean failure path.",
+      "chapter_slug": "storage-files",
+      "level": "Core",
+      "minutes": 30,
+      "goal": "Accept an avatar upload only when it is a small image, and store it safely.",
+      "scenario": "Users upload avatars. The server must reject oversized files and non-images before saving the model.",
+      "starter_code": "class AvatarForm(forms.Form):\n    image = forms.ImageField()\n\ndef upload_avatar(request):\n    form = AvatarForm(request.POST or None, request.FILES or None)\n    # TODO: size check, save, redirect",
+      "tasks": [
+        "Use `request.FILES` when binding.",
+        "Reject files above 2 MB with a form error.",
+        "Use `ImageField`/Pillow validation for real image checks.",
+        "Store through the configured storage backend."
+      ],
+      "acceptance": [
+        "A valid small image saves.",
+        "A non-image is rejected.",
+        "A file over 2 MB is rejected.",
+        "The error is attached to the image field."
+      ],
+      "hints": [
+        "Check `image.size` in `clean_image()`.",
+        "The extension is not a security check.",
+        "Do not read the whole file into memory just to validate it."
+      ],
+      "solution": "class AvatarForm(forms.Form):\n    image = forms.ImageField()\n\n    def clean_image(self):\n        image = self.cleaned_data[\"image\"]\n        if image.size > 2 * 1024 * 1024:\n            raise forms.ValidationError(\"Max 2 MB.\")\n        return image\n\ndef upload_avatar(request):\n    form = AvatarForm(request.POST or None, request.FILES or None)\n    if request.method == \"POST\" and form.is_valid():\n        request.user.avatar.save(\n            form.cleaned_data[\"image\"].name,\n            form.cleaned_data[\"image\"],\n        )\n        return redirect(\"profile\")\n    return render(request, \"profile/avatar.html\", {\"form\": form})",
+      "explain": "Upload validation is a server rule, not a client hint. Storage is a boundary; the view should not care whether files live on disk or S3."
+    },
+    {
+      "slug": "cached-dashboard",
+      "title": "Cached dashboard with invalidation",
+      "subtitle": "Cache the expensive read, invalidate on the write.",
+      "chapter_slug": "caching-deep",
+      "level": "Advanced",
+      "minutes": 35,
+      "goal": "Cache a dashboard query for 60 seconds and invalidate it after a relevant write.",
+      "scenario": "A dashboard aggregates order totals. It is read constantly and changes only when an order is created.",
+      "starter_code": "def dashboard(request):\n    totals = Order.objects.aggregate(total=Sum(\"amount\"))\n    return render(request, \"dashboard.html\", totals)\n\ndef create_order(request):\n    Order.objects.create(...)\n    return redirect(\"dashboard\")",
+      "tasks": [
+        "Cache the aggregate under a stable key for 60 seconds.",
+        "Invalidate the key after creating an order.",
+        "Keep cached data user-independent.",
+        "Add a test that proves the second read does not hit the queryset."
+      ],
+      "acceptance": [
+        "First request computes and caches.",
+        "Second request reads the cache.",
+        "Creating an order invalidates the cache.",
+        "Per-user data is never placed in a shared key."
+      ],
+      "hints": [
+        "Use `cache.get` / `cache.set` / `cache.delete`.",
+        "A shared key must not include private user data.",
+        "Invalidate after the transaction commits if consistency matters."
+      ],
+      "solution": "from django.core.cache import cache\n\ndef dashboard(request):\n    totals = cache.get(\"dashboard:totals\")\n    if totals is None:\n        totals = Order.objects.aggregate(total=Sum(\"amount\"))\n        cache.set(\"dashboard:totals\", totals, 60)\n    return render(request, \"dashboard.html\", totals)\n\ndef create_order(request):\n    Order.objects.create(...)\n    cache.delete(\"dashboard:totals\")\n    return redirect(\"dashboard\")",
+      "explain": "A cache is a second source of truth. The write path must own invalidation, and the key must match the sharing boundary."
+    },
+    {
+      "slug": "management-command",
+      "title": "A useful management command",
+      "subtitle": "Arguments, output, dry-run and a safe default.",
+      "chapter_slug": "commands",
+      "level": "Core",
+      "minutes": 25,
+      "goal": "Build a command that finds inactive users and can delete them only with `--confirm`.",
+      "scenario": "An admin wants a repeatable cleanup command. The default must be a dry run; deletion needs an explicit flag.",
+      "starter_code": "# management/commands/cleanup_users.py\nfrom django.core.management.base import BaseCommand\n\nclass Command(BaseCommand):\n    help = \"Remove inactive users\"\n\n    def handle(self, *args, **options):\n        # TODO: filter, report, confirm\n        pass",
+      "tasks": [
+        "Add `--days` and `--confirm` arguments.",
+        "Default to reporting only.",
+        "Use `self.stdout.write` and a summary count.",
+        "Delete only when `--confirm` is passed."
+      ],
+      "acceptance": [
+        "Without `--confirm`, no rows are deleted.",
+        "`--days 30` filters by `last_login`.",
+        "With `--confirm`, only matching rows are deleted.",
+        "Output states what would happen or what happened."
+      ],
+      "hints": [
+        "Use `parser.add_argument`.",
+        "A dry run is the safe default.",
+        "Print the count before deleting."
+      ],
+      "solution": "from datetime import timedelta\nfrom django.core.management.base import BaseCommand\nfrom django.contrib.auth import get_user_model\nfrom django.utils import timezone\n\nclass Command(BaseCommand):\n    help = \"Remove inactive users\"\n\n    def add_arguments(self, parser):\n        parser.add_argument(\"--days\", type=int, default=90)\n        parser.add_argument(\"--confirm\", action=\"store_true\")\n\n    def handle(self, *args, **options):\n        cutoff = timezone.now() - timedelta(days=options[\"days\"])\n        users = get_user_model().objects.filter(last_login__lt=cutoff)\n        count = users.count()\n        if not options[\"confirm\"]:\n            self.stdout.write(f\"Would delete {count} users. Re-run with --confirm.\")\n            return\n        users.delete()\n        self.stdout.write(self.style.SUCCESS(f\"Deleted {count} users.\"))",
+      "explain": "Commands are production code. A dry run, an explicit confirmation and a summary make destructive operations reviewable."
+    }
+  ]
+}

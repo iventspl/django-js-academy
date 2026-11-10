@@ -1,0 +1,39 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Django Labs · build, then verify{% endblock %}
+{% block body_class %}page-handbook page-handbook-labs{% endblock %}
+{% block meta_description %}Ten short Django build labs with tasks, acceptance criteria and reference implementations.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109q">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Django Labs · {{ completed_count }}/{{ lab_total }} complete · {{ evidence_count }} with evidence</p>
+    <h1>Read it.<br><em>Then build it.</em></h1>
+    <p class="hb-hero-lead">Ten small builds with tasks, acceptance criteria and a hidden reference implementation. No account, no cloud, no magic — just code you can compare after you try.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Back to handbook <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_lab_evidence_export' %}">Export evidence <span aria-hidden="true">↗</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_explanations' %}">Teach-back review <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  <div class="hb-cat-grid">
+    {% for lab in labs %}
+      <a class="hb-cat-card hb-lab-card {% if lab.completed %}is-complete{% endif %}" href="{% url 'dojo:handbook_lab' lab.slug %}">
+        <div class="hb-cat-head">
+          <span class="hb-cat-index">{{ forloop.counter|stringformat:"02d" }}</span>
+          <h3>{{ lab.title }}</h3>
+          <span class="hb-cat-count">{% if lab.completed %}✓{% else %}{{ lab.minutes }}m{% endif %}</span>
+        </div>
+        <p>{{ lab.subtitle }}</p>
+        <span class="hb-lab-meta">{{ lab.level }}{% if lab.chapter %} · {{ lab.chapter.title }}{% endif %}{% if lab.has_evidence %} · evidence{% endif %}</span>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

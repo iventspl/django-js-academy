@@ -78,6 +78,23 @@
     {% endif %}
   </section>
 
+  <section class="weak-spot-band teach-back-band" aria-labelledby="teach-back-title">
+    <div>
+      <p class="eyebrow eyebrow-dark">Teach-back review</p>
+      <h2 id="teach-back-title">Can you explain it without the page?</h2>
+      {% if teach_back_due %}
+        <p>{{ teach_back_due }} saved explanation{{ teach_back_due|pluralize }} {{ teach_back_due|pluralize:"is,are" }} due for another pass. Re-explain it before opening the short answer.</p>
+      {% else %}
+        <p>No explanations are due today. Open any handbook chapter and use “Explain it back” to start the queue.</p>
+      {% endif %}
+    </div>
+    {% if teach_back_due %}
+      <a class="btn btn-primary" href="{% url 'dojo:handbook_explanations' %}?due=1">Review due explanations <span aria-hidden="true">→</span></a>
+    {% else %}
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_explanations' %}">Open teach-back review <span aria-hidden="true">→</span></a>
+    {% endif %}
+  </section>
+
   <section class="section progress-section" aria-labelledby="mastery-title">
     <div class="section-head section-head-tight">
       <div>

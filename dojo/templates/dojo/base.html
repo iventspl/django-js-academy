@@ -11,10 +11,12 @@
   <meta name="description" content="{% block meta_description %}A local-first Django quiz and flashcard dojo for learning Python and Django from beginner to advanced.{% endblock %}">
   <title>{% block title %}Django Quest{% endblock %} · {% block product_name %}Django Quest{% endblock %}</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22{% if request.resolver_match.namespace == 'js_academy' %}%23f7df1e{% elif request.resolver_match.namespace == 'ai_academy' %}%238B5CF6{% else %}%23f6c451{% endif %}%22/><text x=%2232%22 y=%2244%22 text-anchor=%22middle%22 font-size=%2234%22 font-family=%22monospace%22 font-weight=%22bold%22 fill=%22%230d1b24%22>{% if request.resolver_match.namespace == 'js_academy' %}JS{% elif request.resolver_match.namespace == 'ai_academy' %}AI{% else %}DQ{% endif %}</text></svg>">
-  <link rel="stylesheet" href="{% static 'dojo/app.css' %}?v=20261110a">
+  <script>try { const p = new URLSearchParams(location.search); const saved = localStorage.getItem("dq-theme"); const t = p.get("theme") || (p.get("contrast") === "high" ? "contrast" : saved) || "dark"; if (t === "paper") document.documentElement.dataset.theme = "paper"; if (t === "contrast") document.documentElement.dataset.contrast = "high"; } catch (e) {}</script>
+  <link rel="stylesheet" href="{% static 'dojo/app.css' %}?v=20261110d">
   {% block extra_css %}{% endblock %}
   <link rel="stylesheet" href="{% static 'dojo/mobile.css' %}?v=20261030k">
-  <script defer src="{% static 'dojo/app.js' %}?v=20261030p"></script>
+  <link rel="stylesheet" href="{% static 'dojo/paper.css' %}?v=20261110e">
+  <script defer src="{% static 'dojo/app.js' %}?v=20261110d"></script>
 </head>
 <body class="{% block body_class %}{% endblock %} {% if request.resolver_match.namespace == 'js_academy' %}platform-js{% elif request.resolver_match.namespace == 'ai_academy' %}platform-ai{% endif %}">
   <a class="skip-link" href="#main-content">{% if request.resolver_match.namespace == 'js_academy' %}Przejdź do treści{% else %}Skip to content{% endif %}</a>
@@ -29,7 +31,7 @@
       </a>
 
       <input type="checkbox" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-label="Otwórz menu nawigacji">
-      <label for="mobile-nav-toggle" class="mobile-nav-label"><span aria-hidden="true">☰</span> Menu</label>
+      <label for="mobile-nav-toggle" class="mobile-nav-label" aria-controls="main-nav" aria-expanded="false"><span aria-hidden="true">☰</span> Menu</label>
 
       <div class="track-switch" role="group" aria-label="Choose a learning platform">
         <a class="track-django {% if request.resolver_match.namespace != 'js_academy' and request.resolver_match.namespace != 'ai_academy' %}is-active{% endif %}" href="{% url 'dojo:home' %}">
@@ -43,13 +45,22 @@
         </a>
       </div>
 
+      <label class="theme-picker">
+        <span>Theme</span>
+        <select data-theme-select aria-label="Color theme">
+          <option value="dark">Dark</option>
+          <option value="paper">Paper</option>
+          <option value="contrast">High contrast</option>
+        </select>
+      </label>
+
       {% if request.resolver_match.namespace == 'js_academy' %}
         <form class="js-nav-search" action="{% url 'js_academy:search' %}" method="get">
           <label class="sr-only" for="js-nav-q">Szukaj w JS Akademii</label>
           <input id="js-nav-q" name="q" type="search" value="{{ request.GET.q|default:'' }}" placeholder="Szukaj w akademii…">
           <button type="submit" aria-label="Szukaj">↗</button>
         </form>
-        <nav class="main-nav" aria-label="Nawigacja JS Akademii">
+        <nav class="main-nav" id="main-nav" aria-label="Nawigacja JS Akademii">
           <a class="nav-link {% if active_nav == 'js_start' %}is-active{% endif %}" href="{% url 'js_academy:home' %}">
             <span class="nav-glyph" aria-hidden="true">⌂</span>
             <span>Start</span>
@@ -98,7 +109,7 @@
           </details>
         </nav>
       {% elif request.resolver_match.namespace == 'ai_academy' %}
-        <nav class="main-nav" aria-label="AI Academy navigation">
+        <nav class="main-nav" id="main-nav" aria-label="AI Academy navigation">
           <a class="nav-link {% if active_nav == 'ai_home' %}is-active{% endif %}" href="{% url 'ai_academy:home' %}">
             <span class="nav-glyph" aria-hidden="true">⌂</span>
             <span>Start</span>
@@ -146,7 +157,7 @@
           <button type="submit" aria-label="Search">⌕</button>
         </form>
       {% else %}
-        <nav class="main-nav" aria-label="Main navigation">
+        <nav class="main-nav" id="main-nav" aria-label="Main navigation">
           <a class="nav-link {% if active_nav == 'home' %}is-active{% endif %}" href="{% url 'dojo:home' %}">
             <span class="nav-glyph" aria-hidden="true">⌂</span>
             <span>Base camp</span>
@@ -191,6 +202,8 @@
             </summary>
             <div class="nav-more-links">
               <a href="{% url 'dojo:handbook_notes' %}"><span>Handbook notes</span><small>Your section notes</small></a>
+              <a href="{% url 'dojo:handbook_explanations' %}"><span>Teach-back review</span><small>Explain it again</small></a>
+              <a href="{% url 'dojo:handbook_labs' %}"><span>Django Labs</span><small>Build and verify</small></a>
               <a href="{% url 'dojo:handbook_coverage' %}"><span>Coverage</span><small>Chapters and gaps</small></a>
               <a href="{% url 'dojo:handbook_versions' %}"><span>Version matrix</span><small>5.2 · 6.0 · 6.1</small></a>
               <a href="{% url 'dojo:handbook_upgrade' %}"><span>Upgrade assistant</span><small>Plan a version jump</small></a>

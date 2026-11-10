@@ -601,6 +601,83 @@ class HandbookProgress(models.Model):
         return self.chapter_slug
 
 
+class HandbookLabProgress(models.Model):
+    learner = models.ForeignKey(
+        Learner, on_delete=models.CASCADE, related_name="handbook_lab_progress"
+    )
+    lab_slug = models.SlugField(max_length=120)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    evidence_what = models.TextField(blank=True)
+    evidence_decision = models.TextField(blank=True)
+    evidence_test = models.TextField(blank=True)
+    evidence_url = models.URLField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "lab_slug"],
+                name="unique_handbook_lab_progress",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.lab_slug
+
+    @property
+    def has_evidence(self) -> bool:
+        return bool(
+            self.evidence_what
+            or self.evidence_decision
+            or self.evidence_test
+            or self.evidence_url
+        )
+
+
+class HandbookExplanation(models.Model):
+    learner = models.ForeignKey(
+        Learner, on_delete=models.CASCADE, related_name="handbook_explanations"
+    )
+    chapter_slug = models.SlugField(max_length=120)
+    body = models.TextField(blank=True)
+    previous_body = models.TextField(blank=True)
+    rating = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=[
+            ("shaky", "Shaky"),
+            ("okay", "Okay"),
+            ("solid", "Solid"),
+        ],
+    )
+    previous_rating = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=[
+            ("shaky", "Shaky"),
+            ("okay", "Okay"),
+            ("solid", "Solid"),
+        ],
+    )
+    due_on = models.DateField(default=timezone.localdate)
+    interval_days = models.PositiveSmallIntegerField(default=1)
+    repetitions = models.PositiveSmallIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "chapter_slug"],
+                name="unique_handbook_explanation_chapter",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.chapter_slug
+
+
 class HandbookFeedback(models.Model):
     learner = models.ForeignKey(
         Learner, on_delete=models.CASCADE, related_name="handbook_feedback"

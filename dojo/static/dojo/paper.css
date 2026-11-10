@@ -1,0 +1,334 @@
+/* Paper theme: a genuine light shell while keeping the cream article surfaces. */
+
+html[data-theme="paper"] {
+  --text: #102a34;
+  --text-muted: #4f655d;
+  --line-light: rgba(13, 27, 36, 0.16);
+  --ink-muted: #5f6e69;
+}
+
+html[data-theme="paper"] body {
+  background:
+    radial-gradient(circle at 82% -8%, rgba(127, 227, 195, 0.18), transparent 34rem),
+    radial-gradient(circle at 8% 100%, rgba(255, 107, 74, 0.08), transparent 30rem),
+    #f3ebdc;
+  color: #102a34;
+}
+
+html[data-theme="paper"] .sidebar {
+  border-right-color: rgba(13, 27, 36, 0.14);
+  background: #e8ddc9;
+}
+
+html[data-theme="paper"] .brand-copy strong {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .brand-copy span {
+  color: #65776e;
+}
+
+html[data-theme="paper"] .track-switch {
+  border-color: rgba(13, 27, 36, 0.16);
+  background: #f8f2e5;
+}
+
+html[data-theme="paper"] .track-switch a {
+  color: #4f655d;
+}
+
+html[data-theme="paper"] .track-switch a.is-active {
+  background: #102a34;
+  color: #f6f0e2;
+}
+
+html[data-theme="paper"] .track-js.is-active {
+  color: #f7df1e !important;
+}
+
+html[data-theme="paper"] .js-text-link,
+html[data-theme="paper"] .js-deck-foot-link,
+html[data-theme="paper"] .js-knowledge-link,
+html[data-theme="paper"] .js-ref-link,
+html[data-theme="paper"] .js-error-link {
+  color: #a6422d;
+}
+
+html[data-theme="paper"] .nav-link,
+html[data-theme="paper"] .nav-more > summary {
+  color: #30483f;
+}
+
+html[data-theme="paper"] .nav-link .nav-glyph,
+html[data-theme="paper"] .nav-more .nav-glyph {
+  color: #30483f;
+}
+
+html[data-theme="paper"] .nav-link:hover,
+html[data-theme="paper"] .nav-link:focus-visible,
+html[data-theme="paper"] .nav-more > summary:hover,
+html[data-theme="paper"] .nav-more[open] > summary {
+  background: rgba(13, 27, 36, 0.08);
+  color: #102a34;
+}
+
+html[data-theme="paper"] .nav-link.is-active {
+  background: #102a34;
+  color: #f6f0e2;
+}
+
+html[data-theme="paper"] .nav-link.is-active .nav-glyph {
+  color: #f6f0e2;
+}
+
+html[data-theme="paper"] .nav-more-links {
+  border-left-color: rgba(13, 27, 36, 0.2);
+}
+
+html[data-theme="paper"] .nav-more-links a {
+  color: #30483f;
+}
+
+html[data-theme="paper"] .nav-more-links small {
+  color: #6b7e74;
+}
+
+html[data-theme="paper"] .sidebar-note {
+  border-color: rgba(13, 27, 36, 0.14);
+  background: rgba(255, 253, 245, 0.55);
+}
+
+html[data-theme="paper"] .sidebar-note p,
+html[data-theme="paper"] .sidebar-foot {
+  color: #5b7067;
+}
+
+html[data-theme="paper"] .sidebar-rule {
+  background: rgba(13, 27, 36, 0.14);
+}
+
+html[data-theme="paper"] .theme-picker {
+  border-color: rgba(13, 27, 36, 0.18);
+  background: rgba(255, 253, 245, 0.55);
+}
+
+html[data-theme="paper"] .theme-picker > span {
+  color: #4f655d;
+}
+
+html[data-theme="paper"] .theme-picker select {
+  border-color: rgba(13, 27, 36, 0.22);
+  background: #fffdf5;
+  color: #102a34;
+}
+
+html[data-theme="paper"] .dojo-nav-search input,
+html[data-theme="paper"] .js-nav-search input,
+html[data-theme="paper"] .ai-nav-search input {
+  border-color: rgba(13, 27, 36, 0.18);
+  background: #fffdf5;
+  color: #102a34;
+}
+
+html[data-theme="paper"] .dojo-nav-search input::placeholder,
+html[data-theme="paper"] .js-nav-search input::placeholder,
+html[data-theme="paper"] .ai-nav-search input::placeholder {
+  color: #6b7e74;
+}
+
+html[data-theme="paper"] .eyebrow,
+html[data-theme="paper"] .hb-label {
+  color: #23704f;
+}
+
+html[data-theme="paper"] .hb-hero-stats strong {
+  color: #1c6b50;
+}
+
+html[data-theme="paper"] .hb-idle-head h2,
+html[data-theme="paper"] .hb-cat-card h3,
+html[data-theme="paper"] .hb-cat-card h2,
+html[data-theme="paper"] .hb-cat-card h2 a,
+html[data-theme="paper"] .hb-chapter-list a,
+html[data-theme="paper"] .hb-chapter-copy strong,
+html[data-theme="paper"] .hb-bookmark-list a,
+html[data-theme="paper"] .hb-bookmark-list strong {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-chapter-copy span,
+html[data-theme="paper"] .hb-idle-head > p,
+html[data-theme="paper"] .hb-cat-card p {
+  color: #5b7067;
+}
+
+html[data-theme="paper"] .hb-chapter-list a,
+html[data-theme="paper"] .hb-bookmark-list a {
+  border-bottom-color: rgba(13, 27, 36, 0.12);
+}
+
+html[data-theme="paper"] .hb-lab-card h3,
+html[data-theme="paper"] .hb-lab-hero h1,
+html[data-theme="paper"] .hb-lab-card .hb-cat-head h3 {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-lab-card p,
+html[data-theme="paper"] .hb-lab-meta,
+html[data-theme="paper"] .hb-lab-goal,
+html[data-theme="paper"] .hb-lab-panel .hb-prose,
+html[data-theme="paper"] .hb-lab-list,
+html[data-theme="paper"] .hb-lab-panel .hb-check-list {
+  color: #4f655d;
+}
+
+html[data-theme="paper"] .hb-lab-panel {
+  border-color: rgba(13, 27, 36, 0.14);
+  background: #fffaf0;
+}
+
+html[data-theme="paper"] .hb-lab-hint {
+  border-top-color: rgba(13, 27, 36, 0.16);
+}
+
+html[data-theme="paper"] .hb-lab-solution > summary,
+html[data-theme="paper"] .hb-lab-hint > summary {
+  color: #23704f;
+}
+
+html[data-theme="paper"] .hb-evidence textarea,
+html[data-theme="paper"] .hb-evidence input {
+  border-color: rgba(13, 27, 36, 0.18);
+  background: #fffdf5;
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-evidence label {
+  color: #5b7067;
+}
+
+html[data-theme="paper"] .hb-chapter-list a:hover strong,
+html[data-theme="paper"] .hb-bookmark-list a:hover strong {
+  color: #a6422d;
+}
+
+html[data-theme="paper"] .hb-search input {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-search input::placeholder {
+  color: #6b7e74;
+}
+
+html[data-theme="paper"] .hb-try button {
+  color: #23704f;
+  border-color: rgba(35, 112, 79, 0.3);
+}
+
+html[data-theme="paper"] .hb-bookmarks .hb-label,
+html[data-theme="paper"] .hb-cat-card .hb-label {
+  color: #23704f;
+}
+
+html[data-theme="paper"] .page-footer {
+  border-top-color: rgba(13, 27, 36, 0.15);
+  color: #5b7067;
+}
+
+/* Main headings that are hardcoded to paper in the dark theme. */
+html[data-theme="paper"] .hero-copy h1,
+html[data-theme="paper"] .page-header h1,
+html[data-theme="paper"] .progress-hero h1,
+html[data-theme="paper"] .flashcards-hero h1,
+html[data-theme="paper"] .section-head h2,
+html[data-theme="paper"] .js-hero h1,
+html[data-theme="paper"] .hb-hero h1,
+html[data-theme="paper"] .hb-notes-head h1,
+html[data-theme="paper"] .js-page-header h1,
+html[data-theme="paper"] .js-ref-hero h1,
+html[data-theme="paper"] .js-errors-hero h1,
+html[data-theme="paper"] .js-interview-practice-hero h1 {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .js-hero h1 em,
+html[data-theme="paper"] .js-page-header h1 em {
+  color: #b8860b;
+}
+
+html[data-theme="paper"] .hero-copy h1 em,
+html[data-theme="paper"] .page-header h1 em,
+html[data-theme="paper"] .progress-hero h1 em,
+html[data-theme="paper"] .flashcards-hero h1 em,
+html[data-theme="paper"] .hb-hero h1 em,
+html[data-theme="paper"] .hb-notes-head h1 em {
+  color: #c54a32;
+}
+
+html[data-theme="paper"] .hero-lead,
+html[data-theme="paper"] .hb-hero-lead,
+html[data-theme="paper"] .js-lead {
+  color: #4f655d;
+}
+
+html[data-theme="paper"] .hero-facts strong {
+  color: #a65b00;
+}
+
+html[data-theme="paper"] .hero-facts span {
+  color: #5b7067;
+}
+
+html[data-theme="paper"] .btn-ghost-dark {
+  border-color: rgba(16, 42, 52, 0.4);
+  color: #102a34;
+}
+
+html[data-theme="paper"] .btn-ghost-dark:hover {
+  border-color: #102a34;
+  background: #102a34;
+  color: #f6f0e2;
+}
+
+/* Handbook surfaces that assume a dark page behind them. */
+html[data-theme="paper"] .hb-cat-card,
+html[data-theme="paper"] .hb-bookmarks,
+html[data-theme="paper"] .hb-note-card,
+html[data-theme="paper"] .hb-error-card,
+html[data-theme="paper"] .hb-ref-card,
+html[data-theme="paper"] .hb-interview-question-card,
+html[data-theme="paper"] .hb-challenge-review {
+  border-color: rgba(13, 27, 36, 0.14);
+  background: #fffaf0;
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-cat-card h2,
+html[data-theme="paper"] .hb-bookmarks h2,
+html[data-theme="paper"] .hb-note-card h2,
+html[data-theme="paper"] .hb-interview-question-card h2,
+html[data-theme="paper"] .hb-ref-card h2,
+html[data-theme="paper"] .hb-error-card h3 {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-level-note,
+html[data-theme="paper"] .hb-tools-label {
+  color: #5b7067;
+}
+
+html[data-theme="paper"] .hb-coverage-link {
+  border-color: rgba(197, 74, 50, 0.35);
+  color: #a6422d;
+}
+
+html[data-theme="paper"] .hb-search-results .js-search-result {
+  border-color: rgba(13, 27, 36, 0.14);
+  background: #fffaf0;
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-search-results .js-search-result:hover {
+  background: #f7ecd8;
+  color: #102a34;
+}

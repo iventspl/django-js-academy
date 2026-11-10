@@ -52,7 +52,11 @@ def record_fingerprint() -> str:
 
 
 def bundle_paths() -> list[Path]:
-    return sorted(CONTENT_DIR.glob("*.json"))
+    return [
+        path
+        for path in sorted(CONTENT_DIR.glob("*.json"))
+        if path.name != "labs.json"
+    ]
 
 
 def load_bundles() -> list[dict]:

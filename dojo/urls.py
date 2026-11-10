@@ -18,6 +18,24 @@ urlpatterns = [
     path("handbook/gaps/", views.handbook_gaps_page, name="handbook_gaps_page"),
     path("handbook/gaps/clear/", views.handbook_gaps_clear, name="handbook_gaps_clear"),
     path("handbook/notes/", views.handbook_notes, name="handbook_notes"),
+    path("handbook/explanations/", views.handbook_explanations, name="handbook_explanations"),
+    path("handbook/labs/", views.handbook_labs, name="handbook_labs"),
+    path(
+        "handbook/labs/evidence.md",
+        views.handbook_lab_evidence_export,
+        name="handbook_lab_evidence_export",
+    ),
+    path("handbook/labs/<slug:slug>/", views.handbook_lab, name="handbook_lab"),
+    path(
+        "handbook/labs/<slug:slug>/complete/",
+        views.handbook_lab_complete,
+        name="handbook_lab_complete",
+    ),
+    path(
+        "handbook/labs/<slug:slug>/evidence/",
+        views.handbook_lab_evidence,
+        name="handbook_lab_evidence",
+    ),
     path("handbook/notes.md", views.handbook_notes_export, name="handbook_notes_export"),
     path("handbook/<slug:slug>.md", views.handbook_markdown, name="handbook_markdown"),
     path(
@@ -29,6 +47,11 @@ urlpatterns = [
         "handbook/<slug:slug>/feedback/",
         views.handbook_feedback,
         name="handbook_feedback",
+    ),
+    path(
+        "handbook/<slug:slug>/explain/",
+        views.handbook_explanation,
+        name="handbook_explanation",
     ),
     path(
         "handbook/<slug:slug>/notes/<slug:section_id>/",

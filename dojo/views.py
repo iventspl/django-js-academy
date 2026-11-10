@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 import django
 from django.contrib import messages
@@ -28,6 +28,7 @@ from .handbook import (
     suggest_terms,
     traceback_hits,
 )
+from .labs import lab_for_chapter, lab_map, load_labs
 from .models import (
     AppBlueprint,
     ArchitectureCase,
@@ -37,7 +38,9 @@ from .models import (
     Flashcard,
     HandbookProgress,
     HandbookNote,
+    HandbookExplanation,
     HandbookFeedback,
+    HandbookLabProgress,
     HandbookSearchLog,
     Learner,
     Question,
@@ -393,6 +396,139 @@ def handbook_upgrade(request: HttpRequest) -> HttpResponse:
     )
 
 
+@require_GET
+def handbook_labs(request: HttpRequest) -> HttpResponse:
+    learner = Learner.local()
+    rows = list(HandbookLabProgress.objects.filter(learner=learner))
+    completed = {row.lab_slug for row in rows if row.completed_at}
+    evidence_slugs = {row.lab_slug for row in rows if row.has_evidence}
+    labs = []
+    by_slug = chapter_map()
+    for lab in load_labs():
+        labs.append(
+            {
+                **lab,
+                "completed": lab["slug"] in completed,
+                "has_evidence": lab["slug"] in evidence_slugs,
+                "chapter": by_slug.get(lab["chapter_slug"]),
+            }
+        )
+    return render(
+        request,
+        "dojo/handbook_labs.html",
+        {
+            "labs": labs,
+            "completed_count": len(completed),
+            "evidence_count": len(evidence_slugs),
+            "lab_total": len(labs),
+            "active_nav": "handbook",
+            "page_title": "Django Labs",
+        },
+    )
+
+
+@require_GET
+def handbook_lab(request: HttpRequest, slug: str) -> HttpResponse:
+    lab = lab_map().get(slug)
+    if lab is None:
+        raise Http404("Lab not found")
+    chapter = chapter_map().get(lab["chapter_slug"])
+    progress = HandbookLabProgress.objects.filter(
+        learner=Learner.local(), lab_slug=slug
+    ).first()
+    completed = bool(progress and progress.completed_at)
+    return render(
+        request,
+        "dojo/handbook_lab.html",
+        {
+            "lab": lab,
+            "chapter": chapter,
+            "progress": progress,
+            "completed": completed,
+            "active_nav": "handbook",
+            "page_title": lab["title"],
+        },
+    )
+
+
+@require_POST
+def handbook_lab_complete(request: HttpRequest, slug: str) -> HttpResponse:
+    if slug not in lab_map():
+        raise Http404("Lab not found")
+    learner = Learner.local()
+    row, _ = HandbookLabProgress.objects.get_or_create(
+        learner=learner, lab_slug=slug
+    )
+    if row.completed_at:
+        row.completed_at = None
+        row.save(update_fields=["completed_at", "updated_at"])
+        messages.info(request, "Lab marked unfinished.")
+    else:
+        row.completed_at = timezone.now()
+        row.save(update_fields=["completed_at", "updated_at"])
+        messages.success(request, "Lab completed. Evidence beats a percentage.")
+    return redirect("dojo:handbook_lab", slug=slug)
+
+
+@require_POST
+def handbook_lab_evidence(request: HttpRequest, slug: str) -> HttpResponse:
+    if slug not in lab_map():
+        raise Http404("Lab not found")
+    learner = Learner.local()
+    row, _ = HandbookLabProgress.objects.get_or_create(
+        learner=learner, lab_slug=slug
+    )
+    row.evidence_what = request.POST.get("evidence_what", "")[:4000].strip()
+    row.evidence_decision = request.POST.get("evidence_decision", "")[:4000].strip()
+    row.evidence_test = request.POST.get("evidence_test", "")[:4000].strip()
+    row.evidence_url = request.POST.get("evidence_url", "")[:500].strip()
+    row.save(
+        update_fields=[
+            "evidence_what",
+            "evidence_decision",
+            "evidence_test",
+            "evidence_url",
+            "updated_at",
+        ]
+    )
+    messages.success(request, "Lab evidence saved.")
+    return redirect(f"{reverse('dojo:handbook_lab', args=[slug])}#evidence")
+
+
+@require_GET
+def handbook_lab_evidence_export(request: HttpRequest) -> HttpResponse:
+    rows = {
+        row.lab_slug: row
+        for row in HandbookLabProgress.objects.filter(learner=Learner.local())
+    }
+    lines = ["# Django Labs — evidence", ""]
+    for lab in load_labs():
+        row = rows.get(lab["slug"])
+        if not row or not row.has_evidence:
+            continue
+        lines.extend(
+            [
+                f"## {lab['title']}",
+                "",
+                f"Status: {'completed' if row.completed_at else 'in progress'}",
+                "",
+            ]
+        )
+        if row.evidence_what:
+            lines.extend([f"**What I built:** {row.evidence_what}", ""])
+        if row.evidence_decision:
+            lines.extend([f"**Hard decision:** {row.evidence_decision}", ""])
+        if row.evidence_test:
+            lines.extend([f"**Test added:** {row.evidence_test}", ""])
+        if row.evidence_url:
+            lines.extend([f"**Evidence:** {row.evidence_url}", ""])
+    response = HttpResponse(
+        "\n".join(lines).rstrip() + "\n", content_type="text/markdown; charset=utf-8"
+    )
+    response["Content-Disposition"] = 'attachment; filename="django-labs-evidence.md"'
+    return response
+
+
 def _handbook_url(hit_or_suggestion: dict) -> str:
     chapter = hit_or_suggestion["chapter"]
     section = hit_or_suggestion.get("section")
@@ -520,6 +656,10 @@ def handbook_chapter(request: HttpRequest, slug: str) -> HttpResponse:
     feedback = HandbookFeedback.objects.filter(
         learner=learner, chapter_slug=slug
     ).first()
+    explanation = HandbookExplanation.objects.filter(
+        learner=learner, chapter_slug=slug
+    ).first()
+    chapter_lab = lab_for_chapter(slug)
     runtime_version = django.get_version()
     runtime_tuple = tuple(int(part) for part in runtime_version.split(".")[:2])
     version_warning = not (
@@ -537,6 +677,8 @@ def handbook_chapter(request: HttpRequest, slug: str) -> HttpResponse:
             "progress": progress,
             "section_notes": section_notes,
             "feedback": feedback,
+            "explanation": explanation,
+            "chapter_lab": chapter_lab,
             "runtime_version": runtime_version,
             "version_warning": version_warning,
             "active_nav": "handbook",
@@ -730,6 +872,90 @@ def handbook_gaps_clear(request: HttpRequest) -> HttpResponse:
     deleted = HandbookSearchLog.objects.all().delete()[0]
     messages.success(request, f"Cleared {deleted} logged search gap(s).")
     return redirect("dojo:handbook_gaps_page")
+
+
+@require_POST
+def handbook_explanation(request: HttpRequest, slug: str) -> HttpResponse:
+    chapter = chapter_map().get(slug)
+    if chapter is None:
+        raise Http404("Handbook chapter not found")
+    body = request.POST.get("body", "")[:12000].strip()
+    rating = request.POST.get("rating", "")
+    if rating not in {"shaky", "okay", "solid"}:
+        rating = ""
+    learner = Learner.local()
+    existing = HandbookExplanation.objects.filter(
+        learner=learner, chapter_slug=slug
+    ).first()
+    if not body and not rating:
+        if existing:
+            existing.delete()
+        messages.info(request, "Explanation removed.")
+    else:
+        explanation, _ = HandbookExplanation.objects.update_or_create(
+            learner=learner,
+            chapter_slug=slug,
+            defaults={
+                "body": body,
+                "rating": rating,
+                "previous_body": existing.body if existing else "",
+                "previous_rating": existing.rating if existing else "",
+            },
+        )
+        interval = {"shaky": 1, "okay": 3, "solid": 14}.get(rating, 1)
+        explanation.interval_days = interval
+        explanation.repetitions = (existing.repetitions if existing else 0) + 1
+        explanation.due_on = timezone.localdate() + timedelta(days=interval)
+        explanation.save(update_fields=["interval_days", "repetitions", "due_on"])
+        messages.success(request, "Explanation saved.")
+    return redirect(f"{reverse('dojo:handbook_chapter', args=[slug])}#explain")
+
+
+@require_GET
+def handbook_explanations(request: HttpRequest) -> HttpResponse:
+    rating = request.GET.get("rating", "")
+    due_only = request.GET.get("due") == "1"
+    today = timezone.localdate()
+    by_slug = chapter_map()
+    explanations = list(
+        HandbookExplanation.objects.filter(learner=Learner.local())
+    )
+    if rating in {"shaky", "okay", "solid"}:
+        explanations = [item for item in explanations if item.rating == rating]
+    due_count = sum(1 for item in explanations if item.due_on <= today)
+    if due_only:
+        explanations = [item for item in explanations if item.due_on <= today]
+    rank = {"shaky": 0, "okay": 1, "solid": 2, "": 3}
+    rows = []
+    for item in explanations:
+        chapter = by_slug.get(item.chapter_slug)
+        if chapter is None:
+            continue
+        rows.append({"explanation": item, "chapter": chapter})
+    rows.sort(
+        key=lambda row: (
+            row["explanation"].due_on,
+            rank.get(row["explanation"].rating, 3),
+            -row["explanation"].updated_at.timestamp(),
+        )
+    )
+    return render(
+        request,
+        "dojo/handbook_explanations.html",
+        {
+            "rows": rows,
+            "rating": rating,
+            "due_only": due_only,
+            "due_count": due_count,
+            "today": today,
+            "counts": {
+                key: sum(1 for item in explanations if item.rating == key)
+                for key in ("shaky", "okay", "solid", "")
+            },
+            "active_nav": "handbook",
+            "page_title": "Teach-back review",
+        },
+    )
 
 
 @require_GET
@@ -1283,6 +1509,9 @@ def progress(request: HttpRequest) -> HttpResponse:
             "activity_days": recent_activity(learner, 28),
             "achievements": achievements(learner, stats),
             "activities": activities(learner),
+            "teach_back_due": HandbookExplanation.objects.filter(
+                learner=learner, due_on__lte=timezone.localdate()
+            ).count(),
             "recent_attempts": Attempt.objects.filter(
                 learner=learner, completed_at__isnull=False
             ).select_related("topic")[:8],

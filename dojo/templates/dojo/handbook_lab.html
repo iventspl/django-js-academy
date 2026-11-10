@@ -1,0 +1,109 @@
+{% extends "dojo/base.html" %}
+{% load static handbook_extras %}
+
+{% block title %}{{ lab.title }} · Django Labs{% endblock %}
+{% block body_class %}page-handbook page-handbook-lab{% endblock %}
+{% block meta_description %}{{ lab.goal }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109q">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-lab-wrap">
+  <div class="js-breadcrumb">
+    <a href="{% url 'dojo:handbook_labs' %}">Django Labs</a>
+    <span>/</span>
+    <span>{{ lab.title }}</span>
+  </div>
+
+  <header class="hb-lab-hero">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> {{ lab.level }} · {{ lab.minutes }} min</p>
+    <h1>{{ lab.title }}</h1>
+    <p class="hb-hero-lead">{{ lab.subtitle }}</p>
+    <p class="hb-lab-goal"><strong>Goal:</strong> {{ lab.goal }}</p>
+  </header>
+
+  <div class="hb-lab-grid">
+    <div>
+      <section class="hb-lab-panel">
+        <p class="hb-label hb-label-light">Scenario</p>
+        <div class="hb-prose">{{ lab.scenario|prose }}</div>
+      </section>
+
+      <section class="hb-lab-panel">
+        <p class="hb-label hb-label-light">Tasks</p>
+        <ol class="hb-lab-list">{% for task in lab.tasks %}<li>{{ task }}</li>{% endfor %}</ol>
+      </section>
+
+      <section class="hb-lab-panel">
+        <p class="hb-label hb-label-light">Acceptance criteria</p>
+        <ul class="hb-check-list">{% for item in lab.acceptance %}<li>{{ item }}</li>{% endfor %}</ul>
+      </section>
+
+      <section class="hb-lab-panel">
+        <p class="hb-label hb-label-light">Starter code</p>
+        <div class="code-block hb-code">
+          <div class="code-bar"><span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>{{ lab.language }}</span><button class="copy-code" type="button" data-copy-code>Copy</button></div>
+          <pre><code>{{ lab.starter_code }}</code></pre>
+        </div>
+      </section>
+
+      {% if lab.hints %}
+        <section class="hb-lab-panel">
+          <p class="hb-label hb-label-light">Hints</p>
+          {% for hint in lab.hints %}
+            <details class="hb-lab-hint"><summary>Hint {{ forloop.counter }} <span aria-hidden="true">+</span></summary><p>{{ hint }}</p></details>
+          {% endfor %}
+        </section>
+      {% endif %}
+
+      <details class="hb-lab-panel hb-lab-solution">
+        <summary>Show reference implementation <span aria-hidden="true">+</span></summary>
+        <p class="hb-lab-warning">Try the tasks first. Read the solution for decisions, not just syntax.</p>
+        <div class="code-block hb-code">
+          <div class="code-bar"><span class="code-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>{{ lab.language_solution }}</span><button class="copy-code" type="button" data-copy-code>Copy</button></div>
+          <pre><code>{{ lab.solution }}</code></pre>
+        </div>
+        <div class="hb-prose hb-lab-explain">{{ lab.explain|prose }}</div>
+      </details>
+
+      <section class="hb-lab-panel hb-evidence" id="evidence">
+        <p class="hb-label hb-label-light">Lab evidence</p>
+        <h2>Prove what you built.</h2>
+        <p class="hb-lab-evidence-intro">Completion is a checkbox. Evidence is what you can show: the decision, the test and the link.</p>
+        <form method="post" action="{% url 'dojo:handbook_lab_evidence' lab.slug %}">
+          {% csrf_token %}
+          <label for="evidence-what">What I built</label>
+          <textarea id="evidence-what" name="evidence_what" rows="3" placeholder="A short description of the working result.">{{ progress.evidence_what|default:"" }}</textarea>
+          <label for="evidence-decision">One hard decision</label>
+          <textarea id="evidence-decision" name="evidence_decision" rows="2" placeholder="Why did you choose this design?">{{ progress.evidence_decision|default:"" }}</textarea>
+          <label for="evidence-test">One test I added</label>
+          <textarea id="evidence-test" name="evidence_test" rows="2" placeholder="What does the test prove?">{{ progress.evidence_test|default:"" }}</textarea>
+          <label for="evidence-url">Repo or commit link</label>
+          <input id="evidence-url" type="url" name="evidence_url" value="{{ progress.evidence_url|default:'' }}" placeholder="https://github.com/…">
+          <button class="btn btn-primary btn-small" type="submit">Save evidence</button>
+        </form>
+      </section>
+    </div>
+
+    <aside class="hb-lab-aside">
+      <div class="hb-lab-status">
+        <p class="hb-label hb-label-light">Your status</p>
+        <strong>{% if completed %}Completed{% else %}Not completed{% endif %}</strong>
+        <form method="post" action="{% url 'dojo:handbook_lab_complete' lab.slug %}">
+          {% csrf_token %}
+          <button class="btn {% if completed %}btn-ghost-dark{% else %}btn-primary{% endif %} btn-small" type="submit">{% if completed %}Mark unfinished{% else %}Mark lab complete{% endif %}</button>
+        </form>
+      </div>
+      {% if chapter %}
+        <a class="hb-lab-chapter" href="{% url 'dojo:handbook_chapter' chapter.slug %}">
+          <span>Read the chapter</span>
+          <strong>{{ chapter.title }}</strong>
+          <small>{{ chapter.subtitle }}</small>
+        </a>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

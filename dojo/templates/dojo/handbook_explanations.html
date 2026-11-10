@@ -1,0 +1,66 @@
+{% extends "dojo/base.html" %}
+{% load static handbook_extras %}
+
+{% block title %}Teach-back review · Django handbook{% endblock %}
+{% block body_class %}page-handbook page-handbook-explanations{% endblock %}
+{% block meta_description %}Review saved chapter explanations, weakest first, and compare them with the short answer.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109q">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Teach-back review · {{ rows|length }} saved</p>
+    <h1>Explain it again.<br><em>Better this time.</em></h1>
+    <p class="hb-hero-lead">Your own explanation is a better signal than a quiz score. Review the shaky ones first, compare with the short answer, and re-explain without losing the previous attempt.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Back to handbook <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:handbook_notes' %}">Section notes <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  <nav class="hb-level-bar" aria-label="Filter explanations">
+    <a class="hb-level-chip {% if not rating %}is-active{% endif %}" href="{% url 'dojo:handbook_explanations' %}">All <span>{{ rows|length }}</span></a>
+    <a class="hb-level-chip {% if rating == 'shaky' %}is-active{% endif %}" href="?rating=shaky">Shaky <span>{{ counts.shaky }}</span></a>
+    <a class="hb-level-chip {% if rating == 'okay' %}is-active{% endif %}" href="?rating=okay">Okay <span>{{ counts.okay }}</span></a>
+    <a class="hb-level-chip {% if rating == 'solid' %}is-active{% endif %}" href="?rating=solid">Solid <span>{{ counts.solid }}</span></a>
+    <a class="hb-level-chip {% if due_only %}is-active{% endif %}" href="?due=1">Due now <span>{{ due_count }}</span></a>
+  </nav>
+
+  {% if rows %}
+    <div class="hb-notes-list">
+      {% for row in rows %}
+        <article class="hb-note-card hb-explain-card">
+          <div class="hb-note-card-head">
+            <div>
+              <a class="hb-note-chapter" href="{% url 'dojo:handbook_chapter' row.chapter.slug %}#explain">{{ row.chapter.title }}</a>
+              <span class="hb-explain-badge hb-explain-{{ row.explanation.rating|default:'none' }}">{{ row.explanation.get_rating_display|default:"No rating" }}</span>
+              {% if row.explanation.due_on <= today %}<span class="hb-explain-badge hb-explain-due">Due now</span>{% else %}<span class="hb-explain-badge">Next {{ row.explanation.due_on|date:"j M" }}</span>{% endif %}
+            </div>
+            <span class="hb-note-updated">{{ row.explanation.updated_at|date:"j M Y, H:i" }}</span>
+          </div>
+          <p class="hb-note-body">{{ row.explanation.body|default:"No explanation text — open the chapter and write one."|linebreaksbr }}</p>
+          {% if row.explanation.previous_body %}
+            <details class="hb-explain-previous">
+              <summary>Previous attempt{% if row.explanation.previous_rating %} · {{ row.explanation.previous_rating }}{% endif %} <span aria-hidden="true">+</span></summary>
+              <p>{{ row.explanation.previous_body|linebreaksbr }}</p>
+            </details>
+          {% endif %}
+          <details class="hb-explain-previous">
+            <summary>Compare with the short answer <span aria-hidden="true">+</span></summary>
+            <div class="hb-prose">{{ row.chapter.quick_answer|prose }}</div>
+          </details>
+          <a class="hb-note-section" href="{% url 'dojo:handbook_chapter' row.chapter.slug %}#explain">Re-explain this chapter <span aria-hidden="true">→</span></a>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="hb-empty-inline">
+      <span>No explanations saved yet.</span>
+      <a href="{% url 'dojo:handbook' %}">Open a chapter and use “Explain it back” →</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

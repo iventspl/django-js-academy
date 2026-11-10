@@ -29,13 +29,20 @@
 - Added **`/handbook/feedback/`**: a triage view that groups needs-work votes by chapter with comments and stale-review flags.
 - Added **`/handbook/upgrade/`**: source → target version planning with incompatible chapters, target release notes and an upgrade checklist.
 - Added **`/handbook/edit-next/`**: one editorial queue combining needs-work feedback, stale review dates and unmapped search queries.
+- Added **Explain it back** on every chapter: free-text explanation, `Shaky / Okay / Solid` self-rating and a hidden short-answer comparison. New model/migration: `HandbookExplanation` / `0009`.
+- Added **Teach-back review** at `/handbook/explanations/`, sorted weakest-first, with the previous attempt preserved. Migration `0010` adds `previous_body` / `previous_rating`.
+- Added a persisted **Dark · Paper · High contrast** theme switch with a full Paper palette for the shell, handbook and JS surfaces.
+- Added **spaced teach-back scheduling**: `Shaky` 1 day, `Okay` 3 days, `Solid` 14 days; due explanations appear in the review queue and on `/progress/`. Migration `0011` adds `due_on`, `interval_days` and `repetitions`.
+- Added **Django Labs** at `/handbook/labs/`: 10 build tasks with starter code, acceptance criteria, hints and hidden reference implementations. New model/migration: `HandbookLabProgress` / `0012`.
+- Added a **lab evidence journal**: each lab records what was built, a hard decision, a test and a repo link; evidence survives completion toggles and exports to Markdown. Migration `0013`.
 - Improved dark-theme contrast and chapter UI: readable checkpoint buttons, light feedback fields, clearer section notes and visible reading-band actions.
-- Added a collapsible **More tools** group to the Django and JS sidebars, with handbook version, upgrade, feedback and notes shortcuts.
+- Added a persisted **High contrast** toggle and collapsed secondary navigation into **More tools** for both Django and JS modules.
+- Added `aria-current` for the active nav item and `aria-expanded`/`aria-controls` for the mobile menu.
 - `COVERAGE_GAPS` is now empty; remaining work is depth, exercises and version-specific notes.
 
 ### Verification
 
-- Full test suite: **209 tests pass**.
+- Full test suite: **217 tests pass**.
 
 ## 4.28 — 2026-11-09
 

@@ -1,8 +1,10 @@
 from django.contrib import admin
 
 from .models import (
-    HandbookNote,
+    HandbookExplanation,
     HandbookFeedback,
+    HandbookLabProgress,
+    HandbookNote,
     HandbookProgress,
     HandbookSearchLog,
     StudyNote,
@@ -146,6 +148,20 @@ class HandbookFeedbackAdmin(admin.ModelAdmin):
     list_filter = ("helpful",)
     search_fields = ("chapter_slug", "comment")
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(HandbookExplanation)
+class HandbookExplanationAdmin(admin.ModelAdmin):
+    list_display = ("chapter_slug", "rating", "learner", "updated_at")
+    list_filter = ("rating",)
+    search_fields = ("chapter_slug", "body")
+    readonly_fields = ("updated_at",)
+
+
+@admin.register(HandbookLabProgress)
+class HandbookLabProgressAdmin(admin.ModelAdmin):
+    list_display = ("lab_slug", "learner", "completed_at")
+    search_fields = ("lab_slug",)
 
 
 @admin.register(HandbookSearchLog)

@@ -261,6 +261,42 @@
     }
   }
 
+  /* ---------- Accessibility: current page and mobile menu state ---------- */
+  $$(".nav-link.is-active").forEach((link) => {
+    link.setAttribute("aria-current", "page");
+  });
+
+  const navToggle = $("#mobile-nav-toggle");
+  const navLabel = navToggle ? document.querySelector('label[for="mobile-nav-toggle"]') : null;
+  if (navToggle && navLabel) {
+    const syncNavState = () => {
+      navLabel.setAttribute("aria-expanded", navToggle.checked ? "true" : "false");
+    };
+    syncNavState();
+    navToggle.addEventListener("change", syncNavState);
+  }
+
+  /* ---------- Theme preference ---------- */
+  const themeSelect = $("[data-theme-select]");
+  if (themeSelect) {
+    const root = document.documentElement;
+    const applyTheme = (theme) => {
+      delete root.dataset.theme;
+      delete root.dataset.contrast;
+      if (theme === "paper") root.dataset.theme = "paper";
+      if (theme === "contrast") root.dataset.contrast = "high";
+      themeSelect.value = theme;
+      try {
+        localStorage.setItem("dq-theme", theme);
+      } catch (_) {
+        /* Storage can be blocked; the visual theme still works this session. */
+      }
+    };
+    const initial = root.dataset.theme === "paper" ? "paper" : root.dataset.contrast === "high" ? "contrast" : "dark";
+    applyTheme(initial);
+    themeSelect.addEventListener("change", () => applyTheme(themeSelect.value));
+  }
+
   /* ---------- Prevent accidental double submits ---------- */
   $$("[data-rating-form]").forEach((form) => {
     form.addEventListener("submit", (event) => {

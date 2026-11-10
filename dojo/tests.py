@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from .content import load_bundles
 from .handbook import chapter_map, load_chapters, render_prose, search_handbook, suggest_terms
+from .labs import load_labs
 from .models import (
     AppBlueprint,
     ArchitectureCase,
@@ -17,7 +18,9 @@ from .models import (
     FlashcardReview,
     HandbookProgress,
     HandbookNote,
+    HandbookExplanation,
     HandbookFeedback,
+    HandbookLabProgress,
     HandbookSearchLog,
     Learner,
     Question,
@@ -739,6 +742,9 @@ class HandbookViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Ask the handbook")
         self.assertContains(response, "forms.py")
+        self.assertContains(response, "data-theme-select")
+        self.assertContains(response, "Paper")
+        self.assertContains(response, "High contrast")
         self.assertContains(response, "Django handbook")
 
     def test_handbook_search_renders_results(self):
@@ -985,6 +991,121 @@ class HandbookNoteTests(SeededTestCase):
             {"body": "x"},
         )
         self.assertEqual(response.status_code, 404)
+
+
+class HandbookExplanationTests(SeededTestCase):
+    def test_save_explanation_and_rating(self):
+        url = reverse("dojo:handbook_explanation", args=["forms"])
+        response = self.client.post(
+            url, {"body": "Forms validate input before the view uses it.", "rating": "okay"}
+        )
+        self.assertEqual(response.status_code, 302)
+        explanation = HandbookExplanation.objects.get(chapter_slug="forms")
+        self.assertIn("validate input", explanation.body)
+        self.assertEqual(explanation.rating, "okay")
+        self.assertEqual(explanation.interval_days, 3)
+        self.assertEqual(explanation.repetitions, 1)
+        self.assertEqual(explanation.due_on, timezone.localdate() + timedelta(days=3))
+
+        chapter = self.client.get(reverse("dojo:handbook_chapter", args=["forms"]))
+        self.assertContains(chapter, "Close the page. Explain it.")
+        self.assertContains(chapter, "Forms validate input before the view uses it.")
+        self.assertContains(chapter, "self-rating: Okay")
+
+    def test_teach_back_review_keeps_previous_attempt(self):
+        url = reverse("dojo:handbook_explanation", args=["forms"])
+        self.client.post(url, {"body": "First explanation.", "rating": "shaky"})
+        self.client.post(url, {"body": "Second explanation.", "rating": "solid"})
+        explanation = HandbookExplanation.objects.get(chapter_slug="forms")
+        self.assertEqual(explanation.body, "Second explanation.")
+        self.assertEqual(explanation.previous_body, "First explanation.")
+        self.assertEqual(explanation.due_on, timezone.localdate() + timedelta(days=14))
+        self.assertEqual(explanation.repetitions, 2)
+
+        response = self.client.get(reverse("dojo:handbook_explanations"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Teach-back review")
+        self.assertContains(response, "Second explanation.")
+        self.assertContains(response, "First explanation.")
+        self.assertContains(response, "Shaky")
+
+        filtered = self.client.get(
+            reverse("dojo:handbook_explanations"), {"rating": "shaky"}
+        )
+        self.assertContains(filtered, "No explanations saved yet.")
+
+    def test_empty_explanation_is_removed(self):
+        HandbookExplanation.objects.create(
+            learner=Learner.local(),
+            chapter_slug="forms",
+            body="Temporary",
+            rating="solid",
+        )
+        self.client.post(
+            reverse("dojo:handbook_explanation", args=["forms"]), {"body": ""}
+        )
+        self.assertFalse(HandbookExplanation.objects.exists())
+
+    def test_explanation_rejects_unknown_chapter(self):
+        response = self.client.post(
+            reverse("dojo:handbook_explanation", args=["not-real"]), {"body": "x"}
+        )
+        self.assertEqual(response.status_code, 404)
+
+
+class HandbookLabTests(SeededTestCase):
+    def test_labs_are_valid_and_linked_to_chapters(self):
+        labs = load_labs()
+        self.assertEqual(len(labs), 10)
+        chapters = chapter_map()
+        for lab in labs:
+            self.assertIn(lab["chapter_slug"], chapters, lab["slug"])
+
+    def test_lab_index_and_detail_render(self):
+        response = self.client.get(reverse("dojo:handbook_labs"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Django Labs")
+        self.assertContains(response, "CSRF-protected contact form")
+
+        response = self.client.get(
+            reverse("dojo:handbook_lab", args=["contact-form"])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Acceptance criteria")
+        self.assertContains(response, "Show reference implementation")
+
+    def test_lab_completion_toggle(self):
+        url = reverse("dojo:handbook_lab_complete", args=["contact-form"])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        row = HandbookLabProgress.objects.get(lab_slug="contact-form")
+        self.assertIsNotNone(row.completed_at)
+        self.client.post(url)
+        row.refresh_from_db()
+        self.assertIsNone(row.completed_at)
+
+    def test_lab_evidence_survives_completion_toggle(self):
+        evidence_url = reverse("dojo:handbook_lab_evidence", args=["contact-form"])
+        self.client.post(
+            evidence_url,
+            {
+                "evidence_what": "A working contact page.",
+                "evidence_decision": "Used a plain Form.",
+                "evidence_test": "Bad email is rejected.",
+                "evidence_url": "https://example.com/repo",
+            },
+        )
+        row = HandbookLabProgress.objects.get(lab_slug="contact-form")
+        self.assertTrue(row.has_evidence)
+        self.client.post(reverse("dojo:handbook_lab_complete", args=["contact-form"]))
+        row.refresh_from_db()
+        self.assertIsNotNone(row.completed_at)
+        self.assertTrue(row.has_evidence)
+
+        detail = self.client.get(reverse("dojo:handbook_lab", args=["contact-form"]))
+        self.assertContains(detail, "A working contact page.")
+        export = self.client.get(reverse("dojo:handbook_lab_evidence_export"))
+        self.assertIn(b"A working contact page.", export.content)
 
 
 class HandbookFeedbackTests(SeededTestCase):

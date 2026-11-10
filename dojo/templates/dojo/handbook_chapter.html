@@ -6,7 +6,7 @@
 {% block meta_description %}{{ chapter.summary }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109k">
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109q">
 {% endblock %}
 
 {% block extra_js %}
@@ -278,6 +278,46 @@
           </div>
         </aside>
       {% endif %}
+
+      {% if chapter_lab %}
+        <a class="hb-lab-callout" href="{% url 'dojo:handbook_lab' chapter_lab.slug %}">
+          <span>Build it</span>
+          <strong>{{ chapter_lab.title }}</strong>
+          <small>{{ chapter_lab.minutes }} min · tasks, acceptance criteria and reference implementation</small>
+        </a>
+      {% endif %}
+
+      <section class="hb-explain" id="explain" aria-labelledby="explain-title">
+        <div class="hb-explain-copy">
+          <p class="hb-label hb-label-light">Explain it back</p>
+          <h2 id="explain-title">Close the page. Explain it.</h2>
+          <p>In two or three sentences, explain what this chapter solves, when you reach for it, and the trap you now know. Then compare with the short answer.</p>
+          {% if explanation %}
+            <p class="hb-explain-saved">Saved {{ explanation.updated_at|date:"j M Y, H:i" }}{% if explanation.rating %} · self-rating: {{ explanation.get_rating_display }}{% endif %}</p>
+          {% endif %}
+        </div>
+        <form method="post" action="{% url 'dojo:handbook_explanation' chapter.slug %}">
+          {% csrf_token %}
+          <label class="sr-only" for="explain-body">Your explanation</label>
+          <textarea id="explain-body" name="body" rows="5" placeholder="Explain {{ chapter.title }} to a junior developer…">{{ explanation.body|default:"" }}</textarea>
+          <div class="hb-explain-actions">
+            <label class="hb-explain-rating">How solid is it?
+              <select name="rating">
+                <option value="">—</option>
+                <option value="shaky" {% if explanation.rating == 'shaky' %}selected{% endif %}>Shaky</option>
+                <option value="okay" {% if explanation.rating == 'okay' %}selected{% endif %}>Okay</option>
+                <option value="solid" {% if explanation.rating == 'solid' %}selected{% endif %}>Solid</option>
+              </select>
+            </label>
+            <button class="btn btn-primary btn-small" type="submit">Save explanation</button>
+          </div>
+        </form>
+        <details class="hb-explain-model">
+          <summary>Show the short answer <span aria-hidden="true">+</span></summary>
+          <div class="hb-prose">{{ chapter.quick_answer|prose }}</div>
+        </details>
+        <a class="hb-explain-review-link" href="{% url 'dojo:handbook_explanations' %}">Review all saved explanations <span aria-hidden="true">→</span></a>
+      </section>
 
       <section class="hb-feedback" id="feedback" aria-labelledby="feedback-title">
         <div>
