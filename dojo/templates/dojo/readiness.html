@@ -1,0 +1,60 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Django readiness · am I ready?{% endblock %}
+{% block body_class %}page-readiness{% endblock %}
+{% block meta_description %}Readiness score across Django ORM, forms, auth, testing, APIs, deployment and architecture.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109w">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Readiness report · {{ generated_on|date:"j M Y" }}</p>
+    <h1>Am I ready<br><em>for Django?</em></h1>
+    <p class="hb-hero-lead">One score built from real evidence: quiz mastery, completed labs, teach-back explanations and interview answers. No self-reported confidence.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:progress' %}">Progress notebook <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:readiness_export' %}">Export report <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <section class="hb-readiness-hero">
+    <div class="hb-readiness-score">
+      <strong>{{ overall }}%</strong>
+      <span>{{ band }}</span>
+    </div>
+    <div class="hb-readiness-summary">
+      <p>Your score is the average of the areas where you have evidence. Missing evidence lowers the score, not just wrong answers.</p>
+      <div class="hb-readiness-facts">
+        <div><strong>{{ chapters_read }}</strong><span>chapters read</span></div>
+        <div><strong>{{ labs_completed }}</strong><span>labs completed</span></div>
+        <div><strong>{{ explanations }}</strong><span>explanations</span></div>
+        <div><strong>{{ interview_rated }}</strong><span>interview answers</span></div>
+        <div><strong>{{ capstone_phases }}</strong><span>capstone phases</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="hb-readiness-grid">
+    {% for area in areas %}
+      <article class="hb-readiness-card">
+        <div class="hb-readiness-card-head">
+          <h2>{{ area.name }}</h2>
+          <strong>{{ area.score }}%</strong>
+        </div>
+        <div class="hb-readiness-track"><span style="--bar: {{ area.score }}%;"></span></div>
+        <div class="hb-readiness-components">
+          <span>Quiz <strong>{% if area.components.quiz is not None %}{{ area.components.quiz }}%{% else %}—{% endif %}</strong></span>
+          <span>Labs <strong>{% if area.components.labs is not None %}{{ area.components.labs }}%{% else %}—{% endif %}</strong></span>
+          <span>Teach-back <strong>{% if area.components.teach_back is not None %}{{ area.components.teach_back }}%{% else %}—{% endif %}</strong></span>
+          <span>Interview <strong>{% if area.components.interview is not None %}{{ area.components.interview }}%{% else %}—{% endif %}</strong></span>
+        </div>
+        <p class="hb-readiness-action">{{ area.action }}</p>
+      </article>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

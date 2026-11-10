@@ -3035,6 +3035,157 @@ mark {
 
 /* ---------- Django Labs ---------- */
 
+.hb-readiness-hero {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin: 0 0 18px;
+  padding: 20px 22px;
+  border: 1px solid var(--line-light);
+  border-radius: 14px;
+  background: rgba(246, 240, 226, 0.04);
+}
+
+.hb-readiness-score {
+  flex: 0 0 150px;
+  text-align: center;
+}
+
+.hb-readiness-score strong {
+  display: block;
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.hb-readiness-score span {
+  color: var(--mint);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.hb-readiness-summary p {
+  max-width: 65ch;
+  margin: 0 0 10px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.hb-readiness-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hb-readiness-facts div {
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: rgba(246, 240, 226, 0.05);
+}
+
+.hb-readiness-facts strong {
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.hb-readiness-facts span {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  text-transform: uppercase;
+}
+
+.hb-readiness-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.hb-readiness-card {
+  padding: 15px 16px;
+  border: 1px solid var(--line-light);
+  border-radius: 10px;
+  background: rgba(246, 240, 226, 0.04);
+}
+
+.hb-readiness-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hb-readiness-card h2 {
+  margin: 0;
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.hb-readiness-card-head strong {
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+.hb-readiness-track {
+  height: 5px;
+  margin: 9px 0;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgba(246, 240, 226, 0.1);
+}
+
+.hb-readiness-track span {
+  display: block;
+  width: var(--bar);
+  height: 100%;
+  background: linear-gradient(90deg, var(--coral), var(--yellow));
+}
+
+.hb-readiness-components {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+}
+
+.hb-readiness-components strong {
+  color: var(--paper);
+  font-weight: 700;
+}
+
+.hb-readiness-action {
+  margin: 9px 0 0;
+  color: #e6b49f;
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  .hb-readiness-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hb-readiness-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .hb-interview-card {
   margin-top: 16px;
 }

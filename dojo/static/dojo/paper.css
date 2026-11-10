@@ -291,6 +291,33 @@ html[data-theme="paper"] .hb-interview-answer p:last-child {
   color: #4f655d;
 }
 
+html[data-theme="paper"] .hb-readiness-hero,
+html[data-theme="paper"] .hb-readiness-card {
+  border-color: rgba(13, 27, 36, 0.14);
+  background: #fffaf0;
+}
+
+html[data-theme="paper"] .hb-readiness-card h2,
+html[data-theme="paper"] .hb-readiness-facts strong,
+html[data-theme="paper"] .hb-readiness-components strong {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .hb-readiness-summary p,
+html[data-theme="paper"] .hb-readiness-components,
+html[data-theme="paper"] .hb-readiness-facts span {
+  color: #4f655d;
+}
+
+html[data-theme="paper"] .hb-readiness-score strong,
+html[data-theme="paper"] .hb-readiness-card-head strong {
+  color: #9a6500;
+}
+
+html[data-theme="paper"] .hb-readiness-action {
+  color: #8a3c27;
+}
+
 html[data-theme="paper"] .hb-chapter-list a:hover strong,
 html[data-theme="paper"] .hb-bookmark-list a:hover strong {
   color: #a6422d;

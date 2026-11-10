@@ -32,6 +32,7 @@ from .handbook import (
 from .capstone import load_capstone
 from .interview import interview_map, load_interview_questions
 from .labs import lab_for_chapter, lab_map, load_labs
+from .readiness import build_readiness
 from .tracks import load_tracks, track_map
 from .models import (
     AppBlueprint,
@@ -886,6 +887,54 @@ def handbook_track_evidence_export(request: HttpRequest) -> HttpResponse:
         "\n".join(lines).rstrip() + "\n", content_type="text/markdown; charset=utf-8"
     )
     response["Content-Disposition"] = 'attachment; filename="django-tracks-evidence.md"'
+    return response
+
+
+@require_GET
+def readiness(request: HttpRequest) -> HttpResponse:
+    report = build_readiness(Learner.local())
+    return render(
+        request,
+        "dojo/readiness.html",
+        {
+            **report,
+            "active_nav": "readiness",
+            "page_title": "Django readiness",
+        },
+    )
+
+
+@require_GET
+def readiness_export(request: HttpRequest) -> HttpResponse:
+    report = build_readiness(Learner.local())
+    lines = [
+        "# Django readiness report",
+        "",
+        f"Overall: **{report['overall']}%** — {report['band']}",
+        "",
+    ]
+    for area in report["areas"]:
+        lines.extend(
+            [
+                f"## {area['name']}: {area['score']}%",
+                "",
+                f"Next action: {area['action']}",
+                "",
+            ]
+        )
+        for key, label in (
+            ("quiz", "Quiz mastery"),
+            ("labs", "Labs"),
+            ("teach_back", "Teach-back"),
+            ("interview", "Interview"),
+        ):
+            value = area["components"][key]
+            lines.append(f"- {label}: {'—' if value is None else f'{value}%'}")
+        lines.append("")
+    response = HttpResponse(
+        "\n".join(lines).rstrip() + "\n", content_type="text/markdown; charset=utf-8"
+    )
+    response["Content-Disposition"] = 'attachment; filename="django-readiness.md"'
     return response
 
 

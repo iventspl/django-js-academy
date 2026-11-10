@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from .capstone import load_capstone
 from .interview import load_interview_questions
+from .readiness import build_readiness
 from .content import load_bundles
 from .handbook import chapter_map, load_chapters, render_prose, search_handbook, suggest_terms
 from .labs import load_labs
@@ -24,8 +25,8 @@ from .models import (
     DjangoCapstoneProgress,
     DjangoFeature,
     DjangoInterviewPractice,
-    DjangoTrackProgress,
     HandbookExplanation,
+    DjangoTrackProgress,
     HandbookFeedback,
     HandbookLabProgress,
     HandbookSearchLog,
@@ -1279,6 +1280,34 @@ class DjangoInterviewTests(SeededTestCase):
         )
         response = self.client.get(reverse("dojo:interview_report"))
         self.assertIn(b"Lazy means no SQL until evaluation.", response.content)
+
+
+class DjangoReadinessTests(SeededTestCase):
+    def test_readiness_page_and_report(self):
+        response = self.client.get(reverse("dojo:readiness"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Am I ready")
+        self.assertContains(response, "ORM")
+
+        response = self.client.get(reverse("dojo:readiness_export"))
+        self.assertIn(b"Django readiness report", response.content)
+
+    def test_readiness_uses_real_evidence(self):
+        HandbookLabProgress.objects.create(
+            learner=Learner.local(), lab_slug="paginated-search", completed_at=timezone.now()
+        )
+        HandbookExplanation.objects.create(
+            learner=Learner.local(), chapter_slug="orm", rating="solid"
+        )
+        DjangoInterviewPractice.objects.create(
+            learner=Learner.local(), question_slug="orm-lazy", rating="solid"
+        )
+        report = build_readiness(Learner.local())
+        self.assertGreater(report["overall"], 0)
+        orm = next(area for area in report["areas"] if area["key"] == "orm")
+        self.assertGreater(orm["score"], 0)
+        self.assertEqual(orm["components"]["labs"], 50)
+        self.assertEqual(orm["components"]["teach_back"], 100)
 
 
 class HandbookFeedbackTests(SeededTestCase):
