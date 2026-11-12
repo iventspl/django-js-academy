@@ -798,6 +798,103 @@
       "level": "Recipe",
       "errors": [],
       "quiz_topic": "architecture-saas"
+    },
+    {
+      "slug": "recipe-data-lifecycle",
+      "title": "Recipe: data lifecycle",
+      "subtitle": "Archive, restore, purge and audit without losing the plot",
+      "category": "Recipes",
+      "order": 11,
+      "tags": [
+        "models",
+        "delete",
+        "retention",
+        "privacy",
+        "recipe"
+      ],
+      "aliases": [
+        "data lifecycle",
+        "soft delete recipe",
+        "archive recipe",
+        "restore recipe",
+        "purge recipe",
+        "gdpr delete",
+        "right to erasure",
+        "retention policy",
+        "anonymize user",
+        "deletion command",
+        "audit trail",
+        "data retention"
+      ],
+      "summary": "A practical lifecycle for user data: an explicit state model, an archive path, a restore path, a privacy purge and a dry-run retention command.",
+      "quick_answer": "Model the lifecycle explicitly (`active`, `archived`, `purge_after`), never equate archive with delete, make purge a tested batch command, and keep an audit record that contains no personal data.",
+      "sections": [
+        {
+          "id": "lifecycle-model",
+          "title": "Model the lifecycle before writing delete code",
+          "body": "Do not start with `is_deleted = BooleanField(default=False)`. Start with the states the product actually needs:\n\n- `active` - normal use\n- `archived` - hidden from the main UI, still readable by the owner or staff\n- `pending_purge` - scheduled for irreversible removal\n- `purged` - gone, or reduced to an anonymized audit row\n\nA timestamp is more useful than a boolean because it answers *when* and supports retention rules:\n\n- `archived_at`\n- `purge_after`\n- `purged_at`\n\nKeep the state transitions in service functions, not scattered across views. A user archive request and a staff purge request are different permissions and different code paths.\n\nAdd a partial unique constraint so archived rows do not block reuse of a live value, but do not accidentally allow duplicate active rows.",
+          "language": "python",
+          "code": "from datetime import timedelta\n\nfrom django.db import models\nfrom django.utils import timezone\n\nclass NoteQuerySet(models.QuerySet):\n    def live(self):\n        return self.filter(archived_at__isnull=True, purged_at__isnull=True)\n\nclass Note(models.Model):\n    owner = models.ForeignKey(\"auth.User\", on_delete=models.CASCADE)\n    title = models.CharField(max_length=200)\n    archived_at = models.DateTimeField(null=True, blank=True)\n    purge_after = models.DateField(null=True, blank=True)\n    purged_at = models.DateTimeField(null=True, blank=True)\n    created_at = models.DateTimeField(auto_now_add=True)\n\n    objects = NoteQuerySet.as_manager()\n\n    class Meta:\n        constraints = [\n            models.UniqueConstraint(\n                fields=[\"owner\", \"title\"],\n                condition=models.Q(archived_at__isnull=True, purged_at__isnull=True),\n                name=\"unique_live_note_title_per_owner\",\n            ),\n        ]\n\ndef archive_note(note):\n    note.archived_at = timezone.now()\n    note.purge_after = timezone.localdate() + timedelta(days=30)\n    note.save(update_fields=[\"archived_at\", \"purge_after\"])"
+        },
+        {
+          "id": "archive-restore",
+          "title": "Archive and restore are user-facing operations",
+          "body": "Archive is a reversible product action. It should:\n\n- require ownership or staff permission\n- set `archived_at`\n- hide the row from normal querysets\n- keep child rows intact\n- write an audit event\n\nRestore is the inverse and needs its own tests. Restoring can fail because the unique value was reused. Decide the rule in advance:\n\n1. restore fails with a clear conflict, or\n2. restore renames the value, or\n3. restore is only allowed for a short grace window.\n\nDo not silently overwrite the newer row. A restore that destroys current data is worse than no restore.\n\nUse a manager for the default \"live\" view and an explicit `all_objects` manager for archive/restore. Avoid a boolean flag checked in every view; one forgotten filter is a data leak.",
+          "language": "python",
+          "code": "from django.db import IntegrityError, transaction\n\ndef restore_note(note):\n    with transaction.atomic():\n        note.archived_at = None\n        note.purge_after = None\n        try:\n            note.save(update_fields=[\"archived_at\", \"purge_after\"])\n        except IntegrityError as exc:\n            raise ValueError(\n                \"A live note with this title already exists. Rename it before restoring.\"\n            ) from exc\n\ndef archive_note_for(user, note_id):\n    note = Note.objects.select_for_update().get(pk=note_id, owner=user)\n    if note.archived_at:\n        return note\n    note.archived_at = timezone.now()\n    note.save(update_fields=[\"archived_at\"])\n    return note\n\n# Default manager hides archives; use an explicit manager for restore/admin.\nNote.objects.live().count()\n# Note.all_objects.get(pk=note_id) in a staff workflow."
+        },
+        {
+          "id": "privacy-purge",
+          "title": "Privacy purge: export, then erase",
+          "body": "A deletion request is a workflow, not a single `DELETE`.\n\n1. Verify the requester and the scope.\n2. Export the data the user is entitled to receive.\n3. Remove or anonymize personal fields.\n4. Delete related files and third-party copies.\n5. Keep a minimal audit record that proves the request happened.\n6. Return a completion receipt.\n\nAnonymization is often better than deletion for financial or audit rows: replace name/email with a stable hash or a sentinel value, keep the invoice total, remove the free-text note.\n\nWatch the hidden copies: uploaded files, email provider logs, search indexes, analytics, backups and cache. A row deleted from PostgreSQL is not gone from an S3 bucket or a cache key.\n\nRun the purge in a transaction per aggregate, not one giant transaction. It must be retryable.",
+          "language": "python",
+          "code": "from django.db import transaction\n\ndef purge_note(note):\n    # Anonymize fields that audit rows still need.\n    note.title = f\"deleted-{note.pk}\"\n    note.body = \"\"\n    note.purged_at = timezone.now()\n    note.save(update_fields=[\"title\", \"body\", \"purged_at\"])\n\ndef request_purge(user, note_id):\n    with transaction.atomic():\n        note = Note.objects.select_for_update().get(pk=note_id, owner=user)\n        if note.purged_at:\n            return note  # idempotent\n        # 1. export data for the user (separate service)\n        # 2. remove files from storage\n        # 3. purge the row\n        purge_note(note)\n    return note"
+        },
+        {
+          "id": "retention-command",
+          "title": "A dry-run retention command",
+          "body": "A retention command is production code. Defaults matter:\n\n- dry run by default\n- explicit `--confirm` to delete\n- bounded batch size\n- a summary count before and after\n- a cutoff date, not \"everything old\"\n- structured output for logs\n\nUse `--dry-run` and `--confirm` as separate flags, or make dry run the default. Print the queryset count and a sample of IDs before acting.\n\nA command that deletes on import is a footgun. A command that deletes without a count is unauditable. Test the dry run and the confirmed path separately.",
+          "language": "python",
+          "code": "from django.db import transaction\nfrom datetime import timedelta\n\nfrom django.core.management.base import BaseCommand\nfrom django.utils import timezone\n\nclass Command(BaseCommand):\n    help = \"Purge archived notes after their retention window.\"\n\n    def add_arguments(self, parser):\n        parser.add_argument(\"--days\", type=int, default=30)\n        parser.add_argument(\"--batch-size\", type=int, default=500)\n        parser.add_argument(\"--confirm\", action=\"store_true\")\n\n    def handle(self, *args, **options):\n        cutoff = timezone.localdate() - timedelta(days=options[\"days\"])\n        qs = Note.objects.filter(\n            archived_at__isnull=False,\n            purged_at__isnull=True,\n            purge_after__lte=cutoff,\n        )\n        count = qs.count()\n        if not options[\"confirm\"]:\n            self.stdout.write(f\"Would purge {count} notes. Re-run with --confirm.\")\n            return\n        total = 0\n        while True:\n            ids = list(qs.values_list(\"pk\", flat=True)[: options[\"batch_size\"]])\n            if not ids:\n                break\n            with transaction.atomic():\n                for note in Note.objects.select_for_update().filter(pk__in=ids):\n                    purge_note(note)\n            total += len(ids)\n        self.stdout.write(self.style.SUCCESS(f\"Purged {total} notes.\"))"
+        },
+        {
+          "id": "audit-and-tests",
+          "title": "Audit trail and the tests that matter",
+          "body": "Keep an audit row for lifecycle transitions:\n\n- who requested it\n- when\n- what action (`archive`, `restore`, `purge`)\n- the aggregate type and a non-personal identifier\n- the outcome\n\nDo not store the deleted personal data in the audit row \"for history\"; that defeats the purge.\n\nTests to write:\n\n- archive hides the row from the default manager\n- restore works inside the grace window\n- restore conflict is handled explicitly\n- purge removes or anonymizes the right fields\n- purge is idempotent\n- dry run deletes nothing\n- a foreign key protected row blocks the purge with a useful error\n- an archived row does not break the partial unique constraint\n\nIf the purge deletes files, assert the storage calls with a fake backend.",
+          "language": "python",
+          "code": "from django.db import models\n\nclass LifecycleEvent(models.Model):\n    actor = models.ForeignKey(\"auth.User\", null=True, on_delete=models.SET_NULL)\n    action = models.CharField(max_length=20)  # archive | restore | purge\n    object_type = models.CharField(max_length=40)\n    object_id = models.CharField(max_length=64)\n    occurred_at = models.DateTimeField(auto_now_add=True)\n    outcome = models.CharField(max_length=20, default=\"ok\")\n\n# Do not put the deleted title, email or body in this row.\n# A stable non-personal identifier is enough to prove the transition."
+        }
+      ],
+      "pitfalls": [
+        "Using one `is_deleted` boolean for archive, trash and legal erasure.",
+        "Letting restore silently overwrite a newer row.",
+        "Deleting the database row but leaving files, cache and search copies.",
+        "Storing personal data in the audit trail after a purge.",
+        "Running a retention command without a dry run or count.",
+        "Deleting in one unbounded transaction on a large table.",
+        "Forgetting the partial unique constraint after adding soft delete."
+      ],
+      "checklist": [
+        "Lifecycle states and timestamps are explicit.",
+        "Archive and restore are permission-checked and tested.",
+        "Purge covers database, files, cache and search copies.",
+        "Retention command is dry-run by default.",
+        "Audit row contains no personal data.",
+        "Unique constraints still behave for archived rows.",
+        "Purge is idempotent and retryable."
+      ],
+      "related": [
+        "deletion-constraints-reference",
+        "recipe-upload",
+        "recipe-email",
+        "models-advanced"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/db/queries/#deleting-objects",
+      "level": "Recipe",
+      "quiz_topic": "models-orm",
+      "reviewed_on": "2026-11-12",
+      "django_min": "5.2",
+      "django_max": "6.1"
     }
   ]
 }

@@ -63,6 +63,14 @@
           "body": "Paginate lists from day one; an unbounded list is a denial-of-service waiting for traffic. DRF's page-number pagination is fine for admin-style lists; cursor pagination is better for feeds and large tables because it does not drift when rows are inserted.\n\nAdd filtering explicitly with `django-filter` or a small `get_queryset()` parser. Version the API in the URL from the start (`/api/v1/`) so a breaking change does not break every client at once.",
           "code": "from rest_framework.pagination import CursorPagination\n\nclass PostCursorPagination(CursorPagination):\n    page_size = 20\n    ordering = \"-created_at\"\n\nclass PostViewSet(viewsets.ModelViewSet):\n    pagination_class = PostCursorPagination\n\n# urls.py\nurlpatterns = [\n    path(\"api/v1/\", include(router.urls)),\n]",
           "language": "python"
+        },
+        {
+          "id": "api-error-contract",
+          "title": "A predictable API error contract",
+          "body": "Clients need one error shape. A DRF `ValidationError` already gives a field-keyed dictionary, but a permission failure, a missing object and a database conflict can look different if you leave them to defaults.\n\nDecide the status codes first:\n\n- 400: malformed or invalid input\n- 401: not authenticated\n- 403: authenticated but not allowed\n- 404: object not visible to this user\n- 409: state conflict, such as duplicate idempotency key or stock conflict\n- 422: semantically invalid but syntactically valid (optional; many teams use 400)\n\nReturn a stable envelope such as `{\"error\": {\"code\": \"...\", \"message\": \"...\", \"fields\": {...}}}`. Do not return a traceback or a Django HTML error page to an API client.\n\nUse `EXCEPTION_HANDLER` to normalize known exceptions. Keep the original exception for logs, but expose only a safe message. Test 401, 403, 404 and a validation failure, not only the happy path.",
+          "language": "python",
+          "note": "404 for unauthorized object access is usually safer than 403 because it does not confirm that the object exists.",
+          "code": "from rest_framework.views import exception_handler\nfrom rest_framework.response import Response\nfrom rest_framework import status\n\ndef api_exception_handler(exc, context):\n    response = exception_handler(exc, context)\n    if response is None:\n        return None\n    detail = response.data\n    if isinstance(detail, dict) and \"detail\" in detail:\n        payload = {\"error\": {\"code\": \"request_error\", \"message\": str(detail[\"detail\"]), \"fields\": {}}}\n    else:\n        payload = {\"error\": {\"code\": \"validation_error\", \"message\": \"Invalid input.\", \"fields\": detail}}\n    response.data = payload\n    return response"
         }
       ],
       "pitfalls": [

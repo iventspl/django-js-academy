@@ -121,6 +121,22 @@
           "code": "def contact(request):\n    form = ContactForm(request.POST or None)\n    if request.method == \"POST\":\n        print(form.is_bound, form.errors.as_data())  # temporary debugging\n        if form.is_valid():\n            return redirect(\"success\")\n    return render(request, \"contact.html\", {\"form\": form})",
           "language": "python",
           "note": "Remove debugging prints before committing; use Django's logging or a debugger instead."
+        },
+        {
+          "id": "modelchoice-querysets",
+          "title": "ModelChoiceField and per-request querysets",
+          "body": "`ModelChoiceField` is a form field backed by a queryset. The queryset is not a static list: it decides which choices are valid, not just which options are rendered. If you set it to `Account.objects.all()` and only hide options in the template, a crafted POST can still select another user's account.\n\nSet a safe `queryset=Model.objects.none()` on the class, then replace it in `__init__` with a request-scoped queryset. Do not evaluate `.all()` at import time, and do not build the queryset from a hidden input.\n\nFor large choice lists, filter in the database, select only what the label needs, and consider `to_field_name` and `empty_label`. A `ModelChoiceField` with ten thousand rows is a product bug even if it validates.\n\nModelForms generate relation fields with the full default queryset. Restrict them in `__init__` as well; `fields = [...]` controls shape, not authorization.",
+          "language": "python",
+          "note": "Authorization belongs in the queryset, not only in the template. Start from `none()` so a missing request scope fails closed.",
+          "code": "from django import forms\nfrom .models import Account\n\nclass TransferForm(forms.Form):\n    to_account = forms.ModelChoiceField(\n        queryset=Account.objects.none(),\n        empty_label=\"Choose an account\",\n    )\n    amount = forms.DecimalField(min_value=1, max_digits=10, decimal_places=2)\n\n    def __init__(self, *args, user, **kwargs):\n        super().__init__(*args, **kwargs)\n        self.fields[\"to_account\"].queryset = (\n            Account.objects.filter(owner=user, is_active=True)\n            .select_related(\"owner\")\n            .order_by(\"name\")\n        )\n\nclass TransferModelForm(forms.ModelForm):\n    class Meta:\n        model = Transfer\n        fields = [\"to_account\", \"amount\"]\n\n    def __init__(self, *args, user, **kwargs):\n        super().__init__(*args, **kwargs)\n        self.fields[\"to_account\"].queryset = Account.objects.filter(owner=user)"
+        },
+        {
+          "id": "form-accessibility",
+          "title": "Form errors, labels and accessibility",
+          "body": "A form is a user interface before it is a validation object. Every input needs a programmatic label, every error should be associated with its field, and non-field errors need a visible summary.\n\n`field.id_for_label` gives the id that `<label for=...>` should point at. Pair it with `aria-describedby` for help text and errors, and set `aria-invalid=\"true\"` when the field has errors. Do not rely on red text alone; include the error message in text.\n\n`form.as_p()` is fine for a prototype, but it does not give you the markup control needed for accessible help text, grouped fields or a summary. Render fields explicitly.\n\nSend errors back with the same data, status 400 for a normal form POST, and focus the first invalid field. For a successful POST, redirect. That is the POST/redirect/GET contract.",
+          "language": "html",
+          "note": "This is a template fragment, not Python. The key is the id/aria wiring, not the exact CSS classes.",
+          "code": "{% if form.non_field_errors %}\n  <div role=\"alert\" class=\"form-summary\">\n    {{ form.non_field_errors }}\n  </div>\n{% endif %}\n\n{% for field in form %}\n  <div class=\"field{% if field.errors %} has-error{% endif %}\">\n    <label for=\"{{ field.id_for_label }}\">{{ field.label }}</label>\n    {{ field }}\n    {% if field.help_text %}\n      <p id=\"{{ field.id_for_label }}-help\">{{ field.help_text }}</p>\n    {% endif %}\n    {% for error in field.errors %}\n      <p id=\"{{ field.id_for_label }}-error\" class=\"error\">{{ error }}</p>\n    {% endfor %}\n  </div>\n{% endfor %}"
         }
       ],
       "pitfalls": [

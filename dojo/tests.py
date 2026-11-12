@@ -637,6 +637,88 @@ class HandbookContentTests(TestCase):
         self.assertIn("queryset-reference", chapter_map())
         self.assertIn("recipe-auth", chapter_map())
 
+    def test_models_chapter_covers_on_delete_and_db_default(self):
+        chapter = chapter_map()["models"]
+        text = "\n".join(
+            f"{section['body']}\n{section['code']}" for section in chapter["sections"]
+        )
+        self.assertIn("SET_DEFAULT", text)
+        self.assertIn("RESTRICT", text)
+        self.assertIn("db_default", text)
+        self.assertIn("Now()", text)
+        self.assertIn("refresh_from_db()", text)
+
+    def test_deletion_reference_covers_all_modes_and_constraints(self):
+        chapter = chapter_map()["deletion-constraints-reference"]
+        text = "\n".join(
+            f"{section['body']}\n{section['code']}" for section in chapter["sections"]
+        )
+        for term in (
+            "CASCADE",
+            "PROTECT",
+            "RESTRICT",
+            "SET_NULL",
+            "SET_DEFAULT",
+            "SET(value_or_callable)",
+            "DO_NOTHING",
+            "db_constraint",
+            "ProtectedError",
+            "RestrictedError",
+            "UniqueConstraint",
+            "CheckConstraint",
+            "soft_delete",
+        ):
+            self.assertIn(term, text)
+        self.assertEqual(len(chapter["sections"]), 5)
+
+    def test_field_reference_covers_backend_and_generated_fields(self):
+        chapter = chapter_map()["model-fields-reference"]
+        text = "\n".join(
+            f"{section['body']}\n{section['code']}" for section in chapter["sections"]
+        )
+        self.assertIn("GeneratedField", text)
+        self.assertIn("ArrayField", text)
+        self.assertIn("HStoreField", text)
+        self.assertIn("db_default", text)
+        self.assertIn("limit_choices_to", text)
+
+    def test_data_lifecycle_recipe_covers_archive_restore_and_purge(self):
+        chapter = chapter_map()["recipe-data-lifecycle"]
+        text = "\n".join(
+            f"{section['body']}\n{section['code']}" for section in chapter["sections"]
+        )
+        self.assertEqual(len(chapter["sections"]), 5)
+        for term in (
+            "archived_at",
+            "purge_after",
+            "restore",
+            "deletion request",
+            "dry run",
+            "--confirm",
+            "audit",
+            "idempotent",
+        ):
+            self.assertIn(term.lower(), text.lower())
+
+    def test_cross_area_chapters_cover_the_expanded_material(self):
+        checks = {
+            "forms": ("ModelChoiceField", "aria-describedby"),
+            "forms-advanced": ("ManagementForm", "can_delete"),
+            "architecture-patterns": ("OutboxEvent", "transaction.on_commit"),
+            "drf": ("EXCEPTION_HANDLER", "validation_error"),
+            "drf-advanced": ("Idempotency-Key", "request_hash"),
+            "deploy-hardening": ("expand/contract", "sqlmigrate"),
+            "auth": ("USERNAME_FIELD", "AbstractUser"),
+            "admin": ("has_delete_permission", "LogEntry"),
+        }
+        for slug, terms in checks.items():
+            chapter = chapter_map()[slug]
+            text = "\n".join(
+                f"{section['body']}\n{section['code']}" for section in chapter["sections"]
+            )
+            for term in terms:
+                self.assertIn(term, text, f"{slug}: {term}")
+
     def test_forms_chapter_covers_the_working_parts(self):
         chapter = chapter_map()["forms"]
         anchors = {section["id"] for section in chapter["sections"]}
@@ -724,7 +806,7 @@ class HandbookContentTests(TestCase):
         output = StringIO()
         call_command("check_handbook", stdout=output)
         text = output.getvalue()
-        self.assertIn("Chapters: 90", text)
+        self.assertIn("Chapters: 92", text)
         self.assertIn("Handbook is valid", text)
 
     def test_coverage_chapters_have_exercises(self):
@@ -799,7 +881,7 @@ class HandbookViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Coverage report")
         self.assertContains(response, "Known gaps")
-        self.assertContains(response, "90")
+        self.assertContains(response, "92")
 
     def test_version_matrix_renders(self):
         response = self.client.get(reverse("dojo:handbook_versions"))

@@ -69,6 +69,22 @@
           "note": "Start with one or two fitness functions. A hundred rules will be disabled on day two.",
           "table": null,
           "reference": ""
+        },
+        {
+          "id": "dependency-direction",
+          "title": "Dependency direction: views -> application -> domain",
+          "body": "A useful Django architecture is a direction of dependencies, not a folder aesthetic:\n\n- interface layer: views, serializers, forms, admin\n- application layer: services, selectors, use-case functions\n- domain layer: rules, value objects, policies\n- infrastructure: ORM models, cache, email, storage, third-party clients\n\nDependencies point inward. A view may call a service; a service may use the ORM; the domain should not import a view, request or response. This keeps the rule testable without HTTP and prevents circular imports.\n\nIn a small app, a `services.py` and `selectors.py` are enough. Do not add a repository abstraction over the Django ORM just to look enterprise; add it when you need to swap a boundary or isolate a complex query. The point is to make the transaction and permission boundary explicit.\n\nName services after use cases (`place_order`, `invite_member`), not after tables (`order_service`).",
+          "language": "python",
+          "note": "A service should own the transaction boundary and the side effects. The view should translate HTTP to inputs and the result to a response.",
+          "code": "# application/orders.py\nfrom django.db import transaction\n\n@transaction.atomic\ndef place_order(*, customer, sku, quantity):\n    product = Product.objects.select_for_update().get(sku=sku)\n    if product.stock < quantity:\n        raise OutOfStock(sku)\n    product.stock -= quantity\n    product.save(update_fields=[\"stock\"])\n    return Order.objects.create(customer=customer, sku=sku, quantity=quantity)\n\n# interface/views.py\ndef order_create(request):\n    form = OrderForm(request.POST or None)\n    if request.method == \"POST\" and form.is_valid():\n        try:\n            order = place_order(customer=request.user, **form.cleaned_data)\n        except OutOfStock as exc:\n            form.add_error(\"sku\", f\"Only {exc.available} left.\")\n        else:\n            return redirect(\"order-detail\", pk=order.pk)\n    return render(request, \"orders/create.html\", {\"form\": form})"
+        },
+        {
+          "id": "outbox-idempotency",
+          "title": "Reliable side effects: on_commit, outbox and idempotency",
+          "body": "If you send email or publish an event inside a transaction before it commits, the side effect can happen even when the database write rolls back. `transaction.on_commit(callback)` delays the callback until a successful commit, but it is not durable: a process crash after commit loses the callback.\n\nFor important side effects, write an outbox row in the same transaction and let a worker deliver it. The worker marks rows delivered and retries failures. This gives at-least-once delivery; the consumer must be idempotent.\n\nIdempotency means repeating the same operation has the same effect. Use a unique idempotency key on the request or event, store the result, and return the stored result on a repeat. Do not rely on \"the client will not retry\"; networks retry.\n\nKeep the outbox table small with a purge job, and give the worker a visibility timeout so a stuck row can be retried.",
+          "language": "python",
+          "note": "`on_commit` is a good fit for cache invalidation and lightweight notifications. Durable business events belong in an outbox.",
+          "code": "from django.db import models, transaction\n\nclass OutboxEvent(models.Model):\n    topic = models.CharField(max_length=80)\n    payload = models.JSONField()\n    created_at = models.DateTimeField(auto_now_add=True)\n    delivered_at = models.DateTimeField(null=True, blank=True)\n\ndef place_order(*, customer, sku, quantity):\n    with transaction.atomic():\n        order = Order.objects.create(customer=customer, sku=sku, quantity=quantity)\n        OutboxEvent.objects.create(\n            topic=\"order.created\",\n            payload={\"order_id\": order.pk, \"sku\": sku},\n        )\n    return order\n\n# Worker: claim one undelivered row with a row lock, deliver,\n# then set delivered_at. A retry is safe because the consumer\n# deduplicates on (topic, payload[\"order_id\"])."
         }
       ],
       "pitfalls": [

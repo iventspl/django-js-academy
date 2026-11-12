@@ -79,6 +79,14 @@
           "note": "Measure with `assertNumQueries` in a form/view test. The template is part of the query count.",
           "table": null,
           "reference": ""
+        },
+        {
+          "id": "formset-errors-and-forms",
+          "title": "Formsets: management form, errors and deletion",
+          "body": "A formset is a collection of forms plus a management form. The management form stores `TOTAL_FORMS`, `INITIAL_FORMS`, `MIN_NUM_FORMS` and `MAX_NUM_FORMS`; if it is missing or tampered with, Django raises `ManagementForm` errors.\n\nFor inline formsets, pass the parent instance and use `inlineformset_factory(Parent, Child, fields=[...], extra=1, can_delete=True)`. On POST, bind both `request.POST` and `request.FILES`, pass `instance=parent`, then call `formset.is_valid()` and `formset.save()`.\n\n`can_delete=True` adds a `DELETE` checkbox per form. Do not delete rows by removing them from the DOM; submit the checkbox so the formset can validate and save the deletion.\n\nUse `formset.non_form_errors()` for cross-form rules and `formset.errors` for per-form errors. Add `max_num` and server-side authorization, not just JavaScript row limits.",
+          "language": "python",
+          "note": "`formset.save()` handles deletions only when `can_delete=True`; `commit=False` requires a later `save_m2m()` for many-to-many fields.",
+          "code": "from django.forms import inlineformset_factory\n\nLineFormSet = inlineformset_factory(\n    Invoice,\n    InvoiceLine,\n    fields=[\"description\", \"quantity\", \"unit_price\"],\n    extra=1,\n    can_delete=True,\n    min_num=1,\n    validate_min=True,\n)\n\ndef edit_invoice(request, pk):\n    invoice = get_object_or_404(Invoice, pk=pk, owner=request.user)\n    formset = LineFormSet(\n        request.POST or None,\n        request.FILES or None,\n        instance=invoice,\n    )\n    if request.method == \"POST\" and formset.is_valid():\n        formset.save()\n        return redirect(\"invoice-detail\", pk=invoice.pk)\n    return render(request, \"invoices/edit.html\", {\"formset\": formset})"
         }
       ],
       "pitfalls": [

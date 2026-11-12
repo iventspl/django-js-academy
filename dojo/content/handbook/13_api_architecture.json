@@ -81,6 +81,14 @@
           "note": "`force_authenticate` bypasses the auth backend; keep a few real token/session tests too.",
           "table": null,
           "reference": ""
+        },
+        {
+          "id": "idempotency-keys",
+          "title": "Idempotency keys for unsafe API calls",
+          "body": "POST is not idempotent by default. A client retry after a timeout can create two orders or charge twice. An idempotency key fixes this when the server stores the key and the original result.\n\nThe flow:\n\n1. Client sends `Idempotency-Key` with a unique value.\n2. Server looks up the key scoped to the authenticated user and endpoint.\n3. If a completed result exists, return it unchanged.\n4. If a request is in progress, return 409 or wait.\n5. Otherwise execute inside a transaction, store the key and response, then return.\n\nThe key must be unique per user and operation, not globally reusable across tenants. Store a hash of the request body so a different payload with the same key is rejected.\n\nDo not store the full response forever; expire keys after a defined window. A database unique constraint is the race-safe part; a cache alone can lose the key.",
+          "language": "python",
+          "note": "The unique constraint is what makes concurrent retries safe. The cache is an optimization, not the source of truth.",
+          "code": "class IdempotencyRecord(models.Model):\n    user = models.ForeignKey(\"auth.User\", on_delete=models.CASCADE)\n    key = models.CharField(max_length=80)\n    request_hash = models.CharField(max_length=64)\n    status_code = models.PositiveSmallIntegerField(null=True, blank=True)\n    response_body = models.JSONField(default=dict)\n\n    class Meta:\n        constraints = [\n            models.UniqueConstraint(\n                fields=[\"user\", \"key\"],\n                name=\"unique_idempotency_key_per_user\",\n            ),\n        ]\n\n# In the view:\n# 1. compute request_hash from the canonical JSON body\n# 2. get_or_create the record inside transaction.atomic()\n# 3. if it already has a response, return it\n# 4. otherwise execute, save status/body, and return\n# A mismatched request_hash is a 409 conflict, not a replay."
         }
       ],
       "pitfalls": [
@@ -200,6 +208,14 @@
           "note": "A restore drill is also a migration test: does the old backup run with the current code?",
           "table": null,
           "reference": ""
+        },
+        {
+          "id": "release-migrations",
+          "title": "Release migrations and rollback",
+          "body": "A deploy is a release process, not only a new container image. The safe order is:\n\n1. build and test the artifact\n2. run migrations once in a release step\n3. collect static files\n4. start the new web/worker processes\n5. check health and roll back if needed\n\nRun migrations in one release job, not in every web worker; concurrent `migrate` runs can race. Use `migrate --plan` to inspect the SQL and `sqlmigrate` for a specific migration.\n\nFor zero-downtime changes, use expand/contract:\n\n- add a nullable column or new table\n- deploy code that writes both old and new shapes\n- backfill in batches\n- switch reads\n- remove the old column in a later release\n\nNever combine a destructive schema change with the code that stops using it in one deploy. Back up or snapshot before a risky migration, and test restore, not just backup.",
+          "language": "shell",
+          "note": "The exact commands depend on the platform; the invariants are one migration job, a health gate and a tested rollback.",
+          "code": "# release job (one instance, not every web worker)\npython manage.py migrate --plan\npython manage.py migrate\npython manage.py collectstatic --noinput\n\n# inspect a specific migration before production\npython manage.py sqlmigrate app 0042\n\n# rollback to a previous migration only when the migration is reversible\npython manage.py migrate app 0041\n\n# health gate\ncurl --fail https://example.com/healthz/"
         }
       ],
       "pitfalls": [

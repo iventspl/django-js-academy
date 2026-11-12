@@ -1,5 +1,43 @@
 # Changelog
 
+## 4.31 - 2026-11-12
+
+### Cross-area handbook depth
+
+- Forms: added `ModelChoiceField` per-request querysets and accessible error/label markup; advanced forms now cover management forms, inline formsets, deletion and `commit=False`.
+- Architecture: added dependency direction (views -> application -> domain) and reliable side effects with `on_commit`, outbox events and idempotency.
+- API & deploy: added a predictable API error contract, idempotency keys and release/rollback migration ordering with expand/contract.
+- Users & admin: added email-login custom users and admin safety around permissions, destructive actions and audit trails.
+
+### Data lifecycle recipe
+
+- Added **Recipe: data lifecycle** at `/handbook/recipe-data-lifecycle/`:
+  - explicit `archive`, `restore`, `pending purge` and `purged` states
+  - partial unique constraints for archived rows
+  - privacy purge with export, anonymization and file/cache cleanup
+  - dry-run retention command with `--confirm` and bounded batches
+  - audit rows that do not keep the erased personal data
+  - idempotency and restore-conflict tests
+- Handbook is now **92 chapters / 399 answers / 75 official URLs**.
+- Full test suite: **237 tests pass**.
+
+## 4.30 - 2026-11-12
+
+### Django handbook: relationship deletion and database defaults
+
+- Expanded the models chapter with a detailed `on_delete` reference:
+  - `CASCADE`, `PROTECT`, `RESTRICT`, `SET_NULL`, `SET_DEFAULT`, `SET(callable)` and `DO_NOTHING`
+  - worked examples for owned rows, money/audit records, optional assignees and sentinel users
+  - why `on_delete` is Python-side, when `db_constraint=False` creates orphans and when soft delete is the better choice
+- Added a **`db_default` vs `default`** section:
+  - database-owned defaults in Django 5.0+
+  - literals, counters, status values and `Now()`
+  - refresh behaviour, expression limits, migration locks and validation caveats
+- Added a **Deletion & constraints reference** chapter with `on_delete` decision guidance, `PROTECT` vs `RESTRICT`, soft deletes, check/unique constraints and large-cascade costs.
+- Added **computed and backend-specific fields** to the model fields reference: `GeneratedField`, `ArrayField`, `HStoreField`, `db_default` and `limit_choices_to` caveats.
+- Handbook is now **91 chapters / 384 answers / 75 official URLs**.
+- Full test suite: **235 tests pass**.
+
 ## 4.29 — 2026-11-09
 
 ### Django handbook: coverage completion and section notes

@@ -345,15 +345,22 @@
         "unique",
         "choices",
         "upload_to",
-        "validators"
+        "validators",
+        "db_default",
+        "GeneratedField",
+        "limit_choices_to",
+        "db_constraint",
+        "ArrayField",
+        "HStoreField",
+        "computed field"
       ],
-      "summary": "The field types and options that appear in real models, with the database/Python distinction that causes most schema bugs.",
+      "summary": "The field types and options that appear in real models, including database defaults, generated columns, PostgreSQL arrays and the Python/database distinction behind schema bugs.",
       "quick_answer": "Choose the narrowest field that fits. `null` is about the database; `blank` is about form validation. Use `DecimalField` for money, `DateTimeField` with `USE_TZ=True` for time, and a deliberate `on_delete` for every relation.",
       "sections": [
         {
           "id": "scalar-fields",
           "title": "Scalar fields",
-          "body": "The basic column types. Prefer `CharField` with a max length for short text and `TextField` for long text.",
+          "body": "The basic column types. Prefer `CharField` with a max length for short text and `TextField` for long text. Backend-specific fields are listed separately below so you do not copy PostgreSQL-only code into SQLite.",
           "code": "",
           "language": "python",
           "note": "",
@@ -443,10 +450,33 @@
                 "`BinaryField()`",
                 "bytes",
                 "Small binary blobs"
+              ],
+              [
+                "`GeneratedField(expression=..., output_field=...)`",
+                "computed by database",
+                "Stored/generated column; Django 5.0+"
+              ],
+              [
+                "`ArrayField(models.IntegerField())`",
+                "list",
+                "PostgreSQL only; import from `django.contrib.postgres.fields`"
+              ],
+              [
+                "`HStoreField()`",
+                "dict[str, str]",
+                "PostgreSQL only; key/value store"
               ]
             ]
           },
           "reference": ""
+        },
+        {
+          "id": "computed-backend-fields",
+          "title": "Computed and backend-specific fields",
+          "body": "`GeneratedField` moves a calculation into the database. Use it when the value must be correct for every writer, not only Django. The expression must be deterministic and use database-supported functions.\n\n`ArrayField` and `HStoreField` are PostgreSQL-only. They are excellent when the data genuinely is a list or a string map; they are a poor substitute for a normalized relation when you need joins, constraints or portability.\n\n`JSONField` is cross-database and useful for unstructured payloads, but it does not give you the indexing and validation of a real schema. Decide whether the shape is truly flexible before choosing it.\n\nMigration warning: generated columns and backend-specific fields are schema features. Test them on the database you deploy to, not only on SQLite.",
+          "language": "python",
+          "note": "Django 5.0+ has GeneratedField. ArrayField/HStoreField require PostgreSQL and the postgres extras.",
+          "code": "from django.contrib.postgres.fields import ArrayField, HStoreField\nfrom django.db import models\n\nclass OrderLine(models.Model):\n    quantity = models.PositiveIntegerField(default=1)\n    unit_price = models.DecimalField(max_digits=10, decimal_places=2)\n    line_total = models.GeneratedField(\n        expression=models.F(\"quantity\") * models.F(\"unit_price\"),\n        output_field=models.DecimalField(max_digits=12, decimal_places=2),\n        db_persist=True,\n    )\n\nclass Product(models.Model):\n    tags = ArrayField(models.CharField(max_length=40), default=list, blank=True)\n    attributes = HStoreField(default=dict, blank=True)\n    payload = models.JSONField(default=dict, blank=True)"
         },
         {
           "id": "relation-fields",
@@ -481,6 +511,21 @@
                 "`through=`",
                 "Explicit join model",
                 "Extra fields and constraints"
+              ],
+              [
+                "`db_constraint=False`",
+                "No database foreign key",
+                "Orphan rows become possible; keep the default `True`"
+              ],
+              [
+                "`limit_choices_to=`",
+                "Filter form choices",
+                "Not a database constraint"
+              ],
+              [
+                "`related_query_name=`",
+                "Reverse ORM lookup name",
+                "Keep it distinct from `related_name` when they differ"
               ]
             ]
           },
@@ -489,7 +534,7 @@
         {
           "id": "field-options",
           "title": "Common field options",
-          "body": "These options are shared across most fields. They are not interchangeable.",
+          "body": "These options are shared across most fields. They are not interchangeable. `db_default` is a database-side default, not a Python default. `limit_choices_to` only filters form/admin choices; it is not a database constraint.",
           "code": "",
           "language": "python",
           "note": "",
@@ -544,6 +589,21 @@
                 "`help_text=`",
                 "Form/admin hint",
                 "Putting secrets or internal notes there"
+              ],
+              [
+                "`db_default=`",
+                "Database supplies the value when omitted",
+                "Does not populate the Python instance; use `refresh_from_db()`"
+              ],
+              [
+                "`limit_choices_to=`",
+                "Filter form/admin choices",
+                "Does not validate direct saves or API writes"
+              ],
+              [
+                "`db_column=`",
+                "Explicit column name",
+                "Hard to rename later"
               ]
             ]
           },
@@ -1185,6 +1245,11 @@
                 "`empty_form`",
                 "Template for JS-added rows",
                 "Replace `__prefix__`"
+              ],
+              [
+                "`get_form_kwargs()`",
+                "CBV hook that supplies form arguments",
+                "Add `request`/`user` deliberately; do not trust POST only"
               ]
             ]
           },
@@ -1524,6 +1589,106 @@
       "level": "Reference",
       "errors": [],
       "quiz_topic": "views-forms-templates"
+    },
+    {
+      "slug": "deletion-constraints-reference",
+      "title": "Deletion & constraints reference",
+      "subtitle": "What happens to related rows, when deletion must fail, and how to keep invariants",
+      "category": "Reference",
+      "order": 6,
+      "tags": [
+        "models",
+        "on_delete",
+        "constraints",
+        "delete",
+        "reference"
+      ],
+      "aliases": [
+        "on_delete reference",
+        "cascade",
+        "protect",
+        "restrict",
+        "set_null",
+        "set_default",
+        "set callable",
+        "do_nothing",
+        "soft delete",
+        "check constraint",
+        "unique constraint",
+        "db_constraint",
+        "protectederror",
+        "restrictederror",
+        "integrityerror",
+        "delete cascade"
+      ],
+      "summary": "A decision-oriented reference for ForeignKey deletion, database constraints, soft deletes and the query cost of large cascades.",
+      "quick_answer": "Choose `on_delete` from the lifetime of the child row, not from what makes the current error disappear. `CASCADE` owns, `PROTECT`/`RESTRICT` preserve, `SET_NULL`/`SET_DEFAULT`/`SET(callable)` detach. Put invariants in database constraints, not only in forms.",
+      "sections": [
+        {
+          "id": "on-delete",
+          "title": "on_delete, option by option",
+          "body": "`on_delete` is required for `ForeignKey` and `OneToOneField`. It describes what Django should do to child rows when the parent is deleted. It is a data-lifetime decision, not a syntax decision.\n\n| Option | Child after parent delete | Use when |\n|---|---|---|\n| `CASCADE` | Deleted too | The child is owned by the parent and has no independent meaning |\n| `PROTECT` | Parent delete blocked with `ProtectedError` | The child is important enough that deletion must be explicit |\n| `RESTRICT` | Parent delete blocked with `RestrictedError` | Like `PROTECT`, but a cascade from another path may still remove the child |\n| `SET_NULL` | Foreign key set to `NULL` | The relation is optional and the child must survive; requires `null=True` |\n| `SET_DEFAULT` | Foreign key set to its `default` | A known fallback row should own the child; requires a default |\n| `SET(value_or_callable)` | Foreign key set to that value | A fallback needs a query or per-delete calculation; pass a callable |\n| `DO_NOTHING` | Nothing | Only when a database trigger or external system owns the behaviour |\n\n`RESTRICT` is often the better default for financial and audit data because it distinguishes \"this row is required\" from \"this whole subtree is protected\". `PROTECT` still has its place when every path should be blocked.\n\n`on_delete` is Django-side behaviour. It is not automatically the database's `ON DELETE` clause. `db_constraint=False` removes the foreign-key constraint, so the database cannot protect you from an orphan; do not use it to silence a `ProtectedError` or a migration problem.",
+          "language": "python",
+          "code": "from django.db import models\n\nclass Customer(models.Model):\n    name = models.CharField(max_length=120)\n\nclass Invoice(models.Model):\n    customer = models.ForeignKey(\n        Customer,\n        on_delete=models.CASCADE,\n        related_name=\"invoices\",\n    )\n\nclass Payment(models.Model):\n    invoice = models.ForeignKey(\n        Invoice,\n        on_delete=models.PROTECT,\n        related_name=\"payments\",\n    )\n\nclass Ticket(models.Model):\n    assignee = models.ForeignKey(\n        \"auth.User\",\n        on_delete=models.SET_NULL,\n        null=True,\n        blank=True,\n        related_name=\"tickets\",\n    )\n\ndef get_sentinel_user():\n    from django.contrib.auth import get_user_model\n    User = get_user_model()\n    return User.objects.get_or_create(username=\"deleted-user\")[0]\n\nclass AuditEvent(models.Model):\n    actor = models.ForeignKey(\n        \"auth.User\",\n        on_delete=models.SET(get_sentinel_user),\n        related_name=\"audit_events\",\n    )"
+        },
+        {
+          "id": "protect-restrict",
+          "title": "PROTECT vs RESTRICT in practice",
+          "body": "Both raise a `ProtectedError`-family exception and both stop the delete. The difference appears when the child is also reachable through a cascading path.\n\n`PROTECT` blocks the delete no matter how the collector reached the child. `RESTRICT` allows the delete when the child would be removed by another cascade in the same operation. This is why `RESTRICT` is useful for a `Payment` that belongs to an `Invoice`: you cannot delete the invoice directly while payments remain, but if the customer is deleted and the invoice would cascade, the payment can go with it.\n\nCatch the exception at the boundary and turn it into a useful response. Do not catch `Exception` and continue as if the delete succeeded.\n\n`db_constraint=True` is the default and creates a real foreign-key constraint. Keep it. `db_constraint=False` is for legacy schemas or unusual migration ordering; it leaves referential integrity to application code, which means orphan rows are now your job.",
+          "language": "python",
+          "code": "from django.db import models\nfrom django.db.models.deletion import ProtectedError, RestrictedError\n\nclass Invoice(models.Model):\n    customer = models.ForeignKey(\n        \"Customer\", on_delete=models.CASCADE,\n    )\n\nclass Payment(models.Model):\n    invoice = models.ForeignKey(\n        Invoice,\n        on_delete=models.RESTRICT,\n        related_name=\"payments\",\n    )\n\ndef delete_invoice(invoice):\n    try:\n        invoice.delete()\n    except (ProtectedError, RestrictedError) as exc:\n        # Turn this into a 409/400 at the view or service boundary.\n        raise ValueError(\"Remove or reassign the payments first.\") from exc\n\n# Bad: removes the database guarantee and permits orphaned rows.\n# customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, db_constraint=False)"
+        },
+        {
+          "id": "soft-delete",
+          "title": "Soft delete without lying to the ORM",
+          "body": "A soft delete keeps the row and marks it hidden. It is the right tool when history, audit or restore matters, and the wrong tool when the user expects the data to be gone.\n\nThe minimum design is a nullable `deleted_at` timestamp plus a manager/queryset that hides deleted rows by default. Add an explicit `all_objects` manager for admin and restore workflows. Every uniqueness constraint then needs a decision: does a deleted row still occupy the unique value?\n\nDo not implement soft delete by overriding `delete()` and doing nothing. `QuerySet.delete()` does not call each object's `delete()` method, so the two paths diverge. Use an explicit `soft_delete()` service or manager method and a scheduled purge for data that must eventually disappear.\n\nIf a row must be truly erased for privacy, soft delete is not enough: build a hard-delete/export workflow and test it.",
+          "language": "python",
+          "code": "from django.db import models\nfrom django.utils import timezone\n\nclass SoftDeleteQuerySet(models.QuerySet):\n    def alive(self):\n        return self.filter(deleted_at__isnull=True)\n\n    def soft_delete(self):\n        return self.update(deleted_at=timezone.now())\n\nclass Note(models.Model):\n    title = models.CharField(max_length=200)\n    deleted_at = models.DateTimeField(null=True, blank=True)\n\n    objects = SoftDeleteQuerySet.as_manager()\n\n    class Meta:\n        constraints = [\n            models.UniqueConstraint(\n                fields=[\"title\"],\n                condition=models.Q(deleted_at__isnull=True),\n                name=\"unique_live_note_title\",\n            ),\n        ]\n\n# Hidden by the default manager if you choose that design:\nNote.objects.alive().count()\nNote.objects.soft_delete()\n\n# Restore is an explicit operation:\nNote.objects.filter(id=note_id).update(deleted_at=None)"
+        },
+        {
+          "id": "constraints",
+          "title": "Check, unique and conditional constraints",
+          "body": "Constraints are promises the database keeps even when a script, bulk update or race bypasses forms.\n\n- `UniqueConstraint(fields=[...])` enforces multi-column uniqueness. Use `condition=` for a partial unique rule, such as one active membership per user.\n- `CheckConstraint(condition=Q(...))` enforces a row-level rule. In modern Django use `condition=`; older code may show `check=`.\n- `violation_error_message` gives a useful message, but the database exception is still `IntegrityError`.\n- `full_clean(validate_constraints=True)` validates constraints before a write, but `save()` still does not call it automatically.\n\nCatch `IntegrityError` at the service or form boundary, inspect the constraint name if needed, and return a field error. Do not swallow it: a failed constraint means the write did not happen.\n\n`UniqueConstraint` with `condition` requires database support for partial indexes. SQLite and PostgreSQL support it; check your target backend.",
+          "language": "python",
+          "code": "from django.db import IntegrityError, models, transaction\n\nclass Membership(models.Model):\n    user = models.ForeignKey(\"auth.User\", on_delete=models.CASCADE)\n    team = models.ForeignKey(\"Team\", on_delete=models.CASCADE)\n    role = models.CharField(max_length=20, default=\"member\")\n    is_active = models.BooleanField(default=True)\n\n    class Meta:\n        constraints = [\n            models.UniqueConstraint(\n                fields=[\"user\", \"team\"],\n                condition=models.Q(is_active=True),\n                name=\"unique_active_membership\",\n            ),\n            models.CheckConstraint(\n                condition=models.Q(role__in=[\"owner\", \"admin\", \"member\"]),\n                name=\"valid_membership_role\",\n            ),\n        ]\n\ndef add_membership(user, team):\n    try:\n        with transaction.atomic():\n            return Membership.objects.create(user=user, team=team)\n    except IntegrityError as exc:\n        raise ValueError(\"This user is already an active member.\") from exc"
+        },
+        {
+          "id": "delete-performance",
+          "title": "Large deletes and cascade cost",
+          "body": "A delete is not free. Django's collector walks relations, loads child rows, sends `pre_delete`/`post_delete` signals and then deletes. A large cascade can produce many queries and long transactions.\n\nPractical rules:\n\n- Delete in bounded batches for large tables, not one unbounded `QuerySet.delete()`.\n- Know which relations cascade. A single `CASCADE` can turn one parent delete into thousands of child deletes.\n- `PROTECT`/`RESTRICT` are cheap guards; use them before a destructive admin action.\n- `QuerySet.delete()` does not call model `delete()` methods, but it does send delete signals. Do not put critical cleanup only in an overridden `delete()`.\n- For audit-heavy tables, archive or soft-delete first and purge later with an explicit command.\n\nMeasure with query logging or `CaptureQueriesContext` before calling a cascade \"fine\".",
+          "language": "python",
+          "code": "from django.db import transaction\n\ndef purge_invoices(queryset, batch_size=500):\n    total = 0\n    while True:\n        ids = list(queryset.values_list(\"pk\", flat=True)[:batch_size])\n        if not ids:\n            break\n        with transaction.atomic():\n            deleted, _ = queryset.model.objects.filter(pk__in=ids).delete()\n        total += deleted\n    return total\n\n# PROTECT/RESTRICT surface the problem before a large destructive batch.\n# CASCADE may delete far more rows than the parent you selected."
+        }
+      ],
+      "pitfalls": [
+        "Using `CASCADE` for a reference that must survive the parent.",
+        "Using `DO_NOTHING` without a database constraint or trigger.",
+        "Assuming `on_delete` is the same as the database `ON DELETE` action.",
+        "Using `db_constraint=False` to hide an integrity problem.",
+        "Adding a soft delete that breaks unique constraints or restore flows.",
+        "Catching `IntegrityError` without rolling back the transaction.",
+        "Running an unbounded cascade on a large production table."
+      ],
+      "checklist": [
+        "Every relation has an `on_delete` chosen from data lifetime.",
+        "`PROTECT`/`RESTRICT` guards money and audit rows.",
+        "`db_constraint` remains enabled unless there is a documented reason.",
+        "Invariants are enforced by database constraints.",
+        "Large deletes are batched, measured and reversible.",
+        "Soft-deleted rows have an explicit restore and purge path."
+      ],
+      "related": [
+        "models",
+        "model-fields-reference",
+        "migrations",
+        "models-advanced"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/ref/models/fields/#django.db.models.ForeignKey.on_delete",
+      "level": "Reference",
+      "quiz_topic": "models-orm",
+      "reviewed_on": "2026-11-12",
+      "django_min": "5.2",
+      "django_max": "6.1"
     }
   ]
 }

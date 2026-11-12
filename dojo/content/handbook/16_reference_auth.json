@@ -1085,6 +1085,21 @@
                 "`migrate --fake`",
                 "Mark without running",
                 "Recovery only"
+              ],
+              [
+                "`makemigrations --empty app_label`",
+                "Create a migration shell for data or manual SQL",
+                "Use with `RunPython`/`RunSQL`"
+              ],
+              [
+                "`migrate --fake`",
+                "Mark applied without running SQL",
+                "Only when schema is already correct"
+              ],
+              [
+                "`squashmigrations`",
+                "Combine a range into one migration",
+                "Test before replacing history"
               ]
             ]
           },
@@ -1171,7 +1186,7 @@
         {
           "id": "patterns",
           "title": "Patterns and caveats",
-          "body": "The operations that need a plan.",
+          "body": "The operations that need a plan. Start a data migration with `makemigrations --empty`, then write a `RunPython` function that uses historical models. Keep schema and data changes in separate migrations when a backfill is large.",
           "code": "# Data migration with historical model\ndef forwards(apps, schema_editor):\n    Order = apps.get_model(\"shop\", \"Order\")\n    Order.objects.filter(status=\"\").update(status=\"pending\")\n\nclass Migration(migrations.Migration):\n    dependencies = [(\"shop\", \"0004_order_status\")]\n    operations = [migrations.RunPython(forwards, migrations.RunPython.noop)]\n\n# State/DB divergence\nmigrations.SeparateDatabaseAndState(\n    state_operations=[migrations.AddField(...)],\n    database_operations=[migrations.RunSQL(...)],\n)",
           "language": "python",
           "note": "`RunPython.noop` is acceptable only when the data change genuinely cannot be reversed.",
