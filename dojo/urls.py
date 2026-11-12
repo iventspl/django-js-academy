@@ -25,6 +25,7 @@ urlpatterns = [
     path("handbook/notes/", views.handbook_notes, name="handbook_notes"),
     path("handbook/explanations/", views.handbook_explanations, name="handbook_explanations"),
     path("handbook/labs/", views.handbook_labs, name="handbook_labs"),
+    path("handbook/model-health/", views.model_health, name="model_health"),
     path("handbook/tracks/", views.handbook_tracks, name="handbook_tracks"),
     path("handbook/capstone/", views.handbook_capstone, name="handbook_capstone"),
     path(

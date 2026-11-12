@@ -32,6 +32,7 @@ from .handbook import (
 from .capstone import load_capstone
 from .interview import interview_map, load_interview_questions
 from .labs import lab_for_chapter, lab_map, load_labs
+from .model_health import scan_models
 from .readiness import build_readiness
 from .tracks import load_tracks, track_map
 from .models import (
@@ -888,6 +889,20 @@ def handbook_track_evidence_export(request: HttpRequest) -> HttpResponse:
     )
     response["Content-Disposition"] = 'attachment; filename="django-tracks-evidence.md"'
     return response
+
+
+@require_GET
+def model_health(request: HttpRequest) -> HttpResponse:
+    report = scan_models()
+    return render(
+        request,
+        "dojo/model_health.html",
+        {
+            **report,
+            "active_nav": "handbook",
+            "page_title": "Model health audit",
+        },
+    )
 
 
 @require_GET

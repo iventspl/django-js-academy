@@ -1,0 +1,52 @@
+{% extends "dojo/base.html" %}
+{% load static %}
+
+{% block title %}Model health audit · Django{% endblock %}
+{% block body_class %}page-model-health{% endblock %}
+{% block meta_description %}A conservative audit of installed Django models with handbook-linked fixes.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'dojo/handbook.css' %}?v=20261109u">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap hb-wrap hb-notes-wrap">
+  <header class="hb-notes-head">
+    <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span> Model health · {{ models_scanned }} models scanned</p>
+    <h1>Check the<br><em>model layer.</em></h1>
+    <p class="hb-hero-lead">A conservative static audit of installed models. Nothing is changed. Each finding explains the risk and links to the relevant handbook section.</p>
+    <div class="hb-notes-actions">
+      <a class="btn btn-primary" href="{% url 'dojo:handbook' %}">Handbook <span aria-hidden="true">←</span></a>
+      <a class="btn btn-ghost-dark" href="{% url 'dojo:features' %}">Feature map <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  <div class="hb-coverage-stats">
+    <div><strong>{{ counts.error }}</strong><span>errors</span></div>
+    <div><strong>{{ counts.warning }}</strong><span>warnings</span></div>
+    <div><strong>{{ counts.info }}</strong><span>notes</span></div>
+    <div><strong>{{ counts.total }}</strong><span>findings</span></div>
+  </div>
+
+  {% if findings %}
+    <div class="mh-list">
+      {% for finding in findings %}
+        <article class="mh-card mh-{{ finding.severity }}">
+          <div class="mh-head">
+            <span class="mh-severity">{{ finding.severity }}</span>
+            <span class="mh-model">{{ finding.app }}.{{ finding.model }}{% if finding.field != '—' %}.{{ finding.field }}{% endif %}</span>
+          </div>
+          <p class="mh-message">{{ finding.message }}</p>
+          <p class="mh-fix"><strong>Fix:</strong> {{ finding.fix }}</p>
+          <a class="mh-link" href="{{ finding.link }}">Read the handbook <span aria-hidden="true">→</span></a>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="hb-empty-inline">
+      <span>No findings. The model layer passes this conservative audit.</span>
+      <a href="{% url 'dojo:handbook' %}">Keep reading</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

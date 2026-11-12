@@ -251,6 +251,131 @@
       ],
       "official": "https://docs.djangoproject.com/en/stable/ref/django-admin/",
       "quiz_topic": "django-fundamentals"
+    },
+    {
+      "slug": "django-mental-models",
+      "title": "Django mental models",
+      "subtitle": "The eight ideas that explain most Django behaviour",
+      "category": "Start here",
+      "order": 4,
+      "level": "Core",
+      "tags": [
+        "fundamentals",
+        "mental models",
+        "learning",
+        "core"
+      ],
+      "aliases": [
+        "how django works",
+        "django mental model",
+        "request pipeline",
+        "queryset lazy",
+        "model descriptor",
+        "forms validation",
+        "transactions atomic",
+        "migrations state",
+        "authentication authorization",
+        "async django",
+        "why django behaves"
+      ],
+      "summary": "Eight durable mental models - request pipeline, model descriptors, lazy querysets, form validation, transaction scopes, migration state, the three auth questions and async boundaries.",
+      "quick_answer": "Django is a request pipeline over a lazy ORM, with explicit validation, transaction and authorization boundaries. Once those boundaries are clear, most framework behaviour stops looking magical.",
+      "sections": [
+        {
+          "id": "request-pipeline",
+          "title": "A request is a pipeline with boundaries",
+          "body": "A Django request moves through a predictable path:\n\n1. the WSGI/ASGI server creates a request\n2. middleware runs from top to bottom\n3. the URL resolver chooses a view\n4. the view calls services, forms and the ORM\n5. a response travels back through middleware\n\nThe boundaries matter more than the diagram. Session and authentication middleware populate `request.user` before the view. CSRF middleware checks unsafe methods before the view. Your view decides whether the request is authorized for this specific object.\n\nMiddleware order is behaviour: a middleware that needs `request.user` must run after `AuthenticationMiddleware`. A response middleware runs in reverse order.\n\nA view is not the application. Put multi-step workflows in services so the same logic can be called from a command, an API or a test without constructing an HTTP request.",
+          "language": "python",
+          "note": "Common misconception: if a URL exists, it is public. URL dispatch and authorization are separate steps.",
+          "code": "# settings.py\nMIDDLEWARE = [\n    \"django.middleware.security.SecurityMiddleware\",\n    \"django.contrib.sessions.middleware.SessionMiddleware\",\n    \"django.middleware.common.CommonMiddleware\",\n    \"django.middleware.csrf.CsrfViewMiddleware\",\n    \"django.contrib.auth.middleware.AuthenticationMiddleware\",\n    \"django.contrib.messages.middleware.MessageMiddleware\",\n]\n\n# views.py\n@login_required\ndef invoice_detail(request, pk):\n    invoice = get_object_or_404(Invoice, pk=pk, owner=request.user)\n    return render(request, \"invoices/detail.html\", {\"invoice\": invoice})"
+        },
+        {
+          "id": "models-are-descriptors",
+          "title": "Model fields are descriptors over a database row",
+          "body": "A model class is a Python class, but its fields are descriptors. `Post.title` on the class is a field object; `post.title` on an instance reads the value from the instance's state. The database row is the source of truth, and the Python object is a loaded copy.\n\nThat is why `post.save()` can write stale values, why `refresh_from_db()` exists, and why `update_fields` matters. `save()` without `update_fields` writes the fields Django considers changed; `save(update_fields=[\"title\"])` avoids clobbering a concurrently updated column.\n\n`Model._meta` is the metadata layer: fields, constraints, ordering, table name and relations. Use `_meta.get_field(\"author\")` when you need field introspection, not `getattr(Post, \"author\")`.\n\nA model is not a database constraint by itself. `save()` does not call `full_clean()`, and validators are not a database guarantee. Constraints belong in `Meta.constraints`; validation belongs in forms, serializers or an explicit `full_clean()` call.",
+          "language": "python",
+          "note": "Common misconception: saving a model validates every field. It does not. Forms validate; `save()` writes.",
+          "code": "post = Post.objects.get(pk=1)\npost.title = \"New title\"\npost.save(update_fields=[\"title\"])  # do not rewrite unrelated columns\n\n# Read back values changed by the database or another process.\npost.refresh_from_db()\n\n# Introspection uses _meta, not class attributes.\nfield = Post._meta.get_field(\"author\")\nprint(field.remote_field.model)"
+        },
+        {
+          "id": "querysets-are-lazy",
+          "title": "QuerySets are lazy query builders",
+          "body": "A QuerySet describes SQL. It does not run until you ask for a result. That is why you can chain `.filter().exclude().order_by()` without paying for each step.\n\nEvaluation happens when you iterate, call `list()`, index without a slice, call `len()` (which evaluates), or use `bool()`/`exists()`. `count()` runs a COUNT query, not a full fetch. Slicing with a step (`[::2]`) evaluates in Python; a simple limit slice stays lazy.\n\nLaziness is a performance tool and a correctness trap. Reusing an evaluated QuerySet gives you cached results; modifying it returns a new QuerySet but does not clear the old cache. A QuerySet passed to a template may evaluate once, then again if you build a second one.\n\nBuild the query close to where you need it. Add `select_related`/`prefetch_related` for the shape you render, and measure with query logging before optimizing.",
+          "language": "python",
+          "note": "Common misconception: `.filter()` executes SQL. It usually does not; evaluation does.",
+          "code": "qs = Post.objects.filter(is_published=True).order_by(\"-created_at\")\nprint(qs.query)          # no database hit\nprint(qs.exists())       # one EXISTS query\npage = qs[:20]           # still lazy\nposts = list(page)       # evaluates now\n\n# Avoid evaluating just to check emptiness.\nif qs.exists():\n    ...\n\n# Count in the database, not in Python.\ntotal = qs.count()"
+        },
+        {
+          "id": "forms-validate-not-html",
+          "title": "Forms are validation pipelines, not HTML generators",
+          "body": "A form has two jobs: convert submitted data and validate it. Rendering is a third, optional job.\n\nA form is bound when it receives data: `Form(request.POST)`. `is_valid()` runs field cleaning, form `clean()` and validators, then fills `cleaned_data`. An unbound form has no data and is never valid. `Form(request.POST or None)` is a common way to avoid binding an empty POST on GET.\n\n`cleaned_data` is the contract your view consumes. Do not read `request.POST` after validation; use the converted values. `ModelForm.save()` writes the instance, but `commit=False` returns an unsaved object so you can set server-controlled fields.\n\nValidation order matters: field `clean_<name>()`, then form `clean()`, then model validation if you call `full_clean()`. The database constraint is the final backstop, not the first line of defense.",
+          "language": "python",
+          "note": "Common misconception: `is_valid()` is only for HTML forms. It is the validation boundary for any submitted data.",
+          "code": "class TransferForm(forms.Form):\n    amount = forms.DecimalField(min_value=1)\n\n    def clean_amount(self):\n        amount = self.cleaned_data[\"amount\"]\n        if amount > self.user_balance:\n            raise forms.ValidationError(\"Amount exceeds balance.\")\n        return amount\n\ndef transfer(request):\n    form = TransferForm(request.POST or None)\n    if request.method == \"POST\" and form.is_valid():\n        amount = form.cleaned_data[\"amount\"]  # converted + validated\n        return redirect(\"transfer-complete\")\n    return render(request, \"transfer.html\", {\"form\": form})"
+        },
+        {
+          "id": "transactions-are-scopes",
+          "title": "Transactions are scopes, not decorators for luck",
+          "body": "`transaction.atomic()` defines a scope. Everything inside commits together or rolls back together if an exception escapes. Catching an exception inside the block and continuing means the transaction is still usable, but the failed statement may have poisoned it; use a savepoint if you need to recover.\n\nRow locks only work inside a transaction. `select_for_update()` without `atomic()` raises `TransactionManagementError`. Lock the smallest set you need, and re-check the condition after taking the lock.\n\n`transaction.on_commit()` runs after a successful commit. It is right for cache invalidation and lightweight notifications. It is not durable: if the process dies after commit but before the callback, the callback is lost. Important side effects belong in an outbox.\n\nDo not put a network call inside a transaction if you can avoid it. It holds locks and connections for the duration of someone else's timeout.",
+          "language": "python",
+          "note": "Common misconception: `atomic()` makes code thread-safe. It gives all-or-nothing writes; it does not serialize every reader.",
+          "code": "from django.db import transaction\n\n@transaction.atomic\ndef buy(product_id, quantity):\n    product = Product.objects.select_for_update().get(pk=product_id)\n    if product.stock < quantity:\n        raise OutOfStock(product_id)\n    product.stock -= quantity\n    product.save(update_fields=[\"stock\"])\n    transaction.on_commit(lambda: cache.delete(\"product-list\"))\n    return Order.objects.create(product=product, quantity=quantity)"
+        },
+        {
+          "id": "migrations-are-state",
+          "title": "Migrations are a state graph, not a folder of SQL",
+          "body": "Migrations describe changes to Django's project state. Each migration has dependencies, operations and a state at the end. `makemigrations` compares models to that state; `migrate` applies the graph to the database.\n\nThat is why editing an applied migration is dangerous: other environments have already recorded it. Create a new migration instead. If a migration is wrong and has never left your machine, delete and regenerate it; if it reached production, write a corrective migration.\n\nData migrations use `RunPython` with historical models from `apps.get_model()`. Do not import current models into a data migration: the schema at that point may not match today's code. Keep schema changes and large backfills in separate migrations.\n\n`sqlmigrate` shows the SQL for one migration. `migrate --plan` shows what will run. Both are cheap checks before a production deploy.",
+          "language": "shell",
+          "note": "Common misconception: migrations are just generated SQL. They are state transitions that Django uses to build the next state.",
+          "code": "python manage.py makemigrations\npython manage.py sqlmigrate shop 0042\npython manage.py migrate --plan\npython manage.py migrate\n\n# Data migration skeleton\npython manage.py makemigrations shop --empty -n backfill_status"
+        },
+        {
+          "id": "auth-three-questions",
+          "title": "Authentication, authorization and CSRF are three questions",
+          "body": "Keep three questions separate:\n\n- Authentication: who is making the request? `request.user`, session or token.\n- Authorization: may this user perform this action on this object? Permissions, ownership, roles.\n- CSRF: did this state-changing request come from a page we served? A token, not a login check.\n\nA login guard answers only the first question. It does not stop user A from editing user B's invoice. Filter the queryset by the current user or an explicit membership relation, and return 404 when the object should not be visible.\n\nCSRF protects cookie-authenticated unsafe methods. It is not relevant to a pure token API that does not use cookies, but it is critical for a browser session. Do not disable it globally to fix one endpoint.\n\nSuperuser is not a substitute for object permissions. Test anonymous, owner, other-user and staff paths separately.",
+          "language": "python",
+          "note": "Common misconception: `login_required` means the object is safe. It only proves someone is logged in.",
+          "code": "@login_required\ndef invoice_edit(request, pk):\n    # Authentication: login_required\n    # Authorization: the owner filter\n    invoice = get_object_or_404(Invoice, pk=pk, owner=request.user)\n    form = InvoiceForm(request.POST or None, instance=invoice)\n    if request.method == \"POST\" and form.is_valid():\n        form.save()\n        return redirect(\"invoice-detail\", pk=invoice.pk)\n    return render(request, \"invoices/edit.html\", {\"form\": form})"
+        },
+        {
+          "id": "async-is-not-magic",
+          "title": "Async changes concurrency, not the ORM",
+          "body": "An async view lets the server handle other requests while this one awaits I/O. It does not make CPU work faster, and it does not make the synchronous Django ORM async.\n\nInside an async view, use `await sync_to_async(...)` for blocking ORM calls, or keep the view synchronous and let the worker handle concurrency. Do not call the sync ORM directly from async code; Django will raise `SynchronousOnlyOperation`.\n\nLong tasks - email, PDF generation, video processing, third-party calls with retries - belong in a worker, not in the request/response cycle. A background job also gives you retries and a place to observe failure.\n\nChoose async when you have many concurrent I/O-bound requests and an ASGI deployment. Choose a worker when the work is long or must survive a restart. They solve different problems.",
+          "language": "python",
+          "note": "Common misconception: `async def` makes a slow database query fast. It only changes how the process waits.",
+          "code": "from asgiref.sync import sync_to_async\n\nasync def dashboard(request):\n    # The ORM is synchronous; run it off the event loop.\n    invoices = await sync_to_async(list)(\n        Invoice.objects.filter(owner=request.user)[:20]\n    )\n    return render(request, \"dashboard.html\", {\"invoices\": invoices})\n\n# Long work belongs in a task queue, not in this view.\n# send_invoice_email.delay(invoice.pk)"
+        }
+      ],
+      "pitfalls": [
+        "Treating a URL as authorization.",
+        "Assuming `save()` validates all fields.",
+        "Evaluating a QuerySet repeatedly in a template or loop.",
+        "Putting network calls inside a transaction.",
+        "Editing a migration that already reached production.",
+        "Using `login_required` as the only object-level check.",
+        "Marking a view `async` and calling the sync ORM directly."
+      ],
+      "checklist": [
+        "I can trace a request through middleware, URL, view and response.",
+        "I know when a QuerySet evaluates.",
+        "Forms are the validation boundary; constraints are the backstop.",
+        "Transactions own all-or-nothing writes and row locks.",
+        "Migrations are state transitions, not editable SQL files.",
+        "Authentication, authorization and CSRF are separate checks.",
+        "Async is for I/O concurrency; workers are for long tasks."
+      ],
+      "related": [
+        "start",
+        "models",
+        "forms",
+        "auth",
+        "deploy-hardening"
+      ],
+      "official": "https://docs.djangoproject.com/en/stable/topics/http/middleware/",
+      "quiz_topic": "django-fundamentals",
+      "reviewed_on": "2026-11-12",
+      "django_min": "5.2",
+      "django_max": "6.1"
     }
   ]
 }

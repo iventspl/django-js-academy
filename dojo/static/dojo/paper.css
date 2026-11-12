@@ -443,3 +443,35 @@ html[data-theme="paper"] .hb-search-results .js-search-result:hover {
   background: #f7ecd8;
   color: #102a34;
 }
+
+
+html[data-theme="paper"] .mh-card {
+  border-color: rgba(13, 27, 36, 0.14);
+  border-left-color: rgba(13, 27, 36, 0.2);
+  background: #fffaf0;
+}
+
+html[data-theme="paper"] .mh-card.mh-error {
+  border-left-color: #a6422d;
+}
+
+html[data-theme="paper"] .mh-card.mh-warning {
+  border-left-color: #9a6500;
+}
+
+html[data-theme="paper"] .mh-card.mh-info {
+  border-left-color: #23704f;
+}
+
+html[data-theme="paper"] .mh-message,
+html[data-theme="paper"] .mh-fix strong {
+  color: #102a34;
+}
+
+html[data-theme="paper"] .mh-fix {
+  color: #4f655d;
+}
+
+html[data-theme="paper"] .mh-link {
+  color: #8a3c27;
+}

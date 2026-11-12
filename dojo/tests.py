@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from .capstone import load_capstone
 from .interview import load_interview_questions
+from .model_health import scan_models
 from .readiness import build_readiness
 from .content import load_bundles
 from .handbook import chapter_map, load_chapters, render_prose, search_handbook, suggest_terms
@@ -719,6 +720,26 @@ class HandbookContentTests(TestCase):
             for term in terms:
                 self.assertIn(term, text, f"{slug}: {term}")
 
+    def test_mental_models_chapter_covers_the_eight_ideas(self):
+        chapter = chapter_map()["django-mental-models"]
+        self.assertEqual(len(chapter["sections"]), 8)
+        text = "\n".join(
+            f"{section['body']}\n{section['note']}\n{section['code']}"
+            for section in chapter["sections"]
+        )
+        for term in (
+            "predictable path",
+            "descriptors",
+            "QuerySet",
+            "cleaned_data",
+            "transaction.atomic",
+            "migrations",
+            "Authorization",
+            "sync_to_async",
+        ):
+            self.assertIn(term, text)
+        self.assertIn("Common misconception", text)
+
     def test_forms_chapter_covers_the_working_parts(self):
         chapter = chapter_map()["forms"]
         anchors = {section["id"] for section in chapter["sections"]}
@@ -806,7 +827,7 @@ class HandbookContentTests(TestCase):
         output = StringIO()
         call_command("check_handbook", stdout=output)
         text = output.getvalue()
-        self.assertIn("Chapters: 92", text)
+        self.assertIn("Chapters: 93", text)
         self.assertIn("Handbook is valid", text)
 
     def test_coverage_chapters_have_exercises(self):
@@ -881,7 +902,7 @@ class HandbookViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Coverage report")
         self.assertContains(response, "Known gaps")
-        self.assertContains(response, "92")
+        self.assertContains(response, "93")
 
     def test_version_matrix_renders(self):
         response = self.client.get(reverse("dojo:handbook_versions"))
@@ -1390,6 +1411,25 @@ class DjangoReadinessTests(SeededTestCase):
         self.assertGreater(orm["score"], 0)
         self.assertEqual(orm["components"]["labs"], 50)
         self.assertEqual(orm["components"]["teach_back"], 100)
+
+
+class ModelHealthTests(SeededTestCase):
+    def test_model_health_scan_and_page(self):
+        report = scan_models()
+        self.assertGreater(report["models_scanned"], 0)
+        self.assertIn("counts", report)
+        for finding in report["findings"]:
+            self.assertTrue(finding["link"].startswith("/handbook/"))
+
+        response = self.client.get(reverse("dojo:model_health"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Model health")
+        self.assertContains(response, "models scanned")
+
+    def test_model_health_command(self):
+        output = StringIO()
+        call_command("model_health", stdout=output)
+        self.assertIn("Model health audit", output.getvalue())
 
 
 class HandbookFeedbackTests(SeededTestCase):

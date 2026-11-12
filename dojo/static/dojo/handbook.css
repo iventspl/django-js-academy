@@ -3035,6 +3035,97 @@ mark {
 
 /* ---------- Django Labs ---------- */
 
+.mh-list {
+  display: grid;
+  gap: 9px;
+  padding-bottom: 40px;
+}
+
+.mh-card {
+  padding: 14px 16px;
+  border: 1px solid var(--line-light);
+  border-left: 3px solid var(--line-light);
+  border-radius: 8px;
+  background: rgba(246, 240, 226, 0.04);
+}
+
+.mh-error {
+  border-left-color: #e06b55;
+}
+
+.mh-warning {
+  border-left-color: var(--yellow);
+}
+
+.mh-info {
+  border-left-color: var(--mint);
+}
+
+.mh-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mh-severity {
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: rgba(246, 240, 226, 0.1);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.46rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.mh-error .mh-severity {
+  background: rgba(224, 107, 85, 0.16);
+  color: #ffb9a9;
+}
+
+.mh-warning .mh-severity {
+  background: rgba(246, 196, 81, 0.14);
+  color: var(--yellow);
+}
+
+.mh-model {
+  color: var(--mint);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+}
+
+.mh-message {
+  margin: 6px 0 3px;
+  color: var(--paper);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.mh-fix {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.mh-fix strong {
+  color: var(--paper);
+}
+
+.mh-link {
+  display: inline-block;
+  margin-top: 7px;
+  color: var(--coral);
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  text-decoration: none;
+}
+
+.mh-link:hover {
+  text-decoration: underline;
+}
+
 .hb-readiness-hero {
   display: flex;
   align-items: center;

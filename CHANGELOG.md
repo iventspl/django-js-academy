@@ -1,5 +1,41 @@
 # Changelog
 
+## 4.33 - 2026-11-12
+
+### Django mental models
+
+- Added `/handbook/django-mental-models/` with eight long-form explanations:
+  - request pipeline and middleware boundaries
+  - models as descriptors over database rows
+  - lazy QuerySet evaluation
+  - forms as validation pipelines
+  - transactions as scopes
+  - migrations as a state graph
+  - authentication vs authorization vs CSRF
+  - async concurrency vs synchronous ORM
+- Each section has a worked example, a common-misconception note and concrete failure modes.
+- Added the chapter to the feature map via migration `0026`.
+- Handbook is now **93 chapters / 407 answers / 75 official URLs**.
+- Full test suite: **240 tests pass**.
+
+## 4.32 - 2026-11-12
+
+### Model health audit
+
+- Added `/handbook/model-health/` and `python manage.py model_health`.
+- Scans installed models for:
+  - nullable string fields
+  - missing `__str__`
+  - relations without an explicit `related_name`
+  - `DO_NOTHING` and `db_constraint=False`
+  - missing indexes on common filter fields
+  - missing numeric `CheckConstraint`s
+  - `default` / `db_default` mismatches
+- Findings include severity, plain-language risk, a suggested fix and a direct handbook link.
+- Command supports `--json` and `--fail-on error|warning`.
+- Feature map entry via migration `0025`.
+- Full test suite: **239 tests pass**.
+
 ## 4.31 - 2026-11-12
 
 ### Cross-area handbook depth
